@@ -20,6 +20,9 @@
 package net.sf.mzmine.modules.rawdatamethods.peakpicking.manual;
 
 import javax.annotation.Nonnull;
+import javax.swing.JTable;
+
+import com.google.common.collect.Range;
 
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.PeakList;
@@ -27,11 +30,8 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.MZmineModule;
-import net.sf.mzmine.modules.visualization.peaklisttable.table.PeakListTable;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.util.ExitCode;
-
-import com.google.common.collect.Range;
 
 public class ManualPeakPickerModule implements MZmineModule {
 
@@ -43,13 +43,13 @@ public class ManualPeakPickerModule implements MZmineModule {
     }
 
     public static ExitCode runManualDetection(RawDataFile dataFile,
-	    PeakListRow peakListRow, PeakList peakList, PeakListTable table) {
+	    PeakListRow peakListRow, PeakList peakList, JTable table) {
 	return runManualDetection(new RawDataFile[] { dataFile }, peakListRow,
 		peakList, table);
     }
 
     public static ExitCode runManualDetection(RawDataFile dataFiles[],
-	    PeakListRow peakListRow, PeakList peakList, PeakListTable table) {
+	    PeakListRow peakListRow, PeakList peakList, JTable table) {
 
 	Range<Double> mzRange = null, rtRange = null;
 

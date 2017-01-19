@@ -29,11 +29,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
+import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableColumnModel;
+
+import com.google.common.collect.Range;
 
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.PeakIdentity;
@@ -52,7 +57,6 @@ import net.sf.mzmine.modules.visualization.peaklisttable.export.MSMSExportModule
 import net.sf.mzmine.modules.visualization.peaklisttable.table.CommonColumnType;
 import net.sf.mzmine.modules.visualization.peaklisttable.table.DataFileColumnType;
 import net.sf.mzmine.modules.visualization.peaklisttable.table.PeakListTable;
-import net.sf.mzmine.modules.visualization.peaklisttable.table.PeakListTableColumnModel;
 import net.sf.mzmine.modules.visualization.peaksummary.PeakSummaryVisualizerModule;
 import net.sf.mzmine.modules.visualization.spectra.SpectraVisualizerModule;
 import net.sf.mzmine.modules.visualization.threed.ThreeDVisualizerModule;
@@ -62,8 +66,6 @@ import net.sf.mzmine.modules.visualization.twod.TwoDVisualizerModule;
 import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelection;
 import net.sf.mzmine.util.GUIUtils;
 
-import com.google.common.collect.Range;
-
 /**
  * Peak-list table pop-up menu.
  */
@@ -72,9 +74,9 @@ public class PeakListTablePopupMenu extends JPopupMenu implements
 
     private static final long serialVersionUID = 1L;
 
-    private final PeakListTable table;
+    private final JTable table;
     private final PeakList peakList;
-    private final PeakListTableColumnModel columnModel;
+    private final DefaultTableColumnModel columnModel;
 
     private final JMenu showMenu;
     private final JMenu searchMenu;
@@ -101,7 +103,7 @@ public class PeakListTablePopupMenu extends JPopupMenu implements
     private final JMenuItem copyIdsItem;
     private final JMenuItem pasteIdsItem;
 
-    private final PeakListTableWindow window;
+    private final JFrame window;
     private RawDataFile clickedDataFile;
     private PeakListRow clickedPeakListRow;
     private PeakListRow[] allClickedPeakListRows;
@@ -111,8 +113,15 @@ public class PeakListTablePopupMenu extends JPopupMenu implements
     // class.
     private static PeakIdentity copiedId = null;
 
-    public PeakListTablePopupMenu(final PeakListTableWindow window,
-            PeakListTable listTable, final PeakListTableColumnModel model,
+    /**
+     * changed to defaults
+     * @param window
+     * @param listTable
+     * @param model
+     * @param list
+     */
+    public PeakListTablePopupMenu(final JFrame window,
+            JTable listTable, final DefaultTableColumnModel model,
             final PeakList list) {
 
         this.window = window;

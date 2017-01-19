@@ -282,8 +282,7 @@ public class PeakFilterTask extends AbstractTask {
     /**
      * Create a copy of a peak list row.
      */
-    private static PeakListRow copyPeakRow(final PeakListRow row,
-            final boolean[] keepPeak) {
+    private static PeakListRow copyPeakRow(final PeakListRow row, final boolean[] keepPeak) {
 
         // Copy the peak list row.
         final PeakListRow newRow = new SimplePeakListRow(row.getID());

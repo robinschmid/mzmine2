@@ -36,7 +36,13 @@ public interface IsotopePattern extends MassSpectrum {
 	/**
 	 * Isotope pattern was predicted by Isotope pattern calculator
 	 */
-	PREDICTED;
+	PREDICTED,
+	
+	/**
+	 * Filled in by searching raw data (or mass lists)
+	 * Aligned deisotoper
+	 */
+	RAW;
 
     }
 

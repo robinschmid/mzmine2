@@ -49,6 +49,7 @@ import net.sf.mzmine.util.GUIUtils;
 import net.sf.mzmine.util.dialogs.AxesSetupDialog;
 import net.sf.mzmine.util.SaveImage;
 import net.sf.mzmine.util.SaveImage.FileType;
+import net.sf.mzmine.util.chartexport.ChartExportUtil;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -298,6 +299,10 @@ public class TICPlot extends ChartPanel implements MouseWheelListener {
 	final JPopupMenu popupMenu = getPopupMenu();
 	popupMenu.addSeparator();
 
+	// Robin Schmid
+	// add image export
+	ChartExportUtil.addExportMenu(this);
+	
 	// Add EMF and EPS options to the save as menu
 	JMenuItem saveAsMenu = (JMenuItem) popupMenu.getComponent(3);	
 	GUIUtils.addMenuItem(saveAsMenu, "EMF...", this, "SAVE_EMF");

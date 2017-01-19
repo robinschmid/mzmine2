@@ -37,12 +37,12 @@ import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.util.components.CombinedXICComponent;
 import net.sf.mzmine.util.components.PeakXICComponent;
 
-class PeakShapeCellRenderer implements TableCellRenderer {
+public class PeakShapeCellRenderer implements TableCellRenderer {
 
     private PeakList peakList;
     private ParameterSet parameters;
 
-    PeakShapeCellRenderer(PeakList peakList, ParameterSet parameters) {
+    public PeakShapeCellRenderer(PeakList peakList, ParameterSet parameters) {
 	this.peakList = peakList;
 	this.parameters = parameters;
     }

@@ -23,7 +23,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
+import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
+
+import com.google.common.collect.Range;
 
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.MZmineProject;
@@ -38,8 +41,6 @@ import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
 import net.sf.mzmine.util.ScanUtils;
 
-import com.google.common.collect.Range;
-
 class ManualPickerTask extends AbstractTask {
 
     private Logger logger = Logger.getLogger(this.getClass().getName());
@@ -47,7 +48,7 @@ class ManualPickerTask extends AbstractTask {
     private int processedScans, totalScans;
 
     private final MZmineProject project;
-    private final PeakListTable table;
+    private final JTable table;
     private final PeakList peakList;
     private PeakListRow peakListRow;
     private RawDataFile dataFiles[];
@@ -55,7 +56,7 @@ class ManualPickerTask extends AbstractTask {
 
     ManualPickerTask(MZmineProject project, PeakListRow peakListRow,
 	    RawDataFile dataFiles[], ManualPickerParameters parameters,
-	    PeakList peakList, PeakListTable table) {
+	    PeakList peakList, JTable table) {
 
 	this.project = project;
 	this.peakListRow = peakListRow;

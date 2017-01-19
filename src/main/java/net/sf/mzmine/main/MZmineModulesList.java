@@ -45,6 +45,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.Fo
 import net.sf.mzmine.modules.peaklistmethods.identification.formulapredictionpeaklist.FormulaPredictionPeakListModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.fragmentsearch.FragmentSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.glycerophospholipidsearch.GPLipidSearchModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.MetaMSEcorrelateModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ms2search.Ms2SearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.nist.NistMsSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.onlinedbsearch.OnlineDBSearchModule;
@@ -56,6 +57,7 @@ import net.sf.mzmine.modules.peaklistmethods.io.mztabimport.MzTabImportModule;
 import net.sf.mzmine.modules.peaklistmethods.io.sqlexport.SQLExportModule;
 import net.sf.mzmine.modules.peaklistmethods.io.xmlexport.XMLExportModule;
 import net.sf.mzmine.modules.peaklistmethods.io.xmlimport.XMLImportModule;
+import net.sf.mzmine.modules.peaklistmethods.isotopes.aligneddeisotoper.AlignedIsotopeGrouperModule;
 import net.sf.mzmine.modules.peaklistmethods.isotopes.deisotoper.IsotopeGrouperModule;
 import net.sf.mzmine.modules.peaklistmethods.isotopes.isotopeprediction.IsotopePatternCalculator;
 import net.sf.mzmine.modules.peaklistmethods.normalization.linear.LinearNormalizerModule;
@@ -70,6 +72,7 @@ import net.sf.mzmine.modules.projectmethods.projectclose.ProjectCloseModule;
 import net.sf.mzmine.modules.projectmethods.projectload.ProjectLoadModule;
 import net.sf.mzmine.modules.projectmethods.projectsave.ProjectSaveAsModule;
 import net.sf.mzmine.modules.projectmethods.projectsave.ProjectSaveModule;
+import net.sf.mzmine.modules.rawdatamethods.exportscans.ExtractScansModule;
 import net.sf.mzmine.modules.rawdatamethods.filtering.alignscans.AlignScansModule;
 import net.sf.mzmine.modules.rawdatamethods.filtering.baselinecorrection.BaselineCorrectionModule;
 import net.sf.mzmine.modules.rawdatamethods.filtering.cropper.CropFilterModule;
@@ -87,6 +90,7 @@ import net.sf.mzmine.modules.tools.mzrangecalculator.MzRangeMassCalculatorModule
 import net.sf.mzmine.modules.visualization.histogram.HistogramVisualizerModule;
 import net.sf.mzmine.modules.visualization.infovisualizer.InfoVisualizerModule;
 import net.sf.mzmine.modules.visualization.intensityplot.IntensityPlotModule;
+import net.sf.mzmine.modules.visualization.metamsecorrelate.MSECorrGroupVisualizerModule;
 import net.sf.mzmine.modules.visualization.msms.MsMsVisualizerModule;
 import net.sf.mzmine.modules.visualization.neutralloss.NeutralLossVisualizerModule;
 import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableModule;
@@ -119,7 +123,7 @@ public class MZmineModulesList {
             MsMsPeakPickerModule.class, ScanFiltersModule.class,
             CropFilterModule.class, BaselineCorrectionModule.class,
             AlignScansModule.class, ScanSmoothingModule.class,
-            OrderDataFilesModule.class,
+            OrderDataFilesModule.class, ExtractScansModule.class,
 
             // Alignment
             OrderPeakListsModule.class, JoinAlignerModule.class,
@@ -137,6 +141,7 @@ public class MZmineModulesList {
 
             // Isotopes
             IsotopeGrouperModule.class, IsotopePatternCalculator.class,
+            AlignedIsotopeGrouperModule.class, 
 
             // Peak detection
             SmoothingModule.class, DeconvolutionModule.class,
@@ -158,7 +163,7 @@ public class MZmineModulesList {
 
             // Identification
             CustomDBSearchModule.class, FormulaPredictionModule.class,
-            FragmentSearchModule.class, AdductSearchModule.class,
+            FragmentSearchModule.class, AdductSearchModule.class, MetaMSEcorrelateModule.class,
             ComplexSearchModule.class, OnlineDBSearchModule.class,
             GPLipidSearchModule.class, CameraSearchModule.class,
             NistMsSearchModule.class, FormulaPredictionPeakListModule.class, Ms2SearchModule.class,
@@ -167,6 +172,7 @@ public class MZmineModulesList {
             TICVisualizerModule.class, SpectraVisualizerModule.class,
             TwoDVisualizerModule.class, ThreeDVisualizerModule.class,
             MsMsVisualizerModule.class, NeutralLossVisualizerModule.class,
+            MSECorrGroupVisualizerModule.class,
             PeakListTableModule.class, IsotopePatternExportModule.class,
             MSMSExportModule.class, ScatterPlotVisualizerModule.class,
             HistogramVisualizerModule.class, InfoVisualizerModule.class,

@@ -34,21 +34,21 @@ import javax.swing.table.TableCellRenderer;
 /**
  * Simple table cell renderer that renders Numbers using given NumberFormat
  */
-class FormattedCellRenderer implements TableCellRenderer {
+public class FormattedCellRenderer implements TableCellRenderer {
 
     private Font font;
     private NumberFormat format;
 
     /**
      */
-    FormattedCellRenderer(NumberFormat format) {
+    public FormattedCellRenderer(NumberFormat format) {
 	this.format = format;
     }
 
     /**
      * @param font
      */
-    FormattedCellRenderer(NumberFormat format, Font font) {
+    public FormattedCellRenderer(NumberFormat format, Font font) {
 	this.format = format;
 	this.font = font;
     }

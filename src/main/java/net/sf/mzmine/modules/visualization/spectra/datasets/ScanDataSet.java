@@ -127,7 +127,7 @@ public class ScanDataSet extends AbstractXYDataset implements IntervalXYDataset 
     }
 
     public Scan getScan() {
-	return scan;
+    	return scan;
     }
 
     public void addAnnotation(Map<DataPoint, String> annotation) {

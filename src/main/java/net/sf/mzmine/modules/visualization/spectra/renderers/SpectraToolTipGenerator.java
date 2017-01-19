@@ -27,6 +27,7 @@ import net.sf.mzmine.datamodel.IsotopePattern;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.pseudospectra.PseudoSpectrumDataSet;
 import net.sf.mzmine.modules.visualization.spectra.datasets.IsotopesDataSet;
 import net.sf.mzmine.modules.visualization.spectra.datasets.PeakListDataSet;
 
@@ -36,7 +37,7 @@ import org.jfree.data.xy.XYDataset;
 /**
  * Tooltip generator for raw data points
  */
-class SpectraToolTipGenerator implements XYToolTipGenerator {
+public class SpectraToolTipGenerator implements XYToolTipGenerator {
 
     private NumberFormat mzFormat = MZmineCore.getConfiguration().getMZFormat();
     private NumberFormat intensityFormat = MZmineCore.getConfiguration()
@@ -90,8 +91,15 @@ class SpectraToolTipGenerator implements XYToolTipGenerator {
 
 	}
 
+
 	String tooltip = "m/z: " + mzFormat.format(mzValue) + "\nIntensity: "
 		+ intensityFormat.format(intValue);
+	
+	if(dataset instanceof PseudoSpectrumDataSet && series==0) {
+		PseudoSpectrumDataSet ds = (PseudoSpectrumDataSet) dataset;
+		String adduct = ds.getAnnotation(item);
+		return tooltip + (adduct!=null? "\n" + adduct : "");
+	} 
 
 	return tooltip;
 
