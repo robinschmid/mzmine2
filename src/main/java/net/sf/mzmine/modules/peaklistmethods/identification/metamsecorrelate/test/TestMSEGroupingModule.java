@@ -14,7 +14,7 @@ public class TestMSEGroupingModule {
 		core.main(args);
 		
 		// sample project
-		File file = new File("C:/MasterThesisData/data/programming/small.mzmine");
+		File file = new File("C:\\DATA\\Project\\trigger_test.mzmine");
 		// open project
 		ProjectLoaderParameters par = new ProjectLoaderParameters(); 
 		par.getParameter(ProjectLoaderParameters.projectFile).setValue(file);

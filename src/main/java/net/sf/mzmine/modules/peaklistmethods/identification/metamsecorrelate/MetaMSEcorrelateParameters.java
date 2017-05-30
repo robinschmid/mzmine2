@@ -30,6 +30,7 @@ import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
+import net.sf.mzmine.parameters.parametertypes.MassListParameter;
 import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
 import net.sf.mzmine.parameters.parametertypes.PercentParameter;
 import net.sf.mzmine.parameters.parametertypes.esiadducts.ESIAdductsParameter;
@@ -43,6 +44,8 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
 	
 	// General parameters
     public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter();
+	// General parameters
+    public static final MassListParameter MASS_LIST = new MassListParameter();
     // RT-tolerance: Grouping
     public static final RTToleranceParameter RT_TOLERANCE = new RTToleranceParameter(
             "RT tolerance",
@@ -91,7 +94,9 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
             "Minimum percentage for Pearson intensity profile correlation in the same scan event across raw files.",
             0.70, 0, 1);
     
-    
+    // use mass lists
+    public static final BooleanParameter USE_MASS_LIST_DATA = new BooleanParameter("Use mass list data",
+            "Uses the raw data stored in the given mass list", true);
     
     
     // scan event assignment
@@ -159,7 +164,7 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
     
     // Constructor
     public MetaMSEcorrelateParameters() {
-        super(new Parameter[] { PEAK_LISTS, RT_TOLERANCE, MZ_TOLERANCE, GROUPSPARAMETER, MIN_SAMPLES, MAIN_PEAK_HEIGHT, NOISE_LEVEL_PEAK_SHAPE, 
+        super(new Parameter[] { PEAK_LISTS, MASS_LIST, USE_MASS_LIST_DATA, RT_TOLERANCE, MZ_TOLERANCE, GROUPSPARAMETER, MIN_SAMPLES, MAIN_PEAK_HEIGHT, NOISE_LEVEL_PEAK_SHAPE, 
         		MIN_DP_CORR_PEAK_SHAPE, MIN_R_SHAPE_INTRA, MIN_R_I_PROFILE, MIN_PEARSON_R_MSE, 
         		/*ISO_MIN_HEIGHT, ISO_MONOTONIC, ISO_RAW_SEARCH,*/
         		SEARCH_ADDUCTS, POSITIVE_MODE, ADDUCT_BONUSR, MAX_CHARGE, MAX_MOLECULES, MAX_COMBINATION,MAX_MODS,  ADDUCTS});
