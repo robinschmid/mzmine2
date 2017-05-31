@@ -15,6 +15,7 @@ public class RowCorrelationData {
 	// min max avg
 	private double minPeakShapeR, maxPeakShapeR, avgPeakShapeR, avgDPCount;
 	
+	// indices of the two rows
 	// x: testedRow
 	// y: row
 	private int xRow,yRow; 
@@ -47,7 +48,7 @@ public class RowCorrelationData {
 		avgPeakShapeR = 0; avgDPCount = 0;
 		int c = 0;
 		
-		for(int i=0; i<corrPeakShape.length-1; i++) {
+		for(int i=0; i<corrPeakShape.length; i++) {
 			if(corrPeakShape[i]!=null && corrPeakShape[i].getReg()!=null) {
 				c++;
 				avgPeakShapeR += corrPeakShape[i].getR();

@@ -90,10 +90,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 	private final ParameterSet parameters;
 	private final MZmineProject project; 
 
-	//mass list
-	private static String massList;
-	private static boolean useMassListData;
-	
 	// output
 	private MSEGroupedPeakList[] groupedPKL;
 
@@ -111,9 +107,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 		this.peakLists = peakLists;
 		parameters = parameterSet;
 		
-		this.massList = parameterSet.getParameter(MetaMSEcorrelateParameters.MASS_LIST).getValue();
-		useMassListData = parameterSet.getParameter(MetaMSEcorrelateParameters.USE_MASS_LIST_DATA).getValue();
-
 		finishedRows = 0;
 		totalRows = 0;
 
@@ -282,32 +275,39 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 	 * @param peakList
 	 */
 	private void setSampleGroups(PeakList peakList) {
-		HashMap<Object, Integer> sgroupSize = new HashMap<Object, Integer>();
-
-
-		UserParameter<?, ?> params[] = project.getParameters();
-		for (UserParameter<?, ?> p : params) {
-			if (groupingParameter.equals(p.getName())) {
-				// save parameter for sample groups
-				sgroupPara = p;
-				break; 
+		if(groupingParameter==null || groupingParameter.length()==0) {
+			this.sgroupSize = null;
+			hasToFilterMinFInSampleSets = false;
+			return;
+	}
+		else {
+			HashMap<Object, Integer> sgroupSize = new HashMap<Object, Integer>();
+			
+	
+			UserParameter<?, ?> params[] = project.getParameters();
+			for (UserParameter<?, ?> p : params) {
+				if (groupingParameter.equals(p.getName())) {
+					// save parameter for sample groups
+					sgroupPara = p;
+					break; 
+				}
 			}
+			int max = 0;
+			// calc size of sample groups
+			for (RawDataFile file : peakList.getRawDataFiles()) {
+				String parameterValue = sgroupOf(file);
+	
+				Integer v = sgroupSize.get(parameterValue);
+				int val = v==null? 0 : v;
+				sgroupSize.put(parameterValue, val+1); 
+				if(val+1>max) 
+					max = val+1;
+			} 
+			this.sgroupSize = sgroupSize;
+			// has to filter minimum samples with a feature in a set?
+			// only if sample set has to contain more than one sample with a feature
+			hasToFilterMinFInSampleSets = ((int)(max*percContainedInSamples))>1;
 		}
-		int max = 0;
-		// calc size of sample groups
-		for (RawDataFile file : peakList.getRawDataFiles()) {
-			String parameterValue = sgroupOf(file);
-
-			Integer v = sgroupSize.get(parameterValue);
-			int val = v==null? 0 : v;
-			sgroupSize.put(parameterValue, val+1); 
-			if(val+1>max) 
-				max = val+1;
-		} 
-		this.sgroupSize = sgroupSize;
-		// has to filter minimum samples with a feature in a set?
-		// only if sample set has to contain more than one sample with a feature
-		hasToFilterMinFInSampleSets = ((int)(max*percContainedInSamples))>1;
 	}
 
 	/**
@@ -490,7 +490,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 	 */
 	private boolean filterMinFeaturesInSampleSet(final RawDataFile raw[], PeakListRow row) {
 		// short cut if minimum is only one sample in a set
-		if(!hasToFilterMinFInSampleSets)
+		if(!hasToFilterMinFInSampleSets || sgroupSize == null)
 			return true;
 		// is present in X % samples of a sample set?
 		// count sample in groups (no feature in a sample group->no occurrence in map)
@@ -539,7 +539,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 		// for all rows in group
 		for(PeakListRow row2 : pg) {
 			// returns corr<=0 if conditions were not met
-			double tmpcorr;
 			try {
 				FeatureShapeCorrelationData[] data = corrRowToRowFeatureShape(raw, row, row2);
 				// for min max avg
@@ -555,8 +554,9 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 						minShapeR = rowCorr.getMinPeakShapeR();
 				}
 				
-				// Deisotoping went wrong?
+				// search adducts and 13C isotopologues
 				if(searchAdducts) {
+					// Deisotoping went wrong?
 					int absCharge = AlignedIsotopeGrouperTask.find13CIsotope(peakList, row, row2, maxCharge, mzTolerance); 
 					boolean isIsotope = absCharge!=-1; 
 					// search for adducts and add correlation: IProfile doesnt have to be the same for adducts
