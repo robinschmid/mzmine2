@@ -46,7 +46,7 @@ public class HighestDataPointConnector {
     public HighestDataPointConnector(RawDataFile dataFile, int allScanNumbers[],
             double minimumTimeSpan, double minimumHeight,
             MZTolerance mzTolerance) {
-
+    	
         this.mzTolerance = mzTolerance;
         this.minimumHeight = minimumHeight;
         this.minimumTimeSpan = minimumTimeSpan;
