@@ -298,6 +298,11 @@
 		<!-- Start of jars included with MZmine (internal repository) -->
 
 		<dependency>
+			<groupId>mzmine</groupId>
+			<artifactId>jimzMLParser</artifactId>
+			<version>1.0</version>
+		</dependency>
+		<dependency>
 			<groupId>soap-apis</groupId>
 			<artifactId>metlin-api</artifactId>
 			<version>1.0</version>
