@@ -29,13 +29,18 @@ import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.MassListParameter;
 import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
 import net.sf.mzmine.parameters.parametertypes.filenames.DirectoryParameter;
+import net.sf.mzmine.parameters.parametertypes.ranges.RTRangeParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.RawDataFilesParameter;
 
 public class ExtractScansParameters extends SimpleParameterSet {
 
     public static final RawDataFilesParameter dataFiles = new RawDataFilesParameter();
     public static final IntegerParameter scans = new IntegerParameter("Scan count to be exported", "Total scan count to be exported centered around the center time", 30, true);
-    public static final DoubleParameter centerTime = new DoubleParameter("Center time", "Center time", new DecimalFormat("#.#"), 0.0);
+    public static final BooleanParameter useCenterTime = new BooleanParameter("Use center time", "If checked the center time and scan count are used for export. Otherwise all scans in the given time range are exported.", true);
+    public static final DoubleParameter centerTime = new DoubleParameter("Center time", "Center time", new DecimalFormat("#.##"), 0.0);
+
+    public static final RTRangeParameter rangeTime = new RTRangeParameter("Time range", "If \"use center time\" is unchecked all scans between the minimum and maximum time are exported (inclusive).", false, null);
+    
     public static final DirectoryParameter file = new DirectoryParameter("Output directory", "Directory to write scans to");
     public static final BooleanParameter autoMax = new BooleanParameter("Auto search max", "Automatically search for maximum TIC intensity as center scan", true);
     public static final BooleanParameter exportHeader = new BooleanParameter("Export header", "Exports a header for each scan file", true);
@@ -44,7 +49,7 @@ public class ExtractScansParameters extends SimpleParameterSet {
     public static final OptionalParameter<MassListParameter> useMassList = new OptionalParameter<>(new MassListParameter()); 
     
     public ExtractScansParameters() {
-	super(new Parameter[] {useMassList,dataFiles, file, scans, centerTime, autoMax, exportHeader});
+	super(new Parameter[] {useMassList,dataFiles, file, useCenterTime, scans, centerTime, rangeTime, autoMax, exportHeader});
     }
 
 }
