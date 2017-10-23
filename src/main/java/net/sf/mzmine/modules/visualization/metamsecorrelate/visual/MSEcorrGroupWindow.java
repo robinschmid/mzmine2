@@ -2,7 +2,6 @@ package net.sf.mzmine.modules.visualization.metamsecorrelate.visual;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Paint;
@@ -10,24 +9,51 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
+import javax.swing.BoxLayout;
 import javax.swing.InputMap;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JRootPane;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
+
+import net.miginfocom.swing.MigLayout;
+import net.sf.mzmine.datamodel.DataPoint;
+import net.sf.mzmine.datamodel.Feature;
+import net.sf.mzmine.datamodel.MZmineProject;
+import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.FeatureShapeCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.GroupCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.RowCorrelationData;
+import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.pseudospectra.PseudoSpectrum;
+import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.table.GroupedPeakListTable;
+import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.table.GroupedPeakListTableModel;
+import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableModule;
+import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.util.chartexport.ChartExportUtil;
+import net.sf.mzmine.util.chartthemes.ChartThemeFactory;
+import net.sf.mzmine.util.chartthemes.FontChartTheme;
 
 import org.apache.commons.math.stat.regression.SimpleRegression;
 import org.jfree.chart.ChartFactory;
@@ -48,36 +74,6 @@ import org.jfree.data.statistics.BoxAndWhiskerCategoryDataset;
 import org.jfree.data.statistics.DefaultBoxAndWhiskerCategoryDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-
-import net.miginfocom.swing.MigLayout;
-import net.sf.mzmine.datamodel.Feature;
-import net.sf.mzmine.datamodel.MZmineProject;
-import net.sf.mzmine.datamodel.PeakListRow;
-import net.sf.mzmine.datamodel.RawDataFile;
-import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.FeatureShapeCorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.GroupCorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.RowCorrelationData;
-import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.pseudospectra.PseudoSpectrum;
-import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.pseudospectra.PseudoSpectrumDataSet;
-import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.table.GroupedPeakListTable;
-import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.table.GroupedPeakListTableModel;
-import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableModule;
-import net.sf.mzmine.parameters.ParameterSet;
-import net.sf.mzmine.util.chartexport.ChartExportUtil;
-import net.sf.mzmine.util.chartthemes.ChartThemeFactory;
-import net.sf.mzmine.util.chartthemes.FontChartTheme;
-import net.sf.mzmine.util.chartthemes.MyStandardChartTheme;
-import javax.swing.JCheckBox;
-import javax.swing.BoxLayout;
-import java.awt.event.ItemListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.text.NumberFormat;
-import java.awt.event.ItemEvent;
 
 public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
 	// Theme for charts
@@ -616,11 +612,14 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
 					int[] dp = f1.getScanNumbers();
 					for(int i : dp) {
 						double x = raw.getScan(i).getRetentionTime();
-						double y = f1.getDataPoint(i).getIntensity();
-						series.add(x, y);
+						DataPoint cdp = f1.getDataPoint(i);
+						if(cdp!=null) {
+							double y = cdp.getIntensity();
+							series.add(x, y);
+						}
 					}
 					data.addSeries(series);  
-					renderer.setSeriesPaint(data.getSeriesCount()-1, colors[r]);
+					renderer.setSeriesPaint(data.getSeriesCount()-1, colors[r%colors.length]);
 				}
 			}
 			// apply theme
@@ -684,7 +683,7 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
 						XYLineAnnotation line = regressionToAnnotation(fCorr);
 						renderer.addAnnotation(line);  
 						// set colors
-						renderer.setSeriesPaint(data.getSeriesCount()-1, colors[i]);
+						renderer.setSeriesPaint(data.getSeriesCount()-1, colors[i%colors.length]);
 					}
 				}
 			}   
@@ -888,7 +887,7 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
 			}
 
 			// display
-			ChartPanel chart = createCombinedBoxAndWhiskerPlot(dataset, datasetAll, colors[g.getLastViewedRowI()], g.getLastViewedRowI()); 
+			ChartPanel chart = createCombinedBoxAndWhiskerPlot(dataset, datasetAll, colors[g.getLastViewedRowI()%colors.length], g.getLastViewedRowI()); 
 			getPnIntensityCorr().removeAll();
 			getPnIntensityCorr().add(chart, BorderLayout.CENTER);
 			getPnIntensityCorr().validate();
@@ -946,7 +945,7 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
 			int c = rowI<i? i : i+1;
 			if(i<=rowI) c = i-1;
 
-			renderer2.setSeriesPaint(i, colors[c]);
+			renderer2.setSeriesPaint(i, colors[c%colors.length]);
 		} 
 		CategoryPlot plot2 = new CategoryPlot(datasetAll, xAxis2, null, renderer2); 
 

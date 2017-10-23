@@ -91,7 +91,7 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
 
 				switch (commonColumn) {
 				case COLOR:
-					return PKLRowGroup.colors[row];
+					return PKLRowGroup.colors[row%PKLRowGroup.colors.length];
 				case ROWID:
 					return new Integer(pklRow.getID());
 				case AVERAGEMZ:

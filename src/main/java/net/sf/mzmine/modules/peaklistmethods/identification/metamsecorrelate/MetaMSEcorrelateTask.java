@@ -19,16 +19,13 @@
 
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.math.stat.regression.SimpleRegression;
-import org.openscience.cdk.renderer.AverageBondLengthCalculator;
-
+import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
@@ -54,6 +51,8 @@ import net.sf.mzmine.taskcontrol.TaskStatus;
 import net.sf.mzmine.util.PeakListRowSorter;
 import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
+
+import org.apache.commons.math.stat.regression.SimpleRegression;
 
 public class MetaMSEcorrelateTask extends AbstractTask {
 
@@ -94,6 +93,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 	// output
 	private MSEGroupedPeakList[] groupedPKL;
 
+
 	/**
 	 * Create the task.
 	 *
@@ -106,7 +106,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 		this.project = project;
 		this.peakLists = peakLists;
 		parameters = parameterSet;
-
+		
 		finishedRows = 0;
 		totalRows = 0;
 
@@ -275,32 +275,39 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 	 * @param peakList
 	 */
 	private void setSampleGroups(PeakList peakList) {
-		HashMap<Object, Integer> sgroupSize = new HashMap<Object, Integer>();
-
-
-		UserParameter<?, ?> params[] = project.getParameters();
-		for (UserParameter<?, ?> p : params) {
-			if (groupingParameter.equals(p.getName())) {
-				// save parameter for sample groups
-				sgroupPara = p;
-				break; 
+		if(groupingParameter==null || groupingParameter.length()==0) {
+			this.sgroupSize = null;
+			hasToFilterMinFInSampleSets = false;
+			return;
+	}
+		else {
+			HashMap<Object, Integer> sgroupSize = new HashMap<Object, Integer>();
+			
+	
+			UserParameter<?, ?> params[] = project.getParameters();
+			for (UserParameter<?, ?> p : params) {
+				if (groupingParameter.equals(p.getName())) {
+					// save parameter for sample groups
+					sgroupPara = p;
+					break; 
+				}
 			}
+			int max = 0;
+			// calc size of sample groups
+			for (RawDataFile file : peakList.getRawDataFiles()) {
+				String parameterValue = sgroupOf(file);
+	
+				Integer v = sgroupSize.get(parameterValue);
+				int val = v==null? 0 : v;
+				sgroupSize.put(parameterValue, val+1); 
+				if(val+1>max) 
+					max = val+1;
+			} 
+			this.sgroupSize = sgroupSize;
+			// has to filter minimum samples with a feature in a set?
+			// only if sample set has to contain more than one sample with a feature
+			hasToFilterMinFInSampleSets = ((int)(max*percContainedInSamples))>1;
 		}
-		int max = 0;
-		// calc size of sample groups
-		for (RawDataFile file : peakList.getRawDataFiles()) {
-			String parameterValue = sgroupOf(file);
-
-			Integer v = sgroupSize.get(parameterValue);
-			int val = v==null? 0 : v;
-			sgroupSize.put(parameterValue, val+1); 
-			if(val+1>max) 
-				max = val+1;
-		} 
-		this.sgroupSize = sgroupSize;
-		// has to filter minimum samples with a feature in a set?
-		// only if sample set has to contain more than one sample with a feature
-		hasToFilterMinFInSampleSets = ((int)(max*percContainedInSamples))>1;
 	}
 
 	/**
@@ -483,7 +490,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 	 */
 	private boolean filterMinFeaturesInSampleSet(final RawDataFile raw[], PeakListRow row) {
 		// short cut if minimum is only one sample in a set
-		if(!hasToFilterMinFInSampleSets)
+		if(!hasToFilterMinFInSampleSets || sgroupSize == null)
 			return true;
 		// is present in X % samples of a sample set?
 		// count sample in groups (no feature in a sample group->no occurrence in map)
@@ -532,7 +539,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 		// for all rows in group
 		for(PeakListRow row2 : pg) {
 			// returns corr<=0 if conditions were not met
-			double tmpcorr;
 			try {
 				FeatureShapeCorrelationData[] data = corrRowToRowFeatureShape(raw, row, row2);
 				// for min max avg
@@ -548,8 +554,9 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 						minShapeR = rowCorr.getMinPeakShapeR();
 				}
 				
-				// Deisotoping went wrong?
+				// search adducts and 13C isotopologues
 				if(searchAdducts) {
+					// Deisotoping went wrong?
 					int absCharge = AlignedIsotopeGrouperTask.find13CIsotope(peakList, row, row2, maxCharge, mzTolerance); 
 					boolean isIsotope = absCharge!=-1; 
 					// search for adducts and add correlation: IProfile doesnt have to be the same for adducts
@@ -755,6 +762,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 			if(max-offsetI1>minCorrelatedDataPoints && max-offsetI2>minCorrelatedDataPoints) {
 				RawDataFile raw = f1.getDataFile();
 				SimpleRegression reg = new SimpleRegression();
+				
 				// save max and min of intensity of val1(x)
 				double maxX = 0;
 				double minX = Double.POSITIVE_INFINITY;
@@ -765,14 +773,21 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 				for(int i= 0; i<max; i++) {
 					if(sn1[i+offsetI1]!=sn2[i+offsetI2])
 						throw new Exception("Scans are not the same for peak shape corr");
-					double val1 = f1.getDataPoint(sn1[i+offsetI1]).getIntensity();
-					double val2 = f2.getDataPoint(sn2[i+offsetI2]).getIntensity();
-					if(val1>=noiseLevelShapeCorr && val2>=noiseLevelShapeCorr) {
-						reg.addData(val1, val2);
-						if(val1<minX) minX = val1;
-						if(val1>maxX) maxX = val1;
-						I1.add(val1);
-						I2.add(val2);
+					
+					DataPoint dp = f1.getDataPoint(sn1[i+offsetI1]);
+					DataPoint dp2 = f2.getDataPoint(sn2[i+offsetI2]);
+					if(dp!=null && dp2!=null) {
+						// raw data
+						double val1 = dp.getIntensity();
+						double val2 = dp2.getIntensity();
+						
+						if(val1>=noiseLevelShapeCorr && val2>=noiseLevelShapeCorr) {
+							reg.addData(val1, val2);
+							if(val1<minX) minX = val1;
+							if(val1>maxX) maxX = val1;
+							I1.add(val1);
+							I2.add(val2);
+						}
 					}
 				}
 				// return pearson r
