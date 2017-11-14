@@ -75,9 +75,13 @@ public class ImagingParameters {
                 p = scanSettings.getCVParam(ScanSettings.pixelAreaID);
                 if (p != null) pixelWidth = p.getValueAsDouble();
                 // is this the shape or height? test dataset says height obo says shape
+                try {
                 p = scanSettings.getCVParam(ScanSettings.pixelShape);
                 if (p != null) pixelShape = p.getValueAsDouble();
-
+                } catch(Exception ex){
+                	ex.printStackTrace();
+                }
+                
                 p = scanSettings.getCVParam(ScanSettings.scanPatternMeanderingID);
                 if (p != null) pattern = Pattern.MEANDER;
                 p = scanSettings.getCVParam(ScanSettings.scanPatternFlybackID);

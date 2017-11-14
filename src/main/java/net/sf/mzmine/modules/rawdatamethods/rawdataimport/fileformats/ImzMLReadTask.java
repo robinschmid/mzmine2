@@ -112,7 +112,7 @@ public class ImzMLReadTask extends AbstractTask {
         setStatus(TaskStatus.PROCESSING);
         logger.info("Started parsing file " + file);
 
-        file = new File("C:/DATA/MALDI Sh/examples/Example_Processed.imzML");
+        //file = new File("C:/DATA/MALDI Sh/examples/Example_Processed.imzML");
         ImzML imzml = ImzMLHandler.parseimzML(file.getAbsolutePath());
         
         SpectrumList spectra = imzml.getRun().getSpectrumList();
