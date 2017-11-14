@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Hashtable;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -43,19 +42,23 @@ import com.alanmrace.jimzmlparser.mzml.Spectrum;
 import com.alanmrace.jimzmlparser.mzml.SpectrumList;
 import com.alanmrace.jimzmlparser.parser.ImzMLHandler;
 
+import net.sf.mzmine.datamodel.Coordinates;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.MassSpectrumType;
 import net.sf.mzmine.datamodel.PolarityType;
-import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.RawDataFileWriter;
+import net.sf.mzmine.datamodel.impl.CoordinatesXY;
+import net.sf.mzmine.datamodel.impl.CoordinatesXYZ;
+import net.sf.mzmine.datamodel.impl.ImagingParameters;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
+import net.sf.mzmine.datamodel.impl.SimpleImagingScan;
 import net.sf.mzmine.datamodel.impl.SimpleScan;
+import net.sf.mzmine.project.impl.ImagingRawDataFileImpl;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
 import net.sf.mzmine.util.ExceptionUtils;
-import net.sf.mzmine.util.ScanUtils;
-import uk.ac.ebi.jmzml.model.mzml.ParamGroup; 
+import net.sf.mzmine.util.ScanUtils; 
 
 /**
  * This class reads mzML 1.0 and 1.1.0 files
@@ -69,7 +72,7 @@ public class ImzMLReadTask extends AbstractTask {
     private File file;
     private MZmineProject project;
     private RawDataFileWriter newMZmineFile;
-    private RawDataFile finalRawDataFile;
+    private ImagingRawDataFileImpl finalRawDataFile;
     private int totalScans = 0, parsedScans;
 
     private int lastScanNumber = 0;
@@ -144,15 +147,18 @@ public class ImzMLReadTask extends AbstractTask {
                 int precursorCharge = extractPrecursorCharge(spectrum);
                 String scanDefinition = extractScanDefinition(spectrum);
                 DataPoint dataPoints[] = extractDataPoints(spectrum);
+                
+                // imaging
+                Coordinates coord = extractCoordinates(spectrum);
 
                 // Auto-detect whether this scan is centroided
                 MassSpectrumType spectrumType = ScanUtils
                         .detectSpectrumType(dataPoints);
 
-                SimpleScan scan = new SimpleScan(null, scanNumber, msLevel,
+                SimpleImagingScan scan = new SimpleImagingScan(null, scanNumber, msLevel,
                         retentionTime, precursorMz, precursorCharge, null,
                         dataPoints, spectrumType, polarity, scanDefinition,
-                        null);
+                        null, coord);
 
                 for (SimpleScan s : parentStack) {
                     if (s.getScanNumber() == parentScan) {
@@ -181,7 +187,10 @@ public class ImzMLReadTask extends AbstractTask {
 
             }
 
-            finalRawDataFile = newMZmineFile.finishWriting();
+            finalRawDataFile = (ImagingRawDataFileImpl)newMZmineFile.finishWriting();
+            // set settings of image
+            finalRawDataFile.setImagingParam(new ImagingParameters(imzml));
+            // 
             project.addFile(finalRawDataFile);
 
         } catch (Throwable e) {
@@ -230,26 +239,14 @@ public class ImzMLReadTask extends AbstractTask {
 
     private int extractMSLevel(Spectrum spectrum) {
         // Browse the spectrum parameters
-        List<CVParam> cvParams = spectrum.getCvParam();
-        if (cvParams == null)
-            return 1;
-        for (CVParam param : cvParams) {
-            String accession = param.getAccession();
-            String value = param.getValue();
-            if ((accession == null) || (value == null))
-                continue;
-
-            // MS level MS:1000511
-            if (accession.equals("MS:1000511")) {
-                int msLevel = Integer.parseInt(value);
-                return msLevel;
-            }
-        }
+        // MS level MS:1000511
+    	CVParam param = spectrum.getCVParam(Spectrum.msLevel);
+    	if(param!=null)
+    		return param.getValueAsInteger();
         return 1;
     }
 
     private double extractRetentionTime(Spectrum spectrum) {
-
         ScanList scanListElement = spectrum.getScanList();
         if (scanListElement == null)
             return 0; 
@@ -257,8 +254,9 @@ public class ImzMLReadTask extends AbstractTask {
         for (Scan scan : scanListElement) {
         	try {
         		// scan start time correct?
-                double retentionTime = scan.getCVParam(Scan.scanStartTimeID).getValueAsDouble();
-                return retentionTime;
+        		CVParam param = scan.getCVParam(Scan.scanStartTimeID);
+        		if(param!=null)
+        			return param.getValueAsDouble();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -292,6 +290,28 @@ public class ImzMLReadTask extends AbstractTask {
         return new DataPoint[0];
     }
 
+    private Coordinates extractCoordinates(Spectrum spectrum) {
+    	ScanList list = spectrum.getScanList();
+    	if(list!=null) {
+	    	for (Scan scan : spectrum.getScanList()) {
+	            CVParam xValue = scan.getCVParam(Scan.positionXID);
+	            CVParam yValue = scan.getCVParam(Scan.positionYID);
+	            CVParam zValue = scan.getCVParam(Scan.positionZID);
+	
+	            if (xValue != null && yValue != null) {
+	                int x = xValue.getValueAsInteger();
+	                int y = yValue.getValueAsInteger();
+
+	            	if(zValue!=null)
+	            		return new CoordinatesXYZ(x,y,zValue.getValueAsInteger());
+	            	else return new CoordinatesXY(x,y);
+	            }
+	        }
+    	}
+		return null;
+    }
+    
+
     private int extractParentScanNumber(Spectrum spectrum) {
         PrecursorList precursorListElement = spectrum.getPrecursorList();
         if ((precursorListElement == null)
@@ -322,137 +342,78 @@ public class ImzMLReadTask extends AbstractTask {
             if ((selectedIonListElement == null) || (selectedIonListElement.size()==0))
                 return 0;
 
+            // MS:1000040 is used in mzML 1.0,
+            // MS:1000744 is used in mzML 1.1.0
             for (SelectedIon sion : selectedIonListElement) {
-            	
-                List<CVParam> pgCvParams = sion.getCVParamList();
-                for (CVParam param : pgCvParams) {
-                    String accession = param.getAccession();
-                    String value = param.getValue();
-                    if ((accession == null) || (value == null))
-                        continue;
-                    // MS:1000040 is used in mzML 1.0,
-                    // MS:1000744 is used in mzML 1.1.0
-                    if (accession.equals("MS:1000040")
-                            || accession.equals("MS:1000744")) {
-                        double precursorMz = Double.parseDouble(value);
-                        return precursorMz;
-                    }
-                }
+            	CVParam param = sion.getCVParam("MS:1000040");
+            	if(param!=null) 
+            		return param.getValueAsDouble();
 
+            	param = sion.getCVParam("MS:1000744");
+            	if(param!=null) 
+            		return param.getValueAsDouble();
             }
         }
         return 0;
     }
 
     private int extractPrecursorCharge(Spectrum spectrum) {
-        PrecursorList precursorListElement = spectrum.getPrecursorList();
-        if ((precursorListElement == null)
-                || (precursorListElement.getCount().equals(0)))
+        PrecursorList precursorList = spectrum.getPrecursorList();
+        if ((precursorList == null)
+                || (precursorList.size()==0))
             return 0;
 
-        List<Precursor> precursorList = precursorListElement.getPrecursor();
         for (Precursor parent : precursorList) {
-
-            SelectedIonList selectedIonListElement = parent
-                    .getSelectedIonList();
-            if ((selectedIonListElement == null)
-                    || (selectedIonListElement.getCount().equals(0)))
+            SelectedIonList selectedIonListElement = parent.getSelectedIonList();
+            if ((selectedIonListElement == null) || (selectedIonListElement.size()==0))
                 return 0;
-            List<ParamGroup> selectedIonParams = selectedIonListElement
-                    .getSelectedIon();
-            if (selectedIonParams == null)
-                continue;
-
-            for (ParamGroup pg : selectedIonParams) {
-                List<CVParam> pgCvParams = pg.getCvParam();
-                for (CVParam param : pgCvParams) {
-                    String accession = param.getAccession();
-                    String value = param.getValue();
-                    if ((accession == null) || (value == null))
-                        continue;
-                    if (accession.equals("MS:1000041")) {
-                        int precursorCharge = Integer.parseInt(value);
-                        return precursorCharge;
-                    }
-
-                }
-
+            
+            for (SelectedIon sion : selectedIonListElement) {
+            	
+            	// precursor charge 
+            	CVParam param = sion.getCVParam("MS:1000041");
+            	if(param!=null)
+            		return param.getValueAsInteger();
             }
         }
         return 0;
     }
 
     private PolarityType extractPolarity(Spectrum spectrum) {
-        List<CVParam> cvParams = spectrum.getCvParam();
-        if (cvParams != null) {
-            for (CVParam param : cvParams) {
-                String accession = param.getAccession();
+        CVParam cv = spectrum.getCVParam(Spectrum.scanPolarityID);
+        if (spectrum.getCVParam("MS:1000130")!=null)
+            return PolarityType.POSITIVE;
+        else if(spectrum.getCVParam("MS:1000129")!=null)
+            return PolarityType.NEGATIVE;
+        
+        ScanList scanListElement = spectrum.getScanList();
+        if (scanListElement != null) {
+            for (int i=0; i<scanListElement.size(); i++) {
+            	Scan scan = scanListElement.get(i);
 
-                if (accession == null)
-                    continue;
-                if (accession.equals("MS:1000130"))
+                if (scan.getCVParam("MS:1000130")!=null)
                     return PolarityType.POSITIVE;
-                if (accession.equals("MS:1000129"))
+                else if(scan.getCVParam("MS:1000129")!=null)
                     return PolarityType.NEGATIVE;
             }
         }
-        ScanList scanListElement = spectrum.getScanList();
-        if (scanListElement != null) {
-            List<Scan> scanElements = scanListElement.getScan();
-            if (scanElements != null) {
-                for (Scan scan : scanElements) {
-                    cvParams = scan.getCvParam();
-                    if (cvParams == null)
-                        continue;
-                    for (CVParam param : cvParams) {
-                        String accession = param.getAccession();
-                        if (accession == null)
-                            continue;
-                        if (accession.equals("MS:1000130"))
-                            return PolarityType.POSITIVE;
-                        if (accession.equals("MS:1000129"))
-                            return PolarityType.NEGATIVE;
-                    }
-
-                }
-            }
-        }
         return PolarityType.UNKNOWN;
-
     }
 
     private String extractScanDefinition(Spectrum spectrum) {
-        List<CVParam> cvParams = spectrum.getCvParam();
-        if (cvParams != null) {
-            for (CVParam param : cvParams) {
-                String accession = param.getAccession();
-
-                if (accession == null)
-                    continue;
-                if (accession.equals("MS:1000512"))
-                    return param.getValue();
-            }
-        }
+        CVParam cvParams = spectrum.getCVParam("MS:1000512");
+        if(cvParams!=null) return cvParams.getValueAsString();
+        
         ScanList scanListElement = spectrum.getScanList();
         if (scanListElement != null) {
-            List<Scan> scanElements = scanListElement.getScan();
-            if (scanElements != null) {
-                for (Scan scan : scanElements) {
-                    cvParams = scan.getCvParam();
-                    if (cvParams == null)
-                        continue;
-                    for (CVParam param : cvParams) {
-                        String accession = param.getAccession();
-                        if (accession == null)
-                            continue;
-                        if (accession.equals("MS:1000512"))
-                            return param.getValue();
-                    }
-
+                for (int i=0; i<scanListElement.size(); i++) {
+                	Scan scan = scanListElement.get(i);
+                	
+                    cvParams = scan.getCVParam("MS:1000512");
+                    if(cvParams!=null) return cvParams.getValueAsString();
                 }
-            }
         }
-        return spectrum.getId();
+        return spectrum.getID();
     }
 
     public String getTaskDescription() {
@@ -460,21 +421,11 @@ public class ImzMLReadTask extends AbstractTask {
     }
 
     boolean isMsSpectrum(Spectrum spectrum) {
-
-        List<CVParam> cvParams = spectrum.getCvParam();
-        if (cvParams != null) {
-            for (CVParam param : cvParams) {
-                String accession = param.getAccession();
-                if (accession == null)
-                    continue;
-
-                if (accession.equals("MS:1000804"))
-                    return false;
-            }
-        }
+    	// one thats not MS (code for UV?)
+        CVParam cvParams = spectrum.getCVParam("MS:1000804");
 
         // By default, let's assume unidentified spectra are MS spectra
-        return true;
+        return cvParams==null;
     }
 
 }

@@ -111,7 +111,9 @@ public class RawDataFileTypeDetector {
             }
 
             if (fileHeader.contains(MZML_HEADER))
-                return RawDataFileType.MZML;
+            	if(fileName.getName().toLowerCase().endsWith("imzml"))
+            		return RawDataFileType.IMZML;
+            	else return RawDataFileType.MZML;
 
             if (fileHeader.contains(MZDATA_HEADER))
                 return RawDataFileType.MZDATA;
