@@ -29,6 +29,7 @@ import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,6 +43,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.TreeModelListener;
 import javax.swing.tree.TreeModel;
 
+import net.sf.mzmine.MyStuff.listener.ProjectChangeListener;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.desktop.Desktop;
@@ -80,6 +82,11 @@ public class MainWindow extends JFrame implements MZmineModule, Desktop,
     private MainMenu menuBar;
 
     private HelpImpl help;
+	/*
+	 * Robin
+	 */
+	private ArrayList<ProjectChangeListener> projectChangeListener = new ArrayList<ProjectChangeListener>();
+	
 
     public MainMenu getMainMenu() {
 	return menuBar;
@@ -327,5 +334,18 @@ public class MainWindow extends JFrame implements MZmineModule, Desktop,
     public @Nonnull String getName() {
 	return "MZmine main window";
     }
+
+	 /* Robin
+	  * Project changed and so did Treemodels for RawData and Peaklists
+	  */
+	public void fireProjectChanged() {
+		for(ProjectChangeListener listener : projectChangeListener) {
+			listener.projectChanged();
+		}
+	}
+	
+	public void addProjectChangeListener(ProjectChangeListener listener) {
+		projectChangeListener.add(listener);
+	}
 
 }

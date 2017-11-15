@@ -41,6 +41,7 @@ import net.sf.mzmine.modules.peaklistmethods.orderpeaklists.OrderPeakListsModule
 import net.sf.mzmine.modules.peaklistmethods.orderpeaklists.OrderPeakListsParameters;
 import net.sf.mzmine.modules.rawdatamethods.orderdatafiles.OrderDataFilesModule;
 import net.sf.mzmine.modules.rawdatamethods.orderdatafiles.OrderDataFilesParameters;
+import net.sf.mzmine.modules.visualization.imaging.TICImageWindow;
 import net.sf.mzmine.modules.visualization.infovisualizer.InfoVisualizerModule;
 import net.sf.mzmine.modules.visualization.msms.MsMsVisualizerModule;
 import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableModule;
@@ -56,6 +57,7 @@ import net.sf.mzmine.modules.visualization.twod.TwoDVisualizerModule;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsSelectionType;
 import net.sf.mzmine.parameters.parametertypes.selectors.RawDataFilesSelectionType;
+import net.sf.mzmine.project.impl.ImagingRawDataFileImpl;
 import net.sf.mzmine.taskcontrol.Task;
 import net.sf.mzmine.util.ExitCode;
 import net.sf.mzmine.util.GUIUtils;
@@ -394,7 +396,13 @@ public class ProjectTreeMouseHandler extends MouseAdapter implements
                 .getLastPathComponent();
         Object clickedObject = node.getUserObject();
 
-        if (clickedObject instanceof RawDataFile) {
+        if(clickedObject instanceof ImagingRawDataFileImpl) {
+        	ImagingRawDataFileImpl clickedFile = (ImagingRawDataFileImpl) clickedObject;
+        	// TODO 
+        	TICImageWindow w = new TICImageWindow(clickedFile);
+        	w.setVisible(true);
+        }
+        else if (clickedObject instanceof RawDataFile) {
             RawDataFile clickedFile = (RawDataFile) clickedObject;
             TICVisualizerModule.setupNewTICVisualizer(clickedFile);
         }

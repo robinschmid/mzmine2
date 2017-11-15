@@ -304,6 +304,14 @@
 			<version>1.0-SNAPSHOT</version>
 			<scope>compile</scope>
 		</dependency>
+		<!-- 
+		<dependency>
+			<groupId>net.rs.lamsi</groupId>
+			<artifactId>MassImager</artifactId>
+			<version>3.2b</version>
+			<scope>compile</scope>
+		</dependency>
+		-->
 		<dependency>
 			<groupId>soap-apis</groupId>
 			<artifactId>metlin-api</artifactId>

@@ -172,6 +172,11 @@ public class MZmineProjectImpl implements MZmineProject {
         Runnable swingCode = new Runnable() {
             public void run() {
                 rawDataTreeModel.removeObject(file);
+                // TODO check if peak list was in project?
+                // Notify listeners
+                for (MZmineProjectListener listener : listeners) {
+                    listener.dataFileRemoved(file);
+                }
             }
         };
         try {
@@ -227,6 +232,11 @@ public class MZmineProjectImpl implements MZmineProject {
         Runnable swingCode = new Runnable() {
             public void run() {
                 peakListTreeModel.removeObject(peakList);
+                // TODO check if peak list was in project?
+                // Notify listeners
+                for (MZmineProjectListener listener : listeners) {
+                    listener.peakListRemoved(peakList);
+                }
             }
         };
         try {
