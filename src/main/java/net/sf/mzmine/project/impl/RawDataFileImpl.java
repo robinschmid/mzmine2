@@ -37,6 +37,7 @@ import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 
 import net.sf.mzmine.datamodel.DataPoint;
+import net.sf.mzmine.datamodel.ImagingScan;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.RawDataFileWriter;
 import net.sf.mzmine.datamodel.Scan;
@@ -398,15 +399,20 @@ public class RawDataFileImpl implements RawDataFile, RawDataFileWriter {
 			scans.put(newScan.getScanNumber(), (StorableScan) newScan);
 			return;
 		}
-
-		DataPoint dataPoints[] = newScan.getDataPoints();
-		final int storageID = storeDataPoints(dataPoints);
-
-		StorableScan storedScan = new StorableScan(newScan, this,
-				dataPoints.length, storageID);
-
-		scans.put(newScan.getScanNumber(), storedScan);
-
+		else {
+			// convert to storable scan
+			DataPoint dataPoints[] = newScan.getDataPoints();
+			final int storageID = storeDataPoints(dataPoints);
+	
+			StorableScan storedScan;
+			// imaging?
+			if(ImagingScan.class.isInstance(newScan))
+				storedScan = new StorableImagingScan(newScan, this, dataPoints.length, storageID);
+			// non imaging (e.g. hplc)
+			else storedScan = new StorableScan(newScan, this, dataPoints.length, storageID);
+	
+			scans.put(newScan.getScanNumber(), storedScan);
+		}
 	}
 
 	/**

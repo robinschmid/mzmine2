@@ -1,10 +1,15 @@
 package net.sf.mzmine.datamodel;
 
-public interface Coordinates {
-	public int getX();
-	public int getY();
-	public void setX(int x);
-	public void setY(int y);
-	public int getZ();
-	public void setZ(int z);
+public abstract class Coordinates {
+	public abstract int getX();
+	public abstract int getY();
+	public abstract void setX(int x);
+	public abstract void setY(int y);
+	public abstract int getZ();
+	public abstract void setZ(int z);
+	
+	@Override
+	public String toString() {
+		return getX()+";"+getY()+";"+getZ()+";";
+	}
 }

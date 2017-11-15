@@ -2,7 +2,7 @@ package net.sf.mzmine.datamodel.impl;
 
 import net.sf.mzmine.datamodel.Coordinates;
 
-public class CoordinatesXY implements Coordinates {
+public class CoordinatesXY extends Coordinates {
 
 	private int x, y;
 

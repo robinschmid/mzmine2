@@ -4,12 +4,13 @@ import com.google.common.collect.Range;
 
 import net.sf.mzmine.datamodel.Coordinates;
 import net.sf.mzmine.datamodel.DataPoint;
+import net.sf.mzmine.datamodel.ImagingScan;
 import net.sf.mzmine.datamodel.MassSpectrumType;
 import net.sf.mzmine.datamodel.PolarityType;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
 
-public class SimpleImagingScan extends SimpleScan {
+public class SimpleImagingScan extends SimpleScan implements ImagingScan {
 	
 	private Coordinates coordinates;
 
@@ -31,10 +32,12 @@ public class SimpleImagingScan extends SimpleScan {
 	 * 
 	 * @return the xyz coordinates. null if no coordinates were specified
 	 */
+	@Override
 	public Coordinates getCoordinates() {
 		return coordinates;
 	}
 
+	@Override
 	public void setCoordinates(Coordinates coordinates) {
 		this.coordinates = coordinates;
 	}
