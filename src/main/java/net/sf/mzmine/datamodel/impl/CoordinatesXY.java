@@ -17,7 +17,7 @@ public class CoordinatesXY extends Coordinates {
 	}
 	@Override
 	public int getY() {
-		return x;
+		return y;
 	}
 	@Override
 	public void setX(int x) {

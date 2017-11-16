@@ -124,8 +124,6 @@ public class ImzMLReadTask extends AbstractTask {
 
                 if (isCanceled())
                     return;
-                
-                
 
                 Spectrum spectrum = spectra.get(i);
 
@@ -302,7 +300,7 @@ public class ImzMLReadTask extends AbstractTask {
 	                int x = xValue.getValueAsInteger();
 	                int y = yValue.getValueAsInteger();
 
-	            	if(zValue!=null)
+	                if(zValue!=null)
 	            		return new CoordinatesXYZ(x,y,zValue.getValueAsInteger());
 	            	else return new CoordinatesXY(x,y);
 	            }

@@ -34,10 +34,13 @@ public class ImagingParameters {
 	}
 
 	private double minMZ, maxMZ;
+	/**
+	 * lateral width and height in mumeter
+	 */
 	private double lateralWidth, lateralHeight;
-	private double pixelWidth, pixelShape;
+	private double pixelWidth=1, pixelShape=1;
 	// max number of pixels in x and y and z (depth)
-	private int width, height, depth;
+	private int width, height, depth=1;
 	// vertical and horizontal start
 	private VerticalStart vStart;
 	private HorizontalStart hStart;
