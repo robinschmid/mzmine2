@@ -81,6 +81,7 @@ public class ImagingParameters {
                 try {
                 p = scanSettings.getCVParam(ScanSettings.pixelShape);
                 if (p != null) pixelShape = p.getValueAsDouble();
+                else pixelShape = pixelWidth;
                 } catch(Exception ex){
                 	ex.printStackTrace();
                 }
