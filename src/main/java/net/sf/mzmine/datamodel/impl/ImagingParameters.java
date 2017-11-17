@@ -32,6 +32,9 @@ public class ImagingParameters {
 	public static enum Pattern {
 		MEANDER, FLY_BACK, RANDOM
 	}
+	public static enum ScanDirection {
+		HORIZONTAL, VERTICAL
+	}
 
 	private double minMZ, maxMZ;
 	/**
@@ -48,6 +51,7 @@ public class ImagingParameters {
 	private int spectraPerPixel;
 	
 	private Pattern pattern;
+	private ScanDirection scanDirection;
 	
 	
 	public ImagingParameters(ImzML imz) {
@@ -92,8 +96,24 @@ public class ImagingParameters {
                 if (p != null) pattern = Pattern.FLY_BACK;
                 p = scanSettings.getCVParam(ScanSettings.scanPatternRandomAccessID);
                 if (p != null) pattern = Pattern.RANDOM;
+                
+                p = scanSettings.getCVParam(ScanSettings.scanTypeVerticalID);
+                if (p != null) scanDirection = ScanDirection.VERTICAL;
+                else scanDirection = ScanDirection.HORIZONTAL;
             }
         }
+	}
+
+
+	public void print() {
+		System.out.println("pixel dim "+width+" "+height+" "+depth);
+		System.out.println("lateral "+lateralWidth+" "+lateralHeight);
+		System.out.println("pixel size "+pixelWidth+" "+pixelShape);
+		System.out.println(hStart+" "+vStart);
+		System.out.println(pattern+" "+scanDirection);
+		System.out.println("spectraPerPixel "+spectraPerPixel);
+		System.out.println("mz range"+minMZ+" "+maxMZ);
+		
 	}
 
 
@@ -225,4 +245,15 @@ public class ImagingParameters {
 	public void setPattern(Pattern pattern) {
 		this.pattern = pattern;
 	}
+
+
+	public ScanDirection getScanDirection() {
+		return scanDirection;
+	}
+
+
+	public void setScanDirection(ScanDirection scanDirection) {
+		this.scanDirection = scanDirection;
+	}
+
 }

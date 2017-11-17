@@ -297,11 +297,11 @@ public class ImzMLReadTask extends AbstractTask {
 	            CVParam zValue = scan.getCVParam(Scan.positionZID);
 	
 	            if (xValue != null && yValue != null) {
-	                int x = xValue.getValueAsInteger();
-	                int y = yValue.getValueAsInteger();
+	                int x = xValue.getValueAsInteger()-1;
+	                int y = yValue.getValueAsInteger()-1;
 
 	                if(zValue!=null)
-	            		return new CoordinatesXYZ(x,y,zValue.getValueAsInteger());
+	            		return new CoordinatesXYZ(x,y,zValue.getValueAsInteger()-1);
 	            	else return new CoordinatesXY(x,y);
 	            }
 	        }

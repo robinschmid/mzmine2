@@ -28,10 +28,10 @@ public class CoordinatesXY extends Coordinates {
 		this.y = y;
 	}
 	// implementation for xyz coordinates
-	// layer 1
+	// layer 0
 	@Override
 	public int getZ() {
-		return 1;
+		return 0;
 	}
 	@Override
 	public void setZ(int z) {
