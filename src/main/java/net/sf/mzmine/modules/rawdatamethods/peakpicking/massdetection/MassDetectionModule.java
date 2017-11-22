@@ -23,11 +23,17 @@ import java.util.Collection;
 
 import javax.annotation.Nonnull;
 
+import com.google.common.collect.Range;
+
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.desktop.preferences.MZminePreferences;
+import net.sf.mzmine.desktop.preferences.NumOfThreadsParameter;
+import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.MZmineModuleCategory;
 import net.sf.mzmine.modules.MZmineProcessingModule;
 import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelection;
 import net.sf.mzmine.taskcontrol.Task;
 import net.sf.mzmine.util.ExitCode;
 
@@ -55,11 +61,44 @@ public class MassDetectionModule implements MZmineProcessingModule {
                 .getParameter(MassDetectionParameters.dataFiles).getValue()
                 .getMatchingRawDataFiles();
 
-        for (RawDataFile dataFile : dataFiles) {
-            Task newTask = new MassDetectionTask(dataFile, parameters);
-            tasks.add(newTask);
-        }
+        // start multiple tasks if the number of raw data files is 1
+        if(dataFiles.length==1) {
+        	ScanSelection sel = parameters.getParameter(
+                    MassDetectionParameters.scanSelection).getValue();
+        	// Obtain the settings of max concurrent threads
+    	    NumOfThreadsParameter parameter = MZmineCore.getConfiguration()
+    		    .getPreferences()
+    		    .getParameter(MZminePreferences.numOfThreads);
+    	    int maxRunningThreads;
+    	    if (parameter.isAutomatic() || (parameter.getValue() == null))
+    	    	maxRunningThreads = Runtime.getRuntime().availableProcessors();
+    	    else maxRunningThreads = parameter.getValue();
 
+    	    // number of scans
+        	int[] scans = sel.getMatchingScanNumbers(dataFiles[0]);
+        	int numPerTask = scans.length/maxRunningThreads;
+    	    // start tasks
+    	    for(int i=0; i<maxRunningThreads; i++) {
+    	    	ParameterSet p2 = parameters.cloneParameterSet();
+    	    	// use scans.length for last thread to include all remaining scans
+    	    	Range<Integer> range = Range.closed(scans[numPerTask*i], 
+    	    			scans[i==maxRunningThreads-1? scans.length-1 : numPerTask*(i+1)]);
+    	    	
+    	    	ScanSelection nsel = new ScanSelection(range, sel.getScanRTRange(), sel.getPolarity(),
+    	    			sel.getSpectrumType(), sel.getMsLevel(), sel.getScanDefinition());
+    	    	p2.getParameter(MassDetectionParameters.scanSelection).setValue(nsel);
+    	    	
+    	    	// start task
+	            Task newTask = new MassDetectionTask(dataFiles[0], p2);
+	            tasks.add(newTask);
+    	    }
+        }
+        else {
+	        for (RawDataFile dataFile : dataFiles) {
+	            Task newTask = new MassDetectionTask(dataFile, parameters);
+	            tasks.add(newTask);
+	        }
+        }
         return ExitCode.OK;
 
     }
