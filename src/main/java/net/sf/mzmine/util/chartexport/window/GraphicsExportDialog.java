@@ -84,6 +84,7 @@ public class GraphicsExportDialog extends JFrame implements SettingsPanel {
 	private Module panel;
 	private JPanel panel_3;
 	private JCheckBox cbLegend;
+	private JCheckBox cbTitle;
 	
 	
 	//###################################################################
@@ -113,6 +114,7 @@ public class GraphicsExportDialog extends JFrame implements SettingsPanel {
 		//
 		ChartExportUtil.applyTheme(chart);
 		setLegendVisible(chart, getCbLegend().isSelected());
+		setTitleVisible(chart, getCbTitle().isSelected());
 		addChartToPanel(new ChartPanel(chart));
 	}
 	protected void addChartToPanel(ChartPanel chart) { 
@@ -132,6 +134,12 @@ public class GraphicsExportDialog extends JFrame implements SettingsPanel {
 		for(int i=0; i<chart.getSubtitleCount(); i++)
 			chart.getSubtitle(i).setVisible(selected);
 			
+	}
+	private void setTitleVisible(boolean selected) {
+		setTitleVisible(chart, selected);
+	}
+	private void setTitleVisible(JFreeChart chart, boolean selected) {
+		chart.getTitle().setVisible(selected);
 	}
 	/**
 	 * choose a path by file chooser
@@ -453,6 +461,18 @@ public class GraphicsExportDialog extends JFrame implements SettingsPanel {
 								});
 								panel_3.add(cbLegend);
 							}
+							{
+								cbTitle = new JCheckBox("title");
+								cbTitle.setSelected(true);
+								cbTitle.addItemListener(new ItemListener() { 
+									@Override
+									public void itemStateChanged(ItemEvent e) {
+										boolean state = ((JCheckBox)e.getSource()).isSelected();
+										setTitleVisible(state);
+									}
+								});
+								panel_3.add(cbTitle);
+							}
 						}
 					}
 					{
@@ -607,5 +627,8 @@ public class GraphicsExportDialog extends JFrame implements SettingsPanel {
 	}
 	public JCheckBox getCbLegend() {
 		return cbLegend;
+	}
+	public JCheckBox getCbTitle() {
+		return cbTitle;
 	}
 }
