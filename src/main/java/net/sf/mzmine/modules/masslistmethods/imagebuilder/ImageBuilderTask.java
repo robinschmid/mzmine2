@@ -19,28 +19,24 @@
 
 package net.sf.mzmine.modules.masslistmethods.imagebuilder;
 
-import java.util.Arrays;
+import java.util.Iterator;
 import java.util.TreeMap;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import net.sf.mzmine.datamodel.DataPoint;
-import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.MassList;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimplePeakList;
-import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
 import net.sf.mzmine.modules.masslistmethods.chromatogrambuilder.Chromatogram;
-import net.sf.mzmine.modules.peaklistmethods.qualityparameters.QualityParameters;
+import net.sf.mzmine.modules.masslistmethods.imagebuilder.ImageBuilderParameters.Weight;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelection;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
-import net.sf.mzmine.util.PeakSorter;
-import net.sf.mzmine.util.SortingDirection;
-import net.sf.mzmine.util.SortingProperty;
 
 public class ImageBuilderTask extends AbstractTask {
 
@@ -59,6 +55,8 @@ public class ImageBuilderTask extends AbstractTask {
     private String suffix, massListName;
     private MZTolerance mzTolerance;
     private double minimumHeight;
+    
+    private Weight weight;
 
     private SimplePeakList newPeakList;
 
@@ -83,6 +81,10 @@ public class ImageBuilderTask extends AbstractTask {
                 .getValue();
         this.minimumHeight = parameters
                 .getParameter(ImageBuilderParameters.minimumHeight)
+                .getValue();
+
+        this.weight = parameters
+                .getParameter(ImageBuilderParameters.weight)
                 .getValue();
 
         this.suffix = parameters
@@ -132,7 +134,7 @@ public class ImageBuilderTask extends AbstractTask {
         // insert all mz in order and count them
         // mz as integer to avoid floating point * decimals
         //      m/z      number    
-        TreeMap<Integer, Integer> signals = new TreeMap<Integer, Integer>();
+        TreeMap<Integer, Double> signals = new TreeMap<Integer, Double>();
         
 
         int decimals = 3;
@@ -161,19 +163,55 @@ public class ImageBuilderTask extends AbstractTask {
                 return;
             }
 
+            // minimum distance between two detected masses
+            double minDistance = Double.POSITIVE_INFINITY;
+            double lastMZ = -1;
+            
             // add all m/z values in bins
             // insert all mz in order and count them
-            for (int i = 0; i < mzValues.length; i++) {
-				Integer mz = (int)Math.round(mzValues[i].getMZ()*factor);
-				Integer number = signals.get(mz);
-				if(number!=null)
-					signals.put(mz, number+1);
-				else signals.put(mz, 1);
-				
+			double increment = 1;
+			try {
+	            for (int i = 0; i < mzValues.length; i++) {
+	            	double cMZ = mzValues[i].getMZ();
+	            	// minimum distance
+	            	if(lastMZ!=-1 && Math.abs(cMZ-lastMZ)<minDistance)
+	            		minDistance = Math.abs(cMZ-lastMZ);
+	            	
+	            	// save as integer to get around floating point
+					Integer mz = (int)Math.round(cMZ*factor);
+					
+					
+					// weighting
+					switch(weight) {
+					case None:
+						increment = 1;
+						break;
+					case Linear:
+						increment = mzValues[i].getIntensity();
+						break;
+					case log10:
+						increment = Math.log10(mzValues[i].getIntensity());
+						break;
+					}
+					
+					// add increment to value or create new
+					Double number = signals.get(mz);
+					if(number!=null) {
+						signals.put(mz, number+increment);
+					}
+					else signals.put(mz, increment);
+					
+					//
+		            lastMZ = cMZ;
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-            		
             processedScans++;
         }
+        
+        addZeros(signals);
+        
         
         MassListMzDistribution frame = new MassListMzDistribution();
         frame.createChart(signals, decimals);
@@ -184,6 +222,35 @@ public class ImageBuilderTask extends AbstractTask {
 
         logger.info("Finished chromatogram builder on " + dataFile);
 
+    }
+    
+    private void addZeros(TreeMap<Integer, Double> signals) {
+        // add zeros within half of minimum spacing
+		Iterator<Entry<Integer, Double>> it = signals.entrySet().iterator();
+		if(it.hasNext()) {
+			// temp map
+			TreeMap<Integer, Double> tmp = new TreeMap<Integer, Double>();
+			//
+			Entry<Integer, Double> last = it.next();
+			for (int i = 1; i < signals.size() && it.hasNext(); i++) {
+				Entry<Integer, Double> e = it.next();
+				// is the spacing higher than 1 significance?
+				// the key is the mz value times a factor
+				if(e.getKey()-last.getKey()>2) {
+					// add end of peak and start of peak
+					tmp.put(last.getKey()+1, 0.0);
+					tmp.put(e.getKey()-1, 0.0);
+				}
+				else if(e.getKey()-last.getKey()>1) {
+					// add separation between two values that are only separated by 1
+					tmp.put(last.getKey()+1, 0.0);
+				}
+				last = e;
+			}
+			
+			// add all
+			signals.putAll(tmp);
+		}
     }
 
 }

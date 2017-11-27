@@ -61,28 +61,26 @@ public class MassListMzDistribution extends JFrame {
 	}
 	
 	
-	public void createChart(TreeMap<Integer, Integer> signals, int decimals) {
-		Iterator<Entry<Integer, Integer>> it = signals.entrySet().iterator();
+	public void createChart(TreeMap<Integer, Double> signals, int decimals) {
 		
 		XYSeries series = new XYSeries("mz distr");
 //		double[][] data = new double[signals.size()][2];
 
         double factor = Math.pow(10, decimals);
-		
+
+		Iterator<Entry<Integer, Double>> it = signals.entrySet().iterator();
 		for (int i = 0; i < signals.size() && it.hasNext(); i++) {
-			Entry<Integer, Integer> e = it.next();
+			Entry<Integer, Double> e = it.next();
 			double mz = ((double)e.getKey())/factor;
-			double n = ((double)e.getValue());
+			double n = (e.getValue());
 			series.add(mz, n);
 		}
 		
 		
 		XYSeriesCollection dataset = new XYSeriesCollection(series);
-		JFreeChart chart = ChartFactory.createXYLineChart("mz dist", "mz", "n", dataset);
-
-//		XYBarDataset dataset = new XYBarDataset(new XYSeriesCollection(), 1);
-//		JFreeChart chart = ChartFactory.createXYBarChart("Distribution", "m/z", false, "n", dataset);
-		ChartPanel cp = new ChartPanel(chart);
+		SignalDistributionPlot cp = new SignalDistributionPlot("mz dist", "mz", "n", dataset);
+//		JFreeChart chart = ChartFactory.createXYLineChart("mz dist", "mz", "n", dataset);
+//		ChartPanel cp = new ChartPanel(chart);
 		getPnChartView().add(cp, BorderLayout.CENTER);
 		getPnChartView().revalidate();
 		getPnChartView().repaint();

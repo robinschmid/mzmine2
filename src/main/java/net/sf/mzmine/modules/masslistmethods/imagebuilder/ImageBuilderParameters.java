@@ -22,8 +22,11 @@ package net.sf.mzmine.modules.masslistmethods.imagebuilder;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
+import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.MassListParameter;
+import net.sf.mzmine.parameters.parametertypes.MultiChoiceParameter;
+import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
 import net.sf.mzmine.parameters.parametertypes.StringParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.RawDataFilesParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelection;
@@ -31,6 +34,10 @@ import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelectionParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
 
 public class ImageBuilderParameters extends SimpleParameterSet {
+	
+	public static enum Weight {
+		None, Linear, log10;
+	}
 
     public static final RawDataFilesParameter dataFiles = new RawDataFilesParameter();
 
@@ -43,6 +50,11 @@ public class ImageBuilderParameters extends SimpleParameterSet {
             "Min height",
             "Minimum intensity of the highest data point in the image. If image intensity is below this level, it is discarded.",
             MZmineCore.getConfiguration().getIntensityFormat());
+    
+    
+    public static final ComboParameter<Weight> weight = new ComboParameter<Weight>("Intensity weighting", 
+    		"None (the none normalised distribution, choices, defaultValue), linear (n*intensity) and log10 (n*log10(intensity)",
+    		Weight.values(), Weight.None);
 
     public static final MZToleranceParameter mzTolerance = new MZToleranceParameter();
 
@@ -51,7 +63,7 @@ public class ImageBuilderParameters extends SimpleParameterSet {
 
     public ImageBuilderParameters() {
         super(new Parameter[] { dataFiles, scanSelection, massList,
-                minimumHeight, mzTolerance, suffix });
+                minimumHeight, weight, mzTolerance, suffix });
     }
 
 }
