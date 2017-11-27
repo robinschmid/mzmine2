@@ -422,6 +422,10 @@ public class SpectraPlot extends ChartPanel {
 		numOfDataSets++;
 
 	}
+	
+	public int getNumberOfDataSets() {
+		return numOfDataSets;
+	}
 
 	public synchronized void removePeakListDataSets() {
 		for (int i = 0; i < plot.getDatasetCount(); i++) {
