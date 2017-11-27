@@ -349,8 +349,10 @@ public class SpectraVisualizerWindow extends JFrame implements ActionListener {
 						if(selectedMassListName!=null) {
 							// show first mass list
 							MassList masslist = scan.getMassList(selectedMassListName);
-							MassListDataSet dataset = new MassListDataSet(masslist);
-							thiswindow.addDataSet(dataset, Color.green);
+							if(masslist!=null) {
+								MassListDataSet dataset = new MassListDataSet(masslist);
+								thiswindow.addDataSet(dataset, Color.green);
+							}
 						}
 					}
 
@@ -385,8 +387,10 @@ public class SpectraVisualizerWindow extends JFrame implements ActionListener {
 						if(selectedMassListName!=null) {
 							// show first mass list
 							MassList masslist = scan.getMassList(selectedMassListName);
-							MassListDataSet dataset = new MassListDataSet(masslist);
-							thiswindow.addDataSet(dataset, Color.green);
+							if(masslist!=null) {
+								MassListDataSet dataset = new MassListDataSet(masslist);
+								thiswindow.addDataSet(dataset, Color.green);
+							}
 						}
 					}
 				};

@@ -428,6 +428,7 @@ public class ProjectTreeMouseHandler extends MouseAdapter implements
                             clickedScan.getScanNumber());
             MassListDataSet dataset = new MassListDataSet(clickedMassList);
             window.addDataSet(dataset, Color.green);
+            window.setSelectedMassListName(clickedMassList.getName());
         }
 
         if (clickedObject instanceof PeakListRow) {
