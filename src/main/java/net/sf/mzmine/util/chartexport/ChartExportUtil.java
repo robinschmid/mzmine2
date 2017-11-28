@@ -18,6 +18,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.text.NumberFormat;
 
 import javax.swing.JMenuItem;
 
@@ -27,6 +28,7 @@ import org.apache.batik.svggen.SVGGraphics2DIOException;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.encoders.EncoderUtil;
 import org.jfree.chart.encoders.ImageFormat;
 import org.jfree.chart.title.PaintScaleLegend;
@@ -44,7 +46,7 @@ import net.sf.epsgraphics.ColorMode;
 import net.sf.epsgraphics.EpsGraphics;
 import net.sf.mzmine.util.chartexport.window.GraphicsExportDialog;
 import net.sf.mzmine.util.chartthemes.ChartThemeFactory;
-import net.sf.mzmine.util.chartthemes.FontChartTheme;
+import net.sf.mzmine.util.chartthemes.MyStandardChartTheme;
 
 /**
  * only export of charts to images
@@ -54,7 +56,7 @@ import net.sf.mzmine.util.chartthemes.FontChartTheme;
 public class ChartExportUtil {
 	// ######################################################################################
 	// VECTORS: PDF uses ITextpdf lib
-	public static FontChartTheme theme;
+	public static MyStandardChartTheme theme;
 	/**
 	 * takes Only Width in account
 	 * @param chart
@@ -136,7 +138,18 @@ public class ChartExportUtil {
         if(theme==null) {
         	theme = ChartThemeFactory.createBlackNWhiteTheme();
         }
+        // 
+        NumberAxis domain = (NumberAxis) chart.getXYPlot().getDomainAxis();
+        NumberAxis range = (NumberAxis) chart.getXYPlot().getRangeAxis();
+
+        NumberFormat domainFormat = domain.getNumberFormatOverride();
+        NumberFormat rangeFormat = range.getNumberFormatOverride();
+        
         theme.apply(chart);
+        
+        // number format
+        domain.setNumberFormatOverride(domainFormat);
+        range.setNumberFormatOverride(rangeFormat);
 	}
 
 	/**

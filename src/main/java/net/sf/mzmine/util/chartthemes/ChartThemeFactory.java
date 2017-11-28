@@ -6,63 +6,84 @@ import java.awt.Font;
 import java.awt.Paint;
 import java.awt.Stroke;
 
-import org.jfree.chart.ChartTheme;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.StandardChartTheme;
 import org.jfree.chart.plot.DefaultDrawingSupplier;
 import org.jfree.ui.RectangleInsets;
 
 public class ChartThemeFactory { 
-	public static final int THEME_BNW_PRINT = 0, THEME_KARST = 1, THEME_DARKNESS = 2;
-	public static final int THEME_FOR_PRINT = 50, THEME_FOR_PRESENTATION = 51;
 	
-	protected static int standardTheme = THEME_BNW_PRINT;
+	public enum THEME {
+		// main themes
+		BNW_PRINT, KARST, DARKNESS, 
+		// separate options
+		FOR_PRINT, FOR_PRESENTATION;
+		
+		public static THEME getTheme(String ident) {
+			// integer?
+			try {
+				int i = Integer.parseInt(ident);
+				switch(i) {
+				case 0: return BNW_PRINT;
+				case 1: return KARST;
+				case 2: return DARKNESS;
+				case 50: return FOR_PRINT;
+				case 51: return FOR_PRESENTATION;
+				}
+			} catch(Exception ex) {
+			}
+			// else value of
+			return valueOf(ident);
+		}
+		
+	}
 
-	public static FontChartTheme createChartTheme(int theme) {
+	// the standard to be applied to all new charts
+	protected static THEME standardTheme = THEME.BNW_PRINT;
+
+	public static MyStandardChartTheme createChartTheme(THEME theme) {
 		switch(theme) {
-		case THEME_BNW_PRINT:
+		case BNW_PRINT:
 			return createBlackNWhiteTheme(); 
-		case THEME_DARKNESS:
+		case DARKNESS:
 			return createDarknessTheme();  
-		case THEME_KARST:
+		case KARST:
 			return createKarstTheme(); 
 		}
 		return createBlackNWhiteTheme();
 	}
 	
-	public static FontChartTheme changeChartThemeForPrintOrPresentation(FontChartTheme theme, boolean forPrint) {
+	public static MyStandardChartTheme changeChartThemeForPrintOrPresentation(MyStandardChartTheme theme, boolean forPrint) {
 		if(forPrint) {
 	    	// Fonts
 	    	theme.setExtraLargeFont(new Font("Arial", Font.BOLD, 16));
 	    	theme.setLargeFont(new Font("Arial", Font.BOLD, 11));
-	    	theme.setRegularFont(new Font("Arial", Font.PLAIN, 9));
-	    	theme.setSmallFont(new Font("Arial", Font.PLAIN, 9));
+	    	theme.setRegularFont(new Font("Arial", Font.PLAIN, 11));
+	    	theme.setSmallFont(new Font("Arial", Font.PLAIN, 11));
+	    	theme.setFontShortTitle(new Font("Arial", Font.BOLD, 11));
 		}
 		else { // for presentation larger fonts
 	    	//Fonts
 	    	theme.setExtraLargeFont(new Font("Arial", Font.BOLD, 30));
-	    	theme.setLargeFont(new Font("Arial", Font.BOLD, 24));
-	    	theme.setRegularFont(new Font("Arial", Font.PLAIN, 20));
+	    	theme.setLargeFont(new Font("Arial", Font.BOLD, 20));
+	    	theme.setRegularFont(new Font("Arial", Font.PLAIN, 16));
 	    	theme.setSmallFont(new Font("Arial", Font.PLAIN, 16));
+
+	    	theme.setFontShortTitle(new Font("Arial", Font.BOLD, 20));
 		}
 		return theme;
 	}
 	
-    public static FontChartTheme createBlackNWhiteTheme() {
-    	FontChartTheme theme = new FontChartTheme("BnW", false);
+    public static MyStandardChartTheme createBlackNWhiteTheme() {
+    	MyStandardChartTheme theme = new MyStandardChartTheme(THEME.BNW_PRINT, "BnW");
     	// Fonts
     	theme.setExtraLargeFont(new Font("Arial", Font.BOLD, 16));
     	theme.setLargeFont(new Font("Arial", Font.BOLD, 11));
     	theme.setRegularFont(new Font("Arial", Font.PLAIN, 11));
-    	theme.setSmallFont(new Font("Arial", Font.PLAIN, 9));
+    	theme.setSmallFont(new Font("Arial", Font.PLAIN, 11));
     	
     	// Paints
         theme.setTitlePaint(Color.black);
         theme.setSubtitlePaint(Color.black);
-        theme.setLegendBackgroundPaint(Color.white);
         theme.setLegendItemPaint(Color.black);
-        theme.setChartBackgroundPaint(Color.white);
-        theme.setPlotBackgroundPaint(Color.white);
         theme.setPlotOutlinePaint(Color.black); 
         theme.setBaselinePaint(Color.black);
         theme.setCrosshairPaint(Color.black);
@@ -71,6 +92,10 @@ public class ChartThemeFactory {
         theme.setAxisLabelPaint(Color.black);
         theme.setShadowPaint(Color.black);
         theme.setItemLabelPaint(Color.black);
+        
+        theme.setLegendBackgroundPaint(Color.white);
+        theme.setChartBackgroundPaint(Color.white);
+        theme.setPlotBackgroundPaint(Color.white);
 
         theme.setDrawingSupplier(new DefaultDrawingSupplier(
                 new Paint[] {Color.decode("0xFFFF00"),
@@ -94,7 +119,7 @@ public class ChartThemeFactory {
         theme.setRangeGridlinePaint(transp);
         theme.setDomainGridlinePaint(transp); 
         
-        //theme.setAxisLinePaint(Color.black);
+        theme.setAxisLinePaint(Color.black);
         
         // axis offset
         theme.setAxisOffset(new RectangleInsets(0,0,0,0));
@@ -109,8 +134,8 @@ public class ChartThemeFactory {
      *
      * @return The "Darkness" theme.
      */
-    public static FontChartTheme createDarknessTheme() {
-    	FontChartTheme theme = new FontChartTheme("Darkness", false);
+    public static MyStandardChartTheme createDarknessTheme() {
+        MyStandardChartTheme theme = new MyStandardChartTheme(THEME.DARKNESS, "Darkness");
     	// Fonts
     	theme.setExtraLargeFont(new Font("Arial", Font.BOLD, 20));
     	theme.setLargeFont(new Font("Arial", Font.BOLD, 11));
@@ -153,8 +178,9 @@ public class ChartThemeFactory {
         theme.setRangeGridlinePaint(transp);
         theme.setDomainGridlinePaint(transp); 
         
-        //theme.setAxisLinePaint(Color.white); 
+        theme.setAxisLinePaint(Color.white); 
         
+        theme.setMasterFontColor(Color.WHITE);
         // axis offset
         theme.setAxisOffset(new RectangleInsets(0,0,0,0));
         return theme;
@@ -166,8 +192,8 @@ public class ChartThemeFactory {
      *
      * @return The "Darkness" theme.
      */
-    public static FontChartTheme createKarstTheme() {
-    	FontChartTheme theme = new FontChartTheme("Karst", false);
+    public static MyStandardChartTheme createKarstTheme() {
+        MyStandardChartTheme theme = new MyStandardChartTheme(THEME.KARST, "Karst");
     	// Fonts
     	theme.setExtraLargeFont(new Font("Arial", Font.BOLD, 20));
     	theme.setLargeFont(new Font("Arial", Font.BOLD, 11));
@@ -212,7 +238,8 @@ public class ChartThemeFactory {
         theme.setRangeGridlinePaint(transp);
         theme.setDomainGridlinePaint(transp); 
         
-        //theme.setAxisLinePaint(Color.yellow);
+        theme.setAxisLinePaint(Color.yellow);
+        theme.setMasterFontColor(Color.yellow);
         
         // axis offset
         theme.setAxisOffset(new RectangleInsets(0,0,0,0));
@@ -220,10 +247,10 @@ public class ChartThemeFactory {
     }
 
 
-	public static FontChartTheme getStandardTheme() {
+	public static MyStandardChartTheme getStandardTheme() {
 		return createChartTheme(standardTheme);
 	}
-	public static void setStandardTheme(int theme) {
+	public static void setStandardTheme(THEME theme) {
 		standardTheme = theme;
 	}
 }

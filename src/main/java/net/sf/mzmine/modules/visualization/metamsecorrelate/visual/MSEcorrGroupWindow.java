@@ -33,28 +33,6 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 
-import net.miginfocom.swing.MigLayout;
-import net.sf.mzmine.datamodel.DataPoint;
-import net.sf.mzmine.datamodel.Feature;
-import net.sf.mzmine.datamodel.MZmineProject;
-import net.sf.mzmine.datamodel.PeakListRow;
-import net.sf.mzmine.datamodel.RawDataFile;
-import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.FeatureShapeCorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.GroupCorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.RowCorrelationData;
-import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.pseudospectra.PseudoSpectrum;
-import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.table.GroupedPeakListTable;
-import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.table.GroupedPeakListTableModel;
-import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableModule;
-import net.sf.mzmine.parameters.ParameterSet;
-import net.sf.mzmine.util.chartexport.ChartExportUtil;
-import net.sf.mzmine.util.chartthemes.ChartThemeFactory;
-import net.sf.mzmine.util.chartthemes.FontChartTheme;
-
 import org.apache.commons.math.stat.regression.SimpleRegression;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -75,9 +53,31 @@ import org.jfree.data.statistics.DefaultBoxAndWhiskerCategoryDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
+import net.miginfocom.swing.MigLayout;
+import net.sf.mzmine.datamodel.DataPoint;
+import net.sf.mzmine.datamodel.Feature;
+import net.sf.mzmine.datamodel.MZmineProject;
+import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.FeatureShapeCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.GroupCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.RowCorrelationData;
+import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.pseudospectra.PseudoSpectrum;
+import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.table.GroupedPeakListTable;
+import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.table.GroupedPeakListTableModel;
+import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableModule;
+import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.util.chartexport.ChartExportUtil;
+import net.sf.mzmine.util.chartthemes.ChartThemeFactory;
+import net.sf.mzmine.util.chartthemes.MyStandardChartTheme;
+
 public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
 	// Theme for charts
-	private final FontChartTheme theme;
+	private final MyStandardChartTheme theme;
 	//
 	private final Paint colors[]; 
 	// data
