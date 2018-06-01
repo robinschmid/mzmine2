@@ -21,8 +21,6 @@ package net.sf.mzmine.main;
 import net.sf.mzmine.modules.batchmode.BatchModeModule;
 import net.sf.mzmine.modules.masslistmethods.ADAPchromatogrambuilder.ADAPChromatogramBuilderModule;
 import net.sf.mzmine.modules.masslistmethods.chromatogrambuilder.ChromatogramBuilderModule;
-import net.sf.mzmine.modules.masslistmethods.imagebuilder.ImageBuilderModule;
-import net.sf.mzmine.modules.masslistmethods.recalibrate.RecalibrateMassListsModule;
 import net.sf.mzmine.modules.masslistmethods.shoulderpeaksfilter.ShoulderPeaksFilterModule;
 import net.sf.mzmine.modules.peaklistmethods.alignment.hierarchical.HierarAlignerGcModule;
 import net.sf.mzmine.modules.peaklistmethods.alignment.join.JoinAlignerModule;
@@ -101,6 +99,7 @@ import net.sf.mzmine.modules.tools.mzrangecalculator.MzRangeMassCalculatorModule
 import net.sf.mzmine.modules.visualization.histogram.HistogramVisualizerModule;
 import net.sf.mzmine.modules.visualization.infovisualizer.InfoVisualizerModule;
 import net.sf.mzmine.modules.visualization.intensityplot.IntensityPlotModule;
+import net.sf.mzmine.modules.visualization.kendrickmassplot.KendrickMassPlotModule;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.MSECorrGroupVisualizerModule;
 import net.sf.mzmine.modules.visualization.msms.MsMsVisualizerModule;
 import net.sf.mzmine.modules.visualization.neutralloss.NeutralLossVisualizerModule;
@@ -137,7 +136,7 @@ public class MZmineModulesList {
       GridMassModule.class, ManualPeakPickerModule.class, MsMsPeakPickerModule.class,
       ScanFiltersModule.class, CropFilterModule.class, BaselineCorrectionModule.class,
       AlignScansModule.class, ScanSmoothingModule.class, OrderDataFilesModule.class,
-      
+
       ExtractScansModule.class,
 
       // Alignment
@@ -156,8 +155,7 @@ public class MZmineModulesList {
       PeakFinderModule.class, SameRangeGapFillerModule.class,
 
       // Isotopes
-      IsotopeGrouperModule.class, IsotopePatternCalculator.class,
-            AlignedIsotopeGrouperModule.class, 
+      IsotopeGrouperModule.class, IsotopePatternCalculator.class, AlignedIsotopeGrouperModule.class,
 
       // Peak detection
       SmoothingModule.class, DeconvolutionModule.class, ShapeModelerModule.class,
@@ -176,13 +174,13 @@ public class MZmineModulesList {
       CVPlotModule.class, LogratioPlotModule.class, PCAPlotModule.class, CDAPlotModule.class,
       SammonsPlotModule.class, ClusteringModule.class, HeatMapModule.class,
 
-            // Identification
+      // Identification
       CustomDBSearchModule.class, FormulaPredictionModule.class, FragmentSearchModule.class,
       AdductSearchModule.class, ComplexSearchModule.class, OnlineDBSearchModule.class,
       GPLipidSearchModule.class, CameraSearchModule.class, NistMsSearchModule.class,
-      FormulaPredictionPeakListModule.class, Ms2SearchModule.class,MetaMSEcorrelateModule.class,
+      FormulaPredictionPeakListModule.class, Ms2SearchModule.class, MetaMSEcorrelateModule.class,
 
-            // Visualizers
+      // Visualizers
       TICVisualizerModule.class, SpectraVisualizerModule.class, TwoDVisualizerModule.class,
       ThreeDVisualizerModule.class, MsMsVisualizerModule.class, NeutralLossVisualizerModule.class,
       PeakListTableModule.class, IsotopePatternExportModule.class, MSMSExportModule.class,
