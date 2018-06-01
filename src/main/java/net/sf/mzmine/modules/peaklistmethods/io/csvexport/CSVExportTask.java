@@ -22,6 +22,9 @@ package net.sf.mzmine.modules.peaklistmethods.io.csvexport;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import net.sf.mzmine.datamodel.Feature;
@@ -45,9 +48,8 @@ class CSVExportTask extends AbstractTask {
     private String plNamePattern = "{}";
     private String fieldSeparator;
     private ExportRowCommonElement[] commonElements;
-    private String[] identityElements;
     private ExportRowDataFileElement[] dataFileElements;
-    private Boolean exportAllIDs;
+    private Boolean exportAllPeakInfo;
     private String idSeparator;
 
     CSVExportTask(ParameterSet parameters) {
@@ -56,18 +58,17 @@ class CSVExportTask extends AbstractTask {
                 .getValue().getMatchingPeakLists();
         fileName = parameters.getParameter(CSVExportParameters.filename)
                 .getValue();
-        fieldSeparator = parameters.getParameter(
-                CSVExportParameters.fieldSeparator).getValue();
-        commonElements = parameters.getParameter(
-                CSVExportParameters.exportCommonItems).getValue();
-        identityElements = parameters.getParameter(
-                CSVExportParameters.exportIdentityItems).getValue();
-        dataFileElements = parameters.getParameter(
-                CSVExportParameters.exportDataFileItems).getValue();
-        exportAllIDs = parameters.getParameter(
-                CSVExportParameters.exportAllIDs).getValue();
-        idSeparator = parameters.getParameter(
-                CSVExportParameters.idSeparator).getValue();
+        fieldSeparator = parameters
+                .getParameter(CSVExportParameters.fieldSeparator).getValue();
+        commonElements = parameters
+                .getParameter(CSVExportParameters.exportCommonItems).getValue();
+        dataFileElements = parameters
+                .getParameter(CSVExportParameters.exportDataFileItems)
+                .getValue();
+        exportAllPeakInfo = parameters
+                .getParameter(CSVExportParameters.exportAllPeakInfo).getValue();
+        idSeparator = parameters.getParameter(CSVExportParameters.idSeparator)
+                .getValue();
     }
 
     public double getFinishedPercentage() {
@@ -78,8 +79,8 @@ class CSVExportTask extends AbstractTask {
     }
 
     public String getTaskDescription() {
-        return "Exporting peak list(s) " 
-                + Arrays.toString(peakLists) + " to CSV file(s)";
+        return "Exporting peak list(s) " + Arrays.toString(peakLists)
+                + " to CSV file(s)";
     }
 
     public void run() {
@@ -90,22 +91,22 @@ class CSVExportTask extends AbstractTask {
         boolean substitute = fileName.getPath().contains(plNamePattern);
 
         // Total number of rows
-        for (PeakList peakList: peakLists) {
+        for (PeakList peakList : peakLists) {
             totalRows += peakList.getNumberOfRows();
         }
 
         // Process peak lists
-        for (PeakList peakList: peakLists) {
+        for (PeakList peakList : peakLists) {
 
             // Filename
             File curFile = fileName;
             if (substitute) {
                 // Cleanup from illegal filename characters
-                String cleanPlName = peakList.getName().replaceAll(
-                        "[^a-zA-Z0-9.-]", "_");
+                String cleanPlName = peakList.getName()
+                        .replaceAll("[^a-zA-Z0-9.-]", "_");
                 // Substitute
-                String newFilename = fileName.getPath().replaceAll(
-                        Pattern.quote(plNamePattern), cleanPlName);
+                String newFilename = fileName.getPath()
+                        .replaceAll(Pattern.quote(plNamePattern), cleanPlName);
                 curFile = new File(newFilename);
             }
 
@@ -115,8 +116,8 @@ class CSVExportTask extends AbstractTask {
                 writer = new FileWriter(curFile);
             } catch (Exception e) {
                 setStatus(TaskStatus.ERROR);
-                setErrorMessage("Could not open file " + curFile 
-                        + " for writing.");
+                setErrorMessage(
+                        "Could not open file " + curFile + " for writing.");
                 return;
             }
 
@@ -136,7 +137,7 @@ class CSVExportTask extends AbstractTask {
                 return;
             }
 
-            // If peak list substitution pattern wasn't found, 
+            // If peak list substitution pattern wasn't found,
             // treat one peak list only
             if (!substitute)
                 break;
@@ -147,7 +148,7 @@ class CSVExportTask extends AbstractTask {
 
     }
 
-    private void exportPeakList(PeakList peakList, FileWriter writer, 
+    private void exportPeakList(PeakList peakList, FileWriter writer,
             File fileName) {
 
         RawDataFile rawDataFiles[] = peakList.getRawDataFiles();
@@ -156,6 +157,7 @@ class CSVExportTask extends AbstractTask {
         StringBuffer line = new StringBuffer();
 
         // Write column headers
+
         // Common elements
         int length = commonElements.length;
         String name;
@@ -166,18 +168,27 @@ class CSVExportTask extends AbstractTask {
             line.append(name + fieldSeparator);
         }
 
-        // Peak identity elements
-        length = identityElements.length;
-        for (int i = 0; i < length; i++) {
-            name = escapeStringForCSV(identityElements[i]);
-            line.append(name + fieldSeparator);
+        // peak Information
+        Set<String> peakInformationFields = new HashSet<>();
+
+        for (PeakListRow row : peakList.getRows()) {
+            if (row.getPeakInformation() != null) {
+                for (String key : row.getPeakInformation().getAllProperties()
+                        .keySet()) {
+                    peakInformationFields.add(key);
+                }
+            }
         }
+
+        if (exportAllPeakInfo)
+            for (String field : peakInformationFields)
+                line.append(field + fieldSeparator);
 
         // Data file elements
         length = dataFileElements.length;
         for (int df = 0; df < peakList.getNumberOfRawDataFiles(); df++) {
             for (int i = 0; i < length; i++) {
-        	name = rawDataFiles[df].getName();
+                name = rawDataFiles[df].getName();
                 name = name + " " + dataFileElements[i].toString();
                 name = escapeStringForCSV(name);
                 line.append(name + fieldSeparator);
@@ -218,9 +229,45 @@ class CSVExportTask extends AbstractTask {
                 case ROW_RT:
                     line.append(peakListRow.getAverageRT() + fieldSeparator);
                     break;
+                case ROW_IDENTITY:
+                    // Identity elements
+                    PeakIdentity peakId = peakListRow.getPreferredPeakIdentity();
+                    if (peakId == null) {
+                      line.append(fieldSeparator);
+                      break;
+                    }
+                    String propertyValue = peakId.toString();
+                    propertyValue = escapeStringForCSV(propertyValue);
+                    line.append(propertyValue + fieldSeparator);
+                    break;
+                case ROW_IDENTITY_ALL:
+                  // Identity elements
+                  PeakIdentity[] peakIdentities = peakListRow
+                          .getPeakIdentities();
+                  propertyValue = "";
+                  for (int x = 0; x < peakIdentities.length; x++) {
+                      if (x > 0)
+                          propertyValue += idSeparator;
+                      propertyValue += peakIdentities[x].toString();
+                  }
+                  propertyValue = escapeStringForCSV(propertyValue);
+                  line.append(propertyValue + fieldSeparator);
+                  break;
+                case ROW_IDENTITY_DETAILS:
+                  peakId = peakListRow.getPreferredPeakIdentity();
+                  if (peakId == null) {
+                    line.append(fieldSeparator);
+                    break;
+                  }
+                  propertyValue = peakId.getDescription();
+                  if (propertyValue != null) 
+                    propertyValue = propertyValue.replaceAll("\\n", ";");
+                  propertyValue = escapeStringForCSV(propertyValue);
+                  line.append(propertyValue + fieldSeparator);
+                  break;
                 case ROW_COMMENT:
-                    String comment = escapeStringForCSV(peakListRow
-                            .getComment());
+                    String comment = escapeStringForCSV(
+                            peakListRow.getComment());
                     line.append(comment + fieldSeparator);
                     break;
                 case ROW_PEAK_NUMBER:
@@ -235,39 +282,20 @@ class CSVExportTask extends AbstractTask {
                 }
             }
 
-	    // Identity elements
-	    length = identityElements.length;
-	    PeakIdentity peakIdentity = peakListRow.getPreferredPeakIdentity();
-	    PeakIdentity[] peakIdentities = peakListRow.getPeakIdentities();
+            // peak Information
+            if (exportAllPeakInfo) {
+                if (peakListRow.getPeakInformation() != null) {
+                    Map<String, String> allPropertiesMap = peakListRow
+                            .getPeakInformation().getAllProperties();
 
-	    if (exportAllIDs && peakIdentities.length > 1) {
-		// Export all identification results
-		for (int i = 0; i < length; i++) {
-		    String propertyValue = "";
-		    for (int x = 0; x < peakIdentities.length; x++) {
-			if (x == 0) {
-			    propertyValue = escapeStringForCSV(peakIdentities[x]
-				    .getPropertyValue(identityElements[i]));
-			} else {
-			    propertyValue = propertyValue
-				    + idSeparator
-				    + escapeStringForCSV(peakIdentities[x]
-					    .getPropertyValue(identityElements[i]));
-			}
-		    }
-		    line.append(propertyValue + fieldSeparator);
-		}
-	    } else if (peakIdentity != null) {
-		for (int i = 0; i < length; i++) {
-		    String propertyValue = escapeStringForCSV(peakIdentity
-			    .getPropertyValue(identityElements[i]));
-		    line.append(propertyValue + fieldSeparator);
-		}
-	    } else {
-		for (int i = 0; i < length; i++) {
-		    line.append(fieldSeparator);
-		}
-	    }
+                    for (String key : peakInformationFields) {
+                        String value = allPropertiesMap.get(key);
+                        if (value == null)
+                            value = "";
+                        line.append(value + fieldSeparator);
+                    }
+                }
+            }
 
             // Data file elements
             length = dataFileElements.length;
@@ -277,8 +305,8 @@ class CSVExportTask extends AbstractTask {
                     if (peak != null) {
                         switch (dataFileElements[i]) {
                         case PEAK_STATUS:
-                            line.append(peak.getFeatureStatus()
-                                    + fieldSeparator);
+                            line.append(
+                                    peak.getFeatureStatus() + fieldSeparator);
                             break;
                         case PEAK_MZ:
                             line.append(peak.getMZ() + fieldSeparator);
@@ -295,8 +323,8 @@ class CSVExportTask extends AbstractTask {
                                     .upperEndpoint() + fieldSeparator);
                             break;
                         case PEAK_DURATION:
-                            line.append(RangeUtils.rangeLength(peak
-                                    .getRawDataPointsRTRange())
+                            line.append(RangeUtils
+                                    .rangeLength(peak.getRawDataPointsRTRange())
                                     + fieldSeparator);
                             break;
                         case PEAK_HEIGHT:
@@ -316,12 +344,21 @@ class CSVExportTask extends AbstractTask {
                             line.append(peak.getFWHM() + fieldSeparator);
                             break;
                         case PEAK_TAILINGFACTOR:
-                            line.append(peak.getTailingFactor()
-                                    + fieldSeparator);
+                            line.append(
+                                    peak.getTailingFactor() + fieldSeparator);
                             break;
                         case PEAK_ASYMMETRYFACTOR:
-                            line.append(peak.getAsymmetryFactor()
-                                    + fieldSeparator);
+                            line.append(
+                                    peak.getAsymmetryFactor() + fieldSeparator);
+                            break;
+                        case PEAK_MZMIN:
+                            line.append(peak.getRawDataPointsMZRange()
+                                    .lowerEndpoint() + fieldSeparator);
+                            break;
+                        case PEAK_MZMAX:
+                            line.append(peak.getRawDataPointsMZRange()
+                                    .upperEndpoint() + fieldSeparator);
+
                             break;
 
                         }
@@ -361,9 +398,13 @@ class CSVExportTask extends AbstractTask {
         // format).
         String result = inputString.replaceAll("[\\p{Cntrl}]", " ");
 
+        // Skip too long strings (see Excel 2007 specifications)
+        if (result.length() >= 32766)
+            result = result.substring(0, 32765);
+
         // If the text contains fieldSeparator, we will add
         // parenthesis
-        if (result.contains(fieldSeparator)) {
+        if (result.contains(fieldSeparator) || result.contains("\"")) {
             result = "\"" + result.replaceAll("\"", "'") + "\"";
         }
 

@@ -121,6 +121,7 @@ public class PeakListTable extends JTable implements ComponentToolTipProvider {
 			return null;
 		}
 
+<<<<<<< HEAD
 		if (text.contains(ComponentToolTipManager.CUSTOM)) {
 			String values[] = text.split("-");
 			int myID = Integer.parseInt(values[1].trim());
@@ -131,6 +132,68 @@ public class PeakListTable extends JTable implements ComponentToolTipProvider {
 							true, false, ComponentToolTipManager.bg);
 					break;
 				}
+=======
+	} else {
+	    text = "<html>" + text.replace("\n", "<br>") + "</html>";
+	    JLabel label = new JLabel(text);
+	    label.setFont(UIManager.getFont("ToolTip.font"));
+	    JPanel panel = new JPanel();
+	    panel.setBackground(ComponentToolTipManager.bg);
+	    panel.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
+	    panel.add(label);
+	    component = panel;
+	}
+
+	return component;
+
+    }
+
+    public PeakList getPeakList() {
+	return peakList;
+    }
+    public TableRowSorter<PeakListTableModel> getTableRowSorter(){
+    	return sorter;
+    }
+    public TableCellEditor getCellEditor(int row, int column) {
+
+	CommonColumnType commonColumn = pkTableModel.getCommonColumn(column);
+	if (commonColumn == CommonColumnType.IDENTITY) {
+
+	    row = this.convertRowIndexToModel(row);
+	    peakListRow = peakList.getRow(row);
+
+	    PeakIdentity identities[] = peakListRow.getPeakIdentities();
+	    PeakIdentity preferredIdentity = peakListRow
+		    .getPreferredPeakIdentity();
+	    JComboBox<Object> combo;
+
+	    if ((identities != null) && (identities.length > 0)) {
+		combo = new JComboBox<Object>(identities);
+		combo.addItem("-------------------------");
+		combo.addItem(REMOVE_IDENTITY);
+		combo.addItem(EDIT_IDENTITY);
+	    } else {
+		combo = new JComboBox<Object>();
+	    }
+
+	    combo.setFont(comboFont);
+	    combo.addItem(NEW_IDENTITY);
+	    if (preferredIdentity != null) {
+		combo.setSelectedItem(preferredIdentity);
+	    }
+
+	    combo.addActionListener(new ActionListener() {
+
+		public void actionPerformed(ActionEvent e) {
+		    JComboBox<?> combo = (JComboBox<?>) e.getSource();
+		    Object item = combo.getSelectedItem();
+		    if (item != null) {
+			if (item.toString() == NEW_IDENTITY) {
+			    PeakIdentitySetupDialog dialog = new PeakIdentitySetupDialog(
+				    window, peakListRow);
+			    dialog.setVisible(true);
+			    return;
+>>>>>>> refs/heads/OriginalMasterEChartPanel
 			}
 
 		} else {

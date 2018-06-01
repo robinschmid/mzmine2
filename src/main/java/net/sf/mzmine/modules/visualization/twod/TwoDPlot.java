@@ -27,11 +27,21 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
 import java.text.NumberFormat;
+import java.util.logging.Logger;
 
 import javax.swing.JFileChooser;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.filechooser.FileNameExtensionFilter;
+
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.plot.DatasetRenderingOrder;
+import org.jfree.chart.title.TextTitle;
+import org.jfree.chart.ui.RectangleEdge;
+
+import com.google.common.collect.Range;
 
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.RawDataFile;
@@ -40,19 +50,12 @@ import net.sf.mzmine.util.GUIUtils;
 import net.sf.mzmine.util.SaveImage;
 import net.sf.mzmine.util.SaveImage.FileType;
 
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.plot.DatasetRenderingOrder;
-import org.jfree.chart.title.TextTitle;
-import org.jfree.ui.RectangleEdge;
-
-import com.google.common.collect.Range;
-
 /**
  * 
  */
 class TwoDPlot extends ChartPanel {
+
+  private Logger logger = Logger.getLogger(this.getClass().getName());
 
     private static final long serialVersionUID = 1L;
 
@@ -69,7 +72,7 @@ class TwoDPlot extends ChartPanel {
 
     private JFreeChart chart;
 
-    private TwoDXYPlot plot;
+    private BaseXYPlot plot;
 
     private PeakDataRenderer peakDataRenderer;
 
@@ -84,85 +87,88 @@ class TwoDPlot extends ChartPanel {
     private NumberFormat rtFormat = MZmineCore.getConfiguration().getRTFormat();
     private NumberFormat mzFormat = MZmineCore.getConfiguration().getMZFormat();
 
-    // private TwoDItemRenderer renderer;
-
     TwoDPlot(RawDataFile rawDataFile, TwoDVisualizerWindow visualizer,
-	    TwoDDataSet dataset, Range<Double> rtRange, Range<Double> mzRange) {
+	    TwoDDataSet dataset, Range<Double> rtRange, Range<Double> mzRange,String whichPlotTypeStr) {
 
-	super(null, true);
+		super(null, true);
 
-	this.rawDataFile = rawDataFile;
-	this.rtRange = rtRange;
-	this.mzRange = mzRange;
+		this.rawDataFile = rawDataFile;
+		this.rtRange = rtRange;
+		this.mzRange = mzRange;
 
-	setBackground(Color.white);
-	setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+		setBackground(Color.white);
+		setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
 
-	// set the X axis (retention time) properties
-	xAxis = new NumberAxis("Retention time");
-	xAxis.setAutoRangeIncludesZero(false);
-	xAxis.setNumberFormatOverride(rtFormat);
-	xAxis.setUpperMargin(0);
-	xAxis.setLowerMargin(0);
+		// set the X axis (retention time) properties
+		xAxis = new NumberAxis("Retention time");
+		xAxis.setAutoRangeIncludesZero(false);
+		xAxis.setNumberFormatOverride(rtFormat);
+		xAxis.setUpperMargin(0);
+		xAxis.setLowerMargin(0);
 
-	// set the Y axis (intensity) properties
-	yAxis = new NumberAxis("m/z");
-	yAxis.setAutoRangeIncludesZero(false);
-	yAxis.setNumberFormatOverride(mzFormat);
-	yAxis.setUpperMargin(0);
-	yAxis.setLowerMargin(0);
+		// set the Y axis (intensity) properties
+		yAxis = new NumberAxis("m/z");
+		yAxis.setAutoRangeIncludesZero(false);
+		yAxis.setNumberFormatOverride(mzFormat);
+		yAxis.setUpperMargin(0);
+		yAxis.setLowerMargin(0);
 
-	// set the plot properties
-	plot = new TwoDXYPlot(dataset, rtRange, mzRange, xAxis, yAxis);
-	plot.setBackgroundPaint(Color.white);
-	plot.setDomainGridlinesVisible(false);
-	plot.setRangeGridlinesVisible(false);
+		// set the plot properties
+		if (whichPlotTypeStr=="default") {
+			plot = new TwoDXYPlot(dataset, rtRange, mzRange, xAxis, yAxis);
+		}
+		else if (whichPlotTypeStr=="point2D") {
+			plot = new PointTwoDXYPlot(dataset, rtRange, mzRange, xAxis, yAxis);
+		}
+	    plot.setBackgroundPaint(Color.white);
+	    plot.setDomainGridlinesVisible(false);
+	    plot.setRangeGridlinesVisible(false);
 
-	// chart properties
-	chart = new JFreeChart("", titleFont, plot, false);
-	chart.setBackgroundPaint(Color.white);
+	    // chart properties
+	    chart = new JFreeChart("", titleFont, plot, false);
+	    chart.setBackgroundPaint(Color.white);
 
-	setChart(chart);
+	    setChart(chart);
 
-	// title
-	chartTitle = chart.getTitle();
-	chartTitle.setMargin(5, 0, 0, 0);
-	chartTitle.setFont(titleFont);
+	    // title
+	    chartTitle = chart.getTitle();
+	    chartTitle.setMargin(5, 0, 0, 0);
+	    chartTitle.setFont(titleFont);
 
-	chartSubTitle = new TextTitle();
-	chartSubTitle.setFont(subTitleFont);
-	chartSubTitle.setMargin(5, 0, 0, 0);
-	chart.addSubtitle(chartSubTitle);
+	    chartSubTitle = new TextTitle();
+	    chartSubTitle.setFont(subTitleFont);
+	    chartSubTitle.setMargin(5, 0, 0, 0);
+	    chart.addSubtitle(chartSubTitle);
 
-	// disable maximum size (we don't want scaling)
-	setMaximumDrawWidth(Integer.MAX_VALUE);
-	setMaximumDrawHeight(Integer.MAX_VALUE);
+	    // disable maximum size (we don't want scaling)
+	    setMaximumDrawWidth(Integer.MAX_VALUE);
+	    setMaximumDrawHeight(Integer.MAX_VALUE);
 
-	// set crosshair (selection) properties
-	plot.setRangeCrosshairVisible(false);
-	plot.setDomainCrosshairVisible(true);
-	plot.setDomainCrosshairPaint(crossHairColor);
-	plot.setDomainCrosshairStroke(crossHairStroke);
+	    // set crosshair (selection) properties
+	    plot.setRangeCrosshairVisible(false);
+	    plot.setDomainCrosshairVisible(true);
+	    plot.setDomainCrosshairPaint(crossHairColor);
+	    plot.setDomainCrosshairStroke(crossHairStroke);
 
-	// set rendering order
-	plot.setDatasetRenderingOrder(DatasetRenderingOrder.FORWARD);
+	    // set rendering order
+	    plot.setDatasetRenderingOrder(DatasetRenderingOrder.FORWARD);
 
-	peakDataRenderer = new PeakDataRenderer();
+	    peakDataRenderer = new PeakDataRenderer();
 
-	JMenuItem plotTypeMenuItem = new JMenuItem(
-		"Toggle centroid/continuous mode");
-	plotTypeMenuItem.addActionListener(visualizer);
-	plotTypeMenuItem.setActionCommand("SWITCH_PLOTMODE");
-	add(plotTypeMenuItem);
+	    JMenuItem plotTypeMenuItem = new JMenuItem(
+	    	"Toggle centroid/continuous mode");
+	    plotTypeMenuItem.addActionListener(visualizer);
+		plotTypeMenuItem.setActionCommand("SWITCH_PLOTMODE");
+		add(plotTypeMenuItem);
 
-	JPopupMenu popupMenu = getPopupMenu();
-	popupMenu.addSeparator();
-	popupMenu.add(plotTypeMenuItem);
+		JPopupMenu popupMenu = getPopupMenu();
+		popupMenu.addSeparator();
+		popupMenu.add(plotTypeMenuItem);
 
-	// Add EMF and EPS options to the save as menu
-	JMenuItem saveAsMenu = (JMenuItem) popupMenu.getComponent(3);	
-	GUIUtils.addMenuItem(saveAsMenu, "EMF...", this, "SAVE_EMF");
-	GUIUtils.addMenuItem(saveAsMenu, "EPS...", this, "SAVE_EPS");
+		// Add EMF and EPS options to the save as menu
+		JMenuItem saveAsMenu = (JMenuItem) popupMenu.getComponent(3);
+		GUIUtils.addMenuItem(saveAsMenu, "EMF...", this, "SAVE_EMF");
+		GUIUtils.addMenuItem(saveAsMenu, "EPS...", this, "SAVE_EPS");
 
     }
 
@@ -217,7 +223,7 @@ class TwoDPlot extends ChartPanel {
 	}
     }
 
-    TwoDXYPlot getXYPlot() {
+    BaseXYPlot getXYPlot() {
 	return plot;
     }
 
@@ -227,8 +233,8 @@ class TwoDPlot extends ChartPanel {
 
     void switchDataPointsVisible() {
 
-	boolean dataPointsVisible = peakDataRenderer.getBaseShapesVisible();
-	peakDataRenderer.setBaseShapesVisible(!dataPointsVisible);
+	boolean dataPointsVisible = peakDataRenderer.getDefaultShapesVisible();
+	peakDataRenderer.setDefaultShapesVisible(!dataPointsVisible);
 
     }
 
@@ -248,6 +254,8 @@ class TwoDPlot extends ChartPanel {
     }
 
     void loadPeakList(PeakList peakList) {
+      
+      logger.finest("Loading peaklist " + peakList);
 
 	PeakDataSet peaksDataSet = new PeakDataSet(rawDataFile, peakList,
 		rtRange, mzRange);
@@ -282,9 +290,9 @@ class TwoDPlot extends ChartPanel {
     public void showPeaksTooltips(boolean mode) {
 	if (mode) {
 	    PeakToolTipGenerator toolTipGenerator = new PeakToolTipGenerator();
-	    this.peakDataRenderer.setBaseToolTipGenerator(toolTipGenerator);
+	    this.peakDataRenderer.setDefaultToolTipGenerator(toolTipGenerator);
 	} else {
-	    this.peakDataRenderer.setBaseToolTipGenerator(null);
+	    this.peakDataRenderer.setDefaultToolTipGenerator(null);
 	}
     }
 
@@ -293,5 +301,4 @@ class TwoDPlot extends ChartPanel {
 	    plot.setLogScale(logscale);
 	}
     }
-
 }

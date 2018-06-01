@@ -34,6 +34,7 @@ import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.modules.peaklistmethods.peakpicking.deconvolution.PeakResolver;
 import net.sf.mzmine.modules.peaklistmethods.peakpicking.deconvolution.ResolvedPeak;
 import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.util.R.REngineType;
 import net.sf.mzmine.util.R.RSessionWrapper;
 
 import com.google.common.collect.Range;
@@ -52,7 +53,7 @@ public class BaselinePeakDetector implements PeakResolver {
     @Override
     public Feature[] resolvePeaks(final Feature chromatogram,
             ParameterSet parameters,
-            RSessionWrapper rSession) {
+            RSessionWrapper rSession, double msmsRange, double rTRangeMSMS) {
 
         int scanNumbers[] = chromatogram.getScanNumbers();
         final int scanCount = scanNumbers.length;
@@ -117,7 +118,7 @@ public class BaselinePeakDetector implements PeakResolver {
 
                     // Create a new ResolvedPeak and add it.
                     resolvedPeaks.add(new ResolvedPeak(chromatogram,
-                            currentRegionStart, currentRegionEnd));
+                            currentRegionStart, currentRegionEnd, msmsRange, rTRangeMSMS));
                 }
 
                 // Find next peak region, starting from next data point.
@@ -149,4 +150,10 @@ public class BaselinePeakDetector implements PeakResolver {
     public String[] getRequiredRPackagesVersions() {
         return null;
     }
+
+    @Override
+    public REngineType getREngineType(ParameterSet parameters) {
+        return null;
+    }
+
 }

@@ -52,12 +52,12 @@ public class ExtractScansModule implements MZmineProcessingModule {
     @Nonnull
     public ExitCode runModule(@Nonnull MZmineProject project,
             @Nonnull ParameterSet parameters, @Nonnull Collection<Task> tasks) {
-    	ExtractScansTask task = new ExtractScansTask(parameters);
-    	tasks.add(task);
-    	return ExitCode.OK; 
+        ExtractScansTask task = new ExtractScansTask(parameters);
+        tasks.add(task);
+        return ExitCode.OK; 
     }
 
-	@Override
+    @Override
     public @Nonnull MZmineModuleCategory getModuleCategory() {
         return MZmineModuleCategory.RAWDATA;
     }

@@ -51,6 +51,11 @@ public interface PeakListRow {
      */
     public void addPeak(RawDataFile rawData, Feature peak);
 
+    /**D
+     * Remove a peak
+     */
+    public void removePeak(RawDataFile file);
+
     /**
      * Has a peak?
      */
@@ -77,7 +82,8 @@ public interface PeakListRow {
     public double getAverageHeight();
 
     /**
-     * Returns the charge for peak on this row. If more charges are found 0 is returned
+     * Returns the charge for peak on this row. If more charges are found 0 is
+     * returned
      */
     public int getRowCharge();
 
@@ -146,6 +152,26 @@ public interface PeakListRow {
      */
     public void setPreferredPeakIdentity(PeakIdentity identity);
 
+    
+    /**
+     * Adds a new PeakInformation object. 
+     * 
+     * PeakInformation is used to keep extra information about peaks in the 
+     * form of a map <propertyName, propertyValue>
+     * 
+     * @param information object
+     */
+    
+    public void setPeakInformation(PeakInformation information);
+    
+    
+    /**
+     * Returns PeakInformation
+     * @return 
+     */
+    
+    public PeakInformation getPeakInformation();
+    
     /**
      * Returns maximum raw data point intensity among all peaks in this row
      * 
@@ -157,11 +183,24 @@ public interface PeakListRow {
      * Returns the most intense peak in this row
      */
     public Feature getBestPeak();
+    
+    /**
+     * Returns the most intense fragmentation scan in this row
+     */
+    public Scan getBestFragmentation();
 
     /**
      * Returns the most intense isotope pattern in this row. If there are no
      * isotope patterns present in the row, returns null.
      */
     public IsotopePattern getBestIsotopePattern();
+    
+    // DorresteinLaB edit
+    /**
+     * reset the rowID
+     */
+    public void setID(int id);
+    
+    // End DorresteinLab edit
 
 }

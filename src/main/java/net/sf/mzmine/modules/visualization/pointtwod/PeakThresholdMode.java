@@ -17,24 +17,26 @@
  * Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-package net.sf.mzmine.modules.peaklistmethods.io.csvexport;
+package net.sf.mzmine.modules.visualization.pointtwod;
 
-public class ExportRowIdentityElement {
+public enum PeakThresholdMode {
 
-    private String name;
-    private String propertyName;
+    ALL_PEAKS("All peaks"), ABOVE_INTENSITY_PEAKS(
+	    "Peaks above user-defined intensity"), TOP_PEAKS(
+	    "User-defined top peaks"), TOP_PEAKS_AREA(
+	    "User-defined top peaks in the displayed area");
 
-    public ExportRowIdentityElement(String propertyName, String name) {
+    private final String name;
+
+    PeakThresholdMode(String name) {
 	this.name = name;
-	this.propertyName = propertyName;
     }
 
-    public String getPropertyName() {
-	return this.propertyName;
+    public String getName() {
+	return this.name;
     }
 
     public String toString() {
 	return this.name;
     }
-
 }

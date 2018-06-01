@@ -42,6 +42,7 @@ import net.sf.mzmine.modules.peaklistmethods.peakpicking.deconvolution.PeakResol
 import net.sf.mzmine.modules.peaklistmethods.peakpicking.deconvolution.ResolvedPeak;
 import net.sf.mzmine.modules.peaklistmethods.peakpicking.deconvolution.centwave.CentWaveDetectorParameters.PeakIntegrationMethod;
 import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.util.R.REngineType;
 import net.sf.mzmine.util.R.RSessionWrapper;
 import net.sf.mzmine.util.R.RSessionWrapperException;
 
@@ -95,9 +96,14 @@ public class CentWaveDetector implements PeakResolver {
     }
 
     @Override
+    public REngineType getREngineType(final ParameterSet parameters) {
+        return parameters.getParameter(CentWaveDetectorParameters.RENGINE_TYPE).getValue();
+    }
+
+    @Override
     public Feature[] resolvePeaks(final Feature chromatogram,
             final ParameterSet parameters,
-            RSessionWrapper rSession) throws RSessionWrapperException {
+            RSessionWrapper rSession, double msmsRange, double rTRangeMSMS) throws RSessionWrapperException {
         
         int scanNumbers[] = chromatogram.getScanNumbers();
         final int scanCount = scanNumbers.length;
@@ -163,7 +169,7 @@ public class CentWaveDetector implements PeakResolver {
                                 - retentionTimes[start]))) {
 
                             resolvedPeaks.add(new ResolvedPeak(chromatogram,
-                                    start, end));
+                                    start, end,msmsRange,rTRangeMSMS));
                         }
 
                         start = end;
@@ -222,7 +228,7 @@ public class CentWaveDetector implements PeakResolver {
         rSession.eval("xRaw <- new(\"xcmsRaw\")");
         rSession.eval("xRaw@tic <- intensity");
         rSession.eval("xRaw@scantime <- scantime * " + SECONDS_PER_MINUTE);
-        rSession.eval("xRaw@scanindex <- 1:numPoints");
+        rSession.eval("xRaw@scanindex <- 0:(numPoints-1)");
         rSession.eval("xRaw@env$mz <- rep(mz, numPoints)");
         rSession.eval("xRaw@env$intensity <- intensity");
 
@@ -254,19 +260,28 @@ public class CentWaveDetector implements PeakResolver {
         }
 
         // Do peak picking.
-        final Object centWave = roi <= 1 ? null : (double[][]) rSession
-                .collect(
-                        "findPeaks.centWave(xRaw, ppm=0, mzdiff=0, verbose=TRUE"
-                                + ", peakwidth=c(" + peakWidth.lowerEndpoint()
-                                * SECONDS_PER_MINUTE + ", "
-                                + peakWidth.upperEndpoint()
-                                * SECONDS_PER_MINUTE + ')' + ", snthresh="
-                                + snrThreshold + ", integrate="
-                                + integrationMethod.getIndex()
-                                + ", ROI.list=ROIs)", false);
+        rSession.eval("mtx <- findPeaks.centWave(xRaw, ppm=0, mzdiff=0, verbose=TRUE"
+                + ", peakwidth=c(" + peakWidth.lowerEndpoint()
+                * SECONDS_PER_MINUTE + ", "
+                + peakWidth.upperEndpoint()
+                * SECONDS_PER_MINUTE + ')' + ", snthresh="
+                + snrThreshold + ", integrate="
+                + integrationMethod.getIndex()
+                + ", ROI.list=ROIs)");
 
+        // Get rid of 'NA' values potentially found in the resulting matrix
+        rSession.eval("mtx[is.na(mtx)] <- " + RSessionWrapper.NA_DOUBLE); // + "0");//
+        
+        
+        final Object centWave = roi <= 1 ? null : (double[][]) rSession
+    		  .collect("mtx", false);
+        
+        // Done: Refresh R code stack
+        rSession.clearCode();
+        
         peaks = (centWave == null) ? null : (double[][]) centWave;
 
         return peaks;
     }
+    
 }
