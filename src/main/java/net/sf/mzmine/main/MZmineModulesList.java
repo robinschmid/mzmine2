@@ -21,6 +21,7 @@ package net.sf.mzmine.main;
 import net.sf.mzmine.modules.batchmode.BatchModeModule;
 import net.sf.mzmine.modules.masslistmethods.ADAPchromatogrambuilder.ADAPChromatogramBuilderModule;
 import net.sf.mzmine.modules.masslistmethods.chromatogrambuilder.ChromatogramBuilderModule;
+import net.sf.mzmine.modules.masslistmethods.imagebuilder.ImageBuilderModule;
 import net.sf.mzmine.modules.masslistmethods.shoulderpeaksfilter.ShoulderPeaksFilterModule;
 import net.sf.mzmine.modules.peaklistmethods.alignment.hierarchical.HierarAlignerGcModule;
 import net.sf.mzmine.modules.peaklistmethods.alignment.join.JoinAlignerModule;
@@ -131,7 +132,7 @@ public class MZmineModulesList {
       // Raw data methods
       RawDataImportModule.class, RawDataExportModule.class, ExtractScansModule.class,
       MassDetectionModule.class, ShoulderPeaksFilterModule.class, ChromatogramBuilderModule.class,
-      ADAPChromatogramBuilderModule.class,
+      ImageBuilderModule.class, ADAPChromatogramBuilderModule.class,
       // Not ready for prime time: ADAP3DModule.class,
       GridMassModule.class, ManualPeakPickerModule.class, MsMsPeakPickerModule.class,
       ScanFiltersModule.class, CropFilterModule.class, BaselineCorrectionModule.class,

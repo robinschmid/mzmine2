@@ -3,27 +3,26 @@
  * 
  * This file is part of MZmine 2.
  * 
- * MZmine 2 is free software; you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation; either version 2 of the License, or (at your option) any later
- * version.
+ * MZmine 2 is free software; you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
  * 
- * MZmine 2 is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * MZmine 2 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
  * 
- * You should have received a copy of the GNU General Public License along with
- * MZmine 2; if not, write to the Free Software Foundation, Inc., 51 Franklin
- * St, Fifth Floor, Boston, MA 02110-1301 USA
+ * You should have received a copy of the GNU General Public License along with MZmine 2; if not,
+ * write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+ * USA
  */
 
 package net.sf.mzmine.modules.masslistmethods.imagebuilder;
 
 import java.util.Iterator;
-import java.util.TreeMap;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.logging.Logger;
-
+import com.google.common.collect.Range;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.MassList;
@@ -40,217 +39,215 @@ import net.sf.mzmine.taskcontrol.TaskStatus;
 
 public class ImageBuilderTask extends AbstractTask {
 
-    private Logger logger = Logger.getLogger(this.getClass().getName());
+  private Logger logger = Logger.getLogger(this.getClass().getName());
 
-    private MZmineProject project;
-    private RawDataFile dataFile;
+  private MZmineProject project;
+  private RawDataFile dataFile;
 
-    // scan counter
-    private int processedScans = 0, totalScans;
-    private ScanSelection scanSelection;
-    private int newPeakID = 1;
-    private Scan[] scans;
+  // scan counter
+  private int processedScans = 0, totalScans;
+  private ScanSelection scanSelection;
+  private int newPeakID = 1;
+  private Scan[] scans;
 
-    // User parameters
-    private String suffix, massListName;
-    private MZTolerance mzTolerance;
-    private double minimumHeight;
-    
-    private Weight weight;
+  // User parameters
+  private String suffix, massListName;
+  private Range<Double> mzRange;
+  private MZTolerance mzTolerance;
+  private double minimumHeight;
+  private double binWidth;
 
-    private SimplePeakList newPeakList;
+  private Weight weight;
 
-    /**
-     * @param dataFile
-     * @param parameters
-     */
-    public ImageBuilderTask(MZmineProject project, RawDataFile dataFile,
-            ParameterSet parameters) {
+  private SimplePeakList newPeakList;
 
-        this.project = project;
-        this.dataFile = dataFile;
-        this.scanSelection = parameters
-                .getParameter(ImageBuilderParameters.scanSelection)
-                .getValue();
-        this.massListName = parameters
-                .getParameter(ImageBuilderParameters.massList)
-                .getValue();
+  /**
+   * @param dataFile
+   * @param parameters
+   */
+  public ImageBuilderTask(MZmineProject project, RawDataFile dataFile, ParameterSet parameters) {
 
-        this.mzTolerance = parameters
-                .getParameter(ImageBuilderParameters.mzTolerance)
-                .getValue();
-        this.minimumHeight = parameters
-                .getParameter(ImageBuilderParameters.minimumHeight)
-                .getValue();
+    this.project = project;
+    this.dataFile = dataFile;
+    this.scanSelection = parameters.getParameter(ImageBuilderParameters.scanSelection).getValue();
+    this.massListName = parameters.getParameter(ImageBuilderParameters.massList).getValue();
 
-        this.weight = parameters
-                .getParameter(ImageBuilderParameters.weight)
-                .getValue();
+    this.mzRange = parameters.getParameter(ImageBuilderParameters.mzRange).getValue();
 
-        this.suffix = parameters
-                .getParameter(ImageBuilderParameters.suffix).getValue();
+    this.mzTolerance = parameters.getParameter(ImageBuilderParameters.mzTolerance).getValue();
+    this.minimumHeight = parameters.getParameter(ImageBuilderParameters.minimumHeight).getValue();
+    this.binWidth = parameters.getParameter(ImageBuilderParameters.binWidth).getValue();
 
-    }
+    this.weight = parameters.getParameter(ImageBuilderParameters.weight).getValue();
 
-    /**
-     * @see net.sf.mzmine.taskcontrol.Task#getTaskDescription()
-     */
-    public String getTaskDescription() {
-        return "Detecting images in " + dataFile;
-    }
+    this.suffix = parameters.getParameter(ImageBuilderParameters.suffix).getValue();
+  }
 
-    /**
-     * @see net.sf.mzmine.taskcontrol.Task#getFinishedPercentage()
-     */
-    public double getFinishedPercentage() {
-        if (totalScans == 0)
-            return 0;
-        else
-            return (double) processedScans / totalScans;
-    }
+  /**
+   * @see net.sf.mzmine.taskcontrol.Task#getTaskDescription()
+   */
+  public String getTaskDescription() {
+    return "Detecting images in " + dataFile;
+  }
 
-    public RawDataFile getDataFile() {
-        return dataFile;
-    }
+  /**
+   * @see net.sf.mzmine.taskcontrol.Task#getFinishedPercentage()
+   */
+  public double getFinishedPercentage() {
+    if (totalScans == 0)
+      return 0;
+    else
+      return (double) processedScans / totalScans;
+  }
 
-    /**
-     * @see Runnable#run()
-     */
-    public void run() {
+  public RawDataFile getDataFile() {
+    return dataFile;
+  }
 
-        setStatus(TaskStatus.PROCESSING);
 
-        logger.info("Started chromatogram builder on " + dataFile);
+  /**
+   * @see Runnable#run()
+   */
+  public void run() {
 
-        scans = scanSelection.getMatchingScans(dataFile);
-        int allScanNumbers[] = scanSelection.getMatchingScanNumbers(dataFile);
-        totalScans = scans.length;
+    setStatus(TaskStatus.PROCESSING);
 
-        // Create new peak list
-        newPeakList = new SimplePeakList(dataFile + " " + suffix, dataFile);
+    logger.info("Started image builder on " + dataFile);
 
-        Chromatogram[] chromatograms;
-        
-        // insert all mz in order and count them
-        // mz as integer to avoid floating point * decimals
-        //      m/z      number    
-        TreeMap<Integer, Double> signals = new TreeMap<Integer, Double>();
-        
+    scans = scanSelection.getMatchingScans(dataFile);
+    int allScanNumbers[] = scanSelection.getMatchingScanNumbers(dataFile);
+    totalScans = scans.length;
 
-        int decimals = 3;
-        double factor = Math.pow(10, decimals);
-        
-        for (Scan scan : scans) {
+    // Create new peak list
+    newPeakList = new SimplePeakList(dataFile + " " + suffix, dataFile);
 
-            if (isCanceled())
-                return;
+    Chromatogram[] chromatograms;
 
-            MassList massList = scan.getMassList(massListName);
-            if (massList == null) {
-                setStatus(TaskStatus.ERROR);
-                setErrorMessage("Scan " + dataFile + " #" + scan.getScanNumber()
-                        + " does not have a mass list " + massListName);
-                return;
-            }
+    // Create new histogram
+    double range = mzRange.upperEndpoint() - mzRange.lowerEndpoint();
+    int size = (int) (range / binWidth) + 1;
+    int[] bins = new int[size];
 
-            DataPoint mzValues[] = massList.getDataPoints();
+    // insert all mz in order and count them
+    // mz as integer to avoid floating point * decimals
+    // m/z number
+    TreeMap<Integer, Double> signals = new TreeMap<Integer, Double>();
 
-            if (mzValues == null) {
-                setStatus(TaskStatus.ERROR);
-                setErrorMessage("Mass list " + massListName
-                        + " does not contain m/z values for scan #"
-                        + scan.getScanNumber() + " of file " + dataFile);
-                return;
-            }
 
-            // minimum distance between two detected masses
-            double minDistance = Double.POSITIVE_INFINITY;
-            double lastMZ = -1;
-            
-            // add all m/z values in bins
-            // insert all mz in order and count them
-			double increment = 1;
-			try {
-	            for (int i = 0; i < mzValues.length; i++) {
-	            	double cMZ = mzValues[i].getMZ();
-	            	// minimum distance
-	            	if(lastMZ!=-1 && Math.abs(cMZ-lastMZ)<minDistance)
-	            		minDistance = Math.abs(cMZ-lastMZ);
-	            	
-	            	// save as integer to get around floating point
-					Integer mz = (int)Math.round(cMZ*factor);
-					
-					
-					// weighting
-					switch(weight) {
-					case None:
-						increment = 1;
-						break;
-					case Linear:
-						increment = mzValues[i].getIntensity();
-						break;
-					case log10:
-						increment = Math.log10(mzValues[i].getIntensity());
-						break;
-					}
-					
-					// add increment to value or create new
-					Double number = signals.get(mz);
-					if(number!=null) {
-						signals.put(mz, number+increment);
-					}
-					else signals.put(mz, increment);
-					
-					//
-		            lastMZ = cMZ;
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-            processedScans++;
+    int decimals = 3;
+    double factor = Math.pow(10, decimals);
+
+    for (Scan scan : scans) {
+
+      if (isCanceled())
+        return;
+
+      MassList massList = scan.getMassList(massListName);
+      if (massList == null) {
+        setStatus(TaskStatus.ERROR);
+        setErrorMessage("Scan " + dataFile + " #" + scan.getScanNumber()
+            + " does not have a mass list " + massListName);
+        return;
+      }
+
+      DataPoint mzValues[] = massList.getDataPoints();
+
+      if (mzValues == null) {
+        setStatus(TaskStatus.ERROR);
+        setErrorMessage("Mass list " + massListName + " does not contain m/z values for scan #"
+            + scan.getScanNumber() + " of file " + dataFile);
+        return;
+      }
+
+      // minimum distance between two detected masses
+      double minDistance = Double.POSITIVE_INFINITY;
+      double lastMZ = -1;
+
+      // add all m/z values in bins
+      // insert all mz in order and count them
+      double increment = 1;
+      try {
+        for (int i = 0; i < mzValues.length; i++) {
+          double cMZ = mzValues[i].getMZ();
+          // minimum distance
+          if (lastMZ != -1 && Math.abs(cMZ - lastMZ) < minDistance)
+            minDistance = Math.abs(cMZ - lastMZ);
+
+          // save as integer to get around floating point
+          Integer mz = (int) Math.round(cMZ * factor);
+
+
+          // weighting
+          switch (weight) {
+            case None:
+              increment = 1;
+              break;
+            case Linear:
+              increment = mzValues[i].getIntensity();
+              break;
+            case log10:
+              increment = Math.log10(mzValues[i].getIntensity());
+              break;
+          }
+
+          // add increment to value or create new
+          Double number = signals.get(mz);
+          if (number != null) {
+            signals.put(mz, number + increment);
+          } else
+            signals.put(mz, increment);
+
+          // add to histo data
+
+          //
+          lastMZ = cMZ;
         }
-        
-        addZeros(signals);
-        
-        
-        MassListMzDistribution frame = new MassListMzDistribution();
-        frame.createChart(signals, decimals);
-        frame.setVisible(true);
-        
-
-        setStatus(TaskStatus.FINISHED);
-
-        logger.info("Finished chromatogram builder on " + dataFile);
-
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+      processedScans++;
     }
-    
-    private void addZeros(TreeMap<Integer, Double> signals) {
-        // add zeros within half of minimum spacing
-		Iterator<Entry<Integer, Double>> it = signals.entrySet().iterator();
-		if(it.hasNext()) {
-			// temp map
-			TreeMap<Integer, Double> tmp = new TreeMap<Integer, Double>();
-			//
-			Entry<Integer, Double> last = it.next();
-			for (int i = 1; i < signals.size() && it.hasNext(); i++) {
-				Entry<Integer, Double> e = it.next();
-				// is the spacing higher than 1 significance?
-				// the key is the mz value times a factor
-				if(e.getKey()-last.getKey()>2) {
-					// add end of peak and start of peak
-					tmp.put(last.getKey()+1, 0.0);
-					tmp.put(e.getKey()-1, 0.0);
-				}
-				else if(e.getKey()-last.getKey()>1) {
-					// add separation between two values that are only separated by 1
-					tmp.put(last.getKey()+1, 0.0);
-				}
-				last = e;
-			}
-			
-			// add all
-			signals.putAll(tmp);
-		}
+
+    addZeros(signals);
+
+
+    MassListMzDistribution frame = new MassListMzDistribution();
+    frame.createChart(signals, decimals);
+    frame.setVisible(true);
+
+
+    setStatus(TaskStatus.FINISHED);
+
+    logger.info("Finished chromatogram builder on " + dataFile);
+
+  }
+
+  private void addZeros(TreeMap<Integer, Double> signals) {
+    // add zeros within half of minimum spacing
+    Iterator<Entry<Integer, Double>> it = signals.entrySet().iterator();
+    if (it.hasNext()) {
+      // temp map
+      TreeMap<Integer, Double> tmp = new TreeMap<Integer, Double>();
+      //
+      Entry<Integer, Double> last = it.next();
+      for (int i = 1; i < signals.size() && it.hasNext(); i++) {
+        Entry<Integer, Double> e = it.next();
+        // is the spacing higher than 1 significance?
+        // the key is the mz value times a factor
+        if (e.getKey() - last.getKey() > 2) {
+          // add end of peak and start of peak
+          tmp.put(last.getKey() + 1, 0.0);
+          tmp.put(e.getKey() - 1, 0.0);
+        } else if (e.getKey() - last.getKey() > 1) {
+          // add separation between two values that are only separated by 1
+          tmp.put(last.getKey() + 1, 0.0);
+        }
+        last = e;
+      }
+
+      // add all
+      signals.putAll(tmp);
     }
+  }
 
 }
