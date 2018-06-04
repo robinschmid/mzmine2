@@ -18,11 +18,22 @@
 
 package net.sf.mzmine.modules.masslistmethods.imagebuilder;
 
+import java.awt.BorderLayout;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.logging.Logger;
+import javax.swing.JDialog;
+import org.jfree.chart.JFreeChart;
+import org.jfree.data.xy.XYSeries;
 import com.google.common.collect.Range;
+import com.google.common.primitives.Doubles;
+import net.sf.mzmine.MyStuff.histogram.HistogramData;
+import net.sf.mzmine.MyStuff.histogram.HistogramDialog;
+import net.sf.mzmine.chartbasics.EChartFactory;
+import net.sf.mzmine.chartbasics.EChartPanel;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.MassList;
@@ -128,6 +139,9 @@ public class ImageBuilderTask extends AbstractTask {
     int size = (int) (range / binWidth) + 1;
     int[] bins = new int[size];
 
+    // histo 3
+    List<Double> data3 = new ArrayList<Double>();
+
     // insert all mz in order and count them
     // mz as integer to avoid floating point * decimals
     // m/z number
@@ -198,7 +212,8 @@ public class ImageBuilderTask extends AbstractTask {
             signals.put(mz, increment);
 
           // add to histo data
-
+          EChartFactory.addValueToHistoArray(bins, cMZ, binWidth, mzRange.lowerEndpoint());
+          data3.add(cMZ);
           //
           lastMZ = cMZ;
         }
@@ -214,6 +229,25 @@ public class ImageBuilderTask extends AbstractTask {
     MassListMzDistribution frame = new MassListMzDistribution();
     frame.createChart(signals, decimals);
     frame.setVisible(true);
+
+    // create histo dialog 2
+    XYSeries series = new XYSeries("m/z distr", false);
+    // add all m/z values
+    for (int i = 0; i < bins.length; i++)
+      series.add(mzRange.lowerEndpoint() + binWidth / 2 + binWidth * i, bins[i]);
+    JFreeChart chart = EChartFactory.createHistogram(series, binWidth, "n");
+    EChartPanel cp = new EChartPanel(chart);
+    JDialog d2 = new JDialog();
+    d2.getContentPane().setLayout(new BorderLayout());
+    d2.getContentPane().add(cp, BorderLayout.CENTER);
+    d2.setVisible(true);
+
+
+    // create histogram dialog
+    double[] hist3 = Doubles.toArray(data3);
+    HistogramDialog d = new HistogramDialog("m/z distribution", new HistogramData(hist3));
+    d.setVisible(true);
+
 
 
     setStatus(TaskStatus.FINISHED);

@@ -249,7 +249,7 @@ public class EChartFactory {
 
       // see when 98% of the data is displayed
       int sum2 = 0;
-      double barwidth = 0;
+      double barwidth = binwidth;
       if (function != null) {
         for (int i = 0; i < bins.length; i++) {
           if (bins[i] > 0) {
@@ -260,31 +260,33 @@ public class EChartFactory {
             }
           }
         }
-      } else {
-
       }
-
-      XYSeriesCollection xydata = new XYSeriesCollection(series);
-      XYBarDataset dataset = new XYBarDataset(xydata, barwidth);
-      JFreeChart chart = ChartFactory.createXYBarChart("", yAxisLabel, false, "n", dataset,
-          PlotOrientation.VERTICAL, true, true, false);
-
-      XYPlot xyplot = chart.getXYPlot();
-      chart.setBackgroundPaint(new Color(230, 230, 230));
-      chart.getLegend().setVisible(false);
-      xyplot.setForegroundAlpha(0.7F);
-      xyplot.setBackgroundPaint(Color.WHITE);
-      xyplot.setDomainGridlinePaint(new Color(150, 150, 150));
-      xyplot.setRangeGridlinePaint(new Color(150, 150, 150));
-      xyplot.getDomainAxis().setVisible(true);
-      xyplot.getRangeAxis().setVisible(yAxisLabel != null);
-      XYBarRenderer xybarrenderer = (XYBarRenderer) xyplot.getRenderer();
-      xybarrenderer.setShadowVisible(false);
-      xybarrenderer.setBarPainter(new StandardXYBarPainter());
-      xybarrenderer.setDrawBarOutline(false);
-      return chart;
+      return createHistogram(series, barwidth, yAxisLabel);
     } else
       return null;
+  }
+
+
+  public static JFreeChart createHistogram(XYSeries series, double barwidth, String yAxisLabel) {
+    XYSeriesCollection xydata = new XYSeriesCollection(series);
+    XYBarDataset dataset = new XYBarDataset(xydata, barwidth);
+    JFreeChart chart = ChartFactory.createXYBarChart("", yAxisLabel, false, "n", dataset,
+        PlotOrientation.VERTICAL, true, true, false);
+
+    XYPlot xyplot = chart.getXYPlot();
+    chart.setBackgroundPaint(new Color(230, 230, 230));
+    chart.getLegend().setVisible(false);
+    xyplot.setForegroundAlpha(0.7F);
+    xyplot.setBackgroundPaint(Color.WHITE);
+    xyplot.setDomainGridlinePaint(new Color(150, 150, 150));
+    xyplot.setRangeGridlinePaint(new Color(150, 150, 150));
+    xyplot.getDomainAxis().setVisible(true);
+    xyplot.getRangeAxis().setVisible(yAxisLabel != null);
+    XYBarRenderer xybarrenderer = (XYBarRenderer) xyplot.getRenderer();
+    xybarrenderer.setShadowVisible(false);
+    xybarrenderer.setBarPainter(new StandardXYBarPainter());
+    xybarrenderer.setDrawBarOutline(false);
+    return chart;
   }
 
 
