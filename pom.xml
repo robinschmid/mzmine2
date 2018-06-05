@@ -300,6 +300,12 @@
 			<groupId>uk.ac.ebi.jmzml</groupId>
 			<artifactId>jmzml</artifactId>
 			<version>1.7.9</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>logback-classic</artifactId>
+					<groupId>ch.qos.logback</groupId>
+				</exclusion>
+				</exclusions>
 		</dependency>
 
 		<!-- Start of Apache Axis 1.4 -->
