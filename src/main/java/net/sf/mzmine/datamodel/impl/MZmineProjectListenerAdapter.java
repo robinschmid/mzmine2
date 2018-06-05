@@ -6,31 +6,31 @@ import net.sf.mzmine.datamodel.RawDataFile;
 
 public abstract class MZmineProjectListenerAdapter implements MZmineProjectListener {
 
-	public static enum Operation {
-		ADDED, REMOVED;
-	}
-	
-	@Override
-	public void dataFileAdded(RawDataFile raw) {
-		dataFilesChanged(raw, Operation.ADDED);
-	}
+  public static enum Operation {
+    ADDED, REMOVED, NOT_SPECIFIED;
+  }
 
-	@Override
-	public void peakListAdded(PeakList pkl) {
-		peakListsChanged(pkl, Operation.ADDED);
-	}
+  @Override
+  public void dataFileAdded(RawDataFile raw) {
+    dataFilesChanged(raw, Operation.ADDED);
+  }
 
-	@Override
-	public void dataFileRemoved(RawDataFile raw) {
-		dataFilesChanged(raw, Operation.REMOVED);
-	}
+  @Override
+  public void peakListAdded(PeakList pkl) {
+    peakListsChanged(pkl, Operation.ADDED);
+  }
 
-	@Override
-	public void peakListRemoved(PeakList pkl) {
-		peakListsChanged(pkl, Operation.REMOVED);
-	}
-	
-	public abstract void peakListsChanged(PeakList pkl, Operation op);
-	
-	public abstract void dataFilesChanged(RawDataFile raw, Operation op);
+  @Override
+  public void dataFileRemoved(RawDataFile raw) {
+    dataFilesChanged(raw, Operation.REMOVED);
+  }
+
+  @Override
+  public void peakListRemoved(PeakList pkl) {
+    peakListsChanged(pkl, Operation.REMOVED);
+  }
+
+  public abstract void peakListsChanged(PeakList pkl, Operation op);
+
+  public abstract void dataFilesChanged(RawDataFile raw, Operation op);
 }
