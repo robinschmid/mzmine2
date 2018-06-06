@@ -123,15 +123,7 @@ public class MZDistributionHistoTask extends AbstractTask {
               + " does not have a mass list " + massListName);
           return;
         }
-
         DataPoint mzValues[] = massList.getDataPoints();
-
-        if (mzValues == null) {
-          setStatus(TaskStatus.ERROR);
-          setErrorMessage("Mass list " + massListName + " does not contain m/z values for scan #"
-              + scan.getScanNumber() + " of file " + dataFile);
-          return;
-        }
 
         // insert all mz in order and count them
         Arrays.stream(mzValues).mapToDouble(dp -> dp.getMZ()).filter(mz -> mzRange.contains(mz))
