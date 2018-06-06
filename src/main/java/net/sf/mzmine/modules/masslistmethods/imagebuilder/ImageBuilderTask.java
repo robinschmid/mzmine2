@@ -31,7 +31,6 @@ import org.jfree.data.xy.XYSeries;
 import com.google.common.collect.Range;
 import com.google.common.primitives.Doubles;
 import net.sf.mzmine.MyStuff.histogram.HistogramData;
-import net.sf.mzmine.MyStuff.histogram.HistogramDialog;
 import net.sf.mzmine.chartbasics.EChartFactory;
 import net.sf.mzmine.chartbasics.EChartPanel;
 import net.sf.mzmine.datamodel.DataPoint;
@@ -42,6 +41,8 @@ import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimplePeakList;
 import net.sf.mzmine.modules.masslistmethods.chromatogrambuilder.Chromatogram;
 import net.sf.mzmine.modules.masslistmethods.imagebuilder.ImageBuilderParameters.Weight;
+import net.sf.mzmine.modules.masslistmethods.imagebuilder.charts.EHistogramDialog;
+import net.sf.mzmine.modules.masslistmethods.imagebuilder.charts.MassListMzDistribution;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelection;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
@@ -245,7 +246,8 @@ public class ImageBuilderTask extends AbstractTask {
 
     // create histogram dialog
     double[] hist3 = Doubles.toArray(data3);
-    HistogramDialog d = new HistogramDialog("m/z distribution", new HistogramData(hist3));
+    EHistogramDialog d =
+        new EHistogramDialog("m/z distribution", new HistogramData(hist3), binWidth);
     d.setVisible(true);
 
 

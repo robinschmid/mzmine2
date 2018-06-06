@@ -5,6 +5,8 @@ import org.jfree.data.Range;
 import net.sf.mzmine.util.maths.DoubleArraySupplier;
 
 public class HistogramData {
+
+  // data is not binned
   private double[] data;
   private Range range;
 
@@ -33,6 +35,11 @@ public class HistogramData {
     this(data.get());
   }
 
+  /**
+   * Data is not binned and maybe unsorted
+   * 
+   * @return
+   */
   public double[] getData() {
     return data;
   }

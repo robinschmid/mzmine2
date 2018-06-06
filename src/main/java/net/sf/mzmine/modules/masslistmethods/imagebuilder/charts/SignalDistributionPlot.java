@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.modules.masslistmethods.imagebuilder;
+package net.sf.mzmine.modules.masslistmethods.imagebuilder.charts;
 
 import java.awt.Color;
 import java.awt.Cursor;
@@ -294,7 +294,7 @@ public class SignalDistributionPlot extends ChartPanel {
     getXYPlot().getDomainAxis().setRange(lower, upper);
 
     // set constant rangezoom
-    getXYPlot().getDomainAxis().setRangeAboutValue(data.getXValue(0, i), 0.05);
+    getXYPlot().getDomainAxis().setRangeAroundValue(data.getXValue(0, i), 0.05);
   }
 
   public XYPlot getXYPlot() {

@@ -1,4 +1,4 @@
-package net.sf.mzmine.modules.masslistmethods.imagebuilder;
+package net.sf.mzmine.modules.masslistmethods.imagebuilder.charts;
 
 import java.awt.BorderLayout;
 import java.awt.EventQueue;

@@ -58,7 +58,22 @@ public class GUIUtils {
    */
   public static void registerKeyHandler(JComponent component, KeyStroke stroke,
       final ActionListener listener, final String actionCommand) {
-    component.getInputMap().put(stroke, actionCommand);
+    registerKeyHandler(component, JComponent.WHEN_IN_FOCUSED_WINDOW, stroke, listener,
+        actionCommand);
+  }
+
+  /**
+   * Registers a keyboard handler to a given component
+   * 
+   * @param component Component to register the handler to
+   * @param condition see {@link JComponent} and {@link JComponent#WHEN_IN_FOCUSED_WINDOW}
+   * @param stroke Keystroke to activate the handler
+   * @param listener ActionListener to handle the key press
+   * @param actionCommand Action command string
+   */
+  public static void registerKeyHandler(JComponent component, int condition, KeyStroke stroke,
+      final ActionListener listener, final String actionCommand) {
+    component.getInputMap(condition).put(stroke, actionCommand);
     component.getActionMap().put(actionCommand, new AbstractAction() {
 
       /**

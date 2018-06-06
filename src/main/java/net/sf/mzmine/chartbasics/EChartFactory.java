@@ -3,6 +3,7 @@ package net.sf.mzmine.chartbasics;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Paint;
+import java.util.Arrays;
 import java.util.function.DoubleFunction;
 import org.apache.commons.math3.analysis.function.Gaussian;
 import org.apache.commons.math3.fitting.GaussianCurveFitter;
@@ -226,31 +227,14 @@ public class EChartFactory {
       int cbin = (int) Math.ceil(datawidth / binwidth);
       int[] bins = new int[cbin + 1];
 
-      // count intensities in bins
-      // if value>bin.upper put in next
-      for (double v : data) {
-        int i = (int) Math.ceil((v - min) / binwidth) - 1;
-        if (i < 0) // does only happen if min>than minimum value of data
-          i = 0;
-        bins[i]++;
-      }
-
-      int sum = 0;
-      XYSeries series = new XYSeries("histo", true, true);
-      for (int i = 0; i < bins.length; i++) {
-        if (bins[i] > 0) {
-          double x = min + (binwidth / 2.0) + i * binwidth;
-          if (function != null)
-            x = function.apply(x);
-          series.add(x, bins[i]);
-          sum += bins[i];
-        }
-      }
-
-      // see when 98% of the data is displayed
-      int sum2 = 0;
+      XYSeries series = createHistoArray(data, binwidth, min, max, function);
       double barwidth = binwidth;
+
+      // calc new barwidth if a transformation function is defined
       if (function != null) {
+        int sum = Arrays.stream(bins).sum();
+        // see when 98% of the data is displayed
+        int sum2 = 0;
         for (int i = 0; i < bins.length; i++) {
           if (bins[i] > 0) {
             sum2 += bins[i];
@@ -324,19 +308,41 @@ public class EChartFactory {
       int i = (int) Math.ceil((v - min) / binwidth) - 1;
       if (i < 0) // does only happen if min>than minimum value of data
         i = 0;
+      if (i >= bins.length)
+        i = bins.length - 1;
       bins[i]++;
     }
 
+    // add zeros around data
+    boolean peakStarted = false;
     XYSeries series = new XYSeries("histo", true, true);
     for (int i = 0; i < bins.length; i++) {
+      // start peak and add data if>0
       if (bins[i] > 0) {
-        double x = min + (binwidth / 2.0) + i * binwidth;
-        if (function != null)
-          x = function.apply(x);
-        series.add(x, bins[i]);
+        // add previous zero once
+        if (!peakStarted && i > 0)
+          addDPToSeries(series, bins, i - 1, binwidth, min, max, function);
+
+        // add data
+        addDPToSeries(series, bins, i, binwidth, min, max, function);
+
+        peakStarted = true;
+      } else {
+        // add trailing zero
+        addDPToSeries(series, bins, i, binwidth, min, max, function);
+        peakStarted = false;
       }
     }
     return series;
+  }
+
+  private static void addDPToSeries(XYSeries series, int[] bins, int i, double binwidth, double min,
+      double max, DoubleFunction<Double> function) {
+    // adds a data point to the series
+    double x = min + (binwidth / 2.0) + i * binwidth;
+    if (function != null)
+      x = function.apply(x);
+    series.add(x, bins[i]);
   }
 
   /**

@@ -31,7 +31,6 @@ public class HistogramPanel extends JPanel {
 
   private final JPanel contentPanel;
   private DelayedDocumentListener ddlRepaint;
-  private EChartPanel pnHisto;
   private JPanel southwest;
   private JTextField txtBinWidth, txtBinShift;
   private JCheckBox cbExcludeSmallerNoise, cbThirdSQRT;
@@ -45,7 +44,9 @@ public class HistogramPanel extends JPanel {
   private JTextField txtPrecision;
   private JCheckBox cbGaussianFit;
 
+  private EChartPanel pnHisto;
   private HistogramData data;
+  private JPanel boxSettings;
 
   /**
    * Create the dialog.
@@ -71,12 +72,12 @@ public class HistogramPanel extends JPanel {
       contentPanel.add(center1, BorderLayout.CENTER);
       center1.setLayout(new BorderLayout(0, 0));
       {
-        JPanel box = new JPanel();
-        center1.add(box, BorderLayout.SOUTH);
-        box.setLayout(new BoxLayout(box, BoxLayout.Y_AXIS));
+        boxSettings = new JPanel();
+        center1.add(boxSettings, BorderLayout.SOUTH);
+        boxSettings.setLayout(new BoxLayout(boxSettings, BoxLayout.Y_AXIS));
         {
           JPanel pnstats = new JPanel();
-          box.add(pnstats);
+          boxSettings.add(pnstats);
           {
             lbStats = new JLabel("last stats:");
             pnstats.add(lbStats);
@@ -84,7 +85,7 @@ public class HistogramPanel extends JPanel {
         }
         {
           JPanel pnHistoSett = new JPanel();
-          box.add(pnHistoSett);
+          boxSettings.add(pnHistoSett);
           {
             cbExcludeSmallerNoise = new JCheckBox("exclude smallest");
             cbExcludeSmallerNoise.setSelected(true);
@@ -119,14 +120,14 @@ public class HistogramPanel extends JPanel {
           }
           {
             txtBinShift = new JTextField();
-            txtBinShift.setText("0.5");
+            txtBinShift.setText("0");
             pnHistoSett.add(txtBinShift);
             txtBinShift.setColumns(7);
           }
         }
         {
           JPanel secondGaussian = new JPanel();
-          box.add(secondGaussian);
+          boxSettings.add(secondGaussian);
           {
             JButton btnToggleLegend = new JButton("Toggle legend");
             btnToggleLegend.addActionListener(e -> toggleLegends());
@@ -183,7 +184,7 @@ public class HistogramPanel extends JPanel {
         }
         {
           JPanel third = new JPanel();
-          box.add(third);
+          boxSettings.add(third);
           {
             JLabel lblRanges = new JLabel("x-range");
             third.add(lblRanges);
@@ -213,7 +214,7 @@ public class HistogramPanel extends JPanel {
           }
           {
             JPanel panel = new JPanel();
-            box.add(panel);
+            boxSettings.add(panel);
             {
               JLabel label = new JLabel("y-range");
               panel.add(label);
@@ -254,30 +255,33 @@ public class HistogramPanel extends JPanel {
     addListener();
   }
 
-  public HistogramPanel(HistogramData data) {
+  /**
+   * 
+   * @param data
+   * @param binWidth zero (0) for auto detection, -1 to keep last binWidth
+   */
+  public HistogramPanel(HistogramData data, double binWidth) {
     this();
-    setData(data);
+    setData(data, binWidth);
   }
 
-  /**
-   * set data and update
-   * 
-   * @param data
-   */
+
   public void setData(HistogramData data) {
-    setData(data, true);
+    setData(data, -1);
   }
 
   /**
+   * set data and update histo
    * 
    * @param data
-   * @param estimateBinWidth estimates the binning width as range.length divided by SQRT of number
-   *        of data entries
+   * @param binWidth zero (0) for auto detection, -1 to keep last binWidth
    */
-  public void setData(HistogramData data, boolean estimateBinWidth) {
+  public void setData(HistogramData data, double binWidth) {
     this.data = data;
     if (data != null) {
-      if (estimateBinWidth || txtBinWidth.getText().isEmpty()) {
+      if (binWidth > 0) {
+        txtBinWidth.setText(String.valueOf(binWidth));
+      } else if (binWidth == 0 || txtBinWidth.getText().isEmpty()) {
         // set bin width
         int bin = (int) Math.sqrt(data.size());
         double l = data.getRange().getLength();
@@ -484,6 +488,15 @@ public class HistogramPanel extends JPanel {
     }
   }
 
+  public EChartPanel getChartPanel() {
+    return pnHisto;
+  }
+
+  public HistogramData getData() {
+    return data;
+  }
+
+
   public JPanel getSouthwest() {
     return southwest;
   }
@@ -530,5 +543,29 @@ public class HistogramPanel extends JPanel {
 
   public JTextField getTxtPrecision() {
     return txtPrecision;
+  }
+
+  public void setBinWidth(double binWidth) {
+    txtBinWidth.setText(String.valueOf(binWidth));
+  }
+
+  public boolean isGaussianFitEnabled() {
+    return cbGaussianFit.isSelected();
+  }
+
+  /**
+   * set and update gaussian
+   * 
+   * @param lower
+   * @param upper
+   */
+  public void setGaussianFitRange(double lower, double upper) {
+    txtGaussianLower.setText(String.valueOf(lower));
+    txtGaussianUpper.setText(String.valueOf(upper));
+    updateGaussian();
+  }
+
+  public JPanel getBoxSettings() {
+    return boxSettings;
   }
 }
