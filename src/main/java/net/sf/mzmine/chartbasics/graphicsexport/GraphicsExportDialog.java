@@ -199,10 +199,10 @@ public class GraphicsExportDialog extends JFrame {
           pn.add(new JSeparator(), 0, i, 5, 1, 1, 1, GridBagConstraints.BOTH);
           i++;
           // add Apply theme button
-          JButton btnApply2 = new JButton("Apply theme");
+          JButton btnApply = new JButton("Apply theme");
           btnApply.addActionListener(e -> applyTheme());
           pn.add(btnApply, 0, i, 5, 1, 1, 1, GridBagConstraints.BOTH);
-          
+
           // add chart settings
           param = chartParam.getParameters();
           for (int pi = 0; pi < param.length; pi++) {
@@ -325,13 +325,13 @@ public class GraphicsExportDialog extends JFrame {
    * Applies the theme defined as ChartParameters
    */
   protected void applyTheme() {
-      // update param
-      updateParameterSetFromComponents();
+    // update param
+    updateParameterSetFromComponents();
     // apply settings
     chartParam.applyToChartTheme(theme);
     chartParam.applyToChart(chartPanel.getChart());
     theme.apply(chartPanel.getChart());
-//    renewPreview();
+    // renewPreview();
   }
 
   /**
