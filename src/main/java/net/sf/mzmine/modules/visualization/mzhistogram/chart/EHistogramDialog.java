@@ -12,6 +12,12 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.xy.XYDataset;
 import net.sf.mzmine.util.GUIUtils;
 
+/**
+ * Enhanced version. Use arrows to jump to the next or previous distribution
+ * 
+ * @author Robin Schmid (robinschmid@uni-muenster.de)
+ *
+ */
 public class EHistogramDialog extends HistogramDialog implements ActionListener {
   private static final long serialVersionUID = 1L;
   private JCheckBox cbKeepSameXaxis;

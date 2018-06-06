@@ -18,13 +18,11 @@
 
 package net.sf.mzmine.modules.visualization.mzhistogram;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.logging.Logger;
 import com.google.common.collect.Range;
-import com.google.common.primitives.Doubles;
 import io.github.msdk.MSDKRuntimeException;
+import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.MassList;
@@ -107,7 +105,7 @@ public class MZDistributionHistoTask extends AbstractTask {
     totalScans = scans.length;
 
     // histo data
-    List<Double> data = new ArrayList<>();
+    DoubleArrayList data = new DoubleArrayList();
 
     for (Scan scan : scans) {
       if (isCanceled())
@@ -133,8 +131,12 @@ public class MZDistributionHistoTask extends AbstractTask {
     }
 
     if (!data.isEmpty()) {
+      // to array
+      double[] histo = new double[data.size()];
+      for (int i = 0; i < data.size(); i++)
+        histo[i] = data.get(i);
+
       // create histogram dialog
-      double[] histo = Doubles.toArray(data);
       EHistogramDialog dialog =
           new EHistogramDialog("m/z distribution", new HistogramData(histo), binWidth);
       dialog.setVisible(true);

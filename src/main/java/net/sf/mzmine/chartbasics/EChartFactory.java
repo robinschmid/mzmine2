@@ -3,7 +3,9 @@ package net.sf.mzmine.chartbasics;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Paint;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.DoubleFunction;
 import org.apache.commons.math3.analysis.function.Gaussian;
 import org.apache.commons.math3.fitting.GaussianCurveFitter;
@@ -24,12 +26,37 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
+import net.sf.mzmine.datamodel.DataPoint;
+import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 import net.sf.mzmine.util.maths.Precision;
 
 public class EChartFactory {
   private static final Logger logger = LoggerFactory.getLogger(EChartFactory.class);
 
 
+  /**
+   * Performs Gaussian fit on XYSeries
+   * 
+   * @param data the data
+   * @param gMin lower bound of Gaussian fit
+   * @param gMax upper bound of Gaussian fit
+   * @param sigDigits number of significant digits
+   * @return double[] {normFactor, mean, sigma} as a result of
+   *         GaussianCurveFitter.create().fit(obs.toList())
+   */
+  public static double[] gaussianFit(List<DataPoint> data, double gMin, double gMax) {
+    // gaussian fit
+    WeightedObservedPoints obs = new WeightedObservedPoints();
+
+    for (int i = 0; i < data.size(); i++) {
+      double x = data.get(i).getMZ();
+      if (x >= gMin && x <= gMax)
+        obs.add(x, data.get(i).getIntensity());
+    }
+
+    return GaussianCurveFitter.create().fit(obs.toList());
+  }
 
   /**
    * Performs Gaussian fit on XYSeries
@@ -51,8 +78,7 @@ public class EChartFactory {
         obs.add(x, series.getY(i).doubleValue());
     }
 
-    double[] fit = GaussianCurveFitter.create().fit(obs.toList());
-    return fit;
+    return GaussianCurveFitter.create().fit(obs.toList());
   }
 
   /**
@@ -227,7 +253,7 @@ public class EChartFactory {
       int cbin = (int) Math.ceil(datawidth / binwidth);
       int[] bins = new int[cbin + 1];
 
-      XYSeries series = createHistoArray(data, binwidth, min, max, function);
+      XYSeries series = createHistoSeries(data, binwidth, min, max, function);
       double barwidth = binwidth;
 
       // calc new barwidth if a transformation function is defined
@@ -281,9 +307,9 @@ public class EChartFactory {
    * @param binwidth
    * @return A histogram array with length = datawidth/binwidth +1 (datawidth = max-min)
    */
-  public static XYSeries createHistoArray(double[] data, double binwidth) {
+  public static XYSeries createHistoSeries(double[] data, double binwidth) {
     Range r = getBounds(data);
-    return createHistoArray(data, binwidth, r.getLowerBound(), r.getUpperBound(), null);
+    return createHistoSeries(data, binwidth, r.getLowerBound(), r.getUpperBound(), null);
   }
 
   /**
@@ -296,8 +322,58 @@ public class EChartFactory {
    * @param function function to transform data axis
    * @return A histogram array with length = datawidth/binwidth +1 (datawidth = max-min)
    */
-  public static XYSeries createHistoArray(double[] data, double binwidth, double min, double max,
+  public static XYSeries createHistoSeries(double[] data, double binwidth, double min, double max,
       DoubleFunction<Double> function) {
+    double datawidth = (max - min);
+    int cbin = (int) Math.ceil(datawidth / binwidth);
+    int[] bins = new int[cbin + 1];
+
+    // count intensities in bins
+    // if value>bin.upper put in next
+    for (double v : data) {
+      int i = (int) Math.ceil((v - min) / binwidth) - 1;
+      if (i < 0) // does only happen if min>than minimum value of data
+        i = 0;
+      if (i >= bins.length)
+        i = bins.length - 1;
+      bins[i]++;
+    }
+
+    // add zeros around data
+    boolean peakStarted = false;
+    XYSeries series = new XYSeries("histo", true, true);
+    for (int i = 0; i < bins.length; i++) {
+      // start peak and add data if>0
+      if (bins[i] > 0) {
+        // add previous zero once
+        if (!peakStarted && i > 0)
+          addDPToSeries(series, bins, i - 1, binwidth, min, max, function);
+
+        // add data
+        addDPToSeries(series, bins, i, binwidth, min, max, function);
+
+        peakStarted = true;
+      } else {
+        // add trailing zero
+        addDPToSeries(series, bins, i, binwidth, min, max, function);
+        peakStarted = false;
+      }
+    }
+    return series;
+  }
+
+  /**
+   * Converts from double array to histogram array
+   * 
+   * @param data
+   * @param binwidth
+   * @param min real minimum of data
+   * @param max real maximum of data
+   * @param function function to transform data axis
+   * @return A histogram array with length = datawidth/binwidth +1 (datawidth = max-min)
+   */
+  public static XYSeries createHistoSeries(DoubleArrayList data, double binwidth, double min,
+      double max, DoubleFunction<Double> function) {
     double datawidth = (max - min);
     int cbin = (int) Math.ceil(datawidth / binwidth);
     int[] bins = new int[cbin + 1];
@@ -344,6 +420,66 @@ public class EChartFactory {
       x = function.apply(x);
     series.add(x, bins[i]);
   }
+
+  /**
+   * Converts from double array to histogram array
+   * 
+   * @param data
+   * @param binwidth
+   * @param min real minimum of data
+   * @param max real maximum of data
+   * @param function function to transform data axis
+   * @return A histogram array with length = datawidth/binwidth +1 (datawidth = max-min)
+   */
+  public static List<DataPoint> createHistoList(DoubleArrayList data, double binwidth, double min,
+      double max, DoubleFunction<Double> function) {
+    double datawidth = (max - min);
+    int cbin = (int) Math.ceil(datawidth / binwidth);
+    int[] bins = new int[cbin + 1];
+
+    // count intensities in bins
+    // if value>bin.upper put in next
+    for (double v : data) {
+      int i = (int) Math.ceil((v - min) / binwidth) - 1;
+      if (i < 0) // does only happen if min>than minimum value of data
+        i = 0;
+      if (i >= bins.length)
+        i = bins.length - 1;
+      bins[i]++;
+    }
+
+    // add zeros around data
+    List<DataPoint> result = new ArrayList<>();
+    boolean peakStarted = false;
+    for (int i = 0; i < bins.length; i++) {
+      // start peak and add data if>0
+      if (bins[i] > 0) {
+        // add previous zero once
+        if (!peakStarted && i > 0)
+          addDPToList(result, bins, i - 1, binwidth, min, max, function);
+
+        // add data
+        addDPToList(result, bins, i, binwidth, min, max, function);
+
+        peakStarted = true;
+      } else {
+        // add trailing zero
+        addDPToList(result, bins, i, binwidth, min, max, function);
+        peakStarted = false;
+      }
+    }
+    return result;
+  }
+
+  private static void addDPToList(List<DataPoint> list, int[] bins, int i, double binwidth,
+      double min, double max, DoubleFunction<Double> function) {
+    // adds a data point to the series
+    double x = min + (binwidth / 2.0) + i * binwidth;
+    if (function != null)
+      x = function.apply(x);
+    list.add(new SimpleDataPoint(x, bins[i]));
+  }
+
 
   /**
    * Adds a value to a Histogram array. bins array should have length = datawidth/binwidth +1

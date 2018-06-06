@@ -26,6 +26,7 @@ import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.MassListParameter;
 import net.sf.mzmine.parameters.parametertypes.StringParameter;
 import net.sf.mzmine.parameters.parametertypes.ranges.MZRangeParameter;
+import net.sf.mzmine.parameters.parametertypes.ranges.RTRangeParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.RawDataFilesParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelection;
 import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelectionParameter;
@@ -44,13 +45,14 @@ public class ImageBuilderParameters extends SimpleParameterSet {
 
   public static final MassListParameter massList = new MassListParameter();
   public static final MZRangeParameter mzRange = new MZRangeParameter(true);
+  public static final RTRangeParameter rtRange = new RTRangeParameter(true);
 
   public static final DoubleParameter minimumHeight = new DoubleParameter("Min height",
       "Minimum intensity of the highest data point in the image. If image intensity is below this level, it is discarded.",
       MZmineCore.getConfiguration().getIntensityFormat());
 
-  public static final DoubleParameter binWidth =
-      new DoubleParameter("m/z bin width", "Binning of m/z values for peak picking ");
+  public static final DoubleParameter binWidth = new DoubleParameter("m/z bin width",
+      "Binning of m/z values for peak picking ", MZmineCore.getConfiguration().getMZFormat());
 
 
   public static final ComboParameter<Weight> weight = new ComboParameter<Weight>(
@@ -64,8 +66,8 @@ public class ImageBuilderParameters extends SimpleParameterSet {
       new StringParameter("Suffix", "This string is added to filename as suffix", "image");
 
   public ImageBuilderParameters() {
-    super(new Parameter[] {dataFiles, scanSelection, massList, mzRange, minimumHeight, binWidth,
-        weight, mzTolerance, suffix});
+    super(new Parameter[] {dataFiles, scanSelection, massList, mzRange, rtRange, minimumHeight,
+        binWidth, weight, mzTolerance, suffix});
   }
 
 }
