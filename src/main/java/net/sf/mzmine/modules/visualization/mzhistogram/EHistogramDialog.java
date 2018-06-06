@@ -1,4 +1,4 @@
-package net.sf.mzmine.modules.masslistmethods.imagebuilder.charts;
+package net.sf.mzmine.modules.visualization.mzhistogram;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -56,10 +56,12 @@ public class EHistogramDialog extends HistogramDialog implements ActionListener 
     pnJump.add(cbKeepSameXaxis);
 
     JButton btnPrevious = new JButton("<");
+    btnPrevious.setToolTipText("Jump to previous distribution (use left arrow");
     btnPrevious.addActionListener(e -> jumpToPrevPeak());
     pnJump.add(btnPrevious);
 
     JButton btnNext = new JButton(">");
+    btnPrevious.setToolTipText("Jump to previous distribution (use right arrow");
     btnNext.addActionListener(e -> jumpToNextPeak());
     pnJump.add(btnNext);
   }
