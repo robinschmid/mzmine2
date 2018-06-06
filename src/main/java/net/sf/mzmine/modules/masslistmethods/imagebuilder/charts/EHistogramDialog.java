@@ -2,6 +2,7 @@ package net.sf.mzmine.modules.masslistmethods.imagebuilder.charts;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
@@ -53,6 +54,14 @@ public class EHistogramDialog extends HistogramDialog implements ActionListener 
 
     cbKeepSameXaxis = new JCheckBox("keep same x-axis length");
     pnJump.add(cbKeepSameXaxis);
+
+    JButton btnPrevious = new JButton("<");
+    btnPrevious.addActionListener(e -> jumpToPrevPeak());
+    pnJump.add(btnPrevious);
+
+    JButton btnNext = new JButton(">");
+    btnNext.addActionListener(e -> jumpToNextPeak());
+    pnJump.add(btnNext);
   }
 
   @Override
