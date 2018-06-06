@@ -1,4 +1,4 @@
-package net.sf.mzmine.MyStuff.histogram;
+package net.sf.mzmine.modules.visualization.mzhistogram.chart;
 
 import java.awt.BorderLayout;
 import java.awt.Component;

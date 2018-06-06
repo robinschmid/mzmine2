@@ -1,4 +1,4 @@
-package net.sf.mzmine.modules.visualization.mzhistogram;
+package net.sf.mzmine.modules.visualization.mzhistogram.chart;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -10,8 +10,6 @@ import org.jfree.chart.ChartPanel;
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.xy.XYDataset;
-import net.sf.mzmine.MyStuff.histogram.HistogramData;
-import net.sf.mzmine.MyStuff.histogram.HistogramDialog;
 import net.sf.mzmine.util.GUIUtils;
 
 public class EHistogramDialog extends HistogramDialog implements ActionListener {
