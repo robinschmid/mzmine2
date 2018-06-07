@@ -18,9 +18,10 @@
 
 package net.sf.mzmine.modules.masslistmethods.imagebuilder;
 
+import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import com.google.common.collect.Range;
 import io.github.msdk.MSDKRuntimeException;
@@ -36,6 +37,7 @@ import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimplePeakList;
 import net.sf.mzmine.datamodel.impl.SimplePeakListAppliedMethod;
 import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
+import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.masslistmethods.imagebuilder.ImageBuilderParameters.Weight;
 import net.sf.mzmine.modules.masslistmethods.imagebuilder.fitting.Fit;
 import net.sf.mzmine.modules.peaklistmethods.qualityparameters.QualityParameters;
@@ -53,6 +55,8 @@ public class ImageBuilderTask extends AbstractTask {
 
   private MZmineProject project;
   private RawDataFile dataFile;
+
+  private NumberFormat mzform, rtform, iform;
 
   // scan counter
   private int processedScans = 0, totalScans;
@@ -76,7 +80,12 @@ public class ImageBuilderTask extends AbstractTask {
   private ParameterSet parameters;
 
   private int[] scanNumbers;
-  private int tooSmall = 0;
+  private int minimumDataPoints = 100;
+  private boolean showResult = false;
+
+  // stats
+  private int countTooSmall = 0;
+  private int countFitSmallerThanMZTolerance = 0;
 
   /**
    * @param dataFile
@@ -100,6 +109,10 @@ public class ImageBuilderTask extends AbstractTask {
     this.weight = parameters.getParameter(ImageBuilderParameters.weight).getValue();
 
     this.suffix = parameters.getParameter(ImageBuilderParameters.suffix).getValue();
+
+    rtform = MZmineCore.getConfiguration().getRTFormat();
+    mzform = MZmineCore.getConfiguration().getMZFormat();
+    iform = MZmineCore.getConfiguration().getIntensityFormat();
   }
 
   /**
@@ -143,6 +156,10 @@ public class ImageBuilderTask extends AbstractTask {
 
     // histo data
     DoubleArrayList data = new DoubleArrayList();
+    // store max intensities in bins across all scans
+    double datawidth = (mzRange.upperEndpoint() - mzRange.lowerEndpoint());
+    int cbin = (int) Math.ceil(datawidth / binWidth);
+    double[] maxIntensityInBin = new double[cbin + 1];
 
     for (Scan scan : scans) {
       if (isCanceled())
@@ -161,26 +178,39 @@ public class ImageBuilderTask extends AbstractTask {
         DataPoint mzValues[] = massList.getDataPoints();
 
         // insert all mz in order and count them
-        Arrays.stream(mzValues).mapToDouble(dp -> dp.getMZ()).filter(mz -> mzRange.contains(mz))
-            .forEach(mz -> data.add(mz));
+        for (DataPoint dp : mzValues) {
+          // filter
+          if (mzRange.contains(dp.getMZ())) {
+            data.add(dp.getMZ());
+            // test and set max intensity
+            // get bin index
+            int bini =
+                getBinIndex(maxIntensityInBin, dp.getMZ(), mzRange.lowerEndpoint(), binWidth);
+            if (maxIntensityInBin[bini] < dp.getIntensity())
+              maxIntensityInBin[bini] = dp.getIntensity();
+          }
+        }
+
+
         processedScans++;
       }
     }
     if (!data.isEmpty()) {
-      // to array
-      double[] dat = new double[data.size()];
-      for (int i = 0; i < data.size(); i++)
-        dat[i] = data.get(i);
+      if (showResult) {
+        // to array
+        double[] dat = new double[data.size()];
+        for (int i = 0; i < data.size(); i++)
+          dat[i] = data.get(i);
 
-      // create histogram dialog
-      EHistogramDialog dialog =
-          new EHistogramDialog("m/z distribution", new HistogramData(dat), binWidth);
-      dialog.setVisible(true);
+        // create histogram dialog
+        EHistogramDialog dialog =
+            new EHistogramDialog("m/z distribution", new HistogramData(dat), binWidth);
+        dialog.setVisible(true);
+      }
 
       // apply binning
       List<DataPoint> histo = EChartFactory.createHistoList(data, binWidth, mzRange.lowerEndpoint(),
           mzRange.upperEndpoint(), null);
-
       // pick masses by gaussian fit
       double start = -1;
       double end = 0;
@@ -209,17 +239,41 @@ public class ImageBuilderTask extends AbstractTask {
             end = dp.getMZ();
 
             if (dpCount > 3) {
-              // Gaussian fit
-              fit = EChartFactory.gaussianFit(histo, start, end);
-              Fit fitObject = new Fit(start, end, dpCount, fit);
-              fitList.add(fitObject);
-              logger.info(fitObject.toString());
-              // check correct fitting
+              // test if maxIntensity > filter
+              // get bin index
+              int bini0 = getBinIndex(maxIntensityInBin, start, mzRange.lowerEndpoint(), binWidth);
+              int bini1 = getBinIndex(maxIntensityInBin, end, mzRange.lowerEndpoint(), binWidth);
+              boolean isHighEnough = false;
+              for (int bi = bini0; bi <= bini1 && !isHighEnough; bi++) {
+                isHighEnough = maxIntensityInBin[bi] > minimumHeight;
+              }
 
-              // add to peak list
-              double sigma = fitObject.getSigma() * sigmaFactor;
-              double meanMZ = fitObject.getMean();
-              addToPeakList(newPeakList, scans, meanMZ, sigma);
+              if (isHighEnough) {
+                // Gaussian fit
+                try {
+                  fit = EChartFactory.gaussianFit(histo, start, end);
+                  if (fit != null) {
+                    Fit fitObject = new Fit(start, end, dpCount, fit);
+                    fitList.add(fitObject);
+                    logger.info(fitObject.toString());
+                    // check correct fitting
+
+                    // add to peak list
+                    double sigma = fitObject.getSigma() * sigmaFactor;
+                    double meanMZ = fitObject.getMean();
+                    addToPeakList(newPeakList, scans, meanMZ, sigma);
+                  }
+                } catch (Exception e) {
+                  //
+                }
+              } else {
+                double maxI = 0;
+                for (int bi = bini0; bi <= bini1; bi++)
+                  if (maxIntensityInBin[bi] > maxI)
+                    maxI = maxIntensityInBin[bi];
+                logger.info("Distribution not analysed due too low maximum intensity in range "
+                    + start + "-" + end + " I=" + iform.format(maxI));
+              }
             }
 
             // reset
@@ -233,10 +287,12 @@ public class ImageBuilderTask extends AbstractTask {
       }
 
       if (newPeakList.getNumberOfRows() > 0) {
+        logger.info("Adding peaklist to project: " + newPeakList.getName());
         // Add new peaklist to the project
         project.addPeakList(newPeakList);
 
         // Add quality parameters to peaks
+        logger.info("Calculating quality parameters for peaklist: " + newPeakList.getName());
         QualityParameters.calculateQualityParameters(newPeakList);
       }
     } else {
@@ -247,22 +303,46 @@ public class ImageBuilderTask extends AbstractTask {
     logger.info("Finished mz distribution histogram on " + dataFile);
   }
 
+  private int getBinIndex(double[] bins, double value, double min, double binwidth) {
+    int i = (int) Math.ceil((value - min) / binwidth) - 1;
+    if (i < 0) // does only happen if min>than minimum value of data
+      i = 0;
+    if (i >= bins.length)
+      i = bins.length - 1;
+    return i;
+  }
+
   private void addToPeakList(SimplePeakList pkl, Scan[] scans, double meanMZ, double sigma) {
     try {
-      Feature f = FeatureCreator.createFeature(dataFile, massListName, scans, meanMZ, sigma);
+      Range<Double> r = mzTolerance.getToleranceRange(meanMZ);
+      double mzTol = (r.upperEndpoint() - r.lowerEndpoint()) / 2.0;
+      boolean useMZTol = sigma < mzTol;
+      if (useMZTol) {
+        countFitSmallerThanMZTolerance++;
+      }
+      Feature f = FeatureCreator.createFeature(dataFile, massListName, scans, meanMZ,
+          useMZTol ? mzTol : sigma);
       // only add if meet filter
       if (f.getHeight() >= minimumHeight) {
         SimplePeakListRow newRow = new SimplePeakListRow(newPeakID);
         newPeakID++;
         newRow.addPeak(dataFile, f);
         newPeakList.addRow(newRow);
-        logger.info("Added chromatogram #" + newPeakList.getNumberOfRows() + " at " + f.getMZ());
+        if (useMZTol)
+          logger.info("Added chromatogram #" + newPeakList.getNumberOfRows() + " at "
+              + mzform.format(f.getMZ()) + " (#" + countFitSmallerThanMZTolerance
+              + " sigma was too small: " + mzform.format(sigma) + ")");
+        else
+          logger.info("Added chromatogram #" + newPeakList.getNumberOfRows() + " at "
+              + mzform.format(f.getMZ()));
       } else {
-        tooSmall++;
-        logger.info("NOT added TOO SMALL chromatogram #" + tooSmall + " at " + f.getMZ());
+        countTooSmall++;
+        logger.info("NOT added TOO SMALL chromatogram #" + countTooSmall + " at "
+            + mzform.format(f.getMZ()));
       }
     } catch (Exception e) {
       e.printStackTrace();
+      logger.log(Level.WARNING, "Error while adding feature", e);
     }
   }
 

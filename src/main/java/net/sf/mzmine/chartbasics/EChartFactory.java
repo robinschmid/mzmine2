@@ -34,6 +34,7 @@ import net.sf.mzmine.util.maths.Precision;
 public class EChartFactory {
   private static final Logger logger = LoggerFactory.getLogger(EChartFactory.class);
 
+  private static GaussianCurveFitter fitter = GaussianCurveFitter.create().withMaxIterations(10000);
 
   /**
    * Performs Gaussian fit on XYSeries
@@ -54,8 +55,13 @@ public class EChartFactory {
       if (x >= gMin && x <= gMax)
         obs.add(x, data.get(i).getIntensity());
     }
-
-    return GaussianCurveFitter.create().fit(obs.toList());
+    try {
+      return fitter.fit(obs.toList());
+    } catch (Exception e) {
+      e.printStackTrace();
+      logger.error("Cannot fit Gaussian from {} to {}", gMin, gMax, e);
+      return null;
+    }
   }
 
   /**
@@ -78,7 +84,7 @@ public class EChartFactory {
         obs.add(x, series.getY(i).doubleValue());
     }
 
-    return GaussianCurveFitter.create().fit(obs.toList());
+    return fitter.fit(obs.toList());
   }
 
   /**
@@ -101,8 +107,7 @@ public class EChartFactory {
       if (x >= gMin && x <= gMax)
         obs.add(x, data.getYValue(series, i));
     }
-    double[] fit = GaussianCurveFitter.create().fit(obs.toList());
-    return fit;
+    return fitter.fit(obs.toList());
   }
 
   /**

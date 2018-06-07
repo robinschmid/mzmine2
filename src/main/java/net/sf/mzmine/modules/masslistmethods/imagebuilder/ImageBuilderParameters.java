@@ -18,6 +18,7 @@
 
 package net.sf.mzmine.modules.masslistmethods.imagebuilder;
 
+import java.text.DecimalFormat;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
@@ -52,7 +53,7 @@ public class ImageBuilderParameters extends SimpleParameterSet {
       MZmineCore.getConfiguration().getIntensityFormat());
 
   public static final DoubleParameter binWidth = new DoubleParameter("m/z bin width",
-      "Binning of m/z values for peak picking ", MZmineCore.getConfiguration().getMZFormat());
+      "Binning of m/z values for peak picking ", new DecimalFormat("0.00####"));
 
 
   public static final ComboParameter<Weight> weight = new ComboParameter<Weight>(

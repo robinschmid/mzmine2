@@ -1,8 +1,10 @@
 package net.sf.mzmine.modules.masslistmethods.imagebuilder.fitting;
 
+import java.text.NumberFormat;
+import net.sf.mzmine.main.MZmineCore;
+
 public class Fit {
-
-
+  private NumberFormat mzform, rtform, iform;
   // pick masses by gaussian fit
   private double start = -1;
   private double end = 0;
@@ -18,6 +20,10 @@ public class Fit {
     this.end = end;
     this.dpCount = dpCount;
     this.fit = fit;
+
+    rtform = MZmineCore.getConfiguration().getRTFormat();
+    mzform = MZmineCore.getConfiguration().getMZFormat();
+    iform = MZmineCore.getConfiguration().getIntensityFormat();
   }
 
   public double getStart() {
@@ -54,11 +60,13 @@ public class Fit {
 
   @Override
   public String toString() {
-    return "Gaussian fit from " + start + " to " + end + "(" + fitToString() + ")";
+    return "Gaussian fit from " + mzform.format(start) + " to " + mzform.format(end) + "("
+        + fitToString() + ")";
   }
 
   private String fitToString() {
-    return fit[1] + "+-" + fit[2] + "(norm=" + fit[0] + ")";
+    return mzform.format(fit[1]) + "+-" + mzform.format(fit[2]) + "(norm=" + iform.format(fit[0])
+        + ")";
   }
 
   public double getSigma() {
