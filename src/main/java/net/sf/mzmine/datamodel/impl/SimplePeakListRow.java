@@ -29,8 +29,10 @@ import java.util.Vector;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.IsotopePattern;
 import net.sf.mzmine.datamodel.PeakIdentity;
+import net.sf.mzmine.datamodel.PeakInformation;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.util.PeakSorter;
 import net.sf.mzmine.util.SortingDirection;
@@ -42,9 +44,11 @@ import net.sf.mzmine.util.SortingProperty;
 public class SimplePeakListRow implements PeakListRow {
 
     private Hashtable<RawDataFile, Feature> peaks;
+    private Feature preferredPeak;
     private Vector<PeakIdentity> identities;
     private PeakIdentity preferredIdentity;
     private String comment;
+    private PeakInformation information;
     private int myID;
     private double maxDataPointIntensity = 0;
 
@@ -59,6 +63,8 @@ public class SimplePeakListRow implements PeakListRow {
 	this.myID = myID;
 	peaks = new Hashtable<RawDataFile, Feature>();
 	identities = new Vector<PeakIdentity>();
+        information = null;
+        preferredPeak = null;
     }
 
     /**
@@ -96,16 +102,17 @@ public class SimplePeakListRow implements PeakListRow {
 
     public synchronized void addPeak(RawDataFile rawData, Feature peak) {
 
+
 	if (peak == null)
 	    throw new IllegalArgumentException(
 		    "Cannot add null peak to a peak list row");
 
 	peaks.put(rawData, peak);
+
 	if (peak.getRawDataPointsIntensityRange().upperEndpoint() > maxDataPointIntensity)
 	    maxDataPointIntensity = peak.getRawDataPointsIntensityRange()
 		    .upperEndpoint();
 	calculateAverageValues();
-
     }
 
     public double getAverageMZ() {
@@ -265,6 +272,16 @@ public class SimplePeakListRow implements PeakListRow {
 
     }
 
+    @Override
+    public void setPeakInformation(PeakInformation information) {
+        this.information = information;
+    }
+    
+    @Override
+    public PeakInformation getPeakInformation() {
+        return information;
+    }
+    
     /**
      * @see net.sf.mzmine.datamodel.PeakListRow#getDataPointMaxIntensity()
      */
@@ -301,6 +318,7 @@ public class SimplePeakListRow implements PeakListRow {
      * Returns the highest peak in this row
      */
     public Feature getBestPeak() {
+
 	Feature peaks[] = getPeaks();
 	Arrays.sort(peaks, new PeakSorter(SortingProperty.Height,
 		SortingDirection.Descending));
@@ -308,5 +326,52 @@ public class SimplePeakListRow implements PeakListRow {
 	    return null;
 	return peaks[0];
     }
+    
+    @Override
+    public Scan getBestFragmentation() {
+
+        Double bestTIC = 0.0;
+        Scan bestScan = null;
+        for (Feature peak : this.getPeaks())
+        {
+            Double theTIC = 0.0;
+            RawDataFile rawData = peak.getDataFile();
+            int bestScanNumber = peak.getMostIntenseFragmentScanNumber();
+            Scan theScan = rawData.getScan(bestScanNumber);
+            if (theScan != null)
+            {
+                theTIC = theScan.getTIC();
+            }
+            
+            if (theTIC > bestTIC)
+            {
+               bestTIC = theTIC;
+               bestScan = theScan;
+            }
+        }
+        return bestScan;
+    }  
+    
+    //DorresteinLab edit
+    /**
+     * set the ID number
+     */
+
+    public void setID (int id){
+    	myID =id;
+    	return;
+    }
+    //End DorresteinLab edit
+    
+    // Gauthier edit
+    /**
+     * Update average values
+     */
+    public void update() {
+        this.calculateAverageValues();
+    }
+    // End Gauthier edit
+
 
 }
+    //End DorresteinLab edit

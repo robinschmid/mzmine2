@@ -23,6 +23,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.google.common.collect.Range;
+import net.sf.mzmine.datamodel.impl.SimplePeakInformation;
 
 /**
  * This interface defines the properties of a detected peak
@@ -64,7 +65,7 @@ public interface Feature {
     public double getMZ();
 
     /**
-     * This method returns raw retention time of the peak
+     * This method returns raw retention time of the peak in minutes
      */
     public double getRT();
 
@@ -174,5 +175,11 @@ public interface Feature {
      * Sets the asymmetry factor
      */
     public void setAsymmetryFactor(Double af);
+
+    //dulab Edit
+    public void outputChromToFile();
+    public void setPeakInformation(SimplePeakInformation peakInfoIn);
+    public SimplePeakInformation getPeakInformation();
+    //End dulab Edit
 
 }

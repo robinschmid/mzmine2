@@ -24,16 +24,15 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.util.Arrays;
 
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.border.Border;
 
+import com.google.common.collect.Range;
+
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
-
-import com.google.common.collect.Range;
 
 /**
  * Simple lightweight component for plotting peak shape
@@ -103,7 +102,7 @@ public class CombinedXICComponent extends JComponent {
         Dimension size = getSize();
 
         int colorIndex = 0;
-
+        
         for (Feature peak : peaks) {
 
             // set color for current XIC
@@ -121,7 +120,7 @@ public class CombinedXICComponent extends JComponent {
             // painted image
             int xValues[] = new int[scanNumbers.length + 2];
             int yValues[] = new int[scanNumbers.length + 2];
-
+            
             // find one datapoint with maximum intensity in each scan
             for (int i = 0; i < scanNumbers.length; i++) {
 
@@ -143,9 +142,8 @@ public class CombinedXICComponent extends JComponent {
                         * (size.width - 1));
                 yValues[i + 1] = size.height - (int) Math.floor(
                         dataPointIntensity / maxIntensity * (size.height - 1));
-
             }
-
+            
             // add first point
             xValues[0] = xValues[1];
             yValues[0] = size.height - 1;

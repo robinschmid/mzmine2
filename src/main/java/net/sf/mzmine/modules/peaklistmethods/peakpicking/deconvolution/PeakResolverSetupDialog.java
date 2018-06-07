@@ -51,6 +51,7 @@ import net.sf.mzmine.modules.visualization.tic.TICToolBar;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.util.GUIUtils;
+import net.sf.mzmine.util.R.REngineType;
 import net.sf.mzmine.util.R.RSessionWrapper;
 import net.sf.mzmine.util.R.RSessionWrapperException;
 
@@ -73,7 +74,7 @@ public class PeakResolverSetupDialog extends ParameterSetupDialog {
             10);
 
     // Maximum peak count.
-    private static final int MAX_PEAKS = 30;
+    private static final int MAX_PEAKS = 100; // 30
 
     // TIC minimum size.
     private static final Dimension MINIMUM_TIC_DIMENSIONS = new Dimension(400,
@@ -107,7 +108,20 @@ public class PeakResolverSetupDialog extends ParameterSetupDialog {
             final ParameterSet resolverParameters,
             final Class<? extends PeakResolver> resolverClass) {
 
-        super(parent, valueCheckRequired, resolverParameters);
+        this(parent, valueCheckRequired, resolverParameters, resolverClass, null);
+    }
+
+    /**
+     * Method to display setup dialog with a html-formatted footer message at the bottom.
+     *
+     * @param message: html-formatted text
+     */
+    public PeakResolverSetupDialog(Window parent, boolean valueCheckRequired,
+                                   final ParameterSet resolverParameters,
+                                   final Class<? extends PeakResolver> resolverClass,
+                                   String message) {
+
+        super(parent, valueCheckRequired, resolverParameters, message);
 
         // Instantiate resolver.
         try {
@@ -121,6 +135,7 @@ public class PeakResolverSetupDialog extends ParameterSetupDialog {
         }
 
         parameters = resolverParameters;
+
     }
 
     @Override
@@ -236,15 +251,17 @@ public class PeakResolverSetupDialog extends ParameterSetupDialog {
                         String[] reqPackagesVersions = peakResolver
                                 .getRequiredRPackagesVersions();
                         String callerFeatureName = peakResolver.getName();
-                        rSession = new RSessionWrapper(callerFeatureName,
-                                reqPackages, reqPackagesVersions);
+                        REngineType rEngineType = peakResolver.getREngineType(parameters);
+                        rSession = new RSessionWrapper(rEngineType,
+                            	callerFeatureName, reqPackages, reqPackagesVersions);
                         rSession.open();
                     } else {
                         rSession = null;
                     }
-
+                    // preview doesn't show msms scans
+                    // set it to be default searching range
                     resolvedPeaks = peakResolver.resolvePeaks(previewPeak,
-                            parameters, rSession);
+                            parameters, rSession,0,0);
 
                     // Turn off R instance.
                     if (rSession != null)
@@ -271,9 +288,10 @@ public class PeakResolverSetupDialog extends ParameterSetupDialog {
 
                 // Check peak count.
                 if (resolvedPeaks.length > MAX_PEAKS) {
+                    //MZmineCore.getDesktop().displayMessage(this,
+                    //        "Too many peaks detected, please adjust parameter values");
                     MZmineCore.getDesktop().displayMessage(this,
-                            "Too many peaks detected, please adjust parameter values");
-
+                            "Too many peaks detected. Not all of the peaks might be displayed");
                 }
             }
 

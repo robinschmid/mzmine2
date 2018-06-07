@@ -34,12 +34,13 @@ public class RawDataImportParameters extends SimpleParameterSet {
 
     private static final FileFilter filters[] = new FileFilter[] {
             new FileNameExtensionFilter("All raw data files", "cdf", "nc",
-                    "mzData", "mzML", "mzXML", "xml", "raw", "csv", "zip",
+                    "mzData", "mzML", "mzXML", "imzML", "xml", "raw", "csv", "zip",
                     "gz"),
             new FileNameExtensionFilter("All XML files", "xml"),
             new FileNameExtensionFilter("NetCDF files", "cdf", "nc"),
             new FileNameExtensionFilter("mzData files", "mzData"),
             new FileNameExtensionFilter("mzML files", "mzML"),
+            new FileNameExtensionFilter("imzML files (imaging)", "imzML"),
             new FileNameExtensionFilter("Thermo RAW files", "raw"),
             new FileNameExtensionFilter("Waters RAW folders", "raw"),
             new FileNameExtensionFilter("mzXML files", "mzXML"),
@@ -60,9 +61,9 @@ public class RawDataImportParameters extends SimpleParameterSet {
         // We need to allow directories, because Waters raw data come in
         // directories, not files
         chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-
+        
         for (FileFilter filter : filters)
-            chooser.setFileFilter(filter);
+            chooser.addChoosableFileFilter(filter);
         chooser.setFileFilter(filters[0]);
 
         File lastFiles[] = getParameter(fileNames).getValue();

@@ -119,7 +119,6 @@ public class SmoothingTask extends AbstractTask {
 	    // Create new peak list
 	    newPeakList = new SimplePeakList(origPeakList + " " + suffix,
 		    origPeakList.getRawDataFiles());
-	    int peakID = 1;
 
 	    // Process each row.
 	    for (final PeakListRow row : origPeakList.getRows()) {
@@ -127,7 +126,8 @@ public class SmoothingTask extends AbstractTask {
 		if (!isCanceled()) {
 
 		    // Create a new peak-list row.
-		    final PeakListRow newRow = new SimplePeakListRow(peakID++);
+		    final int originalID = row.getID();
+		    final PeakListRow newRow = new SimplePeakListRow(originalID);
 
 		    // Process each peak.
 		    for (final Feature peak : row.getPeaks()) {
@@ -201,7 +201,7 @@ public class SmoothingTask extends AbstractTask {
 					final double lastRT = dataFile.getScan(
 						scanNumbers[i - 1])
 						.getRetentionTime();
-					area += (rt - lastRT)
+					area += (rt - lastRT ) * 60d
 						* (intensity + lastIntensity)
 						/ 2.0;
 				    }

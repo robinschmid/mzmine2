@@ -36,6 +36,7 @@ import net.sf.mzmine.modules.peaklistmethods.peakpicking.deconvolution.PeakResol
 import net.sf.mzmine.modules.peaklistmethods.peakpicking.deconvolution.ResolvedPeak;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.util.RangeUtils;
+import net.sf.mzmine.util.R.REngineType;
 import net.sf.mzmine.util.R.RSessionWrapper;
 
 import com.google.common.collect.Range;
@@ -56,7 +57,7 @@ public class NoiseAmplitudePeakDetector implements PeakResolver {
     @Override
     public Feature[] resolvePeaks(final Feature chromatogram,
             ParameterSet parameters,
-            RSessionWrapper rSession) {
+            RSessionWrapper rSession, double msmsRange, double rTRangeMSMS) {
 
         int scanNumbers[] = chromatogram.getScanNumbers();
         final int scanCount = scanNumbers.length;
@@ -128,7 +129,7 @@ public class NoiseAmplitudePeakDetector implements PeakResolver {
                     if (currentPeakEnd - currentPeakStart > 0) {
 
                         final ResolvedPeak peak = new ResolvedPeak(
-                                chromatogram, currentPeakStart, currentPeakEnd);
+                                chromatogram, currentPeakStart, currentPeakEnd, msmsRange, rTRangeMSMS);
                         if (peakDuration.contains(RangeUtils.rangeLength(peak
                                 .getRawDataPointsRTRange()))
                                 && peak.getHeight() >= minimumPeakHeight) {
@@ -224,6 +225,11 @@ public class NoiseAmplitudePeakDetector implements PeakResolver {
 
     @Override
     public String[] getRequiredRPackagesVersions() {
+        return null;
+    }
+
+    @Override
+    public REngineType getREngineType(ParameterSet parameters) {
         return null;
     }
 }

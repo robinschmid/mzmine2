@@ -26,6 +26,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import javax.swing.JFileChooser;
@@ -67,7 +69,8 @@ public class MainMenu extends JMenuBar implements ActionListener {
             helpMenu, rawDataFilteringMenu, peakDetectionMenu, gapFillingMenu,
             isotopesMenu, peakListPeakPickingMenu, peakListFilteringMenu,
             alignmentMenu, normalizationMenu, identificationMenu,
-            dataAnalysisMenu, peakListExportMenu;
+            dataAnalysisMenu, peakListExportMenu,
+            peakListSpectralDeconvolutionMenu;
 
     private WindowsMenu windowsMenu;
 
@@ -145,6 +148,10 @@ public class MainMenu extends JMenuBar implements ActionListener {
         peakListPeakPickingMenu = new JMenu("Peak detection");
         peakListPeakPickingMenu.setMnemonic(KeyEvent.VK_P);
         peakListMenu.add(peakListPeakPickingMenu);
+
+        peakListSpectralDeconvolutionMenu = new JMenu("Spectral deconvolution");
+        peakListSpectralDeconvolutionMenu.setMnemonic(KeyEvent.VK_S);
+        peakListMenu.add(peakListSpectralDeconvolutionMenu);
 
         gapFillingMenu = new JMenu("Gap filling");
         gapFillingMenu.setMnemonic(KeyEvent.VK_G);
@@ -241,6 +248,9 @@ public class MainMenu extends JMenuBar implements ActionListener {
             break;
         case PEAKLISTPICKING:
             peakListPeakPickingMenu.add(newItem);
+            break;
+        case SPECTRALDECONVOLUTION:
+            peakListSpectralDeconvolutionMenu.add(newItem);
             break;
         case GAPFILLING:
             gapFillingMenu.add(newItem);
@@ -425,4 +435,34 @@ public class MainMenu extends JMenuBar implements ActionListener {
         }
 
     }
+    
+    /**
+     * start modules code sided
+     * @param name name of module
+     * @return
+     */
+	public MZmineRunnableModule startModuleCodeSided(String name) {
+		Set<Entry<JMenuItem, MZmineRunnableModule>> s = moduleMenuItems.entrySet();
+		for (Entry<JMenuItem, MZmineRunnableModule> entry : s) {
+			if(entry.getValue().getName().equals(name)) {
+				entry.getKey().doClick(); 
+				return entry.getValue();
+			}
+		}
+		return null;
+	}
+	/**
+	 * 
+	 * @param name name of module
+	 * @return
+	 */
+	public MZmineRunnableModule getModuleByName(String name) {
+		Set<Entry<JMenuItem, MZmineRunnableModule>> s = moduleMenuItems.entrySet();
+		for (Entry<JMenuItem, MZmineRunnableModule> entry : s) {
+			if(entry.getValue().getName().equals(name)) { 
+				return entry.getValue();
+			}
+		}
+		return null;
+	} 
 }
