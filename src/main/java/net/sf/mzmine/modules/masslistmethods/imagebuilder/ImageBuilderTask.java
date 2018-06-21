@@ -221,8 +221,15 @@ public class ImageBuilderTask extends AbstractTask {
       // store all
       List<Fit> fitList = new ArrayList<>();
 
+      // progress
+      processedScans = 0;
+      totalScans = histo.size();
+
       // for all data points
       for (int i = 0; i < histo.size(); i++) {
+        if (isCanceled())
+          return;
+        processedScans = i;
         DataPoint dp = histo.get(i);
         // search for start (use one 0 value)
         if (dpCount == 0) {
