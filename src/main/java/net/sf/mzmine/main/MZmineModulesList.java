@@ -23,6 +23,7 @@ import net.sf.mzmine.modules.masslistmethods.ADAPchromatogrambuilder.ADAPChromat
 import net.sf.mzmine.modules.masslistmethods.chromatogrambuilder.ChromatogramBuilderModule;
 import net.sf.mzmine.modules.masslistmethods.imagebuilder.ImageBuilderModule;
 import net.sf.mzmine.modules.masslistmethods.shoulderpeaksfilter.ShoulderPeaksFilterModule;
+import net.sf.mzmine.modules.peaklistmethods.IsotopePeakScanner.IsotopePeakScannerModule;
 import net.sf.mzmine.modules.peaklistmethods.alignment.hierarchical.HierarAlignerGcModule;
 import net.sf.mzmine.modules.peaklistmethods.alignment.join.JoinAlignerModule;
 import net.sf.mzmine.modules.peaklistmethods.alignment.ransac.RansacAlignerModule;
@@ -182,7 +183,7 @@ public class MZmineModulesList {
       GPLipidSearchModule.class, CameraSearchModule.class, NistMsSearchModule.class,
       FormulaPredictionPeakListModule.class, Ms2SearchModule.class, MetaMSEcorrelateModule.class,
 
-      //MYMODULE Steffen
+      // MYMODULE Steffen
       IsotopePeakScannerModule.class,
 
       // Visualizers
