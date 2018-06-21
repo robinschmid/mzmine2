@@ -54,7 +54,6 @@ public class ExtendedIsotopePattern implements IsotopePattern {
     private IsotopePatternStatus status;
     private String description;
     private Range<Double> mzRange;
-    private ArrayList<String> descr;
     private double minAbundance;
     private double minIntensity;
     IMolecularFormula formula;
@@ -78,7 +77,7 @@ public class ExtendedIsotopePattern implements IsotopePattern {
      * @param minAbundance minimum abundance to be used to calculate the pattern 0.0-1.0
      * @param minIntensity the minimum intensity of a peak in finished pattern
      */
-   public void setUpFromFormula(String sumFormula, double minAbundance, double minIntensity)
+   public void setUpFromFormula(String sumFormula, double minAbundance, double mzMerge, double minIntensity)
     {
     	IMolecularFormula form = MolecularFormulaManipulator.getMajorIsotopeMolecularFormula(sumFormula, builder);
     	description = sumFormula;
@@ -87,6 +86,8 @@ public class ExtendedIsotopePattern implements IsotopePattern {
     	this.minIntensity = minIntensity;
     	status = IsotopePatternStatus.PREDICTED;
     	addMolecule(form);
+    	mergeDuplicates();
+    	mergePeaks(mzMerge);
     	removePeaksBelowAbundance(minIntensity);
     	sortByAscendingMZ();
     }
@@ -102,23 +103,23 @@ public class ExtendedIsotopePattern implements IsotopePattern {
     	IIsotope[] isotopes = ifac.getIsotopes(element.getSymbol());
     	for(int i = 0; i < count; i++)	//add each element "count" times to the pattern
     		addIsotopes(isotopes);
-    	System.out.println(element.getSymbol() + "added");
+//    	System.out.println(element.getSymbol() + "added");
     }
     
     private void addIsotopes(IIsotope[] isotopes)
     {
     	ArrayList<DataPoint> newDp = new ArrayList<DataPoint>();
     	ArrayList<String> newDpDescr = new ArrayList<String>();
-    	int size = dataPoints.size();
+    
     	for(int i = 0; i < dataPoints.size(); i++)	//add every isotope to every data point
     	{
     		for(IIsotope iso : isotopes)
     		{		// when adding new isotopes intensities only get smaller, so we can to this here to avoid useless calculation
-    			if(iso.getNaturalAbundance() < minAbundance || ((iso.getNaturalAbundance() / 100) * dataPoints.get(i).getIntensity()) < minIntensity)
+    			if(iso.getNaturalAbundance() < minAbundance || ((iso.getNaturalAbundance() / 100) * dataPoints.get(i).getIntensity()) < 1E-12)
     				continue;
     			
 	    		newDp.add(new SimpleDataPoint(dataPoints.get(i).getMZ() + iso.getExactMass(),
-	    				dataPoints.get(i).getIntensity() * iso.getNaturalAbundance() / 100 ));
+	    				dataPoints.get(i).getIntensity() * (iso.getNaturalAbundance() / 100) ));
 	    		//System.out.println(iso.getMassNumber() + iso.getSymbol());
 	    		
 	    		if(dpDescr != null)
@@ -177,24 +178,22 @@ public class ExtendedIsotopePattern implements IsotopePattern {
     	ArrayList<DataPoint> newDp = new ArrayList<DataPoint>();
     	ArrayList<String> newDpDescr = new ArrayList<String>();
     	
-    	for(int i = 0; i < dataPoints.size(); i++)
+    	sortByAscendingMZ();
+    	
+    	for(int i = 0; i < dataPoints.size()-1; i++)
     	{
-    		for(int j = 0; j < dataPoints.size(); j++)
-    		{
-    			if(dataPoints.get(j) == null || dataPoints.get(i) == null || i == j)
-    				continue;
-    			if(Math.abs(dataPoints.get(i).getMZ() - dataPoints.get(j).getMZ()) < 0.00000001)
-    			{
-    				double newIntensity = dataPoints.get(i).getIntensity() + dataPoints.get(j).getIntensity();
-    				dataPoints.set(i, new SimpleDataPoint(
-    					( dataPoints.get(i).getMZ() * dataPoints.get(i).getIntensity()
-    					+ dataPoints.get(j).getMZ() * dataPoints.get(j).getIntensity() )
-    					/ newIntensity, newIntensity));
-    				
-    				dataPoints.set(j, null);
-    				dpDescr.set(j, null);	//we dont want to merge here since its the !same! peak
-    			}
-    		}
+			if(dataPoints.get(i+1) == null || dataPoints.get(i) == null)
+				continue;
+			
+			if(Math.abs(dataPoints.get(i).getMZ() - dataPoints.get(i+1).getMZ()) < 0.0000001)
+			{
+				double newIntensity = dataPoints.get(i).getIntensity() + dataPoints.get(i+1).getIntensity();
+				dataPoints.set(i+1, new SimpleDataPoint(
+					 dataPoints.get(i).getMZ(), newIntensity));
+				
+				dataPoints.set(i, null);
+				dpDescr.set(i, null);	//we dont want to merge here since its the !same! peak
+			}
     	}
     	
     	for(int i = 0; i < dataPoints.size(); i++)
@@ -483,5 +482,9 @@ public class ExtendedIsotopePattern implements IsotopePattern {
     public DataPoint[] getDataPointsOverIntensity(double intensity) {
 	throw new UnsupportedOperationException();
     }
-
+    public void print()
+    {
+    	for(int i = 0; i < dataPoints.size(); i++)
+    		System.out.println("mass: " + dataPoints.get(i).getMZ() + "\t\tintensity: " + dataPoints.get(i).getIntensity() + "\t" + getDetailedPeakDescription(i));
+    }
 }
