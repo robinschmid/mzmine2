@@ -182,6 +182,9 @@ public class MZmineModulesList {
       GPLipidSearchModule.class, CameraSearchModule.class, NistMsSearchModule.class,
       FormulaPredictionPeakListModule.class, Ms2SearchModule.class, MetaMSEcorrelateModule.class,
 
+      //MYMODULE Steffen
+      IsotopePeakScannerModule.class,
+
       // Visualizers
       TICVisualizerModule.class, SpectraVisualizerModule.class, TwoDVisualizerModule.class,
       ThreeDVisualizerModule.class, MsMsVisualizerModule.class, NeutralLossVisualizerModule.class,
