@@ -23,6 +23,7 @@ import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.MassListParameter;
+import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
 import net.sf.mzmine.parameters.parametertypes.ranges.MZRangeParameter;
 import net.sf.mzmine.parameters.parametertypes.ranges.RTRangeParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.RawDataFilesParameter;
@@ -42,7 +43,8 @@ public class MZDistributionHistoParameters extends SimpleParameterSet {
 
   public static final MassListParameter massList = new MassListParameter();
   public static final MZRangeParameter mzRange = new MZRangeParameter(true);
-  public static final RTRangeParameter rtRange = new RTRangeParameter(true);
+  public static final OptionalParameter<RTRangeParameter> rtRange =
+      new OptionalParameter<>(new RTRangeParameter(false));
 
   public static final DoubleParameter binWidth = new DoubleParameter("m/z bin width",
       "Binning of m/z values for peak picking ", MZmineCore.getConfiguration().getMZFormat());

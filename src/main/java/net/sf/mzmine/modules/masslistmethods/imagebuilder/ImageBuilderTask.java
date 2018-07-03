@@ -67,6 +67,9 @@ public class ImageBuilderTask extends AbstractTask {
   // User parameters
   private String suffix, massListName;
   private Range<Double> mzRange;
+
+  //
+  private boolean useRTRange;
   private Range<Double> rtRange;
   private MZTolerance mzTolerance;
   private double minimumHeight;
@@ -100,7 +103,10 @@ public class ImageBuilderTask extends AbstractTask {
     this.massListName = parameters.getParameter(ImageBuilderParameters.massList).getValue();
 
     this.mzRange = parameters.getParameter(ImageBuilderParameters.mzRange).getValue();
-    this.rtRange = parameters.getParameter(ImageBuilderParameters.rtRange).getValue();
+    this.useRTRange = parameters.getParameter(ImageBuilderParameters.rtRange).getValue();
+    if (useRTRange)
+      this.rtRange =
+          parameters.getParameter(ImageBuilderParameters.rtRange).getEmbeddedParameter().getValue();
 
     this.mzTolerance = parameters.getParameter(ImageBuilderParameters.mzTolerance).getValue();
     this.minimumHeight = parameters.getParameter(ImageBuilderParameters.minimumHeight).getValue();
@@ -166,7 +172,7 @@ public class ImageBuilderTask extends AbstractTask {
         return;
 
       // retention time in range
-      if (rtRange.contains(scan.getRetentionTime())) {
+      if (!useRTRange || rtRange.contains(scan.getRetentionTime())) {
         // go through all mass lists
         MassList massList = scan.getMassList(massListName);
         if (massList == null) {

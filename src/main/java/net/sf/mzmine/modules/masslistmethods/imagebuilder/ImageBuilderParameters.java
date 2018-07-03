@@ -25,6 +25,7 @@ import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.MassListParameter;
+import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
 import net.sf.mzmine.parameters.parametertypes.StringParameter;
 import net.sf.mzmine.parameters.parametertypes.ranges.MZRangeParameter;
 import net.sf.mzmine.parameters.parametertypes.ranges.RTRangeParameter;
@@ -46,7 +47,8 @@ public class ImageBuilderParameters extends SimpleParameterSet {
 
   public static final MassListParameter massList = new MassListParameter();
   public static final MZRangeParameter mzRange = new MZRangeParameter(true);
-  public static final RTRangeParameter rtRange = new RTRangeParameter(true);
+  public static final OptionalParameter<RTRangeParameter> rtRange =
+      new OptionalParameter<>(new RTRangeParameter(false));
 
   public static final DoubleParameter minimumHeight = new DoubleParameter("Min height",
       "Minimum intensity of the highest data point in the image. If image intensity is below this level, it is discarded.",

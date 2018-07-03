@@ -28,6 +28,7 @@ import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.MassList;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
+import net.sf.mzmine.modules.masslistmethods.imagebuilder.ImageBuilderParameters;
 import net.sf.mzmine.modules.visualization.mzhistogram.chart.EHistogramDialog;
 import net.sf.mzmine.modules.visualization.mzhistogram.chart.HistogramData;
 import net.sf.mzmine.parameters.ParameterSet;
@@ -50,6 +51,7 @@ public class MZDistributionHistoTask extends AbstractTask {
   // User parameters
   private String suffix, massListName;
   private Range<Double> mzRange;
+  private boolean useRTRange;
   private Range<Double> rtRange;
   private double binWidth;
 
@@ -67,7 +69,10 @@ public class MZDistributionHistoTask extends AbstractTask {
     this.massListName = parameters.getParameter(MZDistributionHistoParameters.massList).getValue();
 
     this.mzRange = parameters.getParameter(MZDistributionHistoParameters.mzRange).getValue();
-    this.rtRange = parameters.getParameter(MZDistributionHistoParameters.rtRange).getValue();
+    this.useRTRange = parameters.getParameter(ImageBuilderParameters.rtRange).getValue();
+    if (useRTRange)
+      this.rtRange =
+          parameters.getParameter(ImageBuilderParameters.rtRange).getEmbeddedParameter().getValue();
     this.binWidth = parameters.getParameter(MZDistributionHistoParameters.binWidth).getValue();
   }
 
@@ -112,7 +117,7 @@ public class MZDistributionHistoTask extends AbstractTask {
         return;
 
       // retention time in range
-      if (rtRange.contains(scan.getRetentionTime())) {
+      if (!useRTRange || rtRange.contains(scan.getRetentionTime())) {
         // go through all mass lists
         MassList massList = scan.getMassList(massListName);
         if (massList == null) {
