@@ -41,6 +41,7 @@ import net.sf.mzmine.modules.peaklistmethods.filtering.peakcomparisonrowfilter.P
 import net.sf.mzmine.modules.peaklistmethods.filtering.peakfilter.PeakFilterModule;
 import net.sf.mzmine.modules.peaklistmethods.filtering.rowsfilter.RowsFilterModule;
 import net.sf.mzmine.modules.peaklistmethods.gapfilling.peakfinder.PeakFinderModule;
+import net.sf.mzmine.modules.peaklistmethods.gapfilling.peakfinder.multithreaded.MultiThreadPeakFinderModule;
 import net.sf.mzmine.modules.peaklistmethods.gapfilling.samerange.SameRangeGapFillerModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.adductsearch.AdductSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.camera.CameraSearchModule;
@@ -156,7 +157,7 @@ public class MZmineModulesList {
       GNPSExportModule.class, SiriusExportModule.class,
 
       // Gap filling
-      PeakFinderModule.class, SameRangeGapFillerModule.class,
+      PeakFinderModule.class, MultiThreadPeakFinderModule.class, SameRangeGapFillerModule.class,
 
       // Isotopes
       IsotopeGrouperModule.class, IsotopePatternCalculator.class, AlignedIsotopeGrouperModule.class,
