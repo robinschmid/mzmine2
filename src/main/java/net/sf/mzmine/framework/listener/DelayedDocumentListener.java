@@ -32,9 +32,6 @@ import org.slf4j.LoggerFactory;
  */
 public class DelayedDocumentListener
     implements DocumentListener, Runnable, EventListener, Serializable {
-  /**
-   * 
-   */
   private static final long serialVersionUID = 1L;
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
