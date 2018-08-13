@@ -29,7 +29,6 @@ import net.sf.mzmine.taskcontrol.Task;
 import net.sf.mzmine.util.ExitCode;
 
 public class MZDistributionHistoModule implements MZmineProcessingModule {
-
   private static final String MODULE_NAME = "m/z scan histogram";
   private static final String MODULE_DESCRIPTION =
       "This module plots all m/z values of all selected scans into one histogram and offers a Gaussian fit.";

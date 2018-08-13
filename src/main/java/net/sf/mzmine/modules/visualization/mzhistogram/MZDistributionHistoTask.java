@@ -37,7 +37,6 @@ import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
 
 public class MZDistributionHistoTask extends AbstractTask {
-
   private Logger logger = Logger.getLogger(this.getClass().getName());
 
   private MZmineProject project;

@@ -31,7 +31,6 @@ import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelection;
 import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelectionParameter;
 
 public class MZDistributionHistoParameters extends SimpleParameterSet {
-
   public static enum Weight {
     None, Linear, log10;
   }
