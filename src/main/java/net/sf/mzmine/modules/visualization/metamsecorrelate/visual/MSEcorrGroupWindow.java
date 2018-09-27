@@ -91,6 +91,7 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
   private JPanel pnPeakShapeCorrAllView;
   private JSplitPane split;
   private JCheckBox cbUseSampleGroups;
+  private JCheckBox cbUseTotalCorrelation;
   private JCheckBox cbSampleSummary;
   private JScrollPane mainScroll;
   private JPanel panel_3;
@@ -335,6 +336,13 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
     panel_7 = new JPanel();
     pnMenu.add(panel_7);
     panel_7.setLayout(new BoxLayout(panel_7, BoxLayout.Y_AXIS));
+
+
+    cbUseTotalCorrelation = new JCheckBox("Use total correlation");
+    panel_7.add(cbUseTotalCorrelation);
+    cbUseTotalCorrelation.addItemListener(e -> plotPeakShapeCorrelation());
+    cbUseTotalCorrelation.setToolTipText(
+        "Show total correlation between two feature list rows (in corr plot) of all data points across all raw data files");
 
     cbSampleSummary = new JCheckBox("Sample summary");
     panel_7.add(cbSampleSummary);
@@ -687,7 +695,11 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
           // get correlation data (row to row)
           RowCorrelationData corrRows = corr.getCorrelationToRowI(i);
           // get correlation of feature-feature in selected raw file
-          FeatureShapeCorrelationData fCorr = corrRows.getCorrPeakShape()[rawI];
+          FeatureShapeCorrelationData fCorr = null;
+          if (getCbUseTotalCorrelation().isSelected())
+            fCorr = corrRows.getTotalCorrelation();
+          else
+            fCorr = corrRows.getCorrPeakShape()[rawI];
           // add series
           if (fCorr != null && fCorr.getReg() != null && fCorr.getData() != null) {
             data.addSeries(regressionToSeries(fCorr, String.valueOf(trow.getID())));
@@ -795,10 +807,9 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
   private XYSeries regressionToSeries(FeatureShapeCorrelationData fCorr, String name) {
     // add all data points to series
     XYSeries series = new XYSeries(name, true, true);
-    Double[] x = fCorr.getX();
-    Double[] y = fCorr.getY();
-    for (int i = 0; i < x.length; i++)
-      series.add(x[i], y[i]);
+    double[][] dat = fCorr.getData();
+    for (double[] d : dat)
+      series.add(d[0], d[1]);
 
     return series;
   }
@@ -1088,6 +1099,10 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
 
   public JCheckBox getCbShowPseudoSpectrum() {
     return cbShowPseudoSpectrum;
+  }
+
+  public JCheckBox getCbUseTotalCorrelation() {
+    return cbUseTotalCorrelation;
   }
 
   public JCheckBox getCbSumPseudoSpectrum() {
