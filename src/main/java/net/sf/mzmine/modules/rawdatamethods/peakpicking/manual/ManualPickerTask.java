@@ -21,9 +21,9 @@ package net.sf.mzmine.modules.rawdatamethods.peakpicking.manual;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
-
+import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
-
+import com.google.common.collect.Range;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
@@ -32,12 +32,9 @@ import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 import net.sf.mzmine.modules.peaklistmethods.qualityparameters.QualityParameters;
-import net.sf.mzmine.modules.visualization.peaklisttable.table.PeakListTable;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
 import net.sf.mzmine.util.ScanUtils;
-
-import com.google.common.collect.Range;
 
 class ManualPickerTask extends AbstractTask {
 
@@ -46,14 +43,14 @@ class ManualPickerTask extends AbstractTask {
   private int processedScans, totalScans;
 
   private final MZmineProject project;
-  private final PeakListTable table;
+  private final JTable table;
   private final PeakList peakList;
   private PeakListRow peakListRow;
   private RawDataFile dataFiles[];
   private Range<Double> rtRange, mzRange;
 
   ManualPickerTask(MZmineProject project, PeakListRow peakListRow, RawDataFile dataFiles[],
-      ManualPickerParameters parameters, PeakList peakList, PeakListTable table) {
+      ManualPickerParameters parameters, PeakList peakList, JTable table) {
 
     this.project = project;
     this.peakListRow = peakListRow;
@@ -67,16 +64,19 @@ class ManualPickerTask extends AbstractTask {
 
   }
 
+  @Override
   public double getFinishedPercentage() {
     if (totalScans == 0)
       return 0;
     return (double) processedScans / totalScans;
   }
 
+  @Override
   public String getTaskDescription() {
     return "Manually picking peaks from " + Arrays.toString(dataFiles);
   }
 
+  @Override
   public void run() {
 
     setStatus(TaskStatus.PROCESSING);

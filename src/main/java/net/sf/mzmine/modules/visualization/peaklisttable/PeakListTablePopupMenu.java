@@ -18,8 +18,30 @@
 
 package net.sf.mzmine.modules.visualization.peaklisttable;
 
+import java.awt.Component;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableColumnModel;
 import com.google.common.collect.Range;
-import net.sf.mzmine.datamodel.*;
+import net.sf.mzmine.datamodel.Feature;
+import net.sf.mzmine.datamodel.PeakIdentity;
+import net.sf.mzmine.datamodel.PeakList;
+import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.FormulaPredictionModule;
@@ -33,8 +55,6 @@ import net.sf.mzmine.modules.visualization.peaklisttable.export.IsotopePatternEx
 import net.sf.mzmine.modules.visualization.peaklisttable.export.MSMSExportModule;
 import net.sf.mzmine.modules.visualization.peaklisttable.table.CommonColumnType;
 import net.sf.mzmine.modules.visualization.peaklisttable.table.DataFileColumnType;
-import net.sf.mzmine.modules.visualization.peaklisttable.table.PeakListTable;
-import net.sf.mzmine.modules.visualization.peaklisttable.table.PeakListTableColumnModel;
 import net.sf.mzmine.modules.visualization.peaksummary.PeakSummaryVisualizerModule;
 import net.sf.mzmine.modules.visualization.spectra.SpectraVisualizerModule;
 import net.sf.mzmine.modules.visualization.threed.ThreeDVisualizerModule;
@@ -44,14 +64,6 @@ import net.sf.mzmine.modules.visualization.twod.TwoDVisualizerModule;
 import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelection;
 import net.sf.mzmine.util.GUIUtils;
 
-import javax.swing.*;
-import javax.swing.table.AbstractTableModel;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.*;
-import java.util.List;
-
 /**
  * Peak-list table pop-up menu.
  */
@@ -59,9 +71,9 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
 
   private static final long serialVersionUID = 1L;
 
-  private final PeakListTable table;
+  private final JTable table;
   private final PeakList peakList;
-  private final PeakListTableColumnModel columnModel;
+  private final DefaultTableColumnModel columnModel;
 
   private final JMenu showMenu;
   private final JMenu searchMenu;
@@ -93,7 +105,7 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
   private final JMenuItem copyIdsItem;
   private final JMenuItem pasteIdsItem;
 
-  private final PeakListTableWindow window;
+  private final JFrame window;
   private RawDataFile clickedDataFile;
   private PeakListRow clickedPeakListRow;
   private PeakListRow[] allClickedPeakListRows;
@@ -103,8 +115,8 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
   // class.
   private static PeakIdentity copiedId = null;
 
-  public PeakListTablePopupMenu(final PeakListTableWindow window, PeakListTable listTable,
-      final PeakListTableColumnModel model, final PeakList list) {
+  public PeakListTablePopupMenu(final JFrame window, JTable listTable,
+      final DefaultTableColumnModel model, final PeakList list) {
 
     this.window = window;
     table = listTable;
@@ -636,3 +648,5 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
         : clickedPeakListRow.getBestPeak();
   }
 }
+
+
