@@ -168,13 +168,13 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
   }
 
   public boolean isCommonColumn(int col) {
-    return col != 0 && col < CommonColumnType2.values().length + 1;
+    return col < CommonColumnType2.values().length;
   }
 
   public CommonColumnType2 getCommonColumn(int col) {
     CommonColumnType2 commonColumns[] = CommonColumnType2.values();
     if (isCommonColumn(col))
-      return commonColumns[col - 1];
+      return commonColumns[col];
 
     return null;
   }
