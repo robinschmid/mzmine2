@@ -20,7 +20,8 @@ package net.sf.mzmine.modules.visualization.spectra.renderers;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-
+import org.jfree.chart.labels.XYToolTipGenerator;
+import org.jfree.data.xy.XYDataset;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.IsotopePattern;
 import net.sf.mzmine.datamodel.PeakList;
@@ -29,13 +30,10 @@ import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.visualization.spectra.datasets.IsotopesDataSet;
 import net.sf.mzmine.modules.visualization.spectra.datasets.PeakListDataSet;
 
-import org.jfree.chart.labels.XYToolTipGenerator;
-import org.jfree.data.xy.XYDataset;
-
 /**
  * Tooltip generator for raw data points
  */
-class SpectraToolTipGenerator implements XYToolTipGenerator {
+public class SpectraToolTipGenerator implements XYToolTipGenerator {
 
   private NumberFormat mzFormat = MZmineCore.getConfiguration().getMZFormat();
   private NumberFormat intensityFormat = MZmineCore.getConfiguration().getIntensityFormat();
@@ -45,6 +43,7 @@ class SpectraToolTipGenerator implements XYToolTipGenerator {
    * @see org.jfree.chart.labels.XYToolTipGenerator#generateToolTip(org.jfree.data.xy.XYDataset,
    *      int, int)
    */
+  @Override
   public String generateToolTip(XYDataset dataset, int series, int item) {
 
     double intValue = dataset.getYValue(series, item);
