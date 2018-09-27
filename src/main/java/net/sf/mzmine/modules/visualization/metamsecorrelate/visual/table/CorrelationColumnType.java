@@ -3,52 +3,51 @@
  * 
  * This file is part of MZmine 2.
  * 
- * MZmine 2 is free software; you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation; either version 2 of the License, or (at your option) any later
- * version.
+ * MZmine 2 is free software; you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
  * 
- * MZmine 2 is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * MZmine 2 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
  * 
- * You should have received a copy of the GNU General Public License along with
- * MZmine 2; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
- * Fifth Floor, Boston, MA 02110-1301 USA
+ * You should have received a copy of the GNU General Public License along with MZmine 2; if not,
+ * write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+ * USA
  */
 
 package net.sf.mzmine.modules.visualization.metamsecorrelate.visual.table;
 
 public enum CorrelationColumnType {
 
-	GROUPID("#", Integer.class), //
-	MAXHEIGHT("Max height", Double.class), //
-	MIN_R_PEAKSHAPE("r min ∩", Double.class), //
-	AVERAGE_R_PEAKSHAPE("r avg ∩", Double.class), //
-	MAX_R_PEAKSHAPE("r max ∩", Double.class), //
-	AVERAGE_DP_COUNT("∩ DPs", Integer.class), // 
-	MIN_R_IPROFILE("r min", Double.class), //
-	AVERAGE_R_IPROFILE("r avg", Double.class), //
-	MAX_R_IPROFILE("r max", Double.class);//
+  MAXHEIGHT("Max height", Double.class), //
+  MIN_R_PEAKSHAPE("r min ∩", Double.class), //
+  AVERAGE_R_PEAKSHAPE("r avg ∩", Double.class), //
+  MAX_R_PEAKSHAPE("r max ∩", Double.class), //
+  AVERAGE_DP_COUNT("∩ DPs", Integer.class), //
+  MIN_R_IPROFILE("r min", Double.class), //
+  AVERAGE_R_IPROFILE("r avg", Double.class), //
+  MAX_R_IPROFILE("r max", Double.class);//
 
-	private final String columnName;
-	private final Class<?> columnClass;
+  private final String columnName;
+  private final Class<?> columnClass;
 
-	CorrelationColumnType(String columnName, Class<?> columnClass) {
-		this.columnName = columnName;
-		this.columnClass = columnClass;
-	}
+  CorrelationColumnType(String columnName, Class<?> columnClass) {
+    this.columnName = columnName;
+    this.columnClass = columnClass;
+  }
 
-	public String getColumnName() {
-		return columnName;
-	}
+  public String getColumnName() {
+    return columnName;
+  }
 
-	public Class<?> getColumnClass() {
-		return columnClass;
-	}
+  public Class<?> getColumnClass() {
+    return columnClass;
+  }
 
-	public String toString() {
-		return columnName;
-	}
+  @Override
+  public String toString() {
+    return columnName;
+  }
 
 }
