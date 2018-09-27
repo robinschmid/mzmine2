@@ -126,6 +126,8 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
             return corr.getMaxIProfileR();
           case MAX_R_PEAKSHAPE:
             return corr.getMaxPeakShapeR();
+          case AVG_TOTAL_R_PEAKSHAPE:
+            return corr.getAvgTotalPeakShapeR();
           case MIN_R_IPROFILE:
             return corr.getMinIProfileR();
           case MIN_R_PEAKSHAPE:
