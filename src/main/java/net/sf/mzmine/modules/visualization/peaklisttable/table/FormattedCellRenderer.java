@@ -22,7 +22,6 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
 import java.text.NumberFormat;
-
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTable;
@@ -33,21 +32,21 @@ import javax.swing.table.TableCellRenderer;
 /**
  * Simple table cell renderer that renders Numbers using given NumberFormat
  */
-class FormattedCellRenderer implements TableCellRenderer {
+public class FormattedCellRenderer implements TableCellRenderer {
 
   private Font font;
   private NumberFormat format;
 
   /**
    */
-  FormattedCellRenderer(NumberFormat format) {
+  public FormattedCellRenderer(NumberFormat format) {
     this.format = format;
   }
 
   /**
    * @param font
    */
-  FormattedCellRenderer(NumberFormat format, Font font) {
+  public FormattedCellRenderer(NumberFormat format, Font font) {
     this.format = format;
     this.font = font;
   }
@@ -56,6 +55,7 @@ class FormattedCellRenderer implements TableCellRenderer {
    * @see javax.swing.table.TableCellRenderer#getTableCellRendererComponent(javax.swing.JTable,
    *      java.lang.Object, boolean, boolean, int, int)
    */
+  @Override
   public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
       boolean hasFocus, int row, int column) {
 
@@ -91,7 +91,7 @@ class FormattedCellRenderer implements TableCellRenderer {
       String text;
 
       if (value instanceof Number)
-        text = format.format((Number) value);
+        text = format.format(value);
       else
         text = value.toString();
 
