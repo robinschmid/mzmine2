@@ -126,18 +126,14 @@ public class GroupedPeakListTableColumnModel extends DefaultTableColumnModel
     CommonColumnType2 visibleCommonColumns[] = CommonColumnType2.values();
     CorrelationColumnType corrColumns[] = CorrelationColumnType.values();
 
-    // add group id col
-    TableColumn newColumn = new TableColumn(0);
-    newColumn.setHeaderValue(corrColumns[0].getColumnName());
-    newColumn.setIdentifier(corrColumns[0]);
-    this.addColumn(newColumn);
+    TableColumn newColumn = null;
 
     // add common columns
     for (int i = 0; i < visibleCommonColumns.length; i++) {
 
       CommonColumnType2 commonColumn = visibleCommonColumns[i];
 
-      newColumn = new TableColumn(i + 1);
+      newColumn = new TableColumn(i);
       newColumn.setHeaderValue(commonColumn.getColumnName());
       newColumn.setIdentifier(commonColumn);
 
@@ -175,7 +171,7 @@ public class GroupedPeakListTableColumnModel extends DefaultTableColumnModel
     ColumnGroup iProfileGroup = new ColumnGroup("Intensity profile correlation");
     header.addColumnGroup(iProfileGroup);
 
-    for (int i = 1; i < corrColumns.length; i++) {
+    for (int i = 0; i < corrColumns.length; i++) {
       CorrelationColumnType corrCol = corrColumns[i];
       int modelIndex = CommonColumnType2.values().length + i;
 
@@ -205,6 +201,9 @@ public class GroupedPeakListTableColumnModel extends DefaultTableColumnModel
         case MIN_R_PEAKSHAPE:
           newColumn.setCellRenderer(corrRenderer);
           break;
+        case AVG_TOTAL_R_PEAKSHAPE:
+          newColumn.setCellRenderer(corrRenderer);
+          break;
         case MAXHEIGHT:
           newColumn.setCellRenderer(intensityRenderer);
           break;
@@ -215,9 +214,9 @@ public class GroupedPeakListTableColumnModel extends DefaultTableColumnModel
 
       this.addColumn(newColumn);
 
-      if (i >= 1 && i <= 5)
+      if (i >= 0 && i < CommonColumnType2.values().length)
         peakShapeGroup.add(newColumn);
-      else if (i >= 6 && i <= 8)
+      else if (i >= 0)
         iProfileGroup.add(newColumn);
     }
 

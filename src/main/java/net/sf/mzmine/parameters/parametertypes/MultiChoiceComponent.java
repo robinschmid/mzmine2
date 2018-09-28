@@ -28,7 +28,6 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.TreeSet;
-
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -74,6 +73,7 @@ public class MultiChoiceComponent extends JPanel implements ActionListener {
         ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     choicesPanel.getViewport().setBackground(Color.WHITE);
+    choicesPanel.setMinimumSize(new Dimension(300, 300));
     add(choicesPanel, BorderLayout.CENTER);
 
     // Buttons panel.

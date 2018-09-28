@@ -188,9 +188,7 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
 
     if (isCommonColumn(col))
       return null;
-    else if (col == 0) {
-      return corrColumns[0];
-    } else {
+    else {
       // substract common columns from the index
       col -= commonColumns.length;
       return corrColumns[col];

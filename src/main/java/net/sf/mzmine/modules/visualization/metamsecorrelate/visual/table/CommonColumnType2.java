@@ -25,8 +25,8 @@ import net.sf.mzmine.datamodel.PeakIdentity;
 public enum CommonColumnType2 {
 
   ROWID("ID", Integer.class), //
-  COLOR("", Paint.class), AVERAGEMZ("m/z", Double.class), //
-  GROUPID("#", Integer.class), //
+  COLOR("", Paint.class), GROUPID("#", Integer.class), //
+  AVERAGEMZ("m/z", Double.class), //
   AVERAGERT("RT", Double.class), //
   IDENTITY("Identity", PeakIdentity.class), //
   COMMENT("Comment", String.class);
