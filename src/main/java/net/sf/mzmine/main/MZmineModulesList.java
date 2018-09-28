@@ -48,7 +48,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.customdbsearch.Custo
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.FormulaPredictionModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulapredictionpeaklist.FormulaPredictionPeakListModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.fragmentsearch.FragmentSearchModule;
-import net.sf.mzmine.modules.peaklistmethods.identification.glycerophospholipidsearch.GPLipidSearchModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.lipididentification.LipidSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.MetaMSEcorrelateModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ms2search.Ms2SearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.nist.NistMsSearchModule;
@@ -98,6 +98,7 @@ import net.sf.mzmine.modules.rawdatamethods.peakpicking.msms.MsMsPeakPickerModul
 import net.sf.mzmine.modules.rawdatamethods.peakpicking.targetedpeakdetection.TargetedPeakDetectionModule;
 import net.sf.mzmine.modules.rawdatamethods.rawdataexport.RawDataExportModule;
 import net.sf.mzmine.modules.rawdatamethods.rawdataimport.RawDataImportModule;
+import net.sf.mzmine.modules.tools.isotopepatternpreview.IsotopePatternPreviewModule;
 import net.sf.mzmine.modules.tools.mzrangecalculator.MzRangeFormulaCalculatorModule;
 import net.sf.mzmine.modules.tools.mzrangecalculator.MzRangeMassCalculatorModule;
 import net.sf.mzmine.modules.visualization.histogram.HistogramVisualizerModule;
@@ -181,7 +182,7 @@ public class MZmineModulesList {
       // Identification
       CustomDBSearchModule.class, FormulaPredictionModule.class, FragmentSearchModule.class,
       AdductSearchModule.class, ComplexSearchModule.class, OnlineDBSearchModule.class,
-      GPLipidSearchModule.class, CameraSearchModule.class, NistMsSearchModule.class,
+      LipidSearchModule.class, CameraSearchModule.class, NistMsSearchModule.class,
       FormulaPredictionPeakListModule.class, Ms2SearchModule.class, SiriusProcessingModule.class,
       MetaMSEcorrelateModule.class,
 
@@ -194,7 +195,8 @@ public class MZmineModulesList {
       VanKrevelenDiagramModule.class, MSECorrGroupVisualizerModule.class,
 
       // Tools
-      MzRangeMassCalculatorModule.class, MzRangeFormulaCalculatorModule.class
+      MzRangeMassCalculatorModule.class, MzRangeFormulaCalculatorModule.class,
+      IsotopePatternPreviewModule.class
 
   };
 }

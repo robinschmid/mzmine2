@@ -10,7 +10,7 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.ui.RectangleInsets;
 import org.jfree.data.xy.XYSeries;
-import net.sf.mzmine.chartbasics.EChartPanel;
+import net.sf.mzmine.chartbasics.gui.swing.EChartPanel;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.IsotopePattern;
