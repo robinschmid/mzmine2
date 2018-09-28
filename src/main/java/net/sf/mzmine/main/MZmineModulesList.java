@@ -181,7 +181,7 @@ public class MZmineModulesList {
       // Identification
       CustomDBSearchModule.class, FormulaPredictionModule.class, FragmentSearchModule.class,
       AdductSearchModule.class, ComplexSearchModule.class, OnlineDBSearchModule.class,
-      GPLipidSearchModule.class, CameraSearchModule.class, NistMsSearchModule.class,
+      LipidSearchModule.class, CameraSearchModule.class, NistMsSearchModule.class,
       FormulaPredictionPeakListModule.class, Ms2SearchModule.class, SiriusProcessingModule.class,
       MetaMSEcorrelateModule.class,
 
@@ -194,7 +194,7 @@ public class MZmineModulesList {
       VanKrevelenDiagramModule.class, MSECorrGroupVisualizerModule.class,
 
       // Tools
-      MzRangeMassCalculatorModule.class, MzRangeFormulaCalculatorModule.class
+      MzRangeMassCalculatorModule.class, MzRangeFormulaCalculatorModule.class, IsotopePatternPreviewModule.class
 
   };
 }
