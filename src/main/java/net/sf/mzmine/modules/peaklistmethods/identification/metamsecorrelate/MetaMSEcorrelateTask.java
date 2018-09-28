@@ -531,8 +531,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         FeatureShapeCorrelationData[] data = corrRowToRowFeatureShape(raw, row, row2);
         // for min max avg
         RowCorrelationData rowCorr = new RowCorrelationData(0, 0, 0, data);
-        // has bad correlation: exit
-        if (rowCorr.hasPeakShapeCorrelation() && rowCorr.getAvgPeakShapeR() <= 0)
+        // no or bad correlation: exit
+        if (!rowCorr.hasPeakShapeCorrelation() || rowCorr.getAvgPeakShapeR() <= 0)
           return false;
         else if (rowCorr.hasPeakShapeCorrelation()) {
           // avg and min shape correlation:
