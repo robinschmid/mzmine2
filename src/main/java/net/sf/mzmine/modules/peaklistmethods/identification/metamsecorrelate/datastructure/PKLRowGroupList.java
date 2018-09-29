@@ -1,7 +1,7 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure;
 
-import java.util.Vector;
+import java.util.ArrayList;
 
-public class PKLRowGroupList extends Vector<PKLRowGroup> {
-  
+public class PKLRowGroupList extends ArrayList<PKLRowGroup> {
+
 }
