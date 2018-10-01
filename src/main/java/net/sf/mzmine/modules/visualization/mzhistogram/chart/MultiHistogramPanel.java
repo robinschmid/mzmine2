@@ -126,14 +126,18 @@ public class MultiHistogramPanel extends JPanel {
           JPanel pnHistoSett = new JPanel();
           boxSettings.add(pnHistoSett);
           {
-            cbExcludeSmallerNoise = new JCheckBox("exclude smallest");
-            cbExcludeSmallerNoise.setSelected(false);
-            pnHistoSett.add(cbExcludeSmallerNoise);
+            if (addExcludeSmallest) {
+              cbExcludeSmallerNoise = new JCheckBox("exclude smallest");
+              cbExcludeSmallerNoise.setSelected(false);
+              pnHistoSett.add(cbExcludeSmallerNoise);
+            }
           }
           {
-            cbThirdSQRT = new JCheckBox("cube root(I)");
-            cbThirdSQRT.setSelected(false);
-            pnHistoSett.add(cbThirdSQRT);
+            if (addCubeRootTransform) {
+              cbThirdSQRT = new JCheckBox("cube root(I)");
+              cbThirdSQRT.setSelected(false);
+              pnHistoSett.add(cbThirdSQRT);
+            }
           }
           {
             Component horizontalStrut = Box.createHorizontalStrut(20);
@@ -406,8 +410,10 @@ public class MultiHistogramPanel extends JPanel {
     txtRangeXEnd.getDocument().addDocumentListener(ddlx);
     txtRangeY.getDocument().addDocumentListener(ddly);
     txtRangeYEnd.getDocument().addDocumentListener(ddly);
-    cbThirdSQRT.addItemListener(e -> updateHistograms());
-    cbExcludeSmallerNoise.addItemListener(e -> updateHistograms());
+    if (cbThirdSQRT != null)
+      cbThirdSQRT.addItemListener(e -> updateHistograms());
+    if (cbExcludeSmallerNoise != null)
+      cbExcludeSmallerNoise.addItemListener(e -> updateHistograms());
     txtBinWidth.getDocument()
         .addDocumentListener(new DelayedDocumentListener(e -> updateHistograms()));
     txtBinShift.getDocument()
@@ -481,7 +487,7 @@ public class MultiHistogramPanel extends JPanel {
         protected JFreeChart doInBackground() throws Exception {
           // create histogram
           double[] dat = data[i].getData();
-          if (cbExcludeSmallerNoise.isSelected()) {
+          if (cbExcludeSmallerNoise != null && cbExcludeSmallerNoise.isSelected()) {
             double noise = data[i].getRange().getLowerBound();
             // get processed data from original image
             dat = DoubleStream.of(dat).filter(d -> d > noise).toArray();
@@ -489,7 +495,8 @@ public class MultiHistogramPanel extends JPanel {
 
           Range r = HistogramChartFactory.getBounds(dat);
 
-          DoubleFunction<Double> f = cbThirdSQRT.isSelected() ? val -> Math.cbrt(val) : val -> val;
+          DoubleFunction<Double> f =
+              cbThirdSQRT != null && cbThirdSQRT.isSelected() ? val -> Math.cbrt(val) : null;
 
           JFreeChart chart = HistogramChartFactory.createHistogram(dat, xLabel, binwidth,
               r.getLowerBound() - binShift, r.getUpperBound(), f);
@@ -657,10 +664,6 @@ public class MultiHistogramPanel extends JPanel {
 
   public JTextField getTxtBinWidth() {
     return txtBinWidth;
-  }
-
-  public JCheckBox getCbExcludeSmallerNoise() {
-    return cbExcludeSmallerNoise;
   }
 
   public JLabel getLbStats() {
