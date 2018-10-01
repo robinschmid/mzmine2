@@ -80,10 +80,15 @@ public class MultiHistogramPanel extends JPanel {
   private State[] states;
   private State state = State.CHANGED;
 
+  public MultiHistogramPanel(String xLabel) {
+    this(xLabel, false, false);
+  }
+
   /**
    * Create the dialog.
    */
-  public MultiHistogramPanel(String xLabel) {
+  public MultiHistogramPanel(String xLabel, boolean addCubeRootTransform,
+      boolean addExcludeSmallest) {
     setxLabel(xLabel);
     setBounds(100, 100, 903, 952);
     setMinimumSize(new Dimension(600, 300));
@@ -122,7 +127,7 @@ public class MultiHistogramPanel extends JPanel {
           boxSettings.add(pnHistoSett);
           {
             cbExcludeSmallerNoise = new JCheckBox("exclude smallest");
-            cbExcludeSmallerNoise.setSelected(true);
+            cbExcludeSmallerNoise.setSelected(false);
             pnHistoSett.add(cbExcludeSmallerNoise);
           }
           {
@@ -295,7 +300,17 @@ public class MultiHistogramPanel extends JPanel {
    * @param binWidth zero (0) for auto detection, -1 to keep last binWidth
    */
   public MultiHistogramPanel(String xLabel, HistogramData[] data, String[] title, double binWidth) {
-    this(xLabel);
+    this(xLabel, data, title, binWidth, false, false);
+  }
+
+  /**
+   * 
+   * @param data
+   * @param binWidth zero (0) for auto detection, -1 to keep last binWidth
+   */
+  public MultiHistogramPanel(String xLabel, HistogramData[] data, String[] title, double binWidth,
+      boolean addCubeRootTransform, boolean addExcludeSmallest) {
+    this(xLabel, addCubeRootTransform, addExcludeSmallest);
     setTitle(title);
     setData(data, binWidth);
   }
@@ -331,6 +346,7 @@ public class MultiHistogramPanel extends JPanel {
     states = new State[data.length];
     pbCharts.removeAll();
     pbCharts.setLayout(new GridLayout(1, data.length));
+
     pn = new JPanel[data.length];
     for (int i = 0; i < data.length; i++) {
       pn[i] = new JPanel(new BorderLayout());
@@ -506,13 +522,12 @@ public class MultiHistogramPanel extends JPanel {
               pnHisto[i] = new EChartPanel(histo, true, true, true, true, true);
               histo.getLegend().setVisible(true);
 
+              pn[i].removeAll();
               pn[i].add(pnHisto[i], BorderLayout.CENTER);
-
-              setState(i, State.DONE);
-
-              // pn[i].getParent().revalidate();
+              pn[i].getParent().revalidate();
               // pn[i].getParent().repaint();
 
+              setState(i, State.DONE);
               contentPanel.revalidate();
               contentPanel.repaint();
             } else {
