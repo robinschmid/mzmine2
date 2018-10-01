@@ -16,12 +16,13 @@
  * USA
  */
 
-package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate;
+package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.math.stat.regression.SimpleRegression;
@@ -41,11 +42,10 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.RowCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductType;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationParameters;
 import net.sf.mzmine.modules.peaklistmethods.isotopes.aligneddeisotoper.AlignedIsotopeGrouperTask;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.UserParameter;
+import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
@@ -53,10 +53,10 @@ import net.sf.mzmine.util.PeakListRowSorter;
 import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
 
-public class MetaMSEcorrelateTask extends AbstractTask {
+public class MSAnnotationTask extends AbstractTask {
 
   // Logger.
-  private static final Logger LOG = Logger.getLogger(MetaMSEcorrelateTask.class.getName());
+  private static final Logger LOG = Logger.getLogger(MSAnnotationTask.class.getName());
 
   private int finishedRows;
   private int totalRows;
@@ -64,10 +64,14 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   private final PeakList[] peakLists;
 
   private final RTTolerance rtTolerance;
+  private final MZTolerance mzTolerance;
   // adducts
-  private MSAnnotationLibrary library;
-  private final boolean useAdductBonusR, searchAdducts;
+  private final ESIAdductType[] selectedAdducts, selectedMods;
+  private Vector<ESIAdductType> allAdducts = new Vector<ESIAdductType>();
+  private Vector<ESIAdductType> allModification = new Vector<ESIAdductType>();
+  private final boolean useAdductBonusR, searchAdducts, isPositive;
   private final double adductBonusR;
+  private final int maxMolecules, maxCombinations, maxCharge, maxMods;
   //
   private final String groupingParameter;
   // sample group size
@@ -94,7 +98,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    * @param parameterSet the parameters.
    * @param list peak list.
    */
-  public MetaMSEcorrelateTask(final MZmineProject project, final ParameterSet parameterSet,
+  public MSAnnotationTask(final MZmineProject project, final ParameterSet parameterSet,
       final PeakList[] peakLists) {
     this.project = project;
     this.peakLists = peakLists;
@@ -105,42 +109,99 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
     // sample groups parameter
     groupingParameter =
-        (String) parameters.getParameter(MetaMSEcorrelateParameters.GROUPSPARAMETER).getValue();
+        (String) parameters.getParameter(MSAnnotationParameters.GROUPSPARAMETER).getValue();
     // tolerances
-    rtTolerance = parameterSet.getParameter(MetaMSEcorrelateParameters.RT_TOLERANCE).getValue();
+    rtTolerance = parameterSet.getParameter(MSAnnotationParameters.RT_TOLERANCE).getValue();
+    mzTolerance = parameterSet.getParameter(MSAnnotationParameters.MZ_TOLERANCE).getValue();
 
     // filter
     // start with high abundant features >= mainPeakIntensity
     // In this way we directly filter out groups with no abundant features
     // fill in smaller features after
     mainPeakIntensity =
-        parameterSet.getParameter(MetaMSEcorrelateParameters.MAIN_PEAK_HEIGHT).getValue();
+        parameterSet.getParameter(MSAnnotationParameters.MAIN_PEAK_HEIGHT).getValue();
     // by min percentage of samples in a sample set that contain this feature MIN_SAMPLES
     percContainedInSamples =
-        parameterSet.getParameter(MetaMSEcorrelateParameters.MIN_SAMPLES).getValue();
+        parameterSet.getParameter(MSAnnotationParameters.MIN_SAMPLES).getValue();
     // intensity correlation across samples
     minIntensityProfileR =
-        parameterSet.getParameter(MetaMSEcorrelateParameters.MIN_R_I_PROFILE).getValue();
+        parameterSet.getParameter(MSAnnotationParameters.MIN_R_I_PROFILE).getValue();
     // feature shape correlation
     minShapeCorrR =
-        parameterSet.getParameter(MetaMSEcorrelateParameters.MIN_R_SHAPE_INTRA).getValue();
+        parameterSet.getParameter(MSAnnotationParameters.MIN_R_SHAPE_INTRA).getValue();
     noiseLevelShapeCorr =
-        parameterSet.getParameter(MetaMSEcorrelateParameters.NOISE_LEVEL_PEAK_SHAPE).getValue();
+        parameterSet.getParameter(MSAnnotationParameters.NOISE_LEVEL_PEAK_SHAPE).getValue();
     // min of 3! TODO
     minCorrelatedDataPoints =
-        parameterSet.getParameter(MetaMSEcorrelateParameters.MIN_DP_CORR_PEAK_SHAPE).getValue();
+        parameterSet.getParameter(MSAnnotationParameters.MIN_DP_CORR_PEAK_SHAPE).getValue();
 
     // TODO: maybe search for isotopes first hard coded and filter by isotope pattern
+    searchAdducts = parameterSet.getParameter(MSAnnotationParameters.SEARCH_ADDUCTS).getValue();
+    isPositive = parameterSet.getParameter(MSAnnotationParameters.POSITIVE_MODE).getValue();
     useAdductBonusR =
-        parameterSet.getParameter(MetaMSEcorrelateParameters.ADDUCT_BONUSR).getValue();
-    adductBonusR = parameterSet.getParameter(MetaMSEcorrelateParameters.ADDUCT_BONUSR)
+        parameterSet.getParameter(MSAnnotationParameters.ADDUCT_BONUSR).getValue();
+    adductBonusR = parameterSet.getParameter(MSAnnotationParameters.ADDUCT_BONUSR)
         .getEmbeddedParameter().getValue();
+    maxMolecules = parameterSet.getParameter(MSAnnotationParameters.MAX_MOLECULES).getValue();
+    maxCombinations =
+        parameterSet.getParameter(MSAnnotationParameters.MAX_COMBINATION).getValue();
+    maxCharge = parameterSet.getParameter(MSAnnotationParameters.MAX_CHARGE).getValue();
+    maxMods = parameterSet.getParameter(MSAnnotationParameters.MAX_MODS).getValue();
 
-    searchAdducts = parameterSet.getParameter(MetaMSEcorrelateParameters.ADDUCT_LIBRARY).getValue();
-    MSAnnotationParameters annParam = (MSAnnotationParameters) parameterSet
-        .getParameter(MetaMSEcorrelateParameters.ADDUCT_LIBRARY).getEmbeddedParameters();
-    library = new MSAnnotationLibrary(annParam);
+    selectedAdducts = parameterSet.getParameter(MSAnnotationParameters.ADDUCTS).getValue()[0];
+    selectedMods = parameterSet.getParameter(MSAnnotationParameters.ADDUCTS).getValue()[1];
+
+    createAllAdducts(isPositive, maxMolecules, maxCombinations, maxCharge);
   }
+
+
+  /**
+   * only for adduct testing
+   */
+  public MSAnnotationTask(boolean pos, ESIAdductType[] selectedAdducts,
+      ESIAdductType[] selectedMods, int maxMolecules, int maxCombinations, int maxCharge,
+      int maxMods) {
+    super();
+    this.selectedAdducts = selectedAdducts;
+    this.selectedMods = selectedMods;
+    this.maxMolecules = maxMolecules;
+    this.maxCombinations = maxCombinations;
+    this.maxCharge = maxCharge;
+    this.maxMods = maxMods;
+    this.project = null;
+    this.peakLists = null;
+    parameters = null;
+
+    finishedRows = 0;
+    totalRows = 0;
+    groupingParameter = null;
+    rtTolerance = null;
+    mzTolerance = null;
+
+    // filter
+    // start with high abundant features >= mainPeakIntensity
+    // In this way we directly filter out groups with no abundant features
+    // fill in smaller features after
+    mainPeakIntensity = 0;
+    // by min percentage of samples in a sample set that contain this feature MIN_SAMPLES
+    percContainedInSamples = 0;
+    // intensity correlation across samples
+    minIntensityProfileR = 0;
+    // feature shape correlation
+    minShapeCorrR = 0;
+    noiseLevelShapeCorr = 0;
+    // min of 3! TODO
+    minCorrelatedDataPoints = 0;
+
+    // TODO: maybe search for isotopes first hard coded and filter by isotope pattern
+    searchAdducts = true;
+    isPositive = pos;
+    useAdductBonusR = true;
+    adductBonusR = 0;
+
+    createAllAdducts(isPositive, maxMolecules, maxCombinations, maxCharge);
+  }
+
 
   @Override
   public double getFinishedPercentage() {
@@ -484,14 +545,14 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         // search adducts and 13C isotopologues
         if (searchAdducts) {
           // Deisotoping went wrong?
-          int absCharge = AlignedIsotopeGrouperTask.find13CIsotope(peakList, row, row2,
-              library.getMaxCharge(), library.getMzTolerance());
+          int absCharge =
+              AlignedIsotopeGrouperTask.find13CIsotope(peakList, row, row2, maxCharge, mzTolerance);
           boolean isIsotope = absCharge != -1;
           // search for adducts and add correlation: IProfile doesnt have to be the same for adducts
           boolean isAdduct = false;
           if (!isIsotope) {
             ESIAdductType[] ad =
-                library.findAdducts(peakList, row2, row, row2.getRowCharge(), row.getRowCharge());
+                findAdducts(peakList, row2, row, row2.getRowCharge(), row.getRowCharge());
             if (ad != null) {
               isAdduct = true;
               lastAdductCombination = ad;
@@ -513,7 +574,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         corr += adductBonusR * adductsInGroup;
       return corr >= minShapeCorrR;
     } else {
-      int max = Math.max(library.getMaxCombinations(), library.getMaxCharge()) + 1;
+      int max = Math.max(maxCombinations, maxCharge) + 1;
       return adductsInGroup > 1
           || (lastAdductCombination != null && lastAdductCombination[0].isMainAdduct(max)
               && lastAdductCombination[1].isMainAdduct(max));
@@ -568,13 +629,13 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       reg.addData(I1, I2);
     }
     // First search for isotopes TODO later fill in isotopes from raw
-    int absCharge = AlignedIsotopeGrouperTask.find13CIsotope(peakList, row, row2,
-        library.getMaxCharge(), library.getMzTolerance());
+    int absCharge =
+        AlignedIsotopeGrouperTask.find13CIsotope(peakList, row, row2, maxCharge, mzTolerance);
     boolean isIsotope = absCharge != -1;
     // TODO search for adducts and add correlation: IProfile doesnt have to be the same for adducts
     boolean isAdduct = false;
     if (!isIsotope)
-      library.findAdducts(peakList, row, row2, row.getRowCharge(), row2.getRowCharge());
+      findAdducts(peakList, row, row2, row.getRowCharge(), row2.getRowCharge());
     double adductBonus = (isIsotope || isAdduct) && useAdductBonusR ? adductBonusR : 0;
     // TODO weighting of intensity corr and feature shape corr
     // there was no correlation possible due to small peaks
@@ -782,4 +843,227 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
   }
 
+  /**
+   *
+   * @param mainRow main peak.
+   * @param possibleAdduct candidate adduct peak.
+   */
+  private ESIAdductType[] findAdducts(final PeakList peakList, final PeakListRow row1,
+      final PeakListRow row2, final int z1, final int z2) {
+    // check all combinations of adducts
+    for (final ESIAdductType adduct : allAdducts) {
+      for (final ESIAdductType adduct2 : allAdducts) {
+        // for one adduct use a maximum of 1 modification
+        // second can have <=maxMods
+        if (!adduct.equals(adduct2) && !(adduct.getModCount() > 1 && adduct2.getModCount() > 1)) {
+          // check charge state if absCharge is not -1 or 0
+          if ((z1 <= 0 || adduct.getAbsCharge() == z1)
+              && (z2 <= 0 || adduct2.getAbsCharge() == z2)) {
+            // checks each raw file - only true if all m/z are in range
+            if (checkAdduct(peakList, row1, row2, adduct, adduct2)) {
+              // is a2 a modification of a1? (same adducts - different mods
+              if (adduct2.isModificationOf(adduct)) {
+                adduct2.subtractMods(adduct).addAdductIdentityToRow(row2, row1);
+                MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row2, false);
+              } else if (adduct.isModificationOf(adduct2)) {
+                adduct.subtractMods(adduct2).addAdductIdentityToRow(row1, row2);
+                MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row1, false);
+              } else {
+                // Add adduct identity and notify GUI.
+                // only if not already present
+                adduct.addAdductIdentityToRow(row1, row2);
+                MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row1, false);
+                adduct2.addAdductIdentityToRow(row2, row1);
+                MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row2, false);
+              }
+              // there can only be one hit for a row-row comparison
+              return new ESIAdductType[] {adduct, adduct2};
+            }
+          }
+        }
+      }
+    }
+    // no adduct to be found
+    return null;
+  }
+
+  /**
+   * Check if candidate peak is a given type of adduct of given main peak. is not checking retention
+   * time (has to be checked before)
+   * 
+   * @param mainPeak main peak.
+   * @param possibleAdduct candidate adduct peak.
+   * @param adduct adduct.
+   * @return true if mass difference, retention time tolerance and adduct peak height conditions are
+   *         met.
+   */
+  private boolean checkAdduct(final PeakList peakList, final PeakListRow row1,
+      final PeakListRow row2, final ESIAdductType adduct, final ESIAdductType adduct2) {
+    // for each peak[rawfile] in row
+    boolean hasCommonPeak = false;
+    //
+    for (RawDataFile raw : peakList.getRawDataFiles()) {
+      Feature f1 = row1.getPeak(raw);
+      Feature f2 = row2.getPeak(raw);
+      if (f1 != null && f2 != null) {
+        hasCommonPeak = true;
+        double mz1 = ((f1.getMZ() * adduct.getAbsCharge()) - adduct.getMassDifference())
+            / adduct.getMolecules();
+        double mz2 = ((f2.getMZ() * adduct2.getAbsCharge()) - adduct2.getMassDifference())
+            / adduct2.getMolecules();
+        if (!mzTolerance.checkWithinTolerance(mz1, mz2))
+          return false;
+      }
+    }
+    // directly returns false if not in range
+    // so if has common peak = isAdduct
+    return hasCommonPeak;
+  }
+
+  /**
+   * create all possible adducts
+   */
+  private void createAllAdducts(boolean positive, int maxMolecules, int maxCombination,
+      int maxCharge) {
+    // normal adducts
+    for (ESIAdductType a : selectedAdducts)
+      if ((a.getCharge() > 0 && positive) || (a.getCharge() < 0 && !positive))
+        allAdducts.add(a);
+    // add or remove H from multi charged (Fe2+)
+    // addRemoveHydrogen(positive);
+    // combined adducts
+    if (maxCombination > 1) {
+      combineAdducts(allAdducts, selectedAdducts, new Vector<ESIAdductType>(allAdducts),
+          maxCombination, 1, false);
+      for (int i = 0; i < allAdducts.size(); i++) {
+        if (allAdducts.get(i).getAbsCharge() > maxCharge) {
+          allAdducts.remove(i);
+          i--;
+        }
+      }
+    }
+    // add or remove H from multi charged (Fe2+)
+    addRemoveHydrogen(positive);
+    // add modification
+    addModification();
+    // multiple molecules
+    addMultipleMolecules(maxMolecules);
+    // print them out
+    for (ESIAdductType a : allAdducts)
+      System.out.println(a.toString());
+  }
+
+  /**
+   * adds modification to the existing adducts
+   */
+  private void addModification() {
+    // normal mods
+    for (ESIAdductType a : selectedMods)
+      allModification.add(a);
+    // combined modification
+    combineAdducts(allModification, selectedMods, new Vector<ESIAdductType>(allModification),
+        maxMods, 1, true);
+    // add new modified adducts
+    int size = allAdducts.size();
+    for (int i = 0; i < size; i++) {
+      ESIAdductType a = allAdducts.get(i);
+      // all mods
+      for (ESIAdductType mod : allModification) {
+        allAdducts.add(ESIAdductType.createModified(a, mod));
+      }
+    }
+  }
+
+  private void addMultipleMolecules(int maxMolecules) {
+    int size = allAdducts.size();
+    for (int k = 0; k < size; k++) {
+      ESIAdductType a = allAdducts.get(k);
+      for (int i = 2; i <= maxMolecules; i++) {
+        allAdducts.add(new ESIAdductType(a));
+        allAdducts.lastElement().setMolecules(i);
+      }
+    }
+  }
+
+  /**
+   * does not check maxCharge-delete afterwards
+   * 
+   * @param adducts
+   * @param maxCombination
+   * @param maxCharge
+   * @param run init with 1
+   */
+  private void combineAdducts(Vector<ESIAdductType> targetList, ESIAdductType[] selectedList,
+      final Vector<ESIAdductType> adducts, int maxCombination, int run, boolean zeroChargeAllowed) {
+    Vector<ESIAdductType> newAdducts = new Vector<ESIAdductType>();
+    for (int i = 0; i < adducts.size(); i++) {
+      ESIAdductType a1 = adducts.get(i);
+      for (int k = 0; k < selectedList.length; k++) {
+        ESIAdductType a2 = selectedList[k];
+        ESIAdductType na = new ESIAdductType(a1, a2);
+        if ((zeroChargeAllowed || na.getCharge() != 0) && !isContainedIn(targetList, na)) {
+          newAdducts.add(na);
+          targetList.add(na);
+        }
+      }
+    }
+    // first run = combination of two
+    if (run + 1 < maxCombination) {
+      combineAdducts(targetList, selectedList, newAdducts, maxCombination, run + 1,
+          zeroChargeAllowed);
+    }
+  }
+
+  private boolean isContainedIn(Vector<ESIAdductType> adducts, ESIAdductType na) {
+    for (ESIAdductType a : adducts) {
+      if (a.sameMathDifference(na))
+        return true;
+    }
+    return false;
+  }
+
+  /**
+   * add or remove hydrogen to obtain more adduct types also to all positive adducts
+   * 
+   * @param positive
+   */
+  private void addRemoveHydrogen(boolean positive) {
+    ESIAdductType H = ESIAdductType.H;
+    ESIAdductType Hneg = ESIAdductType.H_NEG;
+    // remove/add hydrogen from double charged ones to get single charge
+    // example: M+Fe]2+ will be M+Fe-H]+
+    for (int i = 0; i < allAdducts.size(); i++) {
+      ESIAdductType a = allAdducts.get(i);
+      for (int z = a.getAbsCharge(); z > 1; z--) {
+        // positive remove H ; negative add H
+        ESIAdductType tmpA = new ESIAdductType(a, positive ? Hneg : H);
+        if (!isContainedIn(allAdducts, tmpA))
+          allAdducts.add(tmpA);
+        a = tmpA;
+      }
+    }
+    // find !positve selectedAdducts and
+    // add/remove as many H as possible
+    for (int i = 0; i < selectedAdducts.length; i++) {
+      ESIAdductType a = selectedAdducts[i];
+      // adduct has a different charge state than MS mode
+      if (((a.getCharge() > 0) != positive)) {
+        // add/remove H to absCharge == 1 (+- like positive)
+        ESIAdductType[] start = new ESIAdductType[a.getAbsCharge() + 2];
+        start[0] = a;
+        for (int k = 1; k < start.length; k++)
+          start[k] = positive ? H : Hneg;
+        a = new ESIAdductType(start);
+        if (!isContainedIn(allAdducts, a))
+          allAdducts.add(a);
+        // loop runs:
+        for (int z = 2; z <= maxCharge; z++) {
+          ESIAdductType tmpA = new ESIAdductType(a, positive ? H : Hneg);
+          if (!isContainedIn(allAdducts, tmpA))
+            allAdducts.add(tmpA);
+          a = tmpA;
+        }
+      }
+    }
+  }
 }
