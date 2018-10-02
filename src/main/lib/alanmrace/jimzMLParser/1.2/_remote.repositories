@@ -1,0 +1,5 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Tue Oct 02 16:08:54 PDT 2018
+jimzMLParser-1.2-jar-with-dependencies.jar>=
+jimzMLParser-1.2.jar>=
+jimzMLParser-1.2.pom>=
