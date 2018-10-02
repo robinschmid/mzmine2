@@ -18,14 +18,13 @@ import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.MetaMSEcorrelateTask;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductIdentity;
 import net.sf.mzmine.util.PeakListRowSorter;
 import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
 
 public class AnnotationNetworkPanel extends JPanel {
-  private static final Logger LOG = Logger.getLogger(MetaMSEcorrelateTask.class.getName());
+  private static final Logger LOG = Logger.getLogger(AnnotationNetworkPanel.class.getName());
 
   protected String styleSheet =
       "node {" + "   fill-color: black;" + "}" + "node.marked {" + "   fill-color: red;" + "}";

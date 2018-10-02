@@ -2,7 +2,7 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.ms
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
+import java.util.logging.Logger;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
@@ -12,6 +12,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 public class MSAnnotationLibrary {
+  private static final Logger LOG = Logger.getLogger(MSAnnotationLibrary.class.getName());
   private MZTolerance mzTolerance;
   // adducts
   private final ESIAdductType[] selectedAdducts, selectedMods;
@@ -32,35 +33,37 @@ public class MSAnnotationLibrary {
     selectedAdducts = parameterSet.getParameter(MSAnnotationParameters.ADDUCTS).getValue()[0];
     selectedMods = parameterSet.getParameter(MSAnnotationParameters.ADDUCTS).getValue()[1];
 
-    createAllAdducts(isPositive, maxMolecules, maxCombinations, maxCharge);
+    createAllAdducts(isPositive, maxMolecules, maxCombinations, maxCharge, maxMods);
   }
 
   /**
    * create all possible adducts
    */
   private void createAllAdducts(boolean positive, int maxMolecules, int maxCombination,
-      int maxCharge) {
-    // normal adducts
+      int maxCharge, int maxMods) {
+    // normal primary adducts
     for (ESIAdductType a : selectedAdducts)
       if ((a.getCharge() > 0 && positive) || (a.getCharge() < 0 && !positive))
         allAdducts.add(a);
-    // add or remove H from multi charged (Fe2+)
-    // addRemoveHydrogen(positive);
     // combined adducts
     if (maxCombination > 1) {
       combineAdducts(allAdducts, selectedAdducts, new ArrayList<ESIAdductType>(allAdducts),
           maxCombination, 1, false);
-      for (int i = 0; i < allAdducts.size(); i++) {
-        if (allAdducts.get(i).getAbsCharge() > maxCharge) {
-          allAdducts.remove(i);
-          i--;
-        }
+    }
+
+    // only keep the ones with maxCharge+1 (to abstract/add one H only)
+    for (int i = 0; i < allAdducts.size(); i++) {
+      if (allAdducts.get(i).getAbsCharge() > maxCharge + 1) {
+        allAdducts.remove(i);
+        i--;
       }
     }
     // add or remove H from multi charged (Fe2+)
     addRemoveHydrogen(positive);
+
     // add modification
-    addModification();
+    if (maxMods > 0)
+      addModification();
     // multiple molecules
     addMultipleMolecules(maxMolecules);
     // remove all >max charge
@@ -72,7 +75,7 @@ public class MSAnnotationLibrary {
     }
     // print them out
     for (ESIAdductType a : allAdducts)
-      System.out.println(a.toString());
+      LOG.info(a.toString());
   }
 
   /**
@@ -161,8 +164,9 @@ public class MSAnnotationLibrary {
     for (ESIAdductType a : selectedMods)
       allModification.add(a);
     // combined modification
-    combineAdducts(allModification, selectedMods, new Vector<ESIAdductType>(allModification),
-        maxMods, 1, true);
+    if (maxMods > 1)
+      combineAdducts(allModification, selectedMods, new ArrayList<ESIAdductType>(allModification),
+          maxMods, 1, true);
     // add new modified adducts
     int size = allAdducts.size();
     for (int i = 0; i < size; i++) {
