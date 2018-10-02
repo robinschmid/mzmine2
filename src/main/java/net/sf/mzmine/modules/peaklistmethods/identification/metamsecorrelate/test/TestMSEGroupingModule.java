@@ -13,7 +13,7 @@ public class TestMSEGroupingModule {
     core.main(args);
 
     // sample project
-    File file = new File("D://Daten/RAW/Master/STC1.mzmine");
+    File file = new File("D://Daten/RAW/Master/STC1_test.mzmine");
     // open project
     ProjectLoaderParameters par = new ProjectLoaderParameters();
     par.getParameter(ProjectLoaderParameters.projectFile).setValue(file);
