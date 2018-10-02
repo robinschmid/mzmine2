@@ -17,6 +17,7 @@ public class TestNetworks {
 
   public TestNetworks() {
     createNewFrame();
+    // createDirectMulti();
     // createDirect();
   }
 
@@ -41,6 +42,32 @@ public class TestNetworks {
     }
 
     explore(graph.getNode("A"));
+  }
+
+  private void createDirectMulti() {
+    Graph graph = new SingleGraph("tutorial 1");
+
+    graph.addAttribute("ui.stylesheet", styleSheet);
+    graph.setAutoCreate(true);
+    graph.setStrict(false);
+    graph.display();
+
+    graph.addEdge("AB", "A", "B");
+    graph.addEdge("BC", "B", "C");
+    graph.addEdge("CA", "C", "A");
+    graph.addEdge("AD", "A", "D");
+    graph.addEdge("DE", "D", "E");
+    graph.addEdge("DF", "D", "F");
+    graph.addEdge("EF", "E", "F");
+
+    graph.addEdge("XY", "X", "Y");
+    graph.addEdge("YZ", "Y", "Z");
+    graph.addEdge("XZ", "X", "Z");
+
+    for (Node node : graph) {
+      node.addAttribute("ui.label", node.getId());
+    }
+
   }
 
   public void createNewFrame() {
@@ -70,6 +97,11 @@ public class TestNetworks {
     frame.getContentPane().add(view, BorderLayout.CENTER);
     frame.setSize(800, 800);
     frame.setVisible(true);
+
+
+    graph.addEdge("XY", "X", "Y");
+    graph.addEdge("YZ", "Y", "Z");
+    graph.addEdge("XZ", "X", "Z");
   }
 
   public void explore(Node source) {

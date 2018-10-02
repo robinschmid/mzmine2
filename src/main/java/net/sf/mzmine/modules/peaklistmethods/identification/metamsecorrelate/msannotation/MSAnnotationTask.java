@@ -45,7 +45,6 @@ public class MSAnnotationTask extends AbstractTask {
 
   private int finishedRows;
   private int totalRows;
-  private double progress;
   private final PeakList peakList;
 
   private boolean useAvgRT;
