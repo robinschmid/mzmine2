@@ -6,6 +6,8 @@ import javax.swing.JFrame;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.SingleGraph;
+import org.graphstream.ui.spriteManager.Sprite;
+import org.graphstream.ui.spriteManager.SpriteManager;
 import org.graphstream.ui.swingViewer.ViewPanel;
 import org.graphstream.ui.view.Viewer;
 
@@ -102,6 +104,12 @@ public class TestNetworks {
     graph.addEdge("XY", "X", "Y");
     graph.addEdge("YZ", "Y", "Z");
     graph.addEdge("XZ", "X", "Z");
+
+    SpriteManager sman = new SpriteManager(graph);
+    Sprite s = sman.addSprite("XYs");
+    s.setAttribute("ui.label", "text");
+    s.attachToEdge("XY");
+    s.setPosition(0.2);
   }
 
   public void explore(Node source) {
