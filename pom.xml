@@ -361,7 +361,7 @@
 
 		<!-- moved jimzML to private repository -->
 		<dependency>
-			<groupId>com.alanmrace</groupId>
+			<groupId>alanmrace</groupId>
 			<artifactId>jimzMLParser</artifactId>
 			<version>1.1</version>
 		</dependency>

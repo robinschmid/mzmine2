@@ -191,7 +191,7 @@ public class EHistogramDialog extends HistogramDialog implements ActionListener 
     if (keepRange) {
       // set constant range zoom
       double length = plot.getDomainAxis().getRange().getLength();
-      plot.getDomainAxis().setRangeAroundValue(data.getXValue(0, i), length);
+      plot.getDomainAxis().setRangeAboutValue(data.getXValue(0, i), length);
     } else {
       // set range directly around peak
       plot.getDomainAxis().setRange(lower, upper);
