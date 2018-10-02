@@ -63,13 +63,21 @@ public class MSAnnotationLibrary {
     addModification();
     // multiple molecules
     addMultipleMolecules(maxMolecules);
+    // remove all >max charge
+    for (int i = 0; i < allAdducts.size(); i++) {
+      if (allAdducts.get(i).getAbsCharge() > maxCharge) {
+        allAdducts.remove(i);
+        i--;
+      }
+    }
     // print them out
     for (ESIAdductType a : allAdducts)
       System.out.println(a.toString());
   }
 
   /**
-   *
+   * Does only find one
+   * 
    * @param mainRow main peak.
    * @param possibleAdduct candidate adduct peak.
    */
