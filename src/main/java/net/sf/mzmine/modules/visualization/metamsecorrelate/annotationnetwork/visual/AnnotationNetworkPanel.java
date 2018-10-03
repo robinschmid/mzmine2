@@ -165,21 +165,24 @@ public class AnnotationNetworkPanel extends JPanel {
     return row.getID() + " (mz=" + mzForm.format(row.getAverageMZ()) + ")";
   }
 
+
   public void zoom(boolean zoomOut) {
     viewPercent += viewPercent * 0.1 * (zoomOut ? -1 : 1);
-    LOG.info("Zoom to " + viewPercent);
     view.getCamera().setViewPercent(viewPercent);
   }
 
   public void translate(double dx, double dy) {
-    LOG.info("Translate to " + dx + " " + dy);
     Point3 c = view.getCamera().getViewCenter();
-    view.getCamera().setViewCenter(c.x + dx, c.y + dy, c.z);
+    Point3 p0 = view.getCamera().transformPxToGu(0, 0);
+    Point3 p = view.getCamera().transformPxToGu(dx, dy);
+
+    view.getCamera().setViewCenter(c.x + p.x - p0.x, c.y + p.y + p0.y, c.z);
   }
 
   public void setCenter(int x, int y) {
-    LOG.info("Center to " + x + " " + y);
     Point3 c = view.getCamera().getViewCenter();
-    view.getCamera().setViewCenter(x, y, c.z);
+    Point3 p = view.getCamera().transformPxToGu(x, y);
+    view.getCamera().setViewCenter(p.x, p.y, c.z);
   }
+
 }
