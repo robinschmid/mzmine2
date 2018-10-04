@@ -27,14 +27,14 @@ import org.openscience.cdk.interfaces.IIsotope;
 import org.openscience.cdk.interfaces.IMolecularFormula;
 import org.openscience.cdk.silent.SilentChemObjectBuilder;
 import org.openscience.cdk.tools.manipulator.MolecularFormulaManipulator;
+import com.google.common.collect.Range;
+import io.github.msdk.MSDKException;
+import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.IsotopePattern;
 import net.sf.mzmine.datamodel.MassSpectrumType;
 import net.sf.mzmine.datamodel.PolarityType;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
-import com.google.common.collect.Range;
-import io.github.msdk.MSDKException;
-import io.github.msdk.MSDKRuntimeException;
 
 /**
  * Extended implementation of IsotopePattern interface. This can calculate isotope patterns starting
@@ -45,11 +45,11 @@ import io.github.msdk.MSDKRuntimeException;
  * set up via setUp(...)
  * 
  * @author Steffen Heuckeroth steffen.heuckeroth@gmx.de / s_heuc03@uni-muenster.de
- *  
+ * 
  */
 public class ExtendedIsotopePattern implements IsotopePattern {
 
-  private static final double ELECTRON_MASS = 5.4857990943E-4;
+  public static final double ELECTRON_MASS = 5.4857990943E-4;
   private ArrayList<DataPoint> dataPoints;
   private ArrayList<String> dpDescr;
   private DataPoint highestPeak;
@@ -92,8 +92,7 @@ public class ExtendedIsotopePattern implements IsotopePattern {
     IMolecularFormula form;
     try {
       form = MolecularFormulaManipulator.getMajorIsotopeMolecularFormula(sumFormula, builder);
-    }
-    catch (Exception e) {
+    } catch (Exception e) {
       throw new MSDKRuntimeException("Could not set up formula. Invalid input.");
     }
     description = sumFormula;
@@ -150,8 +149,8 @@ public class ExtendedIsotopePattern implements IsotopePattern {
         if (((iso.getNaturalAbundance() / 100.0d) * dataPoints.get(i).getIntensity()) < 1E-12) {
           continue;
         }
-        
-        
+
+
         newDp.add(new SimpleDataPoint(dataPoints.get(i).getMZ() + iso.getExactMass(),
             dataPoints.get(i).getIntensity() * (iso.getNaturalAbundance() / 100.0d)));
         // System.out.println(iso.getMassNumber() + iso.getSymbol());
@@ -296,7 +295,8 @@ public class ExtendedIsotopePattern implements IsotopePattern {
 
     for (int i = 0; i < dataPoints.size(); i++) {
       if (dataPoints.get(i).getIntensity() < minIntensity) {
-//        System.out.println("will remove peak " + i + dpDescr.get(i) + " bc " + dataPoints.get(i).getIntensity() + " < " + minIntensity);
+        // System.out.println("will remove peak " + i + dpDescr.get(i) + " bc " +
+        // dataPoints.get(i).getIntensity() + " < " + minIntensity);
         dataPoints.set(i, null);
         dpDescr.set(i, null);
       }

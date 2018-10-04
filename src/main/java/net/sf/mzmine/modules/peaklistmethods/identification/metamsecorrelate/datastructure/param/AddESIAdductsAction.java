@@ -3,35 +3,32 @@
  *
  * This file is part of MZmine 2.
  *
- * MZmine 2 is free software; you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation; either version 2 of the License, or (at your option) any later
- * version.
+ * MZmine 2 is free software; you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
  *
- * MZmine 2 is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * MZmine 2 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * MZmine 2; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
- * Fifth Floor, Boston, MA 02110-1301 USA
+ * You should have received a copy of the GNU General Public License along with MZmine 2; if not,
+ * write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+ * USA
  */
 
-/* Code created was by or on behalf of Syngenta and is released under the open source license in use for the
- * pre-existing code or project. Syngenta does not assert ownership or copyright any over pre-existing work.
+/*
+ * Code created was by or on behalf of Syngenta and is released under the open source license in use
+ * for the pre-existing code or project. Syngenta does not assert ownership or copyright any over
+ * pre-existing work.
  */
 
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param;
 
-import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-
 import javax.swing.AbstractAction;
-import javax.swing.SwingUtilities;
-
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.ParameterSet;
@@ -40,7 +37,7 @@ import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.MultiChoiceComponent;
 import net.sf.mzmine.parameters.parametertypes.StringParameter;
-import net.sf.mzmine.parameters.parametertypes.esiadducts.ESIAdductsComponent;
+import net.sf.mzmine.parameters.parametertypes.SumformulaParameter;
 import net.sf.mzmine.util.ExitCode;
 
 /**
@@ -49,73 +46,85 @@ import net.sf.mzmine.util.ExitCode;
  */
 public class AddESIAdductsAction extends AbstractAction {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+  /**
+   * 
+   */
+  private static final long serialVersionUID = 1L;
 
-	private MultiChoiceComponent parent;
-	/**
-	 * Create the action.
-	 */
-	public AddESIAdductsAction(MultiChoiceComponent parent) {
-		super("Add...");
-		this.parent = parent;
-		putValue(SHORT_DESCRIPTION, "Add a custom adduct to the set of choices");
-	}
+  private MultiChoiceComponent parent;
 
-	@Override
-	public void actionPerformed(final ActionEvent e) { 
+  /**
+   * Create the action.
+   */
+  public AddESIAdductsAction(MultiChoiceComponent parent) {
+    super("Add...");
+    this.parent = parent;
+    putValue(SHORT_DESCRIPTION, "Add a custom adduct to the set of choices");
+  }
 
-		if (parent != null) {
+  @Override
+  public void actionPerformed(final ActionEvent e) {
 
-			// Show dialog.
-			final ParameterSet parameters = new AddESIAdductParameters();
-			if (parameters.showSetupDialog(MZmineCore.getDesktop()
-					.getMainWindow(), true) == ExitCode.OK) {
+    if (parent != null) {
 
-				// Create new adduct.
-				final ESIAdductType adduct = new ESIAdductType(parameters
-						.getParameter(AddESIAdductParameters.NAME).getValue(),
-						parameters.getParameter(AddESIAdductParameters.MASS_DIFFERENCE).getValue(),
-						parameters.getParameter(AddESIAdductParameters.CHARGE).getValue(),
-						parameters.getParameter(AddESIAdductParameters.MOLECULES).getValue());
+      // Show dialog.
+      final ParameterSet parameters = new AddESIAdductParameters();
+      if (parameters.showSetupDialog(MZmineCore.getDesktop().getMainWindow(),
+          true) == ExitCode.OK) {
 
-				// Add to list of choices (if not already present).
-				final Collection<ESIAdductType> choices = new ArrayList<ESIAdductType>(
-						Arrays.asList((ESIAdductType[]) parent.getChoices()));
-				if (!choices.contains(adduct)) {
+        //
+        int charge = 0;
+        double mz = 0;
+        String name = parameters.getParameter(AddESIAdductParameters.NAME).getValue();
+        // Create new adduct.
+        SumformulaParameter form = parameters.getParameter(AddESIAdductParameters.FORMULA);
+        if (form.checkValue()) {
+          if (name.isEmpty()) {
+            name = form.getValue();
+          }
+          mz = form.getMonoisotopicMass();
+          charge = form.getCharge();
+        } else {
+          mz = parameters.getParameter(AddESIAdductParameters.MASS_DIFFERENCE).getValue();
+          charge = parameters.getParameter(AddESIAdductParameters.CHARGE).getValue();
+        }
 
-					choices.add(adduct);
-					parent.setChoices(choices.toArray(new ESIAdductType[choices
-					                                                    .size()]));
-				}
-			}
-		}
-	}
+        final ESIAdductType adduct = new ESIAdductType(name, mz, charge);
 
-	/**
-	 * Represents an adduct.
-	 */
-	private static class AddESIAdductParameters extends SimpleParameterSet {
+        // Add to list of choices (if not already present).
+        final Collection<ESIAdductType> choices =
+            new ArrayList<ESIAdductType>(Arrays.asList((ESIAdductType[]) parent.getChoices()));
+        if (!choices.contains(adduct)) {
 
-		// Adduct name.
-		private static final StringParameter NAME = new StringParameter("Name",
-				"A name to identify the new adduct");
+          choices.add(adduct);
+          parent.setChoices(choices.toArray(new ESIAdductType[choices.size()]));
+        }
+      }
+    }
+  }
 
-		// Adduct mass difference.
-		private static final DoubleParameter MASS_DIFFERENCE = new DoubleParameter(
-				"Mass difference", "Mass difference for the new adduct",
-				MZmineCore.getConfiguration().getMZFormat());
-		
-		private static final IntegerParameter CHARGE = new IntegerParameter(
-				"Charge", "Charge of adduct", 1);
+  /**
+   * Represents an adduct.
+   */
+  private static class AddESIAdductParameters extends SimpleParameterSet {
 
-		private static final IntegerParameter MOLECULES = new IntegerParameter(
-				"Molecules", "Number of molecules in the adduct/cluster",1);
+    // Adduct name.
+    private static final StringParameter NAME =
+        new StringParameter("Name", "A name to identify the new adduct.", "", false);
 
-		private AddESIAdductParameters() {
-			super(new Parameter[] { NAME, MASS_DIFFERENCE, CHARGE, MOLECULES });
-		}
-	}
+    // Sum formula
+    private static final SumformulaParameter FORMULA = new SumformulaParameter("Sum formula",
+        "Will override mass difference and charge. Is used as name if name is empty.", "", false);
+
+    // Adduct mass difference.
+    private static final DoubleParameter MASS_DIFFERENCE = new DoubleParameter("Mass difference",
+        "Mass difference for the new adduct", MZmineCore.getConfiguration().getMZFormat(), 0d);
+
+    private static final IntegerParameter CHARGE =
+        new IntegerParameter("Charge", "Charge of adduct", 1, false);
+
+    private AddESIAdductParameters() {
+      super(new Parameter[] {NAME, FORMULA, MASS_DIFFERENCE, CHARGE});
+    }
+  }
 }
