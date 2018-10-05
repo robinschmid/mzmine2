@@ -513,12 +513,15 @@ public class MSEcorrGroupWindow extends JFrame {
       PeakListRow row = g.getLastViewedRow();
 
       int maxI = 0;
-      int maxSize = 0;
+      double maxHeight = Double.NEGATIVE_INFINITY;
       for (int i = 0; i < g.getRaw().length; i++) {
         RawDataFile raw = g.getRaw()[i];
-        if (row.getPeak(raw) != null && row.getPeaks().length > maxSize) {
-          maxI = i;
-          maxSize = row.getPeaks().length;
+        if (row.getPeak(raw) != null) {
+          double h = row.getPeak(raw).getHeight();
+          if (h > maxHeight) {
+            maxI = i;
+            maxHeight = h;
+          }
         }
       }
       // set index
