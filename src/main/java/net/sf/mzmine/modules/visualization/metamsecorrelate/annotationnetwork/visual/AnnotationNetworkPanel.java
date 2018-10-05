@@ -38,7 +38,8 @@ public class AnnotationNetworkPanel extends JPanel {
   private double viewPercent = 1;
   // data
   private PeakList pkl;
-  private int rowID = 0;
+
+  private PeakListRow[] rows;
 
   /**
    * Create the panel.
@@ -100,20 +101,37 @@ public class AnnotationNetworkPanel extends JPanel {
     view.addMouseWheelListener(event -> zoom(event.getWheelRotation() < 0));
   }
 
+  /**
+   * All the peaklist
+   * 
+   * @param pkl
+   */
   public void setPeakList(PeakList pkl) {
     this.pkl = pkl;
     if (pkl != null) {
-      createNewGraph();
+      createNewGraph(pkl.getRows());
     }
   }
 
-  public void createNewGraph() {
+  /**
+   * Array of rows
+   * 
+   * @param rows
+   */
+  public void setPeakListRows(PeakListRow[] rows) {
+    pkl = null;
+    this.rows = rows;
+    if (rows != null) {
+      createNewGraph(rows);
+    }
+  }
+
+  public void createNewGraph(PeakListRow[] rows) {
     LOG.info("Adding all annotations to a network");
     graph.clear();
 
     if (pkl != null) {
       // sort by rt
-      PeakListRow[] rows = pkl.getRows();
       Arrays.sort(rows, new PeakListRowSorter(SortingProperty.ID, SortingDirection.Ascending));
 
       int added = 0;
@@ -130,11 +148,13 @@ public class AnnotationNetworkPanel extends JPanel {
             for (int id : ids) {
               if (id > rowID) {
                 PeakListRow row2 = findRowByID(id);
-                String node1 = toNodeName(row);
-                String node2 = toNodeName(row2);
-                String edge = node1 + node2;
-                graph.addEdge(edge, node1, node2);
-                added++;
+                if (row2 != null) {
+                  String node1 = toNodeName(row);
+                  String node2 = toNodeName(row2);
+                  String edge = node1 + node2;
+                  graph.addEdge(edge, node1, node2);
+                  added++;
+                }
               }
             }
           }
