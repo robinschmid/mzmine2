@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.logging.Logger;
@@ -185,7 +186,17 @@ public class AnnotationNetworkPanel extends JPanel {
   }
 
   private String toNodeName(PeakListRow row) {
-    return row.getID() + " (mz=" + mzForm.format(row.getAverageMZ()) + ")";
+    PeakIdentity pid = row.getPreferredPeakIdentity();
+    String id = "";
+    if (pid != null) {
+      id = pid.getName();
+      if (pid instanceof ESIAdductIdentity) {
+        ESIAdductIdentity esi = (ESIAdductIdentity) pid;
+        id = esi.getAdduct() + " by n=" + esi.getPartnerRowsID().length;
+      }
+    }
+    return MessageFormat.format("{1} (mz={2}) {3}", row.getID(), mzForm.format(row.getAverageMZ()),
+        id);
   }
 
 
