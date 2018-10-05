@@ -477,7 +477,7 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
     if (i == 0) {
       double md1 = getMassDifference();
       double md2 = a.getMassDifference();
-      i = md1 == md2 ? 0 : md1 < md2 ? -1 : 1;
+      i = Double.compare(md1, md2);
     }
     return i;
   }

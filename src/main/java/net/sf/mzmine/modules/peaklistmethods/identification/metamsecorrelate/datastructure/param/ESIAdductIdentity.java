@@ -67,7 +67,7 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
   }
 
   public boolean equalsAdduct(ESIAdductType acompare) {
-    return acompare.toString().equals(this.adduct);
+    return acompare.toString(false).equals(this.adduct);
   }
 
   public int[] getPartnerRowsID() {
