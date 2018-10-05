@@ -82,10 +82,10 @@ public class FeatureShapeCorrelationParameters extends SimpleParameterSet {
    */
   public FeatureShapeCorrelationParameters(boolean isSub) {
     super(isSub ? // no peak list and rt tolerance
-        new Parameter[] {PEAK_LISTS, MASS_LIST, USE_MASS_LIST_DATA, RT_TOLERANCE, MAIN_PEAK_HEIGHT,
-            NOISE_LEVEL_PEAK_SHAPE, MIN_DP_CORR_PEAK_SHAPE, MIN_R_SHAPE_INTRA}
-        : new Parameter[] {MASS_LIST, USE_MASS_LIST_DATA, MAIN_PEAK_HEIGHT, NOISE_LEVEL_PEAK_SHAPE,
-            MIN_DP_CORR_PEAK_SHAPE, MIN_R_SHAPE_INTRA});
+        new Parameter[] {MASS_LIST, USE_MASS_LIST_DATA, MAIN_PEAK_HEIGHT, NOISE_LEVEL_PEAK_SHAPE,
+            MIN_DP_CORR_PEAK_SHAPE, MIN_R_SHAPE_INTRA}
+        : new Parameter[] {PEAK_LISTS, RT_TOLERANCE, MASS_LIST, USE_MASS_LIST_DATA,
+            MAIN_PEAK_HEIGHT, NOISE_LEVEL_PEAK_SHAPE, MIN_DP_CORR_PEAK_SHAPE, MIN_R_SHAPE_INTRA});
   }
 
 }
