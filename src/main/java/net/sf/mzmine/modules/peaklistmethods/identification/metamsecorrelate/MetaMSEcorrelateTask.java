@@ -28,6 +28,7 @@ import org.apache.commons.math.stat.regression.SimpleRegression;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.MZmineProject;
+import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
@@ -42,6 +43,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.RowCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationParameters;
@@ -195,6 +197,12 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         if (groups != null) {
           // set groups to pkl
           groupedPKL[e].setGroups(groups);
+
+          if (searchAdducts) {
+            // show all annotations with the highest count of links
+            showMostlikelyAnnotations(groupedPKL[e]);
+          }
+
           // add to project
           project.addPeakList(groupedPKL[e]);
 
@@ -237,6 +245,31 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     }
   }
 
+  /**
+   * Show the annotation with the highest numbers of links
+   * 
+   * @param mseGroupedPeakList
+   */
+  private void showMostlikelyAnnotations(MSEGroupedPeakList mseGroupedPeakList) {
+    for (PeakListRow row : mseGroupedPeakList.getRows()) {
+      int maxLinks = 0;
+      PeakIdentity best = null;
+
+      for (PeakIdentity id : row.getPeakIdentities()) {
+        if (id instanceof ESIAdductIdentity) {
+          ESIAdductIdentity esi = (ESIAdductIdentity) id;
+          int links = esi.getPartnerRowsID().length;
+          if (links > maxLinks) {
+            maxLinks = links;
+            best = id;
+          }
+        }
+      }
+      // set best
+      if (best != null)
+        row.setPreferredPeakIdentity(best);
+    }
+  }
 
   /**
    * gets called to initialise variables for next peaklist

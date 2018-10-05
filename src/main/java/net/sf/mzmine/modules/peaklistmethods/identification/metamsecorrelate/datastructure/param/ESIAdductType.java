@@ -423,13 +423,20 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
 
   @Override
   public String toString() {
+    return toString(true);
+  }
+
+  public String toString(boolean showMass) {
     String z = Math.abs(charge) + (charge < 0 ? "-" : "+");
     if (charge == 0)
       z = "";
     // molecules
     String mol = molecules > 1 ? String.valueOf(molecules) : "";
-    return MessageFormat.format("[{0}M{1}]{2} ({3})", mol, parsedName, z,
-        mzForm.format(getMassDifference()));
+    if (showMass)
+      return MessageFormat.format("[{0}M{1}]{2} ({3})", mol, parsedName, z,
+          mzForm.format(getMassDifference()));
+    else
+      return MessageFormat.format("[{0}M{1}]{2}", mol, parsedName, z);
   }
 
   public String getMassDiffString() {

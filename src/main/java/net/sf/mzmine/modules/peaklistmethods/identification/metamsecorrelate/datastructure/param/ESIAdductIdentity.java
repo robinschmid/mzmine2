@@ -36,8 +36,8 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
    * @param adduct type of adduct.
    */
   public ESIAdductIdentity(final PeakListRow originalPeakListRow, final ESIAdductType adduct) {
-    super(adduct.toString() + " indentified by ID=" + originalPeakListRow.getID());
-    this.adduct = adduct.toString();
+    super(adduct.toString(false) + " indentified by ID=" + originalPeakListRow.getID());
+    this.adduct = adduct.toString(false);
     this.massDifference = adduct.getMassDiffString();
     partnerRows = String.valueOf(originalPeakListRow.getID());
     setPropertyValue(PROPERTY_METHOD, "metaMSEcorrelate");
