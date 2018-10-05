@@ -17,7 +17,7 @@
  * St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-package net.sf.mzmine.modules.visualization.metamsecorrelate;
+package net.sf.mzmine.modules.visualization.metamsecorrelate.mainvis;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,7 +36,7 @@ import net.sf.mzmine.modules.MZmineModuleCategory;
 import net.sf.mzmine.modules.MZmineRunnableModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
-import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.MSEcorrGroupWindow;
+import net.sf.mzmine.modules.visualization.metamsecorrelate.mainvis.visual.MSEcorrGroupWindow;
 import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableModule;
 import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableWindow;
 import net.sf.mzmine.modules.visualization.tic.TICPlotType;

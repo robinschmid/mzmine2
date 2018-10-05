@@ -1,14 +1,11 @@
-package net.sf.mzmine.modules.visualization.metamsecorrelate.visual;
+package net.sf.mzmine.modules.visualization.metamsecorrelate.mainvis.visual;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Paint;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
@@ -70,9 +67,12 @@ import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.table.Grouped
 import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableModule;
 import net.sf.mzmine.parameters.ParameterSet;
 
-public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
+public class MSEcorrGroupWindow extends JFrame {
   //
   private final Paint colors[];
+  // sub window for more charts
+  private MSEcorrGroupSubWindow subWindow = new MSEcorrGroupSubWindow();
+
   // data
   private MSEGroupedPeakList peakList;
   private PKLRowGroupList groups;
@@ -80,18 +80,11 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
   private MZmineProject project;
   // visual
   private JPanel contentPane;
-  private JPanel pnPeakShapeCorr;
-  private JPanel pnIntensityCorr;
   private GroupedPeakListTable tableGroupMembers;
   private JTextField txtGroup;
   private JTextField txtRow;
   private JButton btnPreviousRow;
-  private JPanel pnPeakShapeCorrView;
-  private JPanel pnPeakShapeView;
-  private JPanel pnPeakShapeCorrAllView;
-  private JSplitPane split;
   private JCheckBox cbUseSampleGroups;
-  private JCheckBox cbUseTotalCorrelation;
   private JCheckBox cbSampleSummary;
   private JScrollPane mainScroll;
   private JPanel panel_3;
@@ -103,9 +96,11 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
   private JTextField txtJumpToRT;
   private JPanel panel_6;
   private JCheckBox cbAutoRawFile;
-  private JCheckBox cbShowPseudoSpectrum;
   private JPanel panel_7;
   private JCheckBox cbSumPseudoSpectrum;
+  private JSplitPane splitPane;
+  private JSplitPane splitChart;
+  private JPanel pnSpectrum, pnNetwork;
 
   /**
    * Create the frame.
@@ -124,13 +119,9 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
     // theme
     colors = PKLRowGroup.colors;
 
-    //
-    this.addComponentListener(this);
     // peak list table parameters
     ParameterSet peakListTableParameters =
         MZmineCore.getConfiguration().getModuleParameters(PeakListTableModule.class);
-    //
-    setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
     setBounds(100, 100, 911, 480);
     contentPane = new JPanel();
     contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -144,34 +135,26 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
     mainScroll.setViewportView(pnContent);
     pnContent.setLayout(new BorderLayout(0, 0));
 
-    split = new JSplitPane();
-    split.setResizeWeight(0.5);
-    split.setOrientation(JSplitPane.VERTICAL_SPLIT);
-    pnContent.add(split, BorderLayout.CENTER);
+    splitPane = new JSplitPane();
+    splitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
+    splitPane.setResizeWeight(0.4);
+    pnContent.add(splitPane, BorderLayout.CENTER);
 
-    pnPeakShapeCorr = new JPanel();
-    split.setLeftComponent(pnPeakShapeCorr);
-    pnPeakShapeCorr.setLayout(new FlowLayout(FlowLayout.CENTER, 0, 0));
+    splitChart = new JSplitPane();
+    splitChart.setResizeWeight(0.5);
+    splitPane.setLeftComponent(splitChart);
 
-    pnPeakShapeView = new JPanel();
-    pnPeakShapeCorr.add(pnPeakShapeView);
-    pnPeakShapeView.setLayout(new BorderLayout(0, 0));
+    pnSpectrum = new JPanel();
+    splitChart.setRightComponent(pnSpectrum);
+    pnSpectrum.setLayout(new BorderLayout(0, 0));
 
-    pnPeakShapeCorrView = new JPanel();
-    pnPeakShapeCorr.add(pnPeakShapeCorrView);
-    pnPeakShapeCorrView.setLayout(new BorderLayout(0, 0));
-
-    pnPeakShapeCorrAllView = new JPanel();
-    pnPeakShapeCorr.add(pnPeakShapeCorrAllView);
-    pnPeakShapeCorrAllView.setLayout(new BorderLayout(0, 0));
-
-    pnIntensityCorr = new JPanel();
-    split.setRightComponent(pnIntensityCorr);
-    pnIntensityCorr.setLayout(new BorderLayout(0, 0));
+    pnNetwork = new JPanel();
+    splitChart.setLeftComponent(pnNetwork);
+    pnNetwork.setLayout(new BorderLayout(0, 0));
 
     JPanel pnTable = new JPanel();
-    pnContent.add(pnTable, BorderLayout.SOUTH);
     pnTable.setLayout(new BorderLayout(0, 0));
+    splitPane.setLeftComponent(pnTable);
 
     JPanel pnMenu = new JPanel();
     FlowLayout flowLayout = (FlowLayout) pnMenu.getLayout();
@@ -323,11 +306,6 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
     pnMenu.add(panel_6);
     panel_6.setLayout(new BoxLayout(panel_6, BoxLayout.Y_AXIS));
 
-    cbShowPseudoSpectrum = new JCheckBox("Show pseudo spectrum");
-    cbShowPseudoSpectrum.setSelected(true);
-    cbShowPseudoSpectrum.setToolTipText("Show a speudo spectrum (of one raw file; or summed)");
-    panel_6.add(cbShowPseudoSpectrum);
-
     cbSumPseudoSpectrum = new JCheckBox("Sum pseudo spectrum");
     cbSumPseudoSpectrum.setToolTipText("Take max height of each row");
     cbSumPseudoSpectrum.setSelected(true);
@@ -338,18 +316,12 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
     panel_7.setLayout(new BoxLayout(panel_7, BoxLayout.Y_AXIS));
 
 
-    cbUseTotalCorrelation = new JCheckBox("Use total correlation");
-    panel_7.add(cbUseTotalCorrelation);
-    cbUseTotalCorrelation.addItemListener(e -> plotPeakShapeCorrelation());
-    cbUseTotalCorrelation.setToolTipText(
-        "Show total correlation between two feature list rows (in corr plot) of all data points across all raw data files");
-
     cbSampleSummary = new JCheckBox("Sample summary");
     panel_7.add(cbSampleSummary);
     cbSampleSummary.addItemListener(new ItemListener() {
       @Override
       public void itemStateChanged(ItemEvent e) {
-        plotPeakShapeCorrelation();
+        createCorrColumnsPlot();
       }
     });
     cbSampleSummary.setToolTipText("Average peak shape correlation column chart.");
@@ -377,6 +349,15 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
      * chart = createCombinedChart(); panel = new ChartPanel(chart, true, true, true, false, true);
      * contentPane.add(panel, BorderLayout.SOUTH);
      */
+
+    // close also sub window
+    setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+    this.addWindowListener(new java.awt.event.WindowAdapter() {
+      @Override
+      public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+        subWindow.setVisible(false);
+      }
+    });
 
     // key bindings
     setVisible(true);
@@ -579,10 +560,15 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
       plotPeakShapes();
     // show correlation of f1 to all other features
     if (peakShapeCorr) {
-      plotPeakShapeCorrelation();
+      // correlation of total and single raw file
+      plotPeakShapeCorrelation(false);
+      plotPeakShapeCorrelation(true);
+
+      // all f2f correlations in columns
+      createCorrColumnsPlot();
+
       // plot a pseudo spectrum
-      if (getCbShowPseudoSpectrum().isSelected())
-        plotPseudoSpectrum();
+      plotPseudoSpectrum();
     }
     // plotIProfile
     if (iProfile)
@@ -595,7 +581,6 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
   private void plotPeakShapes() {
     // get group
     PKLRowGroup g = peakList.getLastViewedGroup();
-    getPnPeakShapeView().removeAll();
     if (g != null) {
       // PeakListRow row = g.getLastViewedRow();
       RawDataFile raw = g.getLastViewedRawFile();
@@ -645,21 +630,16 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
       chart.fireChartChanged();
       // add to panel
       ChartPanel cp = createChartPanel(chart);
-
-      getPnPeakShapeView().add(cp, BorderLayout.CENTER);
-
-      getPnPeakShapeCorr().validate();
+      subWindow.setShapePlot(cp);
     }
   }
 
   /**
    * peak shape correlation of selected row to all other rows in selected raw file
    */
-  private void plotPeakShapeCorrelation() {
+  private void plotPeakShapeCorrelation(boolean totalCorrelation) {
     // get group
     PKLRowGroup g = peakList.getLastViewedGroup();
-    getPnPeakShapeCorrView().removeAll();
-    getPnPeakShapeCorrAllView().removeAll();
     if (g != null) {
       //
       PeakListRow row = g.getLastViewedRow();
@@ -696,7 +676,7 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
           RowCorrelationData corrRows = corr.getCorrelationToRowI(i);
           // get correlation of feature-feature in selected raw file
           FeatureShapeCorrelationData fCorr = null;
-          if (getCbUseTotalCorrelation().isSelected())
+          if (totalCorrelation)
             fCorr = corrRows.getTotalCorrelation();
           else
             fCorr = corrRows.getCorrPeakShape()[rawI];
@@ -716,59 +696,71 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
       chart.setNotify(true);
       chart.fireChartChanged();
       EChartPanel cp = createChartPanel(chart);
-      getPnPeakShapeCorrView().add(cp, BorderLayout.CENTER);
+      subWindow.setShapeCorrPlot(cp);
+    }
+  }
+
+  /**
+   * All single feature to feature correlations in a plot
+   */
+  private void createCorrColumnsPlot() {
+    // get group
+    PKLRowGroup g = peakList.getLastViewedGroup();
+    if (g != null) {
+      //
+      PeakListRow row = g.getLastViewedRow();
+      int rowI = g.getLastViewedRowI();
+      GroupCorrelationData corr = g.getCorr(rowI);
+      int rawI = g.getLastViewedRawFileI();
+      RawDataFile raw = g.getLastViewedRawFile();
 
       // spectrum or column chart of all correlations
-      if (!getCbShowPseudoSpectrum().isSelected()) {
-        // add plot of all correlations (this row to all other rows in all raw files)
-        // data set
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-        // go through all raw files
-        for (int r = 0; r < peakList.getRawDataFiles().length; r++) {
-          RawDataFile rfile = peakList.getRawDataFile(r);
-          String rawSG =
-              String.valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), rfile));
+      // add plot of all correlations (this row to all other rows in all raw files)
+      // data set
+      DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+      // go through all raw files
+      for (int r = 0; r < peakList.getRawDataFiles().length; r++) {
+        RawDataFile rfile = peakList.getRawDataFile(r);
+        String rawSG =
+            String.valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), rfile));
 
-          // for each row: correlation of row to row in all raw files
-          for (int i = 0; i < g.size(); i++) {
-            PeakListRow trow = g.get(i);
-            if (rowI != i) {
-              // get correlation data (row to row)
-              RowCorrelationData corrRows = corr.getCorrelationToRowI(i);
-              // get correlation of feature-feature in selected raw file
-              FeatureShapeCorrelationData fCorr = corrRows.getCorrPeakShape()[r];
-              // regression
-              if (fCorr != null && fCorr.getReg() != null && fCorr.getData() != null) {
-                SimpleRegression reg = fCorr.getReg();
-                // for summary of samples
-                if (getCbSampleSummary().isSelected())
-                  dataset.addValue(reg.getR(), rawSG, rfile.getName());
-                else
-                  dataset.addValue(reg.getR(), rawSG, rfile.getName() + "(" + trow.getID() + ")");
-              }
+        // for each row: correlation of row to row in all raw files
+        for (int i = 0; i < g.size(); i++) {
+          PeakListRow trow = g.get(i);
+          if (rowI != i) {
+            // get correlation data (row to row)
+            RowCorrelationData corrRows = corr.getCorrelationToRowI(i);
+            // get correlation of feature-feature in selected raw file
+            FeatureShapeCorrelationData fCorr = corrRows.getCorrPeakShape()[r];
+            // regression
+            if (fCorr != null && fCorr.getReg() != null && fCorr.getData() != null) {
+              SimpleRegression reg = fCorr.getReg();
+              // for summary of samples
+              if (getCbSampleSummary().isSelected())
+                dataset.addValue(reg.getR(), rawSG, rfile.getName());
+              else
+                dataset.addValue(reg.getR(), rawSG, rfile.getName() + "(" + trow.getID() + ")");
             }
           }
         }
-        // add plot
-        title = "Row " + row.getID() + " corr";
-        chart = ChartFactory.createBarChart(title, "Sample group", "Pearson correlation (r)",
-            dataset, PlotOrientation.VERTICAL, false, true, false);
-        BarRenderer catRen = (BarRenderer) chart.getCategoryPlot().getRenderer();
-        catRen.setItemMargin(0.0);
-        CategoryAxis axis = chart.getCategoryPlot().getDomainAxis();
-        axis.setCategoryMargin(0.000);
-        axis.setLowerMargin(0.01);
-        axis.setUpperMargin(0.01);
-        cp = createChartPanel(chart);
-        // formating
-        intensityFormat = MZmineCore.getConfiguration().getIntensityFormat();
-        yAxis = (NumberAxis) chart.getCategoryPlot().getRangeAxis();
-        yAxis.setNumberFormatOverride(intensityFormat);
-        //
-        getPnPeakShapeCorrAllView().add(cp, BorderLayout.CENTER);
       }
-
-      getPnPeakShapeCorr().validate();
+      // add plot
+      String title = "Row " + row.getID() + " corr";
+      JFreeChart chart = ChartFactory.createBarChart(title, "Sample group",
+          "Pearson correlation (r)", dataset, PlotOrientation.VERTICAL, false, true, false);
+      BarRenderer catRen = (BarRenderer) chart.getCategoryPlot().getRenderer();
+      catRen.setItemMargin(0.0);
+      CategoryAxis axis = chart.getCategoryPlot().getDomainAxis();
+      axis.setCategoryMargin(0.000);
+      axis.setLowerMargin(0.01);
+      axis.setUpperMargin(0.01);
+      ChartPanel cp = createChartPanel(chart);
+      // formating
+      NumberFormat intensityFormat = MZmineCore.getConfiguration().getIntensityFormat();
+      NumberAxis yAxis = (NumberAxis) chart.getCategoryPlot().getRangeAxis();
+      yAxis.setNumberFormatOverride(intensityFormat);
+      //
+      subWindow.setCorrColumnsChart(cp);
     }
   }
 
@@ -780,9 +772,10 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
     EChartPanel chart = PseudoSpectrum.createChart(g, g.getLastViewedRawFile(),
         getCbSumPseudoSpectrum().isSelected());
     // theme.apply(chart.getChart());
-    getPnPeakShapeCorrAllView().removeAll();
-    getPnPeakShapeCorrAllView().add(chart, BorderLayout.CENTER);
-    getPnPeakShapeCorrAllView().validate();
+    pnSpectrum.removeAll();
+    pnNetwork.add(chart, BorderLayout.CENTER);
+    pnNetwork.revalidate();
+    pnNetwork.repaint();
   }
 
 
@@ -916,18 +909,9 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
       // display
       ChartPanel chart = createCombinedBoxAndWhiskerPlot(dataset, datasetAll,
           colors[g.getLastViewedRowI() % colors.length], g.getLastViewedRowI());
-      getPnIntensityCorr().removeAll();
-      getPnIntensityCorr().add(chart, BorderLayout.CENTER);
-      getPnIntensityCorr().validate();
+      // add to sub window
+      subWindow.setBoxPlot(chart);
     }
-  }
-
-  public JPanel getPnPeakShapeCorr() {
-    return pnPeakShapeCorr;
-  }
-
-  public JPanel getPnIntensityCorr() {
-    return pnIntensityCorr;
   }
 
   public JButton getBtnPreviousRow() {
@@ -1019,48 +1003,6 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
     return chartPanel;
   }
 
-  public JPanel getPnPeakShapeCorrView() {
-    return pnPeakShapeCorrView;
-  }
-
-  public JPanel getPnPeakShapeView() {
-    return pnPeakShapeView;
-  }
-
-  public JPanel getPnPeakShapeCorrAllView() {
-    return pnPeakShapeCorrAllView;
-  }
-
-
-  @Override
-  public void componentResized(ComponentEvent e) {
-    Dimension s = e.getComponent().getBounds().getSize();
-    int insets = getInsets().left + getInsets().right;
-    Dimension newSize = new Dimension((int) s.getWidth() - insets - 35, (int) s.getHeight() / 3);
-    int w = (int) newSize.getWidth() / 3;
-    int h = (int) newSize.getHeight();
-    getPnPeakShapeCorrAllView().setPreferredSize(new Dimension(w, h));
-    getPnPeakShapeCorrView().setPreferredSize(new Dimension(w, h));
-    getPnPeakShapeView().setPreferredSize(new Dimension(w, h));
-    //
-    getPnIntensityCorr().setPreferredSize(newSize);
-    getPnPeakShapeCorr().setPreferredSize(newSize);
-    revalidate();
-  }
-
-  @Override
-  public void componentHidden(ComponentEvent arg0) {}
-
-  @Override
-  public void componentMoved(ComponentEvent arg0) {}
-
-  @Override
-  public void componentShown(ComponentEvent arg0) {}
-
-  public JSplitPane getSplit() {
-    return split;
-  }
-
   public JCheckBox getCbUseSampleGroups() {
     return cbUseSampleGroups;
   }
@@ -1095,14 +1037,6 @@ public class MSEcorrGroupWindow extends JFrame implements ComponentListener {
 
   public JTextField getTxtRow() {
     return txtRow;
-  }
-
-  public JCheckBox getCbShowPseudoSpectrum() {
-    return cbShowPseudoSpectrum;
-  }
-
-  public JCheckBox getCbUseTotalCorrelation() {
-    return cbUseTotalCorrelation;
   }
 
   public JCheckBox getCbSumPseudoSpectrum() {

@@ -17,7 +17,7 @@
  * Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-package net.sf.mzmine.modules.visualization.metamsecorrelate;
+package net.sf.mzmine.modules.visualization.metamsecorrelate.mainvis;
 
 import java.awt.Window;
 import java.util.HashMap;

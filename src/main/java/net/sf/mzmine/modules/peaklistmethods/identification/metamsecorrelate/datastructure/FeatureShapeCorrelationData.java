@@ -44,7 +44,7 @@ public class FeatureShapeCorrelationData {
       c.data[i][0] = dat.get(i)[0];
       c.data[i][1] = dat.get(i)[1];
       c.minX = Math.min(c.minX, c.data[i][0]);
-      c.minX = Math.max(c.maxX, c.data[i][0]);
+      c.maxX = Math.max(c.maxX, c.data[i][0]);
     }
     c.reg.addData(c.data);
     return c;
