@@ -71,7 +71,7 @@ public class MSEcorrGroupWindow extends JFrame {
   //
   private final Paint colors[];
   // sub window for more charts
-  private MSEcorrGroupSubWindow subWindow = new MSEcorrGroupSubWindow();
+  private MSEcorrGroupSubWindow subWindow;
 
   // data
   private MSEGroupedPeakList peakList;
@@ -111,6 +111,9 @@ public class MSEcorrGroupWindow extends JFrame {
    */
   public MSEcorrGroupWindow(MZmineProject project, final MSEGroupedPeakList peakList,
       PKLRowGroupList groups, int index) {
+    // sub window for more charts
+    subWindow = new MSEcorrGroupSubWindow();
+
     // data
     this.peakList = peakList;
     this.groups = groups;
@@ -361,6 +364,7 @@ public class MSEcorrGroupWindow extends JFrame {
 
     // key bindings
     setVisible(true);
+    subWindow.setVisible(true);
     addKeyBindings();
     setCurrentGroupView(index);
   }
