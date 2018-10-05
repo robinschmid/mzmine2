@@ -31,12 +31,12 @@ import net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.recursive.
 import net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.wavelet.WaveletMassDetector;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
-import net.sf.mzmine.parameters.parametertypes.ModuleComboParameter;
 import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
 import net.sf.mzmine.parameters.parametertypes.StringParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.RawDataFilesParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelection;
 import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelectionParameter;
+import net.sf.mzmine.parameters.parametertypes.submodules.ModuleComboParameter;
 import net.sf.mzmine.util.ExitCode;
 
 import net.sf.mzmine.parameters.parametertypes.filenames.FileNameParameter;

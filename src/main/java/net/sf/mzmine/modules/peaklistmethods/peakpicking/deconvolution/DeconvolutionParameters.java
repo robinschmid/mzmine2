@@ -28,9 +28,9 @@ import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
-import net.sf.mzmine.parameters.parametertypes.ModuleComboParameter;
 import net.sf.mzmine.parameters.parametertypes.StringParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
+import net.sf.mzmine.parameters.parametertypes.submodules.ModuleComboParameter;
 import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
 
 public class DeconvolutionParameters extends SimpleParameterSet {

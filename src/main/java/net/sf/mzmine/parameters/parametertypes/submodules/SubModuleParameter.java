@@ -16,27 +16,25 @@
  * USA
  */
 
-package net.sf.mzmine.parameters.parametertypes;
+package net.sf.mzmine.parameters.parametertypes.submodules;
 
 import java.util.Collection;
-
+import org.w3c.dom.Element;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.UserParameter;
-
-import org.w3c.dom.Element;
 
 /**
  * Parameter represented by check box with additional sub-parameters
  * 
  */
-public class OptionalModuleParameter implements UserParameter<Boolean, OptionalModuleComponent> {
+public class SubModuleParameter implements UserParameter<Boolean, SubModuleComponent> {
 
   private String name, description;
   private ParameterSet embeddedParameters;
   private Boolean value;
 
-  public OptionalModuleParameter(String name, String description, ParameterSet embeddedParameters) {
+  public SubModuleParameter(String name, String description, ParameterSet embeddedParameters) {
     this.name = name;
     this.description = description;
     this.embeddedParameters = embeddedParameters;
@@ -63,8 +61,8 @@ public class OptionalModuleParameter implements UserParameter<Boolean, OptionalM
   }
 
   @Override
-  public OptionalModuleComponent createEditingComponent() {
-    return new OptionalModuleComponent(embeddedParameters);
+  public SubModuleComponent createEditingComponent() {
+    return new SubModuleComponent(embeddedParameters);
   }
 
   @Override
@@ -90,23 +88,19 @@ public class OptionalModuleParameter implements UserParameter<Boolean, OptionalM
   }
 
   @Override
-  public OptionalModuleParameter cloneParameter() {
+  public SubModuleParameter cloneParameter() {
     final ParameterSet embeddedParametersClone = embeddedParameters.cloneParameterSet();
-    final OptionalModuleParameter copy =
-        new OptionalModuleParameter(name, description, embeddedParametersClone);
+    final SubModuleParameter copy =
+        new SubModuleParameter(name, description, embeddedParametersClone);
     copy.setValue(this.getValue());
     return copy;
   }
 
   @Override
-  public void setValueFromComponent(OptionalModuleComponent component) {
-    this.value = component.isSelected();
-  }
+  public void setValueFromComponent(SubModuleComponent component) {}
 
   @Override
-  public void setValueToComponent(OptionalModuleComponent component, Boolean newValue) {
-    component.setSelected(newValue);
-  }
+  public void setValueToComponent(SubModuleComponent component, Boolean newValue) {}
 
   @Override
   public void loadValueFromXML(Element xmlElement) {

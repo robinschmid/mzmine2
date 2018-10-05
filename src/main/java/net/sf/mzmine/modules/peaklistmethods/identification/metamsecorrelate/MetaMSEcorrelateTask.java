@@ -35,6 +35,8 @@ import net.sf.mzmine.datamodel.impl.SimplePeakListAppliedMethod;
 import net.sf.mzmine.desktop.Desktop;
 import net.sf.mzmine.desktop.impl.HeadLessDesktop;
 import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.FeatureShapeCorrelationParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.InterSampleIntCorrParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.FeatureShapeCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
@@ -61,28 +63,40 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   private int finishedRows;
   private int totalRows;
   private double progress;
-  private final PeakList[] peakLists;
 
+  private final ParameterSet parameters;
+  private final MZmineProject project;
+  // GENERAL
+  private final PeakList[] peakLists;
   private final RTTolerance rtTolerance;
-  // adducts
+
+  // ADDUCTS
   private MSAnnotationLibrary library;
   private final boolean useAdductBonusR, searchAdducts;
   private final double adductBonusR;
-  //
+
+  // GROUP and MIN SAMPLES FILTER
+  private boolean useGroups;
   private final String groupingParameter;
+  /**
+   * Minimum percentage of samples (in group if useGroup) that have to contain a feature
+   */
+  private double percContainedInSamples;
   // sample group size
   private UserParameter<?, ?> sgroupPara;
   private HashMap<Object, Integer> sgroupSize;
   private boolean hasToFilterMinFInSampleSets;
 
-  // filter
-  private final double mainPeakIntensity, percContainedInSamples;
+  // FEATURE SHAPE CORRELATION
   // pearson correlation r to identify negative correlation
-  private final double minIntensityProfileR, minShapeCorrR;
+  private final double mainPeakIntensity;
+  private final double minShapeCorrR;
   private static double noiseLevelShapeCorr = 1E4, minCorrelatedDataPoints = 3;
 
-  private final ParameterSet parameters;
-  private final MZmineProject project;
+  // MAX INTENSITY PROFILE CORRELATION ACROSS SAMPLES
+  private double minMaxICorr;
+  private int minDPMaxICorr;
+
 
   // output
   private MSEGroupedPeakList[] groupedPKL;
@@ -104,33 +118,33 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     totalRows = 0;
 
     // sample groups parameter
-    groupingParameter =
-        (String) parameters.getParameter(MetaMSEcorrelateParameters.GROUPSPARAMETER).getValue();
+    useGroups = parameters.getParameter(MetaMSEcorrelateParameters.GROUPSPARAMETER).getValue();
+    groupingParameter = (String) parameters.getParameter(MetaMSEcorrelateParameters.GROUPSPARAMETER)
+        .getEmbeddedParameter().getValue();
+    // by min percentage of samples in a sample set that contain this feature MIN_SAMPLES
+    percContainedInSamples =
+        parameterSet.getParameter(MetaMSEcorrelateParameters.MIN_SAMPLES).getValue();
+
     // tolerances
     rtTolerance = parameterSet.getParameter(MetaMSEcorrelateParameters.RT_TOLERANCE).getValue();
 
+    // FEATURE SHAPE CORRELATION
+    FeatureShapeCorrelationParameters corrp = (FeatureShapeCorrelationParameters) parameterSet
+        .getParameter(MetaMSEcorrelateParameters.FSHAPE_CORRELATION).getEmbeddedParameters();
     // filter
     // start with high abundant features >= mainPeakIntensity
     // In this way we directly filter out groups with no abundant features
     // fill in smaller features after
     mainPeakIntensity =
-        parameterSet.getParameter(MetaMSEcorrelateParameters.MAIN_PEAK_HEIGHT).getValue();
-    // by min percentage of samples in a sample set that contain this feature MIN_SAMPLES
-    percContainedInSamples =
-        parameterSet.getParameter(MetaMSEcorrelateParameters.MIN_SAMPLES).getValue();
-    // intensity correlation across samples
-    minIntensityProfileR =
-        parameterSet.getParameter(MetaMSEcorrelateParameters.MIN_R_I_PROFILE).getValue();
-    // feature shape correlation
+        corrp.getParameter(FeatureShapeCorrelationParameters.MAIN_PEAK_HEIGHT).getValue();
     minShapeCorrR =
-        parameterSet.getParameter(MetaMSEcorrelateParameters.MIN_R_SHAPE_INTRA).getValue();
+        corrp.getParameter(FeatureShapeCorrelationParameters.MIN_R_SHAPE_INTRA).getValue();
     noiseLevelShapeCorr =
-        parameterSet.getParameter(MetaMSEcorrelateParameters.NOISE_LEVEL_PEAK_SHAPE).getValue();
-    // min of 3! TODO
+        corrp.getParameter(FeatureShapeCorrelationParameters.NOISE_LEVEL_PEAK_SHAPE).getValue();
     minCorrelatedDataPoints =
-        parameterSet.getParameter(MetaMSEcorrelateParameters.MIN_DP_CORR_PEAK_SHAPE).getValue();
+        corrp.getParameter(FeatureShapeCorrelationParameters.MIN_DP_CORR_PEAK_SHAPE).getValue();
 
-    // TODO: maybe search for isotopes first hard coded and filter by isotope pattern
+    // ADDUCTS
     useAdductBonusR =
         parameterSet.getParameter(MetaMSEcorrelateParameters.ADDUCT_BONUSR).getValue();
     adductBonusR = parameterSet.getParameter(MetaMSEcorrelateParameters.ADDUCT_BONUSR)
@@ -140,6 +154,13 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     MSAnnotationParameters annParam = (MSAnnotationParameters) parameterSet
         .getParameter(MetaMSEcorrelateParameters.ADDUCT_LIBRARY).getEmbeddedParameters();
     library = new MSAnnotationLibrary(annParam);
+
+    // intensity correlation across samples
+    minMaxICorr = parameterSet.getParameter(MetaMSEcorrelateParameters.IMAX_CORRELATION)
+        .getEmbeddedParameters().getParameter(InterSampleIntCorrParameters.MIN_CORRELATION)
+        .getValue();
+    minDPMaxICorr = parameterSet.getParameter(MetaMSEcorrelateParameters.IMAX_CORRELATION)
+        .getEmbeddedParameters().getParameter(InterSampleIntCorrParameters.MIN_DP).getValue();
   }
 
   @Override
@@ -586,7 +607,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       double corrIprofile = reg.getR();
       if (corr + adductBonus < minShapeCorrR)
         return 0;
-      else if (corrIprofile < minIntensityProfileR)
+      else if (corrIprofile < minMaxICorr)
         return 0;
       else
         return (corr + corrIprofile) / 2;

@@ -20,21 +20,19 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate;
 
 import java.awt.Window;
 import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.FeatureShapeCorrelationParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.InterSampleIntCorrParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.UserParameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
-import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
-import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
-import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
-import net.sf.mzmine.parameters.parametertypes.MassListParameter;
-import net.sf.mzmine.parameters.parametertypes.OptionalModuleParameter;
 import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
 import net.sf.mzmine.parameters.parametertypes.PercentParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
-import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
+import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
+import net.sf.mzmine.parameters.parametertypes.submodules.SubModuleParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTToleranceParameter;
 import net.sf.mzmine.util.ExitCode;
 
@@ -42,83 +40,33 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
 
   // General parameters
   public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter();
-  // General parameters
-  public static final MassListParameter MASS_LIST = new MassListParameter();
   // RT-tolerance: Grouping
   public static final RTToleranceParameter RT_TOLERANCE = new RTToleranceParameter("RT tolerance",
       "Maximum allowed difference of retention time to set a relationship between peaks");
-  // MZ-tolerance: deisotoping, adducts
-  public static final MZToleranceParameter MZ_TOLERANCE = new MZToleranceParameter("m/z tolerance",
-      "Tolerance value of the m/z difference between peaks");
 
   // GROUPING
   // sample sets
-  public static final ComboParameter<Object> GROUPSPARAMETER = new ComboParameter<Object>(
-      "Sample set",
-      "Paremeter defining the sample set of each sample. (Set them in Project/Set sample parameters)",
-      new Object[0]);
+  public static final OptionalParameter<ComboParameter<Object>> GROUPSPARAMETER =
+      new OptionalParameter<ComboParameter<Object>>(new ComboParameter<Object>("Sample set",
+          "Paremeter defining the sample set of each sample. (Set them in Project/Set sample parameters)",
+          new Object[0]));
 
   // minimum of samples per set (with the feature detected or filled in (min height?)
   // ... showing RT<=tolerance and r>=MIN_PEARSON_R
   public static final PercentParameter MIN_SAMPLES = new PercentParameter("Min samples",
       "Minimum of samples per group (with the feature detected or filled in) matching the conditions (RT, R^2).",
       0.30, 0, 1);
-  // peak shape
-  // min intensity of main peaks
-  public static final DoubleParameter MAIN_PEAK_HEIGHT =
-      new DoubleParameter("Main peak height", "Starts with grouping all features >= mainPeakHeight",
-          MZmineCore.getConfiguration().getIntensityFormat(), 5E5);
 
-  // min intensity of data points to be peak shape correlated
-  public static final DoubleParameter NOISE_LEVEL_PEAK_SHAPE = new DoubleParameter(
-      "Noise level (peak shape correlation)", "Only correlate data points >= noiseLevel.",
-      MZmineCore.getConfiguration().getIntensityFormat(), 1E4);
-  // min data points to be used for correlation
-  public static final IntegerParameter MIN_DP_CORR_PEAK_SHAPE =
-      new IntegerParameter("Min data points",
-          "Minimum of data points to be used for correlation of peak shapes.", 3, 3, 100000);
+  // Sub parameters of correlation grouping
+  public static final SubModuleParameter FSHAPE_CORRELATION = new SubModuleParameter(
+      "Correlation grouping", "Grouping based on Pearson correlation of the feature shapes.",
+      new FeatureShapeCorrelationParameters(true));
 
-  // minimum Pearson correlation (r) for feature grouping in the same scan event of one raw file
-  public static final PercentParameter MIN_R_SHAPE_INTRA = new PercentParameter(
-      "Min r peak shape correlation (intra)",
-      "Minimum percentage for Pearson peak shape correlation for feature grouping in the same scan event of one raw file.",
-      0.85, 0, 1);
+  public static final OptionalModuleParameter IMAX_CORRELATION =
+      new OptionalModuleParameter("Max intensity correlation",
+          "Feature to feature correlation of the maximum intensities across all samples.",
+          new InterSampleIntCorrParameters());
 
-  // intensity profile
-  public static final PercentParameter MIN_R_I_PROFILE = new PercentParameter(
-      "Min r (height profile)",
-      "Minimum percentage for Pearson intensity profile correlation in the same scan event across raw files.",
-      0.70, 0, 1);
-
-  // use mass lists
-  public static final BooleanParameter USE_MASS_LIST_DATA = new BooleanParameter(
-      "Use mass list data", "Uses the raw data stored in the given mass list", true);
-
-
-  // scan event assignment
-  // minimum Pearson correlation (r) for feature grouping across different scan events of one raw
-  // file
-  public static final PercentParameter MIN_PEARSON_R_MSE = new PercentParameter(
-      "Min r peak shape correlation (inter)",
-      "Minimum Pearson correlation (r) for feature grouping across different scan events of one raw file.",
-      0.80, 0, 1);
-
-  // deisotoping: use groups, mztolerance, min height, check boxes for isotopes, or list like
-  // adducts? monotonic
-  public static final DoubleParameter ISO_MIN_HEIGHT =
-      new DoubleParameter("Min isotopic peak height",
-          "Minimum of a peak height used to search isotopic peaks in the raw data.");
-  public static final BooleanParameter ISO_MONOTONIC = new BooleanParameter(
-      "Monotonic 13C isotope pattern",
-      "Search for a monotonic 13C isotope pattern. Still finds other specified isotopes.", true);
-  public static final BooleanParameter ISO_RAW_SEARCH = new BooleanParameter(
-      "Search isotopic peaks in raw data",
-      "Search for a monotonic 13C isotope pattern. Still finds other specified isotopes.", true);
-  // elements
-  public static final BooleanParameter ISO_CL = new BooleanParameter("Cl", "Search for Cl", false);
-  public static final BooleanParameter ISO_BR = new BooleanParameter("Br", "Search for Br", false);
-  public static final BooleanParameter ISO_FE = new BooleanParameter("Fe", "Search for Fe", false);
-  public static final BooleanParameter ISO_S = new BooleanParameter("S", "Search for S", false);
 
   // #####################################################################################
   // Intensity profile correlation
@@ -142,10 +90,14 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
 
   // Constructor
   public MetaMSEcorrelateParameters() {
-    super(new Parameter[] {PEAK_LISTS, MASS_LIST, USE_MASS_LIST_DATA, RT_TOLERANCE, MZ_TOLERANCE,
-        GROUPSPARAMETER, MIN_SAMPLES, MAIN_PEAK_HEIGHT, NOISE_LEVEL_PEAK_SHAPE,
-        MIN_DP_CORR_PEAK_SHAPE, MIN_R_SHAPE_INTRA, MIN_R_I_PROFILE, MIN_PEARSON_R_MSE,
-        /* ISO_MIN_HEIGHT, ISO_MONOTONIC, ISO_RAW_SEARCH, */
+    super(new Parameter[] {PEAK_LISTS, RT_TOLERANCE,
+        // Group and minimum samples filter
+        GROUPSPARAMETER, MIN_SAMPLES,
+        // feature shape correlation
+        FSHAPE_CORRELATION,
+        // intensity max correlation
+        IMAX_CORRELATION,
+        // adducts
         ADDUCT_LIBRARY, ADDUCT_BONUSR});
   }
 
@@ -166,9 +118,11 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
         choices[i + 1] = newChoices[i].getName();
       }
     }
-    getParameter(MetaMSEcorrelateParameters.GROUPSPARAMETER).setChoices(choices);
+    getParameter(MetaMSEcorrelateParameters.GROUPSPARAMETER).getEmbeddedParameter()
+        .setChoices(choices);
     if (choices.length > 1)
-      getParameter(MetaMSEcorrelateParameters.GROUPSPARAMETER).setValue(choices[1]);
+      getParameter(MetaMSEcorrelateParameters.GROUPSPARAMETER).getEmbeddedParameter()
+          .setValue(choices[1]);
 
     ParameterSetupDialog dialog = new ParameterSetupDialog(parent, valueCheckRequired, this);
     dialog.setVisible(true);
