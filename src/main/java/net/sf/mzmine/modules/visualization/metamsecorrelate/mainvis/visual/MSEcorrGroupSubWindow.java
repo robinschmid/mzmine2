@@ -2,7 +2,7 @@ package net.sf.mzmine.modules.visualization.metamsecorrelate.mainvis.visual;
 
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
-import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
@@ -60,9 +60,9 @@ public class MSEcorrGroupSubWindow extends JFrame {
     splitPane2.setOrientation(JSplitPane.VERTICAL_SPLIT);
 
 
-    JPanel bottom = new JPanel(new FlowLayout());
-    JPanel middle = new JPanel(new FlowLayout());
-    JPanel top = new JPanel(new FlowLayout());
+    JPanel bottom = new JPanel(new GridLayout(1, 2));
+    JPanel middle = new JPanel(new GridLayout(1, 3));
+    JPanel top = new JPanel(new BorderLayout());
     splitPane.setLeftComponent(top);
     splitPane.setRightComponent(splitPane2);
     splitPane2.setLeftComponent(middle);
@@ -70,7 +70,7 @@ public class MSEcorrGroupSubWindow extends JFrame {
 
     // top
     pnCorrColumns = new JPanel(new BorderLayout());
-    top.add(pnCorrColumns);
+    top.add(pnCorrColumns, BorderLayout.CENTER);
 
     // middle
     pnShape = new JPanel(new BorderLayout());
@@ -114,8 +114,8 @@ public class MSEcorrGroupSubWindow extends JFrame {
   private void addChartToPanel(JPanel pn, ChartPanel chart) {
     pn.removeAll();
     pn.add(chart, BorderLayout.CENTER);
-    pn.revalidate();
-    pn.repaint();
+    pn.getParent().revalidate();
+    pn.getParent().repaint();
   }
 
   public JPanel getPnBoxPlot() {

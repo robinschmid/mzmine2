@@ -110,7 +110,8 @@ public class AnnotationNetworkPanel extends JPanel {
     this.pkl = pkl;
     if (pkl != null) {
       createNewGraph(pkl.getRows());
-    }
+    } else
+      graph.clear();
   }
 
   /**
@@ -123,6 +124,8 @@ public class AnnotationNetworkPanel extends JPanel {
     this.rows = rows;
     if (rows != null) {
       createNewGraph(rows);
+    } else {
+      graph.clear();
     }
   }
 
@@ -130,7 +133,7 @@ public class AnnotationNetworkPanel extends JPanel {
     LOG.info("Adding all annotations to a network");
     graph.clear();
 
-    if (pkl != null) {
+    if (rows != null) {
       // sort by rt
       Arrays.sort(rows, new PeakListRowSorter(SortingProperty.ID, SortingDirection.Ascending));
 
@@ -147,7 +150,7 @@ public class AnnotationNetworkPanel extends JPanel {
             // add all connection for ids>rowID
             for (int id : ids) {
               if (id > rowID) {
-                PeakListRow row2 = findRowByID(id);
+                PeakListRow row2 = findRowByID(id, rows);
                 if (row2 != null) {
                   String node1 = toNodeName(row);
                   String node2 = toNodeName(row2);
@@ -169,11 +172,11 @@ public class AnnotationNetworkPanel extends JPanel {
     }
   }
 
-  private PeakListRow findRowByID(int id) {
-    if (pkl == null)
+  private PeakListRow findRowByID(int id, PeakListRow[] rows) {
+    if (rows == null)
       return null;
     else {
-      for (PeakListRow r : pkl.getRows())
+      for (PeakListRow r : rows)
         if (r.getID() == id)
           return r;
 

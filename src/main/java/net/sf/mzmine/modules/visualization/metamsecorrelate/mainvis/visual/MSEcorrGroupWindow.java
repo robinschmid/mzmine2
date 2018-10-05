@@ -61,6 +61,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.RowCorrelationData;
+import net.sf.mzmine.modules.visualization.metamsecorrelate.annotationnetwork.visual.AnnotationNetworkPanel;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.pseudospectra.PseudoSpectrum;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.table.GroupedPeakListTable;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.table.GroupedPeakListTableModel;
@@ -100,7 +101,8 @@ public class MSEcorrGroupWindow extends JFrame {
   private JCheckBox cbSumPseudoSpectrum;
   private JSplitPane splitPane;
   private JSplitPane splitChart;
-  private JPanel pnSpectrum, pnNetwork;
+  private JPanel pnSpectrum;
+  private AnnotationNetworkPanel pnNetwork;
 
   /**
    * Create the frame.
@@ -131,33 +133,30 @@ public class MSEcorrGroupWindow extends JFrame {
     contentPane.setLayout(new BorderLayout(0, 0));
     setContentPane(contentPane);
 
-    mainScroll = new JScrollPane();
-    contentPane.add(mainScroll, BorderLayout.CENTER);
-
-    JPanel pnContent = new JPanel();
-    mainScroll.setViewportView(pnContent);
-    pnContent.setLayout(new BorderLayout(0, 0));
-
     splitPane = new JSplitPane();
     splitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
     splitPane.setResizeWeight(0.4);
-    pnContent.add(splitPane, BorderLayout.CENTER);
+    contentPane.add(splitPane, BorderLayout.CENTER);
 
     splitChart = new JSplitPane();
     splitChart.setResizeWeight(0.5);
     splitPane.setLeftComponent(splitChart);
 
     pnSpectrum = new JPanel();
-    splitChart.setRightComponent(pnSpectrum);
     pnSpectrum.setLayout(new BorderLayout(0, 0));
+    splitChart.setRightComponent(pnSpectrum);
 
-    pnNetwork = new JPanel();
+    pnNetwork = new AnnotationNetworkPanel();
     splitChart.setLeftComponent(pnNetwork);
-    pnNetwork.setLayout(new BorderLayout(0, 0));
+
+    // scroll table
+    mainScroll = new JScrollPane();
+    splitPane.setRightComponent(mainScroll);
 
     JPanel pnTable = new JPanel();
     pnTable.setLayout(new BorderLayout(0, 0));
-    splitPane.setLeftComponent(pnTable);
+    mainScroll.setViewportView(pnTable);
+
 
     JPanel pnMenu = new JPanel();
     FlowLayout flowLayout = (FlowLayout) pnMenu.getLayout();
@@ -570,10 +569,11 @@ public class MSEcorrGroupWindow extends JFrame {
 
       // all f2f correlations in columns
       createCorrColumnsPlot();
-
-      // plot a pseudo spectrum
-      plotPseudoSpectrum();
     }
+    // plot a pseudo spectrum
+    plotPseudoSpectrum();
+    // network of annotations
+    createAnnotationNetwork();
     // plotIProfile
     if (iProfile)
       plotIProfile();
@@ -700,7 +700,10 @@ public class MSEcorrGroupWindow extends JFrame {
       chart.setNotify(true);
       chart.fireChartChanged();
       EChartPanel cp = createChartPanel(chart);
-      subWindow.setShapeCorrPlot(cp);
+      if (totalCorrelation)
+        subWindow.setTotalShapeCorrPlot(cp);
+      else
+        subWindow.setShapeCorrPlot(cp);
     }
   }
 
@@ -772,16 +775,32 @@ public class MSEcorrGroupWindow extends JFrame {
    * plots the pseudo spectrum of the current group
    */
   private void plotPseudoSpectrum() {
-    PKLRowGroup g = peakList.getLastViewedGroup();
-    EChartPanel chart = PseudoSpectrum.createChart(g, g.getLastViewedRawFile(),
-        getCbSumPseudoSpectrum().isSelected());
-    // theme.apply(chart.getChart());
     pnSpectrum.removeAll();
-    pnNetwork.add(chart, BorderLayout.CENTER);
-    pnNetwork.revalidate();
-    pnNetwork.repaint();
+    PKLRowGroup g = peakList.getLastViewedGroup();
+    if (g != null) {
+      EChartPanel chart = PseudoSpectrum.createChart(g, g.getLastViewedRawFile(),
+          getCbSumPseudoSpectrum().isSelected());
+      // theme.apply(chart.getChart());
+      pnSpectrum.add(chart, BorderLayout.CENTER);
+      pnSpectrum.revalidate();
+      pnSpectrum.repaint();
+    }
   }
 
+  /**
+   * Annotation network
+   */
+  private void createAnnotationNetwork() {
+    PKLRowGroup g = peakList.getLastViewedGroup();
+    if (g != null) {
+      PeakListRow[] rows = g.toArray(new PeakListRow[g.size()]);
+      pnNetwork.setPeakListRows(rows);
+      pnNetwork.revalidate();
+      pnNetwork.repaint();
+    } else {
+      pnNetwork.setPeakListRows(null);
+    }
+  }
 
   /**
    * adds a new export menu to this chart panel
