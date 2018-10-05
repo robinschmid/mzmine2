@@ -58,7 +58,8 @@ public class PKLRowGroup extends ArrayList<PeakListRow> {
       for (int k = 0; k < this.size(); k++) {
         if (i != k) {
           PeakListRow row = this.get(k);
-          double iProfileR = MetaMSEcorrelateTask.corrRowToRowIProfile(raw, testRow, row);
+          FeatureShapeCorrelationData iProfileR =
+              MetaMSEcorrelateTask.corrRowToRowIProfile(raw, testRow, row);
           FeatureShapeCorrelationData[] fCorr = null;
           try {
             fCorr = MetaMSEcorrelateTask.corrRowToRowFeatureShape(raw, testRow, row);

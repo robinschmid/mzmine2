@@ -490,7 +490,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       try {
         FeatureShapeCorrelationData[] data = corrRowToRowFeatureShape(raw, row, row2);
         // for min max avg
-        RowCorrelationData rowCorr = new RowCorrelationData(0, 0, 0, data);
+        RowCorrelationData rowCorr = new RowCorrelationData(0, 0, null, data);
         // no or bad correlation: exit
         if (!rowCorr.hasPeakShapeCorrelation() || rowCorr.getAvgPeakShapeR() <= 0)
           return false;
@@ -620,24 +620,25 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    * @param raw
    * @param row
    * @param g
-   * @return Pearson r of height correlation
+   * @return Correlation data of i profile of max i
    */
-  public static double corrRowToRowIProfile(final RawDataFile raw[], PeakListRow row,
-      PeakListRow g) {
-    SimpleRegression reg = new SimpleRegression();
+  public static FeatureShapeCorrelationData corrRowToRowIProfile(final RawDataFile raw[],
+      PeakListRow row, PeakListRow g) {
+    List<double[]> data = new ArrayList<>();
     // go through all raw files
     for (int r = 0; r < raw.length; r++) {
       Feature f1 = row.getPeak(raw[r]);
       Feature f2 = g.getPeak(raw[r]);
-      // I profile correlation
-      // TODO: low value imputation?
-      double I1 = f1 != null ? f1.getHeight() : 0;
-      double I2 = f2 != null ? f2.getHeight() : 0;
-      reg.addData(I1, I2);
+      if (f1 != null && f2 != null) {
+        // I profile correlation
+        // TODO: low value imputation?
+        double I1 = f1.getHeight();
+        double I2 = f2.getHeight();
+        data.add(new double[] {I1, I2});
+      }
     }
     // TODO weighting of intensity corr
-    double corrIprofile = reg.getR();
-    return corrIprofile;
+    return FeatureShapeCorrelationData.create(data);
   }
 
   /**

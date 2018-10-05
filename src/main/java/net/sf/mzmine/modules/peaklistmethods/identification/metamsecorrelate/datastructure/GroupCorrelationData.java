@@ -34,11 +34,12 @@ public class GroupCorrelationData {
     avgTotalPeakShapeR = 0;
     int c = 0;
     for (int i = 0; i < corr.length; i++) {
-      avgIProfileR += corr[i].getCorrIProfileR();
-      if (corr[i].getCorrIProfileR() < minIProfileR)
-        minIProfileR = corr[i].getCorrIProfileR();
-      if (corr[i].getCorrIProfileR() > maxIProfileR)
-        maxIProfileR = corr[i].getCorrIProfileR();
+      double iProfileR = corr[i].getCorrIProfile().getR();
+      avgIProfileR += iProfileR;
+      if (iProfileR < minIProfileR)
+        minIProfileR = iProfileR;
+      if (iProfileR > maxIProfileR)
+        maxIProfileR = iProfileR;
 
       // peak shape correlation
       if (corr[i].hasPeakShapeCorrelation()) {

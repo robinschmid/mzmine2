@@ -501,7 +501,7 @@ public class MSEcorrGroupWindow extends JFrame {
     GroupedPeakListTableModel model = (GroupedPeakListTableModel) tableGroupMembers.getModel();
     model.fireTableDataChanged();
     //
-    renewAllPlots(true, true, true);
+    renewAllPlots(true, true, true, true);
   }
 
   /**
@@ -539,7 +539,7 @@ public class MSEcorrGroupWindow extends JFrame {
   protected void setCurrentRawView(int i) {
     PKLRowGroup g = peakList.getLastViewedGroup();
     g.setLastViewedRawFileI(i);
-    renewAllPlots(true, true, false);
+    renewAllPlots(true, true, false, false);
   }
 
   /**
@@ -554,13 +554,14 @@ public class MSEcorrGroupWindow extends JFrame {
     g.setLastViewedRowI(i);
     // auto show raw file containing lastViewed row
     boolean renewRaw = checkAutoShowRawFile();
-    renewAllPlots(renewRaw, true, true);
+    renewAllPlots(renewRaw, true, true, false);
   }
 
   /**
    * renews all plots: IProfile, peak shapes, peak shape correlation
    */
-  public void renewAllPlots(boolean peakShapes, boolean peakShapeCorr, boolean iProfile) {
+  public void renewAllPlots(boolean peakShapes, boolean peakShapeCorr, boolean iProfile,
+      boolean networkSpectrum) {
     // plot peak shapes
     if (peakShapes)
       plotPeakShapes();
@@ -569,14 +570,18 @@ public class MSEcorrGroupWindow extends JFrame {
       // correlation of total and single raw file
       plotPeakShapeCorrelation(false);
       plotPeakShapeCorrelation(true);
+      // intensity profile correlation
+      plotIMaxCorrelation();
 
       // all f2f correlations in columns
       createCorrColumnsPlot();
     }
-    // plot a pseudo spectrum
-    plotPseudoSpectrum();
-    // network of annotations
-    createAnnotationNetwork();
+    if (networkSpectrum) {
+      // plot a pseudo spectrum
+      plotPseudoSpectrum();
+      // network of annotations
+      createAnnotationNetwork();
+    }
     // plotIProfile
     if (iProfile)
       plotIProfile();
@@ -707,6 +712,71 @@ public class MSEcorrGroupWindow extends JFrame {
         subWindow.setTotalShapeCorrPlot(cp);
       else
         subWindow.setShapeCorrPlot(cp);
+    }
+  }
+
+
+  /**
+   * Correlation of the maximum intensitites. One series per f2f correlation over all raw data
+   * files.
+   */
+  private void plotIMaxCorrelation() {
+    // get group
+    PKLRowGroup g = peakList.getLastViewedGroup();
+    if (g != null) {
+      //
+      PeakListRow row = g.getLastViewedRow();
+      int rowI = g.getLastViewedRowI();
+      GroupCorrelationData corr = g.getCorr(rowI);
+      int rawI = g.getLastViewedRawFileI();
+      RawDataFile raw = g.getLastViewedRawFile();
+
+      // first chart: correlation of row to all other rows in rawI
+      // data set
+      XYSeriesCollection data = new XYSeriesCollection();
+      // title
+      String sg =
+          String.valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), raw));
+      String title = "Row " + row.getID() + " corr in: " + sg + "(" + raw.getName() + ")";
+      // create chart
+      JFreeChart chart =
+          ChartFactory.createScatterPlot(title, "Intensity (row: " + row.getID() + ")",
+              "Intensity (other rows)", data, PlotOrientation.VERTICAL, true, true, false);
+      XYItemRenderer renderer = chart.getXYPlot().getRenderer();
+      // formating
+      NumberFormat intensityFormat = MZmineCore.getConfiguration().getIntensityFormat();
+      NumberAxis xAxis = (NumberAxis) chart.getXYPlot().getDomainAxis();
+      NumberAxis yAxis = (NumberAxis) chart.getXYPlot().getRangeAxis();
+      xAxis.setNumberFormatOverride(intensityFormat);
+      yAxis.setNumberFormatOverride(intensityFormat);
+      //
+      chart.setNotify(false);
+      // for each row: correlation of row to
+      for (int i = 0; i < g.size(); i++) {
+        PeakListRow trow = g.get(i);
+        if (rowI != i) {
+          // get correlation data (row to row)
+          RowCorrelationData corrRows = corr.getCorrelationToRowI(i);
+          // get correlation of feature-feature in selected raw file
+          FeatureShapeCorrelationData fCorr = null;
+          fCorr = corrRows.getCorrIProfile();
+          // add series
+          if (fCorr != null && fCorr.getReg() != null && fCorr.getData() != null) {
+            data.addSeries(regressionToSeries(fCorr, String.valueOf(trow.getID())));
+            // add regression line
+            XYLineAnnotation line = regressionToAnnotation(fCorr);
+            renderer.addAnnotation(line);
+            // set colors
+            renderer.setSeriesPaint(data.getSeriesCount() - 1, colors[i % colors.length]);
+          }
+        }
+      }
+
+      // add chart to panel
+      chart.setNotify(true);
+      chart.fireChartChanged();
+      EChartPanel cp = createChartPanel(chart);
+      subWindow.setMaxICorrPlot(cp);
     }
   }
 

@@ -8,7 +8,7 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.da
  */
 public class RowCorrelationData {
   // correlation to all peaks
-  private double corrIProfileR;
+  private FeatureShapeCorrelationData corrIProfile;
   //
   private boolean hasPeakShapeCorr = false;
   private FeatureShapeCorrelationData[] corrPeakShape;
@@ -22,10 +22,10 @@ public class RowCorrelationData {
   // y: row
   private int xRow, yRow;
 
-  public RowCorrelationData(int xRow, int yRow, double corrIProfileR,
+  public RowCorrelationData(int xRow, int yRow, FeatureShapeCorrelationData corrIProfile,
       FeatureShapeCorrelationData[] corrPeakShape) {
     super();
-    this.corrIProfileR = corrIProfileR;
+    this.corrIProfile = corrIProfile;
     setCorrPeakShape(corrPeakShape);
     this.xRow = xRow;
     this.yRow = yRow;
@@ -113,14 +113,13 @@ public class RowCorrelationData {
     return avgDPCount;
   }
 
-  public double getCorrIProfileR() {
-    return corrIProfileR;
+  public FeatureShapeCorrelationData getCorrIProfile() {
+    return corrIProfile;
   }
 
-  public void setCorrIProfileR(double corrIProfileR) {
-    this.corrIProfileR = corrIProfileR;
+  public void setCorrIProfileR(FeatureShapeCorrelationData corrIProfile) {
+    this.corrIProfile = corrIProfile;
   }
-
 
   public int getXRow() {
     return xRow;
