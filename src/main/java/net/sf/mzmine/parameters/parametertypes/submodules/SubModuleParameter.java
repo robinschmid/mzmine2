@@ -32,7 +32,6 @@ public class SubModuleParameter implements UserParameter<Boolean, SubModuleCompo
 
   private String name, description;
   private ParameterSet embeddedParameters;
-  private Boolean value;
 
   public SubModuleParameter(String name, String description, ParameterSet embeddedParameters) {
     this.name = name;
@@ -69,23 +68,19 @@ public class SubModuleParameter implements UserParameter<Boolean, SubModuleCompo
   public Boolean getValue() {
     // If the option is selected, first check that the module has all
     // parameters set
-    if ((value != null) && (value)) {
-      for (Parameter<?> p : embeddedParameters.getParameters()) {
-        if (p instanceof UserParameter) {
-          UserParameter<?, ?> up = (UserParameter<?, ?>) p;
-          Object upValue = up.getValue();
-          if (upValue == null)
-            return null;
-        }
+    for (Parameter<?> p : embeddedParameters.getParameters()) {
+      if (p instanceof UserParameter) {
+        UserParameter<?, ?> up = (UserParameter<?, ?>) p;
+        Object upValue = up.getValue();
+        if (upValue == null)
+          return null;
       }
     }
-    return value;
+    return true;
   }
 
   @Override
-  public void setValue(Boolean value) {
-    this.value = value;
-  }
+  public void setValue(Boolean value) {}
 
   @Override
   public SubModuleParameter cloneParameter() {
@@ -106,25 +101,15 @@ public class SubModuleParameter implements UserParameter<Boolean, SubModuleCompo
   public void loadValueFromXML(Element xmlElement) {
     embeddedParameters.loadValuesFromXML(xmlElement);
     String selectedAttr = xmlElement.getAttribute("selected");
-    this.value = Boolean.valueOf(selectedAttr);
   }
 
   @Override
   public void saveValueToXML(Element xmlElement) {
-    if (value != null)
-      xmlElement.setAttribute("selected", value.toString());
     embeddedParameters.saveValuesToXML(xmlElement);
   }
 
   @Override
   public boolean checkValue(Collection<String> errorMessages) {
-    if (value == null) {
-      errorMessages.add(name + " is not set properly");
-      return false;
-    }
-    if (value == true) {
-      return embeddedParameters.checkParameterValues(errorMessages);
-    }
-    return true;
+    return embeddedParameters.checkParameterValues(errorMessages);
   }
 }
