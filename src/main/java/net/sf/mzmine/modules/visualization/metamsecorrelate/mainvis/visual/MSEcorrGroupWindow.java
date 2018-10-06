@@ -600,8 +600,10 @@ public class MSEcorrGroupWindow extends JFrame {
       // data set
       XYSeriesCollection data = new XYSeriesCollection();
       // add plot
-      String sg =
-          String.valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), raw));
+      String sg = "";
+      if (peakList.getSampleGroupsParameter() != null)
+        sg = String.valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), raw));
+
       String title = sg + "(" + raw.getName() + ")";
       JFreeChart chart = ChartFactory.createXYLineChart(title, "retention time | min", "Intensity",
           data, PlotOrientation.VERTICAL, true, true, false);
@@ -664,8 +666,10 @@ public class MSEcorrGroupWindow extends JFrame {
       // data set
       XYSeriesCollection data = new XYSeriesCollection();
       // title
-      String sg =
-          String.valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), raw));
+      String sg = "";
+      if (peakList.getSampleGroupsParameter() != null)
+        sg = String.valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), raw));
+
       String title = "Row " + row.getID() + " corr in: " + sg + "(" + raw.getName() + ")";
       // create chart
       JFreeChart chart =
@@ -735,8 +739,8 @@ public class MSEcorrGroupWindow extends JFrame {
       // data set
       XYSeriesCollection data = new XYSeriesCollection();
       // title
-      String sg =
-          String.valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), raw));
+      String sg = peakList.getSampleGroupsParameter() == null ? ""
+          : String.valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), raw));
       String title = "Row " + row.getID() + " corr in: " + sg + "(" + raw.getName() + ")";
       // create chart
       JFreeChart chart =
@@ -801,8 +805,8 @@ public class MSEcorrGroupWindow extends JFrame {
       // go through all raw files
       for (int r = 0; r < peakList.getRawDataFiles().length; r++) {
         RawDataFile rfile = peakList.getRawDataFile(r);
-        String rawSG =
-            String.valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), rfile));
+        String rawSG = peakList.getSampleGroupsParameter() == null ? ""
+            : String.valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), rfile));
 
         // for each row: correlation of row to row in all raw files
         for (int i = 0; i < g.size(); i++) {
@@ -931,8 +935,19 @@ public class MSEcorrGroupWindow extends JFrame {
       PeakListRow row = g.getLastViewedRow();
       RawDataFile[] raw = row.getRawDataFiles();
       // one category for each sample group
-      int sgCount = peakList.getSampleGroups().size();
-      String sgName[] = new String[sgCount];
+      boolean noGroups = true;
+      String sgName[] = null;
+      int sgCount = 0;
+      if (peakList.getSampleGroups() != null) {
+        sgCount = peakList.getSampleGroups().size();
+        sgName = new String[sgCount];
+        int c = 0;
+        for (Object o : peakList.getSampleGroups().keySet()) {
+          sgName[c] = (String) o;
+          c++;
+        }
+        noGroups = false;
+      }
       // row IDs for series name
       int[] rowID = new int[g.size()];
       rowID[0] = row.getID();
@@ -944,16 +959,11 @@ public class MSEcorrGroupWindow extends JFrame {
         }
       }
       // one list for each row in the group and each sample group
-      List[][] sg = new List[g.size()][sgCount];
+      List[][] sg = new List[g.size()][noGroups ? 1 : sgCount];
       for (int i = 0; i < sg.length; i++)
         for (int k = 0; k < sg[0].length; k++)
-          sg[i][k] = new ArrayList();
+          sg[i][k] = new ArrayList<>();
 
-      c = 0;
-      for (Object o : peakList.getSampleGroups().keySet()) {
-        sgName[c] = (String) o;
-        c++;
-      }
 
       final DefaultBoxAndWhiskerCategoryDataset dataset = new DefaultBoxAndWhiskerCategoryDataset();
       final DefaultBoxAndWhiskerCategoryDataset datasetAll =
@@ -961,44 +971,49 @@ public class MSEcorrGroupWindow extends JFrame {
 
       // go through all raw files
       for (int r = 0; r < raw.length; r++) {
-        // find group
+        // find sample group
         c = 0;
-        for (Object o : peakList.getSampleGroups().keySet()) {
-          Object rawSG = project.getParameterValue(peakList.getSampleGroupsParameter(), raw[r]);
-          if (o.equals(rawSG)) {
-            // height: add to lists
-            Feature f1 = row.getPeak(raw[r]);
-            double I1 = f1 != null ? f1.getHeight() : 0;
-            sg[0][c].add(I1);
-            // all other rows than the selected one
-            int k = 1;
-            for (PeakListRow trow : g) {
-              if (trow.getID() != row.getID()) {
-                Feature f2 = trow.getPeak(raw[r]);
-                double I = f2 != null ? f2.getHeight() : 0;
-                sg[k][c].add(I);
-                k++;
-              }
+        if (!noGroups) {
+          for (Object o : peakList.getSampleGroups().keySet()) {
+            Object rawSG = project.getParameterValue(peakList.getSampleGroupsParameter(), raw[r]);
+            if (o.equals(rawSG)) {
+              break;
             }
+            // next sample group
+            c++;
           }
-          c++;
+        }
+        // add
+        // height: add to lists
+        Feature f1 = row.getPeak(raw[r]);
+        double I1 = f1 != null ? f1.getHeight() : 0;
+        sg[0][c].add(I1);
+        // all other rows than the selected one
+        int k = 1;
+        for (PeakListRow trow : g) {
+          if (trow.getID() != row.getID()) {
+            Feature f2 = trow.getPeak(raw[r]);
+            double I = f2 != null ? f2.getHeight() : 0;
+            sg[k][c].add(I);
+            k++;
+          }
         }
       }
       // k: rows
       // i: sample groups
       for (int i = 0; i < sg[0].length; i++)
         // data, series key, sample group
-        if (getCbUseSampleGroups().isSelected())
+        if (!noGroups && getCbUseSampleGroups().isSelected())
           dataset.add(sg[0][i], "" + rowID[0], sgName[i]);
         else
-          dataset.add(sg[0][i], sgName[i], "" + rowID[0]);
+          dataset.add(sg[0][i], "data", "" + rowID[0]);
 
       for (int k = 0; k < sg.length; k++) {
         for (int i = 0; i < sg[k].length; i++) {
-          if (getCbUseSampleGroups().isSelected())
+          if (!noGroups && getCbUseSampleGroups().isSelected())
             datasetAll.add(sg[k][i], "" + rowID[k], sgName[i]);
           else
-            datasetAll.add(sg[k][i], sgName[i], "" + rowID[k]);
+            datasetAll.add(sg[k][i], "data", "" + rowID[k]);
         }
       }
 

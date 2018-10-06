@@ -18,16 +18,21 @@
 
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.impl.SimplePeakIdentity;
 
 public class ESIAdductIdentity extends SimplePeakIdentity {
 
+  private NumberFormat netIDForm = new DecimalFormat("000");
   // identifier like [M+H]+
   private String adduct;
   private String massDifference;
   // partner rowIDs
   private String partnerRows;
+  // network id (number)
+  private int netID = -1;
 
   /**
    * Create the identity.
@@ -36,11 +41,12 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
    * @param adduct type of adduct.
    */
   public ESIAdductIdentity(final PeakListRow originalPeakListRow, final ESIAdductType adduct) {
-    super(adduct.toString(false) + " indentified by ID=" + originalPeakListRow.getID());
+    super("later");
     this.adduct = adduct.toString(false);
     this.massDifference = adduct.getMassDiffString();
     partnerRows = String.valueOf(originalPeakListRow.getID());
-    setPropertyValue(PROPERTY_METHOD, "metaMSEcorrelate");
+    setPropertyValue(PROPERTY_METHOD, "MS annotation");
+    setPropertyValue(PROPERTY_NAME, getIDString());
   }
 
   public String getAdduct() {
@@ -63,7 +69,21 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
   }
 
   public String getIDString() {
-    return adduct + " identified by ID=" + partnerRows;
+    StringBuilder b = new StringBuilder();
+    if (netID != -1) {
+      b.append("Net");
+      b.append(getNetIDString());
+      b.append(" ");
+    }
+    b.append(adduct);
+    b.append(" indentified by ID=");
+    b.append(partnerRows);
+    return b.toString();
+  }
+
+  @Override
+  public String toString() {
+    return getIDString();
   }
 
   public boolean equalsAdduct(ESIAdductType acompare) {
@@ -77,5 +97,28 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
       ids[i] = Integer.valueOf(split[i]);
 
     return ids;
+  }
+
+  /**
+   * Network number
+   * 
+   * @param id
+   */
+  public void setNetID(int id) {
+    netID = id;
+    setPropertyValue(PROPERTY_NAME, getIDString());
+  }
+
+  /**
+   * Network number
+   * 
+   * @return
+   */
+  public int getNetID() {
+    return netID;
+  }
+
+  public String getNetIDString() {
+    return netIDForm.format(getNetID());
   }
 }

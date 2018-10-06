@@ -19,6 +19,7 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.sf.mzmine.datamodel.MZmineProject;
@@ -153,6 +154,12 @@ public class MSAnnotationTask extends AbstractTask {
 
       LOG.info("A total of " + compared + " row2row comparisons with " + annotPairs
           + " annotation pairs");
+      List net = MSAnnotationNetworkLogic.createAnnotationNetworks(peakList, true);
+      LOG.info("A total of " + net.size() + " networks");
+
+      LOG.info("Show most likely annotations");
+      MSAnnotationNetworkLogic.showMostlikelyAnnotations(peakList);
+
 
       // finish
       if (!isCanceled()) {
@@ -168,9 +175,7 @@ public class MSAnnotationTask extends AbstractTask {
         setStatus(TaskStatus.FINISHED);
         LOG.info("Finished adducts search in " + peakList);
       }
-    } catch (
-
-    Throwable t) {
+    } catch (Exception t) {
       LOG.log(Level.SEVERE, "Adduct search error", t);
       setStatus(TaskStatus.ERROR);
       setErrorMessage(t.getMessage());

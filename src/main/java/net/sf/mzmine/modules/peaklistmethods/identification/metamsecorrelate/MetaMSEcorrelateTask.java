@@ -28,7 +28,6 @@ import org.apache.commons.math.stat.regression.SimpleRegression;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.MZmineProject;
-import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
@@ -43,9 +42,9 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.RowCorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationParameters;
 import net.sf.mzmine.modules.peaklistmethods.isotopes.aligneddeisotoper.AlignedIsotopeGrouperTask;
 import net.sf.mzmine.parameters.ParameterSet;
@@ -194,13 +193,20 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         // group the features of one scan event of all samples
         // by RT and r-Pearson (intra)
         groups = groupFeatures(groupedPKL[e]);
+        LOG.info("Corr: grouping done");
+
         if (groups != null) {
           // set groups to pkl
           groupedPKL[e].setGroups(groups);
 
           if (searchAdducts) {
             // show all annotations with the highest count of links
-            showMostlikelyAnnotations(groupedPKL[e]);
+            LOG.info("Corr: show most likely annotations");
+            MSAnnotationNetworkLogic.showMostlikelyAnnotations(groupedPKL[e]);
+
+            //
+            LOG.info("Corr: create annotation network numbers");
+            MSAnnotationNetworkLogic.createAnnotationNetworks(groupedPKL[e], true);
           }
 
           // add to project
@@ -237,39 +243,13 @@ public class MetaMSEcorrelateTask extends AbstractTask {
           LOG.info("Finished adducts search in " + peakLists[e]);
         }
       }
-    } catch (Throwable t) {
-
+    } catch (Exception t) {
       LOG.log(Level.SEVERE, "Adduct search error", t);
       setStatus(TaskStatus.ERROR);
       setErrorMessage(t.getMessage());
     }
   }
 
-  /**
-   * Show the annotation with the highest numbers of links
-   * 
-   * @param mseGroupedPeakList
-   */
-  private void showMostlikelyAnnotations(MSEGroupedPeakList mseGroupedPeakList) {
-    for (PeakListRow row : mseGroupedPeakList.getRows()) {
-      int maxLinks = 0;
-      PeakIdentity best = null;
-
-      for (PeakIdentity id : row.getPeakIdentities()) {
-        if (id instanceof ESIAdductIdentity) {
-          ESIAdductIdentity esi = (ESIAdductIdentity) id;
-          int links = esi.getPartnerRowsID().length;
-          if (links > maxLinks) {
-            maxLinks = links;
-            best = id;
-          }
-        }
-      }
-      // set best
-      if (best != null)
-        row.setPreferredPeakIdentity(best);
-    }
-  }
 
   /**
    * gets called to initialise variables for next peaklist
@@ -376,6 +356,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       // try to fit all features to all groups twice
       // giving the first feature the chance of beeing correlated to all gorups
       progress = 0.05;
+      LOG.info("Corr: grouping main features");
       // for all rows
       for (int i = 0; i < totalRows; i++) {
         PeakListRow row = rows[i];
@@ -409,6 +390,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
       // #########################################################################
       // SECOND GO: all high abundant rows again
+      LOG.info("Corr: second chance for main features");
+
       for (int i = 0; i < totalRows; i++) {
         PeakListRow row = rows[i];
         // start with high abundant features
@@ -432,6 +415,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       // ######################################################################
       // now correlate and add low abundant features to groups
       if (groups.size() > 0) {
+        LOG.info("Corr: grouping low abundant features < main peak intensity");
         progress = 0.65;
         double step = (0.90 - 0.65) / totalRows;
         for (int i = 0; i < totalRows; i++) {

@@ -193,9 +193,12 @@ public class AnnotationNetworkPanel extends JPanel {
       if (pid instanceof ESIAdductIdentity) {
         ESIAdductIdentity esi = (ESIAdductIdentity) pid;
         id = esi.getAdduct() + " by n=" + esi.getPartnerRowsID().length;
+
+        if (esi.getNetID() != -1)
+          id += " (Net" + esi.getNetIDString() + ")";
       }
     }
-    return MessageFormat.format("{1} (mz={2}) {3}", row.getID(), mzForm.format(row.getAverageMZ()),
+    return MessageFormat.format("{0} (mz={1}) {2}", row.getID(), mzForm.format(row.getAverageMZ()),
         id);
   }
 
