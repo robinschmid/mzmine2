@@ -196,6 +196,19 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         LOG.info("Corr: grouping done");
 
         if (groups != null) {
+          // delete empty groups size <2
+          for (int i = 0; i < groups.size(); i++) {
+            if (groups.get(i).size() < 2) {
+              groups.remove(i);
+              i--;
+            }
+          }
+          // renumber
+          for (int i = 0; i < groups.size(); i++) {
+            PKLRowGroup g = groups.get(i);
+            g.setGroupID(i);
+          }
+
           // set groups to pkl
           groupedPKL[e].setGroups(groups);
 
