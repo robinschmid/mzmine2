@@ -153,4 +153,29 @@ public class MSAnnotationNetworkLogic {
       return null;
     }
   }
+
+  /**
+   * All MS annotation connections
+   * 
+   * @return
+   */
+  public static List<PeakListRow> findAllAnnotationConnections(PeakListRow[] rows,
+      PeakListRow row) {
+    List<PeakListRow> connections = new ArrayList<>();
+
+    for (PeakIdentity pi : row.getPeakIdentities()) {
+      // identity by ms annotation module
+      if (pi instanceof ESIAdductIdentity) {
+        ESIAdductIdentity adduct = (ESIAdductIdentity) pi;
+
+        // add all connection
+        int[] ids = adduct.getPartnerRowsID();
+        for (int id : ids) {
+          PeakListRow row2 = findRowByID(id, rows);
+          connections.add(row2);
+        }
+      }
+    }
+    return connections;
+  }
 }

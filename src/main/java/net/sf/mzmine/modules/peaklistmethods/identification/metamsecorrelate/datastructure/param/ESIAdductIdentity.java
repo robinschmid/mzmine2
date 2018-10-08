@@ -20,6 +20,8 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.da
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.Arrays;
+import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.impl.SimplePeakIdentity;
 
@@ -120,5 +122,33 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
 
   public String getNetIDString() {
     return netIDForm.format(getNetID());
+  }
+
+  /**
+   * 
+   * @param row
+   * @param link
+   * @return The identity of row, determined by link or null if there is no connection
+   */
+  public static ESIAdductIdentity getIdentityOf(PeakListRow row, PeakListRow link) {
+    for (PeakIdentity pi : row.getPeakIdentities()) {
+      // identity by ms annotation module
+      if (pi instanceof ESIAdductIdentity) {
+        ESIAdductIdentity adduct = (ESIAdductIdentity) pi;
+        if (adduct.hasPartnerID(link.getID()))
+          return adduct;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Checks whether partner ids contain a certain id
+   * 
+   * @param id
+   * @return
+   */
+  public boolean hasPartnerID(int id) {
+    return Arrays.stream(getPartnerRowsID()).anyMatch(pid -> pid == id);
   }
 }
