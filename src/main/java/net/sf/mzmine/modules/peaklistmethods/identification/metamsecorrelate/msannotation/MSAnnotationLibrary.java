@@ -85,6 +85,17 @@ public class MSAnnotationLibrary {
    * @param possibleAdduct candidate adduct peak.
    */
   public ESIAdductType[] findAdducts(final PeakList peakList, final PeakListRow row1,
+      final PeakListRow row2) {
+    return findAdducts(peakList, row1, row2, row1.getRowCharge(), row2.getRowCharge());
+  }
+
+  /**
+   * Does only find one
+   * 
+   * @param mainRow main peak.
+   * @param possibleAdduct candidate adduct peak.
+   */
+  public ESIAdductType[] findAdducts(final PeakList peakList, final PeakListRow row1,
       final PeakListRow row2, final int z1, final int z2) {
     // check all combinations of adducts
     for (final ESIAdductType adduct : allAdducts) {

@@ -44,7 +44,7 @@ public class MSAnnotationNetworkLogic {
   }
 
   /**
-   * Create list of AnnotationNetworks
+   * Create list of AnnotationNetworks and set net ID
    * 
    * @param rows
    * @return
@@ -55,7 +55,7 @@ public class MSAnnotationNetworkLogic {
   }
 
   /**
-   * Create list of AnnotationNetworks
+   * Create list of AnnotationNetworks and set net ID
    * 
    * @param rows
    * @return

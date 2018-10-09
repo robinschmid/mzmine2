@@ -39,11 +39,41 @@ public class PKLRowGroup extends ArrayList<PeakListRow> {
     this.rtSum = new double[raw.length];
     this.rtValues = new int[raw.length];
     this.groupID = groupID;
-    add(row);
+    if (row != null)
+      add(row);
   }
 
   /**
    * Recalculates all stats for this group
+   * 
+   * @param corrMap
+   */
+  public void recalcGroupCorrelation(R2RCorrMap corrMap) {
+    // init
+    corr = new GroupCorrelationData[this.size()];
+    RawDataFile[] raw = this.getRaw();
+
+    // test all rows against all other rows
+    for (int i = 0; i < this.size(); i++) {
+      RowCorrelationData[] rowCorr = new RowCorrelationData[this.size() - 1];
+      int counter = 0;
+      PeakListRow testRow = this.get(i);
+      for (int k = 0; k < this.size(); k++) {
+        if (i != k) {
+          rowCorr[counter] = corrMap.get(testRow, this.get(k));
+          counter++;
+        }
+      }
+      // create group corr object
+      corr[i] = new GroupCorrelationData(rowCorr, testRow.getBestPeak().getHeight());
+    }
+  }
+
+
+  /**
+   * Recalculates all stats for this group without map
+   * 
+   * @param corrMap
    */
   public void recalcGroupCorrelation() {
     // init
@@ -66,7 +96,7 @@ public class PKLRowGroup extends ArrayList<PeakListRow> {
           } catch (Exception e) {
             e.printStackTrace();
           }
-          rowCorr[counter] = new RowCorrelationData(i, k, iProfileR, fCorr);
+          rowCorr[counter] = new RowCorrelationData(testRow.getID(), row.getID(), iProfileR, fCorr);
           counter++;
         }
       }

@@ -65,7 +65,10 @@ public class MSEGroupedPeakList extends SimplePeakList {
         row.addPeakIdentity(new MSEGroupPeakIdentity(g), true);
       }
       // recalc correlation
-      g.recalcGroupCorrelation();
+      if (corrMap != null)
+        g.recalcGroupCorrelation(corrMap);
+      else
+        g.recalcGroupCorrelation();
     }
   }
 

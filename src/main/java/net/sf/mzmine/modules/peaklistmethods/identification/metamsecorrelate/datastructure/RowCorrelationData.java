@@ -136,4 +136,9 @@ public class RowCorrelationData {
   public void setYRow(int yRow) {
     this.yRow = yRow;
   }
+
+  public boolean isValid() {
+    return (corrTotal != null && corrTotal.getReg().getN() > 0)
+        || (corrIProfile != null && corrIProfile.getReg().getN() > 0);
+  }
 }
