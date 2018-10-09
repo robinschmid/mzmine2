@@ -141,8 +141,8 @@ public class GroupCorrelationData {
    * @return the correlation data of this row to row[rowI]
    */
   public RowCorrelationData getCorrelationToRowI(int rowI) {
-    for (int i = (rowI == 0 ? 0 : rowI - 1); i < corr.length; i++)
-      if (corr[i].getYRow() == rowI)
+    for (int i = 0; i < corr.length; i++)
+      if (corr[i] != null && corr[i].getYRow() == rowI)
         return corr[i];
     return null;
   }

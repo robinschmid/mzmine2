@@ -101,8 +101,7 @@ public class R2RCorrMap extends TreeMap<String, RowCorrelationData> {
         } else if (group2 == null) {
           group.add(pkl.findRowByID(ids[1]));
           used.put(ids[1], group);
-        } else {
-          // group is null
+        } else if (group == null) {
           group2.add(pkl.findRowByID(ids[0]));
           used.put(ids[0], group2);
         }

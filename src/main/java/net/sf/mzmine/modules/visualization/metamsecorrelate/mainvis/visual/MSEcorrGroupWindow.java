@@ -689,21 +689,23 @@ public class MSEcorrGroupWindow extends JFrame {
         PeakListRow trow = g.get(i);
         if (rowI != i) {
           // get correlation data (row to row)
-          RowCorrelationData corrRows = corr.getCorrelationToRowI(i);
-          // get correlation of feature-feature in selected raw file
-          FeatureShapeCorrelationData fCorr = null;
-          if (totalCorrelation)
-            fCorr = corrRows.getTotalCorrelation();
-          else
-            fCorr = corrRows.getCorrPeakShape()[rawI];
-          // add series
-          if (fCorr != null && fCorr.getReg() != null && fCorr.getData() != null) {
-            data.addSeries(regressionToSeries(fCorr, String.valueOf(trow.getID())));
-            // add regression line
-            XYLineAnnotation line = regressionToAnnotation(fCorr);
-            renderer.addAnnotation(line);
-            // set colors
-            renderer.setSeriesPaint(data.getSeriesCount() - 1, colors[i % colors.length]);
+          RowCorrelationData corrRows = corr.getCorrelationToRowI(trow.getID());
+          if (corrRows != null) {
+            // get correlation of feature-feature in selected raw file
+            FeatureShapeCorrelationData fCorr = null;
+            if (totalCorrelation)
+              fCorr = corrRows.getTotalCorrelation();
+            else
+              fCorr = corrRows.getCorrPeakShape()[rawI];
+            // add series
+            if (fCorr != null && fCorr.getReg() != null && fCorr.getData() != null) {
+              data.addSeries(regressionToSeries(fCorr, String.valueOf(trow.getID())));
+              // add regression line
+              XYLineAnnotation line = regressionToAnnotation(fCorr);
+              renderer.addAnnotation(line);
+              // set colors
+              renderer.setSeriesPaint(data.getSeriesCount() - 1, colors[i % colors.length]);
+            }
           }
         }
       }
@@ -760,18 +762,20 @@ public class MSEcorrGroupWindow extends JFrame {
         PeakListRow trow = g.get(i);
         if (rowI != i) {
           // get correlation data (row to row)
-          RowCorrelationData corrRows = corr.getCorrelationToRowI(i);
-          // get correlation of feature-feature in selected raw file
-          FeatureShapeCorrelationData fCorr = null;
-          fCorr = corrRows.getCorrIProfile();
-          // add series
-          if (fCorr != null && fCorr.getReg() != null && fCorr.getData() != null) {
-            data.addSeries(regressionToSeries(fCorr, String.valueOf(trow.getID())));
-            // add regression line
-            XYLineAnnotation line = regressionToAnnotation(fCorr);
-            renderer.addAnnotation(line);
-            // set colors
-            renderer.setSeriesPaint(data.getSeriesCount() - 1, colors[i % colors.length]);
+          RowCorrelationData corrRows = corr.getCorrelationToRowI(trow.getID());
+          if (corrRows != null) {
+            // get correlation of feature-feature in selected raw file
+            FeatureShapeCorrelationData fCorr = null;
+            fCorr = corrRows.getCorrIProfile();
+            // add series
+            if (fCorr != null && fCorr.getReg() != null && fCorr.getData() != null) {
+              data.addSeries(regressionToSeries(fCorr, String.valueOf(trow.getID())));
+              // add regression line
+              XYLineAnnotation line = regressionToAnnotation(fCorr);
+              renderer.addAnnotation(line);
+              // set colors
+              renderer.setSeriesPaint(data.getSeriesCount() - 1, colors[i % colors.length]);
+            }
           }
         }
       }
@@ -813,17 +817,19 @@ public class MSEcorrGroupWindow extends JFrame {
           PeakListRow trow = g.get(i);
           if (rowI != i) {
             // get correlation data (row to row)
-            RowCorrelationData corrRows = corr.getCorrelationToRowI(i);
-            // get correlation of feature-feature in selected raw file
-            FeatureShapeCorrelationData fCorr = corrRows.getCorrPeakShape()[r];
-            // regression
-            if (fCorr != null && fCorr.getReg() != null && fCorr.getData() != null) {
-              SimpleRegression reg = fCorr.getReg();
-              // for summary of samples
-              if (getCbSampleSummary().isSelected())
-                dataset.addValue(reg.getR(), rawSG, rfile.getName());
-              else
-                dataset.addValue(reg.getR(), rawSG, rfile.getName() + "(" + trow.getID() + ")");
+            RowCorrelationData corrRows = corr.getCorrelationToRowI(trow.getID());
+            if (corrRows != null) {
+              // get correlation of feature-feature in selected raw file
+              FeatureShapeCorrelationData fCorr = corrRows.getCorrPeakShape()[r];
+              // regression
+              if (fCorr != null && fCorr.getReg() != null && fCorr.getData() != null) {
+                SimpleRegression reg = fCorr.getReg();
+                // for summary of samples
+                if (getCbSampleSummary().isSelected())
+                  dataset.addValue(reg.getR(), rawSG, rfile.getName());
+                else
+                  dataset.addValue(reg.getR(), rawSG, rfile.getName() + "(" + trow.getID() + ")");
+              }
             }
           }
         }
