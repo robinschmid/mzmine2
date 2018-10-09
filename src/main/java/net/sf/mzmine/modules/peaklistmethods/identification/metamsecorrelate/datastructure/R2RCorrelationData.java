@@ -42,7 +42,7 @@ public class R2RCorrelationData {
   }
 
   public CorrelationData getCorrPeakShape(RawDataFile raw) {
-    return corrPeakShape.get(raw);
+    return corrPeakShape == null ? null : corrPeakShape.get(raw);
   }
 
   /**
@@ -148,7 +148,7 @@ public class R2RCorrelationData {
   }
 
   public boolean hasFeatureShapeCorrelation() {
-    return (corrTotal != null && corrTotal.getReg() != null && corrTotal.getReg().getN() > 0);
+    return (corrPeakShape != null && !corrPeakShape.isEmpty());
   }
 
   /**

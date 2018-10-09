@@ -64,6 +64,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.annotationnetwork.visual.AnnotationNetworkPanel;
+import net.sf.mzmine.modules.visualization.metamsecorrelate.corrnetwork.visual.CorrNetworkPanel;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.pseudospectra.PseudoSpectrum;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.table.GroupedPeakListTable;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.table.GroupedPeakListTableModel;
@@ -105,8 +106,10 @@ public class MSEcorrGroupWindow extends JFrame {
   private JCheckBox cbSumPseudoSpectrum;
   private JSplitPane splitPane;
   private JSplitPane splitChart;
+  private JSplitPane splitNetwork;
   private JPanel pnSpectrum;
   private AnnotationNetworkPanel pnNetwork;
+  private CorrNetworkPanel pnCorrNetwork;
 
   /**
    * Create the frame.
@@ -150,8 +153,16 @@ public class MSEcorrGroupWindow extends JFrame {
     pnSpectrum.setLayout(new BorderLayout(0, 0));
     splitChart.setRightComponent(pnSpectrum);
 
+
+    splitNetwork = new JSplitPane();
+    splitNetwork.setResizeWeight(0.5);
+    splitChart.setLeftComponent(splitNetwork);
+
     pnNetwork = new AnnotationNetworkPanel();
-    splitChart.setLeftComponent(pnNetwork);
+    splitNetwork.setRightComponent(pnNetwork);
+
+    pnCorrNetwork = new CorrNetworkPanel();
+    splitNetwork.setLeftComponent(pnCorrNetwork);
 
     // scroll table
     mainScroll = new JScrollPane();
@@ -585,6 +596,8 @@ public class MSEcorrGroupWindow extends JFrame {
       plotPseudoSpectrum();
       // network of annotations
       createAnnotationNetwork();
+      // create correlation network
+      createCorrelationNetwork();
     }
     // plotIProfile
     if (iProfile)
@@ -897,6 +910,21 @@ public class MSEcorrGroupWindow extends JFrame {
       pnNetwork.setPeakListRows(rows);
       pnNetwork.revalidate();
       pnNetwork.repaint();
+    } else {
+      pnNetwork.setPeakListRows(null);
+    }
+  }
+
+  /**
+   * Correlation network
+   */
+  private void createCorrelationNetwork() {
+    PKLRowGroup g = peakList.getLastViewedGroup();
+    if (g != null) {
+      PeakListRow[] rows = g.toArray(new PeakListRow[g.size()]);
+      pnCorrNetwork.setPeakListRows(rows, peakList.getCorrelationMap());
+      pnCorrNetwork.revalidate();
+      pnCorrNetwork.repaint();
     } else {
       pnNetwork.setPeakListRows(null);
     }

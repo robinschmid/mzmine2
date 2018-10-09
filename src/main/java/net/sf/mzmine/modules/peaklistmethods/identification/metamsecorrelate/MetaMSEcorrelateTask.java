@@ -330,11 +330,11 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
       // show all annotations with the highest count of links
       LOG.info("Corr: show most likely annotations");
-      MSAnnotationNetworkLogic.showMostlikelyAnnotations(peakList);
+      MSAnnotationNetworkLogic.showMostlikelyAnnotations(groupedPKL);
 
       //
       LOG.info("Corr: create annotation network numbers");
-      return MSAnnotationNetworkLogic.createAnnotationNetworks(peakList, true);
+      return MSAnnotationNetworkLogic.createAnnotationNetworks(groupedPKL, true);
     }
     return null;
   }

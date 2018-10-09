@@ -44,6 +44,8 @@ public class CorrNetworkPanel extends JPanel {
 
   private double minR;
 
+  private R2RCorrMap map;
+
   /**
    * Create the panel.
    */
@@ -128,12 +130,12 @@ public class CorrNetworkPanel extends JPanel {
    */
   public void setPeakList(PeakList pkl, R2RCorrMap map) {
     this.pkl = pkl;
+    this.map = map;
     if (pkl != null && map != null) {
       createNewGraph(pkl, map);
     } else
       graph.clear();
   }
-
 
   public void createNewGraph(PeakList pkl, R2RCorrMap map) {
     LOG.info("Adding all corr >" + minR + " to a network");
@@ -147,11 +149,13 @@ public class CorrNetworkPanel extends JPanel {
         PeakListRow a = pkl.findRowByID(ids[0]);
         PeakListRow b = pkl.findRowByID(ids[1]);
 
-        String node1 = toNodeName(a);
-        String node2 = toNodeName(b);
-        String edge = node1 + node2;
-        graph.addEdge(edge, node1, node2);
-        added++;
+        if (a != null && b != null) {
+          String node1 = toNodeName(a);
+          String node2 = toNodeName(b);
+          String edge = node1 + node2;
+          graph.addEdge(edge, node1, node2);
+          added++;
+        }
       }
     }
 
@@ -161,6 +165,51 @@ public class CorrNetworkPanel extends JPanel {
     }
     LOG.info("Added " + added + " connections");
   }
+
+  public void setPeakListRows(PeakListRow[] rows2, R2RCorrMap map) {
+    this.rows = rows2;
+    this.map = map;
+    if (rows != null && map != null) {
+      createNewGraph(rows, map);
+    } else
+      graph.clear();
+  }
+
+  /**
+   * Sub set of rows
+   * 
+   * @param rows
+   * @param map
+   */
+  public void createNewGraph(PeakListRow[] rows, R2RCorrMap map) {
+    LOG.info("Adding all corr >" + minR + " to a network");
+    graph.clear();
+
+    // add all connections
+    int added = 0;
+    for (int i = 0; i < rows.length - 1; i++) {
+      PeakListRow a = rows[i];
+      for (int k = i + 1; k < rows.length; k++) {
+        PeakListRow b = rows[k];
+        R2RCorrelationData r2r = map.get(a, b);
+        if (r2r != null && r2r.hasFeatureShapeCorrelation() && r2r.getAvgPeakShapeR() > minR) {
+          String node1 = toNodeName(a);
+          String node2 = toNodeName(b);
+          String edge = node1 + node2;
+          graph.addEdge(edge, node1, node2);
+          added++;
+        }
+      }
+    }
+
+    // add id name
+    for (Node node : graph) {
+      node.addAttribute("ui.label", node.getId());
+    }
+    LOG.info("Added " + added + " connections");
+  }
+
+
 
   private PeakListRow findRowByID(int id, PeakListRow[] rows) {
     if (rows == null)
