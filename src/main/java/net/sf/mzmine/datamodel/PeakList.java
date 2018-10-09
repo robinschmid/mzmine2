@@ -216,4 +216,6 @@ public interface PeakList {
    */
   public Range<Double> getRowsRTRange();
 
+  public PeakListRow findRowByID(int id);
+
 }
