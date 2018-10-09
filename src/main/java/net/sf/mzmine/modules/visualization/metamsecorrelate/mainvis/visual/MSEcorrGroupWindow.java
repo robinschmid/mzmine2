@@ -12,6 +12,8 @@ import java.awt.event.KeyEvent;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.BoxLayout;
@@ -55,12 +57,12 @@ import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.FeatureShapeCorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.GroupCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.RowCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.annotationnetwork.visual.AnnotationNetworkPanel;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.pseudospectra.PseudoSpectrum;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.table.GroupedPeakListTable;
@@ -69,6 +71,8 @@ import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableModule;
 import net.sf.mzmine.parameters.ParameterSet;
 
 public class MSEcorrGroupWindow extends JFrame {
+  // Logger.
+  private final Logger LOG = Logger.getLogger(getClass().getName());
   //
   private final Paint colors[];
   // sub window for more charts
@@ -652,72 +656,76 @@ public class MSEcorrGroupWindow extends JFrame {
    * peak shape correlation of selected row to all other rows in selected raw file
    */
   private void plotPeakShapeCorrelation(boolean totalCorrelation) {
-    // get group
-    PKLRowGroup g = peakList.getLastViewedGroup();
-    if (g != null) {
-      //
-      PeakListRow row = g.getLastViewedRow();
-      int rowI = g.getLastViewedRowI();
-      GroupCorrelationData corr = g.getCorr(rowI);
-      int rawI = g.getLastViewedRawFileI();
-      RawDataFile raw = g.getLastViewedRawFile();
+    try {
+      // get group
+      PKLRowGroup g = peakList.getLastViewedGroup();
+      if (g != null) {
+        //
+        PeakListRow row = g.getLastViewedRow();
+        int rowI = g.getLastViewedRowI();
+        R2GroupCorrelationData corr = g.getCorr(rowI);
+        int rawI = g.getLastViewedRawFileI();
+        RawDataFile raw = g.getLastViewedRawFile();
 
-      // first chart: correlation of row to all other rows in rawI
-      // data set
-      XYSeriesCollection data = new XYSeriesCollection();
-      // title
-      String sg = "";
-      if (peakList.getSampleGroupsParameter() != null)
-        sg = String.valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), raw));
+        // first chart: correlation of row to all other rows in rawI
+        // data set
+        XYSeriesCollection data = new XYSeriesCollection();
+        // title
+        String sg = "";
+        if (peakList.getSampleGroupsParameter() != null)
+          sg = String.valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), raw));
 
-      String title = "Row " + row.getID() + " corr in: " + sg + "(" + raw.getName() + ")";
-      // create chart
-      JFreeChart chart =
-          ChartFactory.createScatterPlot(title, "Intensity (row: " + row.getID() + ")",
-              "Intensity (other rows)", data, PlotOrientation.VERTICAL, true, true, false);
-      XYItemRenderer renderer = chart.getXYPlot().getRenderer();
-      // formating
-      NumberFormat intensityFormat = MZmineCore.getConfiguration().getIntensityFormat();
-      NumberAxis xAxis = (NumberAxis) chart.getXYPlot().getDomainAxis();
-      NumberAxis yAxis = (NumberAxis) chart.getXYPlot().getRangeAxis();
-      xAxis.setNumberFormatOverride(intensityFormat);
-      yAxis.setNumberFormatOverride(intensityFormat);
-      //
-      chart.setNotify(false);
-      // for each row: correlation of row to
-      for (int i = 0; i < g.size(); i++) {
-        PeakListRow trow = g.get(i);
-        if (rowI != i) {
-          // get correlation data (row to row)
-          RowCorrelationData corrRows = corr.getCorrelationToRowI(trow.getID());
-          if (corrRows != null) {
-            // get correlation of feature-feature in selected raw file
-            FeatureShapeCorrelationData fCorr = null;
-            if (totalCorrelation)
-              fCorr = corrRows.getTotalCorrelation();
-            else
-              fCorr = corrRows.getCorrPeakShape()[rawI];
-            // add series
-            if (fCorr != null && fCorr.getReg() != null && fCorr.getData() != null) {
-              data.addSeries(regressionToSeries(fCorr, String.valueOf(trow.getID())));
-              // add regression line
-              XYLineAnnotation line = regressionToAnnotation(fCorr);
-              renderer.addAnnotation(line);
-              // set colors
-              renderer.setSeriesPaint(data.getSeriesCount() - 1, colors[i % colors.length]);
+        String title = "Row " + row.getID() + " corr in: " + sg + "(" + raw.getName() + ")";
+        // create chart
+        JFreeChart chart =
+            ChartFactory.createScatterPlot(title, "Intensity (row: " + row.getID() + ")",
+                "Intensity (other rows)", data, PlotOrientation.VERTICAL, true, true, false);
+        XYItemRenderer renderer = chart.getXYPlot().getRenderer();
+        // formating
+        NumberFormat intensityFormat = MZmineCore.getConfiguration().getIntensityFormat();
+        NumberAxis xAxis = (NumberAxis) chart.getXYPlot().getDomainAxis();
+        NumberAxis yAxis = (NumberAxis) chart.getXYPlot().getRangeAxis();
+        xAxis.setNumberFormatOverride(intensityFormat);
+        yAxis.setNumberFormatOverride(intensityFormat);
+        //
+        chart.setNotify(false);
+        // for each row: correlation of row to
+        for (int i = 0; i < g.size(); i++) {
+          PeakListRow trow = g.get(i);
+          if (rowI != i) {
+            // get correlation data (row to row)
+            R2RCorrelationData corrRows = corr.getCorrelationToRowI(trow.getID());
+            if (corrRows != null) {
+              // get correlation of feature-feature in selected raw file
+              CorrelationData fCorr = null;
+              if (totalCorrelation)
+                fCorr = corrRows.getTotalCorrelation();
+              else
+                fCorr = corrRows.getCorrPeakShape(raw);
+              // add series
+              if (fCorr != null && fCorr.getReg() != null && fCorr.getData() != null) {
+                data.addSeries(regressionToSeries(fCorr, String.valueOf(trow.getID())));
+                // add regression line
+                XYLineAnnotation line = regressionToAnnotation(fCorr);
+                renderer.addAnnotation(line);
+                // set colors
+                renderer.setSeriesPaint(data.getSeriesCount() - 1, colors[i % colors.length]);
+              }
             }
           }
         }
-      }
 
-      // add chart to panel
-      chart.setNotify(true);
-      chart.fireChartChanged();
-      EChartPanel cp = createChartPanel(chart);
-      if (totalCorrelation)
-        subWindow.setTotalShapeCorrPlot(cp);
-      else
-        subWindow.setShapeCorrPlot(cp);
+        // add chart to panel
+        chart.setNotify(true);
+        chart.fireChartChanged();
+        EChartPanel cp = createChartPanel(chart);
+        if (totalCorrelation)
+          subWindow.setTotalShapeCorrPlot(cp);
+        else
+          subWindow.setShapeCorrPlot(cp);
+      }
+    } catch (Exception e) {
+      LOG.log(Level.SEVERE, e.getMessage(), e);
     }
   }
 
@@ -727,64 +735,68 @@ public class MSEcorrGroupWindow extends JFrame {
    * files.
    */
   private void plotIMaxCorrelation() {
-    // get group
-    PKLRowGroup g = peakList.getLastViewedGroup();
-    if (g != null) {
-      //
-      PeakListRow row = g.getLastViewedRow();
-      int rowI = g.getLastViewedRowI();
-      GroupCorrelationData corr = g.getCorr(rowI);
-      int rawI = g.getLastViewedRawFileI();
-      RawDataFile raw = g.getLastViewedRawFile();
+    try {
+      // get group
+      PKLRowGroup g = peakList.getLastViewedGroup();
+      if (g != null) {
+        //
+        PeakListRow row = g.getLastViewedRow();
+        int rowI = g.getLastViewedRowI();
+        R2GroupCorrelationData corr = g.getCorr(rowI);
+        int rawI = g.getLastViewedRawFileI();
+        RawDataFile raw = g.getLastViewedRawFile();
 
-      // first chart: correlation of row to all other rows in rawI
-      // data set
-      XYSeriesCollection data = new XYSeriesCollection();
-      // title
-      String sg = peakList.getSampleGroupsParameter() == null ? ""
-          : String.valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), raw));
-      String title = "Row " + row.getID() + " corr in: " + sg + "(" + raw.getName() + ")";
-      // create chart
-      JFreeChart chart =
-          ChartFactory.createScatterPlot(title, "Intensity (row: " + row.getID() + ")",
-              "Intensity (other rows)", data, PlotOrientation.VERTICAL, true, true, false);
-      XYItemRenderer renderer = chart.getXYPlot().getRenderer();
-      // formating
-      NumberFormat intensityFormat = MZmineCore.getConfiguration().getIntensityFormat();
-      NumberAxis xAxis = (NumberAxis) chart.getXYPlot().getDomainAxis();
-      NumberAxis yAxis = (NumberAxis) chart.getXYPlot().getRangeAxis();
-      xAxis.setNumberFormatOverride(intensityFormat);
-      yAxis.setNumberFormatOverride(intensityFormat);
-      //
-      chart.setNotify(false);
-      // for each row: correlation of row to
-      for (int i = 0; i < g.size(); i++) {
-        PeakListRow trow = g.get(i);
-        if (rowI != i) {
-          // get correlation data (row to row)
-          RowCorrelationData corrRows = corr.getCorrelationToRowI(trow.getID());
-          if (corrRows != null) {
-            // get correlation of feature-feature in selected raw file
-            FeatureShapeCorrelationData fCorr = null;
-            fCorr = corrRows.getCorrIProfile();
-            // add series
-            if (fCorr != null && fCorr.getReg() != null && fCorr.getData() != null) {
-              data.addSeries(regressionToSeries(fCorr, String.valueOf(trow.getID())));
-              // add regression line
-              XYLineAnnotation line = regressionToAnnotation(fCorr);
-              renderer.addAnnotation(line);
-              // set colors
-              renderer.setSeriesPaint(data.getSeriesCount() - 1, colors[i % colors.length]);
+        // first chart: correlation of row to all other rows in rawI
+        // data set
+        XYSeriesCollection data = new XYSeriesCollection();
+        // title
+        String sg = peakList.getSampleGroupsParameter() == null ? ""
+            : String.valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), raw));
+        String title = "Row " + row.getID() + " corr in: " + sg + "(" + raw.getName() + ")";
+        // create chart
+        JFreeChart chart =
+            ChartFactory.createScatterPlot(title, "Intensity (row: " + row.getID() + ")",
+                "Intensity (other rows)", data, PlotOrientation.VERTICAL, true, true, false);
+        XYItemRenderer renderer = chart.getXYPlot().getRenderer();
+        // formating
+        NumberFormat intensityFormat = MZmineCore.getConfiguration().getIntensityFormat();
+        NumberAxis xAxis = (NumberAxis) chart.getXYPlot().getDomainAxis();
+        NumberAxis yAxis = (NumberAxis) chart.getXYPlot().getRangeAxis();
+        xAxis.setNumberFormatOverride(intensityFormat);
+        yAxis.setNumberFormatOverride(intensityFormat);
+        //
+        chart.setNotify(false);
+        // for each row: correlation of row to
+        for (int i = 0; i < g.size(); i++) {
+          PeakListRow trow = g.get(i);
+          if (rowI != i) {
+            // get correlation data (row to row)
+            R2RCorrelationData corrRows = corr.getCorrelationToRowI(trow.getID());
+            if (corrRows != null) {
+              // get correlation of feature-feature in selected raw file
+              CorrelationData fCorr = null;
+              fCorr = corrRows.getCorrIProfile();
+              // add series
+              if (fCorr != null && fCorr.getReg() != null && fCorr.getData() != null) {
+                data.addSeries(regressionToSeries(fCorr, String.valueOf(trow.getID())));
+                // add regression line
+                XYLineAnnotation line = regressionToAnnotation(fCorr);
+                renderer.addAnnotation(line);
+                // set colors
+                renderer.setSeriesPaint(data.getSeriesCount() - 1, colors[i % colors.length]);
+              }
             }
           }
         }
-      }
 
-      // add chart to panel
-      chart.setNotify(true);
-      chart.fireChartChanged();
-      EChartPanel cp = createChartPanel(chart);
-      subWindow.setMaxICorrPlot(cp);
+        // add chart to panel
+        chart.setNotify(true);
+        chart.fireChartChanged();
+        EChartPanel cp = createChartPanel(chart);
+        subWindow.setMaxICorrPlot(cp);
+      }
+    } catch (Exception e) {
+      LOG.log(Level.SEVERE, e.getMessage(), e);
     }
   }
 
@@ -792,65 +804,70 @@ public class MSEcorrGroupWindow extends JFrame {
    * All single feature to feature correlations in a plot
    */
   private void createCorrColumnsPlot() {
-    // get group
-    PKLRowGroup g = peakList.getLastViewedGroup();
-    if (g != null) {
-      //
-      PeakListRow row = g.getLastViewedRow();
-      int rowI = g.getLastViewedRowI();
-      GroupCorrelationData corr = g.getCorr(rowI);
-      int rawI = g.getLastViewedRawFileI();
-      RawDataFile raw = g.getLastViewedRawFile();
+    try {
+      // get group
+      PKLRowGroup g = peakList.getLastViewedGroup();
+      if (g != null) {
+        //
+        PeakListRow row = g.getLastViewedRow();
+        int rowI = g.getLastViewedRowI();
+        R2GroupCorrelationData corr = g.getCorr(rowI);
+        int rawI = g.getLastViewedRawFileI();
+        RawDataFile raw = g.getLastViewedRawFile();
 
-      // spectrum or column chart of all correlations
-      // add plot of all correlations (this row to all other rows in all raw files)
-      // data set
-      DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-      // go through all raw files
-      for (int r = 0; r < peakList.getRawDataFiles().length; r++) {
-        RawDataFile rfile = peakList.getRawDataFile(r);
-        String rawSG = peakList.getSampleGroupsParameter() == null ? ""
-            : String.valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), rfile));
+        // spectrum or column chart of all correlations
+        // add plot of all correlations (this row to all other rows in all raw files)
+        // data set
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        // go through all raw files
+        for (int r = 0; r < peakList.getRawDataFiles().length; r++) {
+          RawDataFile rfile = peakList.getRawDataFile(r);
+          String rawSG = peakList.getSampleGroupsParameter() == null ? ""
+              : String
+                  .valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), rfile));
 
-        // for each row: correlation of row to row in all raw files
-        for (int i = 0; i < g.size(); i++) {
-          PeakListRow trow = g.get(i);
-          if (rowI != i) {
-            // get correlation data (row to row)
-            RowCorrelationData corrRows = corr.getCorrelationToRowI(trow.getID());
-            if (corrRows != null) {
-              // get correlation of feature-feature in selected raw file
-              FeatureShapeCorrelationData fCorr = corrRows.getCorrPeakShape()[r];
-              // regression
-              if (fCorr != null && fCorr.getReg() != null && fCorr.getData() != null) {
-                SimpleRegression reg = fCorr.getReg();
-                // for summary of samples
-                if (getCbSampleSummary().isSelected())
-                  dataset.addValue(reg.getR(), rawSG, rfile.getName());
-                else
-                  dataset.addValue(reg.getR(), rawSG, rfile.getName() + "(" + trow.getID() + ")");
+          // for each row: correlation of row to row in all raw files
+          for (int i = 0; i < g.size(); i++) {
+            PeakListRow trow = g.get(i);
+            if (rowI != i) {
+              // get correlation data (row to row)
+              R2RCorrelationData corrRows = corr.getCorrelationToRowI(trow.getID());
+              if (corrRows != null) {
+                // get correlation of feature-feature in selected raw file
+                CorrelationData fCorr = corrRows.getCorrPeakShape(raw);
+                // regression
+                if (fCorr != null && fCorr.getReg() != null && fCorr.getData() != null) {
+                  SimpleRegression reg = fCorr.getReg();
+                  // for summary of samples
+                  if (getCbSampleSummary().isSelected())
+                    dataset.addValue(reg.getR(), rawSG, rfile.getName());
+                  else
+                    dataset.addValue(reg.getR(), rawSG, rfile.getName() + "(" + trow.getID() + ")");
+                }
               }
             }
           }
         }
+        // add plot
+        String title = "Row " + row.getID() + " corr";
+        JFreeChart chart = ChartFactory.createBarChart(title, "Sample group",
+            "Pearson correlation (r)", dataset, PlotOrientation.VERTICAL, false, true, false);
+        BarRenderer catRen = (BarRenderer) chart.getCategoryPlot().getRenderer();
+        catRen.setItemMargin(0.0);
+        CategoryAxis axis = chart.getCategoryPlot().getDomainAxis();
+        axis.setCategoryMargin(0.000);
+        axis.setLowerMargin(0.01);
+        axis.setUpperMargin(0.01);
+        ChartPanel cp = createChartPanel(chart);
+        // formating
+        NumberFormat intensityFormat = MZmineCore.getConfiguration().getIntensityFormat();
+        NumberAxis yAxis = (NumberAxis) chart.getCategoryPlot().getRangeAxis();
+        yAxis.setNumberFormatOverride(intensityFormat);
+        //
+        subWindow.setCorrColumnsChart(cp);
       }
-      // add plot
-      String title = "Row " + row.getID() + " corr";
-      JFreeChart chart = ChartFactory.createBarChart(title, "Sample group",
-          "Pearson correlation (r)", dataset, PlotOrientation.VERTICAL, false, true, false);
-      BarRenderer catRen = (BarRenderer) chart.getCategoryPlot().getRenderer();
-      catRen.setItemMargin(0.0);
-      CategoryAxis axis = chart.getCategoryPlot().getDomainAxis();
-      axis.setCategoryMargin(0.000);
-      axis.setLowerMargin(0.01);
-      axis.setUpperMargin(0.01);
-      ChartPanel cp = createChartPanel(chart);
-      // formating
-      NumberFormat intensityFormat = MZmineCore.getConfiguration().getIntensityFormat();
-      NumberAxis yAxis = (NumberAxis) chart.getCategoryPlot().getRangeAxis();
-      yAxis.setNumberFormatOverride(intensityFormat);
-      //
-      subWindow.setCorrColumnsChart(cp);
+    } catch (Exception e) {
+      LOG.log(Level.SEVERE, e.getMessage(), e);
     }
   }
 
@@ -903,7 +920,7 @@ public class MSEcorrGroupWindow extends JFrame {
    * @param name
    * @return
    */
-  private XYSeries regressionToSeries(FeatureShapeCorrelationData fCorr, String name) {
+  private XYSeries regressionToSeries(CorrelationData fCorr, String name) {
     // add all data points to series
     XYSeries series = new XYSeries(name, true, true);
     double[][] dat = fCorr.getData();
@@ -919,7 +936,7 @@ public class MSEcorrGroupWindow extends JFrame {
    * @param name
    * @return line for correlation
    */
-  private XYLineAnnotation regressionToAnnotation(FeatureShapeCorrelationData fCorr) {
+  private XYLineAnnotation regressionToAnnotation(CorrelationData fCorr) {
     SimpleRegression reg = fCorr.getReg();
 
     double minY = fCorr.getMinX() * reg.getSlope() + reg.getIntercept();

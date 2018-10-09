@@ -18,13 +18,15 @@
 
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.math.stat.regression.SimpleRegression;
+import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.MZmineProject;
@@ -37,18 +39,16 @@ import net.sf.mzmine.desktop.impl.HeadLessDesktop;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.FeatureShapeCorrelationParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.InterSampleIntCorrParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.FeatureShapeCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.RowCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.AnnotationNetwork;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationParameters;
-import net.sf.mzmine.modules.peaklistmethods.isotopes.aligneddeisotoper.AlignedIsotopeGrouperTask;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.corrnetwork.visual.CorrNetworkFrame;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.UserParameter;
@@ -74,7 +74,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   private final ParameterSet parameters;
   private final MZmineProject project;
   // GENERAL
-  private final PeakList[] peakLists;
+  private final PeakList peakList;
   private final RTTolerance rtTolerance;
 
   // ADDUCTS
@@ -98,7 +98,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   // pearson correlation r to identify negative correlation
   private final double mainPeakIntensity;
   private final double minShapeCorrR;
-  private static double noiseLevelShapeCorr = 1E4, minCorrelatedDataPoints = 3;
+  private static double noiseLevelShapeCorr = 1E4;
+  private static int minCorrelatedDataPoints = 3;
 
   // MAX INTENSITY PROFILE CORRELATION ACROSS SAMPLES
   private double minMaxICorr;
@@ -108,7 +109,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   private Stage stage;
 
   // output
-  private MSEGroupedPeakList[] groupedPKL;
+  private MSEGroupedPeakList groupedPKL;
 
 
   /**
@@ -118,9 +119,9 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    * @param list peak list.
    */
   public MetaMSEcorrelateTask(final MZmineProject project, final ParameterSet parameterSet,
-      final PeakList[] peakLists) {
+      final PeakList peakList) {
     this.project = project;
-    this.peakLists = peakLists;
+    this.peakList = peakList;
     parameters = parameterSet;
 
     finishedRows = 0;
@@ -180,92 +181,76 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
   @Override
   public String getTaskDescription() {
-    return "Identification of groups in " + peakLists.length + " scan events (lists)";
+    return "Identification of groups in " + peakList.getName() + " scan events (lists)";
   }
 
   @Override
   public void run() {
     setStatus(TaskStatus.PROCESSING);
-    LOG.info("Starting MSE correlation search in " + peakLists.length + " peaklists");
+    LOG.info("Starting MSE correlation search in " + peakList.getName() + " peaklists");
     try {
-      groupedPKL = new MSEGroupedPeakList[peakLists.length];
-      for (int e = 0; e < peakLists.length; e++) {
-        if (isCanceled())
-          return;
+      if (isCanceled())
+        return;
 
-        LOG.info("Starting MSE correlation search in " + peakLists[e].getName() + "");
-        // create new PKL for grouping
-        groupedPKL[e] = new MSEGroupedPeakList(peakLists[e].getRawDataFiles(), peakLists[e]);
-        // find groups and size
-        setSampleGroups(groupedPKL[e]);
-        groupedPKL[e].setSampleGroupsParameter(sgroupPara);
-        groupedPKL[e].setSampleGroups(sgroupSize);
+      // create new PKL for grouping
+      groupedPKL = new MSEGroupedPeakList(peakList.getRawDataFiles(), peakList);
+      // find groups and size
+      setSampleGroups(groupedPKL);
+      groupedPKL.setSampleGroupsParameter(sgroupPara);
+      groupedPKL.setSampleGroups(sgroupSize);
 
-        // create correlation map
-        stage = Stage.CORRELATION_ANNOTATION;
-        finishedRows = 0;
-        R2RCorrMap corrMap = new R2RCorrMap();
-        List<AnnotationNetwork> annNet = doR2RComparison(groupedPKL[e], corrMap);
-        if (isCanceled())
-          return;
+      // create correlation map
+      stage = Stage.CORRELATION_ANNOTATION;
+      finishedRows = 0;
+      R2RCorrMap corrMap = new R2RCorrMap();
+      List<AnnotationNetwork> annNet = doR2RComparison(groupedPKL, corrMap);
+      if (isCanceled())
+        return;
 
-        // show corr network
-        CorrNetworkFrame f = new CorrNetworkFrame(peakLists[e], corrMap, 0.95);
-        f.setVisible(true);
+      // show corr network
+      CorrNetworkFrame f = new CorrNetworkFrame(groupedPKL, corrMap, 0.95);
+      f.setVisible(true);
 
-        LOG.info("Corr: Starting to group by correlation");
-        stage = Stage.GROUPING;
-        finishedRows = 0;
-        PKLRowGroupList groups = corrMap.createCorrGroups(groupedPKL[e]);
+      LOG.info("Corr: Starting to group by correlation");
+      stage = Stage.GROUPING;
+      finishedRows = 0;
+      PKLRowGroupList groups = corrMap.createCorrGroups(groupedPKL);
 
-        if (isCanceled())
-          return;
-        // refinement:
-        // filter by avg correlation in group
-        // delete single connections between sub networks
-        if (groups != null) {
-          // set groups to pkl
-          groupedPKL[e].setCorrelationMap(corrMap);
-          groupedPKL[e].setGroups(groups);
+      if (isCanceled())
+        return;
+      // refinement:
+      // filter by avg correlation in group
+      // delete single connections between sub networks
+      if (groups != null) {
+        // set groups to pkl
+        groupedPKL.setCorrelationMap(corrMap);
+        groupedPKL.setGroups(groups);
 
-          // add to project
-          project.addPeakList(groupedPKL[e]);
+        // add to project
+        project.addPeakList(groupedPKL);
 
-          // do deisotoping
-          deisotopeGroups();
-          // do adduct search
-          // searchAdducts();
-        }
-      }
-      // if events>1
-      if (peakLists.length > 1) {
-        // combine groups across events by RT and r-Pearson (inter event)
-        combineGroups();
+        // do deisotoping
+        deisotopeGroups();
+        // do adduct search
+        // searchAdducts();
+        // Add task description to peakList.
+        groupedPKL.addDescriptionOfAppliedTask(new SimplePeakListAppliedMethod(
+            "Correlation grouping and identification of adducts", parameters));
 
-        // search for in source fragments by profile in MS1 and MSE
-        findInSourceFragments();
-      }
+        // Repaint the window to reflect the change in the peak list
+        Desktop desktop = MZmineCore.getDesktop();
+        if (!(desktop instanceof HeadLessDesktop))
+          desktop.getMainWindow().repaint();
 
-      if (!isCanceled()) {
-        for (int e = 0; e < peakLists.length; e++) {
-          // Add task description to peakList.
-          peakLists[e].addDescriptionOfAppliedTask(
-              new SimplePeakListAppliedMethod("Identification of adducts", parameters));
-
-          // Repaint the window to reflect the change in the peak list
-          Desktop desktop = MZmineCore.getDesktop();
-          if (!(desktop instanceof HeadLessDesktop))
-            desktop.getMainWindow().repaint();
-
-          // Done.
-          setStatus(TaskStatus.FINISHED);
-          LOG.info("Finished adducts search in " + peakLists[e]);
-        }
+        // Done.
+        setStatus(TaskStatus.FINISHED);
+        LOG.info("Finished correlation grouping and adducts search in " + peakList);
       }
     } catch (Exception t) {
-      LOG.log(Level.SEVERE, "Adduct search error", t);
+      LOG.log(Level.SEVERE, "Correlation and adduct search error", t);
       setStatus(TaskStatus.ERROR);
       setErrorMessage(t.getMessage());
+      throw new MSDKRuntimeException(t);
     }
   }
 
@@ -275,7 +260,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    * @param peakList
    * @return
    */
-  private List<AnnotationNetwork> doR2RComparison(MSEGroupedPeakList peakList, R2RCorrMap map) {
+  private List<AnnotationNetwork> doR2RComparison(MSEGroupedPeakList peakList, R2RCorrMap map)
+      throws Exception {
     LOG.info("Corr: Creating row2row correlation map");
 
     PeakListRow rows[] = peakList.getRows();
@@ -290,30 +276,53 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     int compared = 0;
     for (int i = 0; i < totalRows - 1; i++) {
       PeakListRow row = rows[i];
-      for (int x = i + 1; x < totalRows; x++) {
-        if (isCanceled())
-          return null;
 
-        PeakListRow row2 = rows[x];
+      // is present in min % of samples
+      if (filterMinFeaturesInSampleSet(raw, row)) {
+        for (int x = i + 1; x < totalRows; x++) {
+          if (isCanceled())
+            return null;
 
-        // correlate if in rt range
-        if (rtTolerance.checkWithinTolerance(row.getAverageRT(), row2.getAverageRT())) {
-          RowCorrelationData corr = corrR2R(raw, row, row2);
-          if (corr != null && corr.isValid() && corr.getAvgPeakShapeR() >= minShapeCorrR)
-            map.add(row, row2, corr);
+          PeakListRow row2 = rows[x];
+          // is present in min % of samples
+          if (filterMinFeaturesInSampleSet(raw, row2)) {
 
-          if (searchAdducts) {
-            // check for adducts in library
-            ESIAdductType[] id = library.findAdducts(peakList, row, row2);
-            compared++;
-            if (id != null)
-              annotPairs++;
+            // correlate if in rt range
+            if (rtTolerance.checkWithinTolerance(row.getAverageRT(), row2.getAverageRT())) {
+              R2RCorrelationData corr =
+                  corrR2R(raw, row, row2, minDPMaxICorr, minCorrelatedDataPoints);
+              if (corr != null) {
+                // deletes correlations if criteria is not met
+                corr.validate(minMaxICorr, minShapeCorrR);
+                // still valid?
+                if (corr.isValid())
+                  map.add(row, row2, corr);
+              }
+
+              if (searchAdducts) {
+                // check for adducts in library
+                ESIAdductType[] id = library.findAdducts(peakList, row, row2);
+                compared++;
+                if (id != null)
+                  annotPairs++;
+              }
+            }
           }
         }
       }
       finishedRows = i;
     }
-    LOG.info("Corr: Correlations done");
+
+    // number of f2f correlations
+    int nF2F = 0;
+    for (R2RCorrelationData r2r : map.values()) {
+      if (r2r.hasFeatureShapeCorrelation())
+        nF2F += r2r.getCorrPeakShape().size();
+    }
+
+    LOG.info(MessageFormat.format(
+        "Corr: Correlations done with {0} R2R correlations and {1} F2F correlations", map.size(),
+        nF2F));
 
     if (searchAdducts) {
       LOG.info("Corr: A total of " + compared + " row2row comparisons with " + annotPairs
@@ -336,26 +345,22 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    * @param raw
    * @param testRow
    * @param row
-   * @return
+   * @return R2R correlation or null if invalid/no correlation
    */
-  public static RowCorrelationData corrR2R(RawDataFile[] raw, PeakListRow testRow,
-      PeakListRow row) {
-    try {
-      FeatureShapeCorrelationData iProfileR =
-          MetaMSEcorrelateTask.corrRowToRowIProfile(raw, testRow, row);
-      FeatureShapeCorrelationData[] fCorr =
-          MetaMSEcorrelateTask.corrRowToRowFeatureShape(raw, testRow, row);
+  public static R2RCorrelationData corrR2R(RawDataFile[] raw, PeakListRow testRow, PeakListRow row,
+      int minDPMaxICorr, int minCorrelatedDataPoints) throws Exception {
+    CorrelationData iProfileR = corrRowToRowIProfile(raw, testRow, row, minDPMaxICorr);
+    Map<RawDataFile, CorrelationData> fCorr =
+        corrRowToRowFeatureShape(raw, testRow, row, minCorrelatedDataPoints);
 
-      RowCorrelationData rCorr =
-          new RowCorrelationData(testRow.getID(), row.getID(), iProfileR, fCorr);
-      if (rCorr.isValid())
-        return rCorr;
-      else
-        return null;
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    return null;
+    if (fCorr.isEmpty())
+      fCorr = null;
+
+    R2RCorrelationData rCorr = new R2RCorrelationData(testRow, row, iProfileR, fCorr);
+    if (rCorr.isValid())
+      return rCorr;
+    else
+      return null;
   }
 
 
@@ -371,8 +376,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       return;
     } else {
       HashMap<Object, Integer> sgroupSize = new HashMap<Object, Integer>();
-
-
       UserParameter<?, ?> params[] = project.getParameters();
       for (UserParameter<?, ?> p : params) {
         if (groupingParameter.equals(p.getName())) {
@@ -409,146 +412,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   }
 
   /**
-   * First step is to bin the samples by average rt tolerance is higher to get all samples in the
-   * same group creates all groups possible
-   */
-  /*
-   * private PKLRowGroupList groupFeatures1(PeakList peakList) { PeakListRow rows[] =
-   * peakList.getRows(); totalRows = rows.length;
-   * 
-   * if(totalRows>0) { // sort by RT of raw file peak not average! Arrays.sort(rows, new
-   * PeakListRowSorter(SortingProperty.RT, SortingDirection.Ascending));
-   * 
-   * // store groups in array PKLRowGroupList groups = new PKLRowGroupList();
-   * 
-   * // group by larger tolerance for average RT PKLRowGroup lastG = null;
-   * 
-   * double tol = rtTolerance.getTolerance()*2; RTTolerance avrtTolerace = new
-   * RTTolerance(rtTolerance.isAbsolute(), tol); // start with feature one and create a new group
-   * every time the distance is to high for (int i = 0; i < totalRows; i++) { PeakListRow row =
-   * rows[i]; // new group? if(lastG==null || !avrtTolerace.checkWithinTolerance(
-   * lastG.getCenterAVRT(), row.getAverageRT())){
-   * 
-   * PKLRowGroup newG = new PKLRowGroup(row.getAverageRT()+tol); // add previous features to new
-   * group? if(lastG!=null) { for(PeakListRow old : lastG) { // check current feature of new group
-   * with old ones if(avrtTolerace.checkWithinTolerance(row.getAverageRT(), old.getAverageRT()))
-   * newG.add(0,old); } } // set center of new group if some features were added if(newG.size()>0) {
-   * newG.setCenterAVRT(newG.firstElement().getAverageRT()+tol); } groups.add(newG); lastG = newG; }
-   * 
-   * // add feature to current group lastG.add(row); } return groups; } return null; }
-   */
-  /**
-   * build a groups list with only intense features because they are showing higher correlation
-   * check correlation to high features in range -> same/different group -> can be inserted in
-   * multiple groups has to run 2 times for inserting first features in multiple groups
-   * 
-   * insert low abundant features
-   * 
-   * @param peakList
-   * @return
-   */
-  private PKLRowGroupList groupFeatures(PeakList peakList) {
-    PeakListRow rows[] = peakList.getRows();
-    totalRows = rows.length;
-    final RawDataFile raw[] = peakList.getRawDataFiles();
-
-    if (totalRows > 1) {
-      // sort by avgRT
-      Arrays.sort(rows, new PeakListRowSorter(SortingProperty.RT, SortingDirection.Ascending));
-
-      // store groups in list
-      PKLRowGroupList groups = new PKLRowGroupList();
-
-      // start with feature one and create a new group every time
-      // the distance is to high or there is no peak shape correlation
-      // try to fit all features to all groups twice
-      // giving the first feature the chance of beeing correlated to all gorups
-      LOG.info("Corr: grouping main features");
-      // for all rows
-      for (int i = 0; i < totalRows; i++) {
-        PeakListRow row = rows[i];
-        // start with high abundant features
-        // higher than mainPeakIntensity? contained in X % samples of a sample set?
-        if (row.getBestPeak().getHeight() >= mainPeakIntensity
-            && filterMinFeaturesInSampleSet(raw, row)) {
-          // new group?
-          if (groups.size() == 0) {
-            groups.add(new PKLRowGroup(raw, row, 0));
-          } else {
-            boolean added = false;
-            // check all groups for correlation with row
-            for (int g = 0; g < groups.size(); g++) {
-              PKLRowGroup pg = groups.get(g);
-              // check and add if row is correlated
-              // TODO maybe add it to group but if its to far off - give false as a result -> also
-              // new group
-              if (corrRowToGroup(peakList, raw, row, pg)) {
-                pg.add(row);
-                added = true;
-              }
-            }
-            // not added? create new group
-            if (!added)
-              groups.add(new PKLRowGroup(raw, row, groups.size()));
-          }
-        }
-        finishedRows = i;
-      }
-
-      // #########################################################################
-      // SECOND GO: all high abundant rows again
-      LOG.info("Corr: second chance for main features");
-
-      for (int i = 0; i < totalRows; i++) {
-        PeakListRow row = rows[i];
-        // start with high abundant features
-        // higher than mainPeakIntensity? contained in X % samples of a sample set?
-        if (row.getBestPeak().getHeight() >= mainPeakIntensity
-            && filterMinFeaturesInSampleSet(raw, row)) {
-          // check all groups for correlation with row
-          for (int g = 0; g < groups.size(); g++) {
-            PKLRowGroup pg = groups.get(g);
-            if (!pg.contains(row)) {
-              // correlate and add if row fits
-              if (corrRowToGroup(peakList, raw, row, pg)) {
-                pg.add(row);
-              }
-            }
-          }
-        }
-        finishedRows = i;
-      }
-
-      // ######################################################################
-      // now correlate and add low abundant features to groups
-      if (groups.size() > 0) {
-        LOG.info("Corr: grouping low abundant features < main peak intensity");
-        double step = (0.90 - 0.65) / totalRows;
-        for (int i = 0; i < totalRows; i++) {
-          PeakListRow row = rows[i];
-          // start with high abundant features
-          // lower than mainPeakIntensity? contained in X % samples of a sample set?
-          if (row.getBestPeak().getHeight() < mainPeakIntensity
-              && filterMinFeaturesInSampleSet(raw, row)) {
-            // check all groups for correlation with row
-            for (int g = 0; g < groups.size(); g++) {
-              PKLRowGroup pg = groups.get(g);
-              // correlate and add if row fits
-              // TODO maybe add it to group but if its to far off - give false as a result
-              if (corrRowToGroup(peakList, raw, row, pg)) {
-                pg.add(row);
-              }
-            }
-          }
-          finishedRows = i;
-        }
-        return groups;
-      }
-    }
-    return null;
-  }
-
-  /**
    * only keep rows which contain features in at least X % samples in a set called before starting
    * row processing
    * 
@@ -581,160 +444,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     return true;
   }
 
-  /**
-   * correlation between row and group(every row of the group)
-   * 
-   * @param row
-   * @param pg
-   * @return
-   */
-  private boolean corrRowToGroup(final PeakList peakList, final RawDataFile raw[], PeakListRow row,
-      PKLRowGroup pg) {
-    // simple fast correlation to groups RT min/max/avg
-    // direct exclusion for high level filtering
-    // check rt of all peaks of all raw files
-    for (int r = 0; r < raw.length; r++) {
-      Feature f = row.getPeak(raw[r]);
-      if (f != null && pg.hasPeak(r)) {
-        if (!pg.isInRange(r, f, rtTolerance))
-          return false;
-      }
-    }
-
-    // correlation to all rows and all peaks of a row (feature)
-    double minShapeR = 1, avgShapeR = 0;
-    int c = 0;
-    int adductsInGroup = 0;
-    ESIAdductType[] lastAdductCombination = null;
-    // for all rows in group
-    for (PeakListRow row2 : pg) {
-      // returns corr<=0 if conditions were not met
-      try {
-        FeatureShapeCorrelationData[] data = corrRowToRowFeatureShape(raw, row, row2);
-        // for min max avg
-        RowCorrelationData rowCorr = new RowCorrelationData(row.getID(), row2.getID(), null, data);
-        // no or bad correlation: exit
-        if (!rowCorr.hasPeakShapeCorrelation() || rowCorr.getAvgPeakShapeR() <= 0)
-          return false;
-        else if (rowCorr.hasPeakShapeCorrelation()) {
-          // avg and min shape correlation:
-          c++;
-          avgShapeR += rowCorr.getAvgPeakShapeR();
-          if (rowCorr.getMinPeakShapeR() < minShapeR)
-            minShapeR = rowCorr.getMinPeakShapeR();
-        }
-
-        // search adducts and 13C isotopologues
-        if (searchAdducts) {
-          // Deisotoping went wrong?
-          int absCharge = AlignedIsotopeGrouperTask.find13CIsotope(peakList, row, row2,
-              library.getMaxCharge(), library.getMzTolerance());
-          boolean isIsotope = absCharge != -1;
-          // search for adducts and add correlation: IProfile doesnt have to be the same for adducts
-          boolean isAdduct = false;
-          if (!isIsotope) {
-            ESIAdductType[] ad =
-                library.findAdducts(peakList, row2, row, row2.getRowCharge(), row.getRowCharge());
-            if (ad != null) {
-              isAdduct = true;
-              lastAdductCombination = ad;
-            }
-          }
-          adductsInGroup += isAdduct || isIsotope ? 1 : 0;
-        }
-
-      } catch (Exception e) {
-        e.printStackTrace();
-        LOG.log(Level.SEVERE, "Error: " + e.getLocalizedMessage(), e);
-        return false;
-      }
-    }
-    // calculate combined correlation
-    if (c != 0) {
-      double corr = avgShapeR / c;
-      if (useAdductBonusR)
-        corr += adductBonusR * adductsInGroup;
-      return corr >= minShapeCorrR;
-    } else {
-      int max = Math.max(library.getMaxCombinations(), library.getMaxCharge()) + 1;
-      return adductsInGroup > 1
-          || (lastAdductCombination != null && lastAdductCombination[0].isMainAdduct(max)
-              && lastAdductCombination[1].isMainAdduct(max));
-    }
-  }
-
-  /**
-   * correlates one row to another peak shape correlation (Pearson) (if negative or zero direct
-   * escape) otherwise avg(corr)>= minCorrPeakShape intensity profile correlation (Pearson) >=
-   * minCorrIProfile TODO: maybe impute low values instead of 0 for not detected!
-   * 
-   * @param row
-   * @param g
-   * @return average correlation over both factors ranging from minR to 1 (or 0 if minimum
-   *         correlation was not met)
-   * @throws Exception
-   */
-  private double corrRowToRow(final PeakList peakList, final RawDataFile raw[], PeakListRow row,
-      PeakListRow row2) throws Exception {
-    double corr = 0;
-    SimpleRegression reg = new SimpleRegression();
-    // count
-    int c = 0;
-    // go through all raw files
-    for (int r = 0; r < raw.length; r++) {
-      Feature f1 = row.getPeak(raw[r]);
-      Feature f2 = row2.getPeak(raw[r]);
-      if (f1 != null && f2 != null) {
-        // peak shape correlation
-        FeatureShapeCorrelationData cFS = corrFeatureShape(f1, f2, true);
-        if (cFS != null) {
-          double tmpcorr = cFS.getR();
-          // escape if peak shapes are showing a negative correlation
-          if (tmpcorr <= 0)
-            return tmpcorr;
-          corr += tmpcorr;
-          c++;
-        } else {
-          // correlation was not possible
-          // maybe due to a small peak in this raw file
-          // escape if features would be high enough for a correlation
-          // this means the features are not intercepting
-          if (countDPHigherThanNoise(f1) >= minCorrelatedDataPoints
-              && countDPHigherThanNoise(f2) >= minCorrelatedDataPoints)
-            return 0;
-        }
-      }
-      // I profile correlation
-      // TODO: low value imputation?
-      double I1 = f1 != null ? f1.getHeight() : 0;
-      double I2 = f2 != null ? f2.getHeight() : 0;
-      reg.addData(I1, I2);
-    }
-    // First search for isotopes TODO later fill in isotopes from raw
-    int absCharge = AlignedIsotopeGrouperTask.find13CIsotope(peakList, row, row2,
-        library.getMaxCharge(), library.getMzTolerance());
-    boolean isIsotope = absCharge != -1;
-    // TODO search for adducts and add correlation: IProfile doesnt have to be the same for adducts
-    boolean isAdduct = false;
-    if (!isIsotope)
-      library.findAdducts(peakList, row, row2, row.getRowCharge(), row2.getRowCharge());
-    double adductBonus = (isIsotope || isAdduct) && useAdductBonusR ? adductBonusR : 0;
-    // TODO weighting of intensity corr and feature shape corr
-    // there was no correlation possible due to small peaks
-    if (c == 0) {
-      //
-      return isAdduct || isIsotope ? 1 : 0;
-    } else {
-      corr = (corr / c);
-      double corrIprofile = reg.getR();
-      if (corr + adductBonus < minShapeCorrR)
-        return 0;
-      else if (corrIprofile < minMaxICorr)
-        return 0;
-      else
-        return (corr + corrIprofile) / 2;
-    }
-  }
 
   /**
    * correlates the height profile of one row to another NO escape routine
@@ -742,10 +451,10 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    * @param raw
    * @param row
    * @param g
-   * @return Correlation data of i profile of max i
+   * @return Correlation data of i profile of max i (or null if no correlation)
    */
-  public static FeatureShapeCorrelationData corrRowToRowIProfile(final RawDataFile raw[],
-      PeakListRow row, PeakListRow g) {
+  public static CorrelationData corrRowToRowIProfile(final RawDataFile raw[], PeakListRow row,
+      PeakListRow g, int minDPMaxICorr) {
     List<double[]> data = new ArrayList<>();
     // go through all raw files
     for (int r = 0; r < raw.length; r++) {
@@ -760,35 +469,34 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       }
     }
     // TODO weighting of intensity corr
-    return FeatureShapeCorrelationData.create(data);
+    if (data.size() < minDPMaxICorr)
+      return null;
+    else
+      return CorrelationData.create(data);
   }
 
   /**
-   * correlation of row to row peak shape NO escape routine
+   * Correlation of feature to feature shapes in all RawDataFiles
    * 
-   * @param raw raw files used to construct this peak list
+   * @param raw
    * @param row
    * @param g
-   * @return feature shape correlation as an array[rawFiles] or null if one feature has no peak in a
-   *         raw file or an empty correlation (corr.regression==null) if not not enough data points
-   *         for a correlation
+   * @return Map of feature shape correlation data (can be empty NON null)
    * @throws Exception
    */
-  public static FeatureShapeCorrelationData[] corrRowToRowFeatureShape(final RawDataFile raw[],
-      PeakListRow row, PeakListRow g) throws Exception {
-    FeatureShapeCorrelationData[] corrData = new FeatureShapeCorrelationData[raw.length];
+  public static Map<RawDataFile, CorrelationData> corrRowToRowFeatureShape(final RawDataFile raw[],
+      PeakListRow row, PeakListRow g, int minCorrelatedDataPoints) throws Exception {
+    HashMap<RawDataFile, CorrelationData> corrData = new HashMap<>();
     // go through all raw files
     for (int r = 0; r < raw.length; r++) {
       Feature f1 = row.getPeak(raw[r]);
       Feature f2 = g.getPeak(raw[r]);
       if (f1 != null && f2 != null) {
         // peak shape correlation
-        corrData[r] = corrFeatureShape(f1, f2, true);
+        CorrelationData data = corrFeatureShape(f1, f2, true);
         // enough data points
-        if (corrData[r] != null && corrData[r].getDPCount() < minCorrelatedDataPoints)
-          corrData[r] = null;
-      } else {
-        corrData[r] = null;
+        if (data != null && data.getDPCount() >= minCorrelatedDataPoints)
+          corrData.put(raw[r], data);
       }
     }
     return corrData;
@@ -803,8 +511,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    *         correlation
    * @throws Exception
    */
-  public static FeatureShapeCorrelationData corrFeatureShape(Feature f1, Feature f2,
-      boolean sameRawFile) throws Exception {
+  public static CorrelationData corrFeatureShape(Feature f1, Feature f2, boolean sameRawFile)
+      throws Exception {
     // Range<Double> rt1 = f1.getRawDataPointsRTRange();
     // Range<Double> rt2 = f2.getRawDataPointsRTRange();
     if (sameRawFile) {
@@ -844,11 +552,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         max = sn2.length - offsetI2;
       if (max - offsetI1 > minCorrelatedDataPoints && max - offsetI2 > minCorrelatedDataPoints) {
         RawDataFile raw = f1.getDataFile();
-        SimpleRegression reg = new SimpleRegression();
 
         // save max and min of intensity of val1(x)
-        double maxX = 0;
-        double minX = Double.POSITIVE_INFINITY;
         List<double[]> data = new ArrayList<double[]>();
         // add all data points over a given threshold
         // raw data (not smoothed)
@@ -864,19 +569,13 @@ public class MetaMSEcorrelateTask extends AbstractTask {
             double val2 = dp2.getIntensity();
 
             if (val1 >= noiseLevelShapeCorr && val2 >= noiseLevelShapeCorr) {
-              reg.addData(val1, val2);
-              if (val1 < minX)
-                minX = val1;
-              if (val1 > maxX)
-                maxX = val1;
               data.add(new double[] {val1, val2});
             }
           }
         }
         // return pearson r
-        if (reg.getN() >= minCorrelatedDataPoints) {
-          return FeatureShapeCorrelationData.create(reg, data.toArray(new double[data.size()][]),
-              minX, maxX);
+        if (data.size() >= minCorrelatedDataPoints) {
+          return CorrelationData.create(data);
         }
       }
     } else {

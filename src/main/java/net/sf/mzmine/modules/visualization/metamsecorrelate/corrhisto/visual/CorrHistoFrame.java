@@ -9,12 +9,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import net.miginfocom.swing.MigLayout;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.FeatureShapeCorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.GroupCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.RowCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
 import net.sf.mzmine.modules.visualization.mzhistogram.chart.HistogramData;
 import net.sf.mzmine.modules.visualization.mzhistogram.chart.MultiHistogramPanel;
 
@@ -96,21 +94,15 @@ public class CorrHistoFrame extends JFrame {
       // total correlation of all data points of two rows
       DoubleArrayList total = new DoubleArrayList();
 
-      PKLRowGroupList groups = pkl.getGroups();
-      for (PKLRowGroup g : groups) {
-        // correlation of row to group
-        for (GroupCorrelationData row : g.getCorr()) {
-          // correlation of row to row
-          for (RowCorrelationData r2r : row.getCorr()) {
-            if (r2r != null) {
-              avg.add(r2r.getAvgPeakShapeR());
-              total.add(r2r.getTotalCorrelation().getR());
-              // all single features
-              for (FeatureShapeCorrelationData f2f : r2r.getCorrPeakShape())
-                if (f2f != null)
-                  single.add(f2f.getR());
-            }
-          }
+      R2RCorrMap map = pkl.getCorrelationMap();
+      for (R2RCorrelationData r2r : map.values()) {
+        if (r2r.hasFeatureShapeCorrelation()) {
+          avg.add(r2r.getAvgPeakShapeR());
+          total.add(r2r.getTotalCorrelation().getR());
+          // all single features
+          for (CorrelationData f2f : r2r.getCorrPeakShape().values())
+            if (f2f != null)
+              single.add(f2f.getR());
         }
       }
 

@@ -11,6 +11,7 @@ import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.impl.SimpleFeature;
 import net.sf.mzmine.datamodel.impl.SimplePeakList;
 import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.exceptions.NoCorrelationMapException;
 import net.sf.mzmine.parameters.UserParameter;
 import net.sf.mzmine.util.PeakUtils;
 
@@ -60,7 +61,7 @@ public class MSEGroupedPeakList extends SimplePeakList {
    * 
    * @param groups
    */
-  public void setGroups(PKLRowGroupList groups) {
+  public void setGroups(PKLRowGroupList groups) throws NoCorrelationMapException {
     try {
       LOG.info("Setting corr groups now to peaklist");
       this.groups = groups;
@@ -75,7 +76,7 @@ public class MSEGroupedPeakList extends SimplePeakList {
         if (corrMap != null)
           g.recalcGroupCorrelation(corrMap);
         else
-          g.recalcGroupCorrelation();
+          throw new NoCorrelationMapException("Cannot set groups without R2RCorrMap");
       }
     } catch (Exception e) {
       LOG.log(Level.SEVERE, "Cannot set groups", e);

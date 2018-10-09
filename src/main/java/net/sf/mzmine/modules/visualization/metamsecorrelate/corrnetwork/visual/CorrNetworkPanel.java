@@ -21,7 +21,7 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.RowCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductIdentity;
 
 public class CorrNetworkPanel extends JPanel {
@@ -141,7 +141,7 @@ public class CorrNetworkPanel extends JPanel {
 
     // add all connections
     int added = 0;
-    for (Entry<String, RowCorrelationData> e : map.entrySet()) {
+    for (Entry<String, R2RCorrelationData> e : map.entrySet()) {
       if (e.getValue().getAvgPeakShapeR() >= minR) {
         int[] ids = R2RCorrMap.toKeyIDs(e.getKey());
         PeakListRow a = pkl.findRowByID(ids[0]);

@@ -2,12 +2,12 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.da
 
 import java.awt.Paint;
 import java.util.ArrayList;
+import java.util.List;
 import org.jfree.chart.ChartColor;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.MetaMSEcorrelateTask;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 
 public class PKLRowGroup extends ArrayList<PeakListRow> {
@@ -16,8 +16,8 @@ public class PKLRowGroup extends ArrayList<PeakListRow> {
   // visualization
   private int lastViewedRow = 0;
   private int lastViewedRawFile = 0;
-  // correlation data of all rows
-  private GroupCorrelationData[] corr;
+  // correlation data of all rows to this group
+  private R2GroupCorrelationData[] corr;
   // running index of groups
   private int groupID = 0;
   // raw files used for peak list creation
@@ -27,7 +27,7 @@ public class PKLRowGroup extends ArrayList<PeakListRow> {
   private int[] rtValues;
   private double[] min, max;
 
-  public PKLRowGroup(final RawDataFile[] raw, PeakListRow row, int groupID) {
+  public PKLRowGroup(final RawDataFile[] raw, int groupID) {
     super();
     this.raw = raw;
     this.min = new double[raw.length];
@@ -39,8 +39,6 @@ public class PKLRowGroup extends ArrayList<PeakListRow> {
     this.rtSum = new double[raw.length];
     this.rtValues = new int[raw.length];
     this.groupID = groupID;
-    if (row != null)
-      add(row);
   }
 
   /**
@@ -50,58 +48,21 @@ public class PKLRowGroup extends ArrayList<PeakListRow> {
    */
   public void recalcGroupCorrelation(R2RCorrMap corrMap) {
     // init
-    corr = new GroupCorrelationData[this.size()];
-    RawDataFile[] raw = this.getRaw();
+    corr = new R2GroupCorrelationData[this.size()];
 
     // test all rows against all other rows
     for (int i = 0; i < this.size(); i++) {
-      RowCorrelationData[] rowCorr = new RowCorrelationData[this.size() - 1];
-      int counter = 0;
+      List<R2RCorrelationData> rowCorr = new ArrayList<>();
       PeakListRow testRow = this.get(i);
       for (int k = 0; k < this.size(); k++) {
         if (i != k) {
-          rowCorr[counter] = corrMap.get(testRow, this.get(k));
-          counter++;
+          R2RCorrelationData r2r = corrMap.get(testRow, this.get(k));
+          if (r2r != null)
+            rowCorr.add(r2r);
         }
       }
       // create group corr object
-      corr[i] = new GroupCorrelationData(rowCorr, testRow.getBestPeak().getHeight());
-    }
-  }
-
-
-  /**
-   * Recalculates all stats for this group without map
-   * 
-   * @param corrMap
-   */
-  public void recalcGroupCorrelation() {
-    // init
-    corr = new GroupCorrelationData[this.size()];
-    RawDataFile[] raw = this.getRaw();
-
-    // test all rows against all other rows
-    for (int i = 0; i < this.size(); i++) {
-      RowCorrelationData[] rowCorr = new RowCorrelationData[this.size() - 1];
-      int counter = 0;
-      PeakListRow testRow = this.get(i);
-      for (int k = 0; k < this.size(); k++) {
-        if (i != k) {
-          PeakListRow row = this.get(k);
-          FeatureShapeCorrelationData iProfileR =
-              MetaMSEcorrelateTask.corrRowToRowIProfile(raw, testRow, row);
-          FeatureShapeCorrelationData[] fCorr = null;
-          try {
-            fCorr = MetaMSEcorrelateTask.corrRowToRowFeatureShape(raw, testRow, row);
-          } catch (Exception e) {
-            e.printStackTrace();
-          }
-          rowCorr[counter] = new RowCorrelationData(testRow.getID(), row.getID(), iProfileR, fCorr);
-          counter++;
-        }
-      }
-      // create group corr object
-      corr[i] = new GroupCorrelationData(rowCorr, testRow.getBestPeak().getHeight());
+      corr[i] = new R2GroupCorrelationData(testRow, rowCorr, testRow.getBestPeak().getHeight());
     }
   }
 
@@ -110,7 +71,7 @@ public class PKLRowGroup extends ArrayList<PeakListRow> {
    * 
    * @return
    */
-  public GroupCorrelationData[] getCorr() {
+  public R2GroupCorrelationData[] getCorr() {
     return corr;
   }
 
@@ -119,7 +80,7 @@ public class PKLRowGroup extends ArrayList<PeakListRow> {
    * 
    * @return
    */
-  public GroupCorrelationData getCorr(int row) {
+  public R2GroupCorrelationData getCorr(int row) {
     return corr[row];
   }
 

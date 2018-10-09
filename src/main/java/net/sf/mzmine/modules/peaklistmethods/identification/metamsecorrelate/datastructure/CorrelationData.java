@@ -1,6 +1,7 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import org.apache.commons.math.stat.regression.SimpleRegression;
 
@@ -10,7 +11,7 @@ import org.apache.commons.math.stat.regression.SimpleRegression;
  * @author RibRob
  *
  */
-public class FeatureShapeCorrelationData {
+public class CorrelationData {
 
   // data points
   // [I1 ; I2][data point]
@@ -23,19 +24,17 @@ public class FeatureShapeCorrelationData {
    * 
    * @param corr
    */
-  public static FeatureShapeCorrelationData create(FeatureShapeCorrelationData[] corr) {
+  public static CorrelationData create(Collection<CorrelationData> corr) {
     List<double[]> dat = new ArrayList<>();
-    for (int i = 0; i < corr.length; i++) {
-      if (corr[i] != null && corr[i].getReg() != null) {
-        for (double[] d : corr[i].getData())
-          dat.add(d);
-      }
+    for (CorrelationData c : corr) {
+      for (double[] d : c.getData())
+        dat.add(d);
     }
     return create(dat);
   }
 
-  public static FeatureShapeCorrelationData create(List<double[]> dat) {
-    FeatureShapeCorrelationData c = new FeatureShapeCorrelationData();
+  public static CorrelationData create(List<double[]> dat) {
+    CorrelationData c = new CorrelationData();
     c.reg = new SimpleRegression();
     c.data = new double[dat.size()][2];
     c.minX = Double.NEGATIVE_INFINITY;
@@ -50,9 +49,9 @@ public class FeatureShapeCorrelationData {
     return c;
   }
 
-  public static FeatureShapeCorrelationData create(SimpleRegression reg, double[][] data,
-      double minX, double maxX) {
-    FeatureShapeCorrelationData c = new FeatureShapeCorrelationData();
+  public static CorrelationData create(SimpleRegression reg, double[][] data, double minX,
+      double maxX) {
+    CorrelationData c = new CorrelationData();
     c.reg = reg;
     c.minX = minX;
     c.maxX = maxX;

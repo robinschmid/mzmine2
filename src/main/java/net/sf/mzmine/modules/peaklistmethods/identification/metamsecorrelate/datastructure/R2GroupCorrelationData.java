@@ -1,13 +1,17 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure;
 
+import java.util.List;
+import net.sf.mzmine.datamodel.PeakListRow;
+
 /**
  * correlation of one row to a group
  * 
  * @author RibRob
  */
-public class GroupCorrelationData {
+public class R2GroupCorrelationData {
+  private PeakListRow row;
   // row index is xRow in corr data
-  private RowCorrelationData[] corr;
+  private List<R2RCorrelationData> corr;
   private double maxHeight;
   // averages are calculated by dividing by the row count
   private double minIProfileR, avgIProfileR, maxIProfileR;
@@ -15,14 +19,22 @@ public class GroupCorrelationData {
   // total peak shape r
   private double avgTotalPeakShapeR;
 
-  public GroupCorrelationData(RowCorrelationData[] corr, double maxHeight) {
+  public R2GroupCorrelationData(PeakListRow row, List<R2RCorrelationData> corr, double maxHeight) {
     super();
+    this.row = row;
     setCorr(corr);
     this.maxHeight = maxHeight;
   }
 
-  public void setCorr(RowCorrelationData[] corr) {
+  public void setCorr(List<R2RCorrelationData> corr) {
     this.corr = corr;
+    recalcCorr();
+  }
+
+  /**
+   * Recalc correlation
+   */
+  public void recalcCorr() {
     // min max
     minIProfileR = 1;
     maxIProfileR = -1;
@@ -32,34 +44,36 @@ public class GroupCorrelationData {
     avgPeakShapeR = 0;
     avgDPCount = 0;
     avgTotalPeakShapeR = 0;
-    int c = 0;
-    int cR2R = 0;
-    for (int i = 0; i < corr.length; i++) {
-      if (corr[i] != null) {
-        cR2R++;
-        double iProfileR = corr[i].getCorrIProfile().getR();
+    int cImax = 0;
+    int cPeakShape = 0;
+
+    for (R2RCorrelationData r2r : corr) {
+      if (r2r.hasIMaxCorr()) {
+        cImax++;
+        double iProfileR = r2r.getCorrIProfile().getR();
         avgIProfileR += iProfileR;
         if (iProfileR < minIProfileR)
           minIProfileR = iProfileR;
         if (iProfileR > maxIProfileR)
           maxIProfileR = iProfileR;
-
-        // peak shape correlation
-        if (corr[i].hasPeakShapeCorrelation()) {
-          c++;
-          avgTotalPeakShapeR += corr[i].getTotalCorrelation().getR();
-          avgPeakShapeR += corr[i].getAvgPeakShapeR();
-          avgDPCount += corr[i].getAvgDPcount();
-          if (corr[i].getMinPeakShapeR() < minPeakShapeR)
-            minPeakShapeR = corr[i].getMinPeakShapeR();
-          if (corr[i].getMaxPeakShapeR() > maxPeakShapeR)
-            maxPeakShapeR = corr[i].getMaxPeakShapeR();
-        }
       }
-      avgTotalPeakShapeR = avgTotalPeakShapeR / c;
-      avgIProfileR = avgIProfileR / corr.length;
-      avgDPCount = avgDPCount / c;
-      avgPeakShapeR = avgPeakShapeR / c;
+
+      // peak shape correlation
+      if (r2r.hasFeatureShapeCorrelation()) {
+        cPeakShape++;
+        avgTotalPeakShapeR += r2r.getTotalCorrelation().getR();
+        avgPeakShapeR += r2r.getAvgPeakShapeR();
+        avgDPCount += r2r.getAvgDPcount();
+        if (r2r.getMinPeakShapeR() < minPeakShapeR)
+          minPeakShapeR = r2r.getMinPeakShapeR();
+        if (r2r.getMaxPeakShapeR() > maxPeakShapeR)
+          maxPeakShapeR = r2r.getMaxPeakShapeR();
+      }
+
+      avgTotalPeakShapeR = avgTotalPeakShapeR / cPeakShape;
+      avgIProfileR = avgIProfileR / cImax;
+      avgDPCount = avgDPCount / cPeakShape;
+      avgPeakShapeR = avgPeakShapeR / cPeakShape;
     }
   }
 
@@ -71,7 +85,7 @@ public class GroupCorrelationData {
     this.maxHeight = maxHeight;
   }
 
-  public RowCorrelationData[] getCorr() {
+  public List<R2RCorrelationData> getCorr() {
     return corr;
   }
 
@@ -139,12 +153,26 @@ public class GroupCorrelationData {
    * 
    * @param rowI
    * @return the correlation data of this row to row[rowI]
+   * @throws Exception (should not happen, only if processing was corrupt)
    */
-  public RowCorrelationData getCorrelationToRowI(int rowI) {
-    for (int i = 0; i < corr.length; i++)
-      if (corr[i] != null && corr[i].getYRow() == rowI)
-        return corr[i];
+  public R2RCorrelationData getCorrelationToRowI(int rowI) throws Exception {
+    if (row.getID() == rowI)
+      throw new Exception("No correlation of row to itself");
+    for (R2RCorrelationData c : corr) {
+      if (c.getIDA() == rowI || c.getIDB() == rowI)
+        return c;
+    }
     return null;
+  }
+
+  /**
+   * 
+   * @param rowI
+   * @return the correlation data of this row to row[rowI]
+   * @throws Exception
+   */
+  public R2RCorrelationData getCorrelationToRow(PeakListRow row) throws Exception {
+    return getCorrelationToRowI(row.getID());
   }
 
 }

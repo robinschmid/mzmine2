@@ -24,7 +24,7 @@ import javax.swing.table.AbstractTableModel;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.MetaMSEcorrelateTask;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.GroupCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 
@@ -111,7 +111,7 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
       } else {
 
         CorrelationColumnType corrCol = getCorrelationColumn(col);
-        GroupCorrelationData corr = group.getCorr(row);
+        R2GroupCorrelationData corr = group.getCorr(row);
 
         switch (corrCol) {
           case MAXHEIGHT:

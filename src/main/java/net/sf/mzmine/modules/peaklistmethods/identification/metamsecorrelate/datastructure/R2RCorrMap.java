@@ -18,7 +18,7 @@ import net.sf.mzmine.datamodel.RawDataFile;
  * @author Robin Schmid
  *
  */
-public class R2RCorrMap extends TreeMap<String, RowCorrelationData> {
+public class R2RCorrMap extends TreeMap<String, R2RCorrelationData> {
   private static final Logger LOG = Logger.getLogger(R2RCorrMap.class.getName());
   /**
    * 
@@ -49,11 +49,11 @@ public class R2RCorrMap extends TreeMap<String, RowCorrelationData> {
    * @param row2
    * @param corr
    */
-  public void add(PeakListRow row, PeakListRow row2, RowCorrelationData corr) {
+  public void add(PeakListRow row, PeakListRow row2, R2RCorrelationData corr) {
     this.put(toKey(row, row2), corr);
   }
 
-  public RowCorrelationData get(PeakListRow row, PeakListRow row2) {
+  public R2RCorrelationData get(PeakListRow row, PeakListRow row2) {
     return get(toKey(row, row2));
   }
 
@@ -74,9 +74,9 @@ public class R2RCorrMap extends TreeMap<String, RowCorrelationData> {
 
       RawDataFile[] raw = pkl.getRawDataFiles();
       // add all connections
-      Iterator<Entry<String, RowCorrelationData>> entries = this.entrySet().iterator();
+      Iterator<Entry<String, R2RCorrelationData>> entries = this.entrySet().iterator();
       while (entries.hasNext()) {
-        Entry<String, RowCorrelationData> e = entries.next();
+        Entry<String, R2RCorrelationData> e = entries.next();
         int[] ids = toKeyIDs(e.getKey());
         // already added?
         PKLRowGroup group = used.get(ids[0]);
@@ -92,7 +92,8 @@ public class R2RCorrMap extends TreeMap<String, RowCorrelationData> {
           groups.remove(group2);
         } else if (group == null && group2 == null) {
           // create new group with both rows
-          group = new PKLRowGroup(raw, pkl.findRowByID(ids[0]), groups.size());
+          group = new PKLRowGroup(raw, groups.size());
+          group.add(pkl.findRowByID(ids[0]));
           group.add(pkl.findRowByID(ids[1]));
           groups.add(group);
           // mark as used
