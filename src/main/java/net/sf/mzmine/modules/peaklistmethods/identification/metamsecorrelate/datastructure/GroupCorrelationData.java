@@ -33,30 +33,34 @@ public class GroupCorrelationData {
     avgDPCount = 0;
     avgTotalPeakShapeR = 0;
     int c = 0;
+    int cR2R = 0;
     for (int i = 0; i < corr.length; i++) {
-      double iProfileR = corr[i].getCorrIProfile().getR();
-      avgIProfileR += iProfileR;
-      if (iProfileR < minIProfileR)
-        minIProfileR = iProfileR;
-      if (iProfileR > maxIProfileR)
-        maxIProfileR = iProfileR;
+      if (corr[i] != null) {
+        cR2R++;
+        double iProfileR = corr[i].getCorrIProfile().getR();
+        avgIProfileR += iProfileR;
+        if (iProfileR < minIProfileR)
+          minIProfileR = iProfileR;
+        if (iProfileR > maxIProfileR)
+          maxIProfileR = iProfileR;
 
-      // peak shape correlation
-      if (corr[i].hasPeakShapeCorrelation()) {
-        c++;
-        avgTotalPeakShapeR += corr[i].getTotalCorrelation().getR();
-        avgPeakShapeR += corr[i].getAvgPeakShapeR();
-        avgDPCount += corr[i].getAvgDPcount();
-        if (corr[i].getMinPeakShapeR() < minPeakShapeR)
-          minPeakShapeR = corr[i].getMinPeakShapeR();
-        if (corr[i].getMaxPeakShapeR() > maxPeakShapeR)
-          maxPeakShapeR = corr[i].getMaxPeakShapeR();
+        // peak shape correlation
+        if (corr[i].hasPeakShapeCorrelation()) {
+          c++;
+          avgTotalPeakShapeR += corr[i].getTotalCorrelation().getR();
+          avgPeakShapeR += corr[i].getAvgPeakShapeR();
+          avgDPCount += corr[i].getAvgDPcount();
+          if (corr[i].getMinPeakShapeR() < minPeakShapeR)
+            minPeakShapeR = corr[i].getMinPeakShapeR();
+          if (corr[i].getMaxPeakShapeR() > maxPeakShapeR)
+            maxPeakShapeR = corr[i].getMaxPeakShapeR();
+        }
       }
+      avgTotalPeakShapeR = avgTotalPeakShapeR / c;
+      avgIProfileR = avgIProfileR / corr.length;
+      avgDPCount = avgDPCount / c;
+      avgPeakShapeR = avgPeakShapeR / c;
     }
-    avgTotalPeakShapeR = avgTotalPeakShapeR / c;
-    avgIProfileR = avgIProfileR / corr.length;
-    avgDPCount = avgDPCount / c;
-    avgPeakShapeR = avgPeakShapeR / c;
   }
 
   public double getMaxHeight() {

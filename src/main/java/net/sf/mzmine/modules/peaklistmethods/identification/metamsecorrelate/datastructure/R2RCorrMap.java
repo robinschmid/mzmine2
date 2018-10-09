@@ -69,6 +69,8 @@ public class R2RCorrMap extends TreeMap<String, RowCorrelationData> {
     try {
       PKLRowGroupList groups = new PKLRowGroupList();
       HashMap<Integer, PKLRowGroup> used = new HashMap<>();
+      HashMap<Integer, Integer> usedi = new HashMap<>();
+      int current = 0;
 
       RawDataFile[] raw = pkl.getRawDataFiles();
       // add all connections

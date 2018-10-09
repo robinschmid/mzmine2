@@ -190,6 +190,9 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     try {
       groupedPKL = new MSEGroupedPeakList[peakLists.length];
       for (int e = 0; e < peakLists.length; e++) {
+        if (isCanceled())
+          return;
+
         LOG.info("Starting MSE correlation search in " + peakLists[e].getName() + "");
         // create new PKL for grouping
         groupedPKL[e] = new MSEGroupedPeakList(peakLists[e].getRawDataFiles(), peakLists[e]);
@@ -203,9 +206,11 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         finishedRows = 0;
         R2RCorrMap corrMap = new R2RCorrMap();
         List<AnnotationNetwork> annNet = doR2RComparison(groupedPKL[e], corrMap);
+        if (isCanceled())
+          return;
 
         // show corr network
-        CorrNetworkFrame f = new CorrNetworkFrame(peakLists[e], corrMap, 0.9);
+        CorrNetworkFrame f = new CorrNetworkFrame(peakLists[e], corrMap, 0.95);
         f.setVisible(true);
 
         LOG.info("Corr: Starting to group by correlation");
@@ -213,6 +218,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         finishedRows = 0;
         PKLRowGroupList groups = corrMap.createCorrGroups(groupedPKL[e]);
 
+        if (isCanceled())
+          return;
         // refinement:
         // filter by avg correlation in group
         // delete single connections between sub networks
@@ -287,23 +294,12 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         if (isCanceled())
           return null;
 
-        boolean inRTRange = true;
         PeakListRow row2 = rows[x];
-        // check rt first
-        // simple fast correlation to groups RT min/max/avg
-        // direct exclusion for high level filtering
-        // check rt of all peaks of all raw files
-        for (int r = 0; r < raw.length && inRTRange; r++) {
-          Feature f = row.getPeak(raw[r]);
-          Feature f2 = row2.getPeak(raw[r]);
-          if (f != null && f2 != null && !rtTolerance.checkWithinTolerance(f.getRT(), f2.getRT()))
-            inRTRange = false;
-        }
 
         // correlate if in rt range
-        if (inRTRange) {
+        if (rtTolerance.checkWithinTolerance(row.getAverageRT(), row2.getAverageRT())) {
           RowCorrelationData corr = corrR2R(raw, row, row2);
-          if (corr != null && corr.isValid() && corr.getAvgPeakShapeR() > minShapeCorrR)
+          if (corr != null && corr.isValid() && corr.getAvgPeakShapeR() >= minShapeCorrR)
             map.add(row, row2, corr);
 
           if (searchAdducts) {

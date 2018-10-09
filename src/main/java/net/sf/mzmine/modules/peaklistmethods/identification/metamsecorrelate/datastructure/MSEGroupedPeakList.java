@@ -1,6 +1,9 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure;
 
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
@@ -12,6 +15,8 @@ import net.sf.mzmine.parameters.UserParameter;
 import net.sf.mzmine.util.PeakUtils;
 
 public class MSEGroupedPeakList extends SimplePeakList {
+  // Logger.
+  private final Logger LOG = Logger.getLogger(getClass().getName());
   // parameter which groups the sample sets
   private UserParameter<?, ?> sgroupPara = null;
   // sample sets and size of this set as values
@@ -56,19 +61,25 @@ public class MSEGroupedPeakList extends SimplePeakList {
    * @param groups
    */
   public void setGroups(PKLRowGroupList groups) {
-    this.groups = groups;
-    // for all rows in a group:
-    for (int i = groups.size() - 1; i >= 0; i--) {
-      PKLRowGroup g = groups.get(i);
-      // add all identities
-      for (PeakListRow row : g) {
-        row.addPeakIdentity(new MSEGroupPeakIdentity(g), true);
+    try {
+      LOG.info("Setting corr groups now to peaklist");
+      this.groups = groups;
+      // for all rows in a group:
+      for (int i = groups.size() - 1; i >= 0; i--) {
+        PKLRowGroup g = groups.get(i);
+        // add all identities
+        for (PeakListRow row : g) {
+          row.addPeakIdentity(new MSEGroupPeakIdentity(g), true);
+        }
+        // recalc correlation
+        if (corrMap != null)
+          g.recalcGroupCorrelation(corrMap);
+        else
+          g.recalcGroupCorrelation();
       }
-      // recalc correlation
-      if (corrMap != null)
-        g.recalcGroupCorrelation(corrMap);
-      else
-        g.recalcGroupCorrelation();
+    } catch (Exception e) {
+      LOG.log(Level.SEVERE, "Cannot set groups", e);
+      throw new MSDKRuntimeException(e);
     }
   }
 
