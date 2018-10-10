@@ -20,7 +20,6 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.fi
 
 import java.awt.Window;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.MetaMSEcorrelateParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.UserParameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
@@ -36,6 +35,7 @@ import net.sf.mzmine.util.ExitCode;
 public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
 
 
+  private final boolean isSub;
   // sample sets
   public static final OptionalParameter<ComboParameter<Object>> GROUPSPARAMETER =
       new OptionalParameter<ComboParameter<Object>>(new ComboParameter<Object>("Sample set",
@@ -83,6 +83,7 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
     super(isSub ? new Parameter[] {MIN_HEIGHT, MIN_SAMPLES_ALL, MIN_SAMPLES_GROUP}
         : new Parameter[] {GROUPSPARAMETER, RT_TOLERANCE, MIN_HEIGHT, MIN_SAMPLES_ALL,
             MIN_SAMPLES_GROUP});
+    this.isSub = isSub;
   }
 
   /**
@@ -101,27 +102,32 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
   @Override
   public ExitCode showSetupDialog(Window parent, boolean valueCheckRequired) {
     // Update the parameter choices
-    UserParameter<?, ?> newChoices[] =
-        MZmineCore.getProjectManager().getCurrentProject().getParameters();
-    String[] choices;
-    if (newChoices == null || newChoices.length == 0) {
-      choices = new String[1];
-      choices[0] = "No groups";
-    } else {
-      choices = new String[newChoices.length + 1];
-      choices[0] = "No groups";
-      for (int i = 0; i < newChoices.length; i++) {
-        choices[i + 1] = newChoices[i].getName();
+    if (isSub)
+      return super.showSetupDialog(parent, valueCheckRequired);
+    else {
+      OptionalParameter<ComboParameter<Object>> gParam = getParameter(GROUPSPARAMETER);
+      if (gParam != null) {
+        UserParameter<?, ?> newChoices[] =
+            MZmineCore.getProjectManager().getCurrentProject().getParameters();
+        String[] choices;
+        if (newChoices == null || newChoices.length == 0) {
+          choices = new String[1];
+          choices[0] = "No groups";
+        } else {
+          choices = new String[newChoices.length + 1];
+          choices[0] = "No groups";
+          for (int i = 0; i < newChoices.length; i++) {
+            choices[i + 1] = newChoices[i].getName();
+          }
+        }
+        gParam.getEmbeddedParameter().setChoices(choices);
+        if (choices.length > 1)
+          gParam.getEmbeddedParameter().setValue(choices[1]);
       }
-    }
-    getParameter(MetaMSEcorrelateParameters.GROUPSPARAMETER).getEmbeddedParameter()
-        .setChoices(choices);
-    if (choices.length > 1)
-      getParameter(MetaMSEcorrelateParameters.GROUPSPARAMETER).getEmbeddedParameter()
-          .setValue(choices[1]);
 
-    ParameterSetupDialog dialog = new ParameterSetupDialog(parent, valueCheckRequired, this);
-    dialog.setVisible(true);
-    return dialog.getExitCode();
+      ParameterSetupDialog dialog = new ParameterSetupDialog(parent, valueCheckRequired, this);
+      dialog.setVisible(true);
+      return dialog.getExitCode();
+    }
   }
 }

@@ -8,6 +8,7 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.parameters.UserParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.AbsoluteNRelative;
+import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 
 public class MinimumFeatureFilter {
 
@@ -94,9 +95,34 @@ public class MinimumFeatureFilter {
     return false;
   }
 
-
+  /**
+   * Check for overlapping features in two rows (features in the same RawDataFile with
+   * height>minHeight)
+   * 
+   * @param project
+   * @param raw
+   * @param row
+   * @param row2
+   * @return
+   */
   public boolean filterMinFeaturesOverlap(MZmineProject project, final RawDataFile raw[],
       PeakListRow row, PeakListRow row2) {
+    return filterMinFeaturesOverlap(project, raw, row, row2, null);
+  }
+
+  /**
+   * Check for overlapping features in two rows (features in the same RawDataFile with
+   * height>minHeight and within rtTolerance)
+   * 
+   * @param project
+   * @param raw
+   * @param row
+   * @param row2
+   * @param rtTolerance
+   * @return
+   */
+  public boolean filterMinFeaturesOverlap(MZmineProject project, final RawDataFile raw[],
+      PeakListRow row, PeakListRow row2, RTTolerance rtTolerance) {
     // filter min samples in all
     if (minFInSamples.isGreaterZero()) {
       int n = 0;
@@ -104,7 +130,8 @@ public class MinimumFeatureFilter {
         Feature a = row.getPeak(file);
         Feature b = row2.getPeak(file);
         if (a != null && a.getHeight() >= minFeatureHeight && b != null
-            && b.getHeight() >= minFeatureHeight) {
+            && b.getHeight() >= minFeatureHeight
+            && (rtTolerance == null || rtTolerance.checkWithinTolerance(a.getRT(), b.getRT()))) {
           n++;
         }
       }
@@ -124,7 +151,8 @@ public class MinimumFeatureFilter {
       Feature a = row.getPeak(file);
       Feature b = row2.getPeak(file);
       if (a != null && a.getHeight() >= minFeatureHeight && b != null
-          && b.getHeight() >= minFeatureHeight) {
+          && b.getHeight() >= minFeatureHeight
+          && (rtTolerance == null || rtTolerance.checkWithinTolerance(a.getRT(), b.getRT()))) {
         String sgroup = sgroupOf(project, file);
 
         MutableInt count = counter.get(sgroup);

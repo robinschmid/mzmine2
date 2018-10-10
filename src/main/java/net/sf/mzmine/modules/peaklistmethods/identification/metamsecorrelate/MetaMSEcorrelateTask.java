@@ -291,7 +291,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
           PeakListRow row2 = rows[x];
           // has a minimum number/% of overlapping features in all samples / in at least one groups
           if (!useMinFInSamplesFilter
-              || minFFilter.filterMinFeaturesOverlap(project, raw, row, row2)) {
+              || minFFilter.filterMinFeaturesOverlap(project, raw, row, row2, rtTolerance)) {
             boolean rtInRange = checkRTRange(raw, row, row2, noiseLevelShapeCorr, rtTolerance);
 
             // correlate if in rt range
