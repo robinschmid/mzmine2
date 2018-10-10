@@ -49,7 +49,6 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msa
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationParameters;
-import net.sf.mzmine.modules.visualization.metamsecorrelate.corrnetwork.visual.CorrNetworkFrame;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.UserParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
@@ -206,10 +205,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       List<AnnotationNetwork> annNet = doR2RComparison(groupedPKL, corrMap);
       if (isCanceled())
         return;
-
-      // show corr network
-      CorrNetworkFrame f = new CorrNetworkFrame(groupedPKL, corrMap, 0.95);
-      f.setVisible(true);
 
       LOG.info("Corr: Starting to group by correlation");
       stage = Stage.GROUPING;

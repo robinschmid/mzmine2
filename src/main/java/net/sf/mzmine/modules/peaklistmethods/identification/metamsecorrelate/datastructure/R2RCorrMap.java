@@ -112,6 +112,9 @@ public class R2RCorrMap extends TreeMap<String, R2RCorrelationData> {
           }
         }
       }
+      // sort by retention time
+      groups.sortByRT();
+
       // reset index
       for (int i = 0; i < groups.size(); i++)
         groups.get(i).setGroupID(i);
