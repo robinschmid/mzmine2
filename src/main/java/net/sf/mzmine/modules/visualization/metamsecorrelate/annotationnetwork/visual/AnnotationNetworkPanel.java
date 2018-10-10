@@ -174,7 +174,7 @@ public class AnnotationNetworkPanel extends JPanel {
   private void addNewEdge(String node1, String node2, double dmz) {
     String edge = node1 + node2;
     graph.addEdge(edge, node1, node2);
-    graph.getEdge(edge).addAttribute("ui.label", "\u0394" + mzForm.format(dmz));
+    graph.getEdge(edge).addAttribute("ui.label", "\u0394 " + mzForm.format(dmz));
   }
 
   private PeakListRow findRowByID(int id, PeakListRow[] rows) {
