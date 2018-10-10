@@ -271,4 +271,9 @@ public class CorrNetworkPanel extends JPanel {
     this.minR = minR;
   }
 
+  public void resetZoom() {
+    viewPercent = 1;
+    view.getCamera().resetView();
+  }
+
 }

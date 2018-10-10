@@ -9,6 +9,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
+import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -604,6 +605,7 @@ public class MSEcorrGroupWindow extends JFrame {
    * plots the peak shapes of each row of one selected raw file
    */
   private void plotPeakShapes() {
+    ChartPanel cp = null;
     // get group
     PKLRowGroup g = peakList.getLastViewedGroup();
     if (g != null) {
@@ -656,15 +658,18 @@ public class MSEcorrGroupWindow extends JFrame {
       chart.setNotify(true);
       chart.fireChartChanged();
       // add to panel
-      ChartPanel cp = createChartPanel(chart);
-      subWindow.setShapePlot(cp);
+      cp = createChartPanel(chart);
     }
+    // show
+    subWindow.setShapePlot(cp);
   }
 
   /**
    * peak shape correlation of selected row to all other rows in selected raw file
    */
   private void plotPeakShapeCorrelation(boolean totalCorrelation) {
+    // result
+    EChartPanel cp = null;
     try {
       // get group
       PKLRowGroup g = peakList.getLastViewedGroup();
@@ -684,7 +689,8 @@ public class MSEcorrGroupWindow extends JFrame {
         if (peakList.getSampleGroupsParameter() != null)
           sg = String.valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), raw));
 
-        String title = "Row " + row.getID() + " corr in: " + sg + "(" + raw.getName() + ")";
+        String title = totalCorrelation ? "Total correlation of row " + row.getID()
+            : MessageFormat.format("Row {0} corr in: {1} ({2})", row.getID(), sg, raw.getName());
         // create chart
         JFreeChart chart =
             ChartFactory.createScatterPlot(title, "Intensity (row: " + row.getID() + ")",
@@ -727,15 +733,16 @@ public class MSEcorrGroupWindow extends JFrame {
         // add chart to panel
         chart.setNotify(true);
         chart.fireChartChanged();
-        EChartPanel cp = createChartPanel(chart);
-        if (totalCorrelation)
-          subWindow.setTotalShapeCorrPlot(cp);
-        else
-          subWindow.setShapeCorrPlot(cp);
+        cp = createChartPanel(chart);
       }
     } catch (Exception e) {
       LOG.log(Level.SEVERE, e.getMessage(), e);
     }
+    // show
+    if (totalCorrelation)
+      subWindow.setTotalShapeCorrPlot(cp);
+    else
+      subWindow.setShapeCorrPlot(cp);
   }
 
 
@@ -744,6 +751,7 @@ public class MSEcorrGroupWindow extends JFrame {
    * files.
    */
   private void plotIMaxCorrelation() {
+    EChartPanel cp = null;
     try {
       // get group
       PKLRowGroup g = peakList.getLastViewedGroup();
@@ -761,7 +769,7 @@ public class MSEcorrGroupWindow extends JFrame {
         // title
         String sg = peakList.getSampleGroupsParameter() == null ? ""
             : String.valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), raw));
-        String title = "Row " + row.getID() + " corr in: " + sg + "(" + raw.getName() + ")";
+        String title = MessageFormat.format("Row {0} Imax corr across all samples", row.getID());
         // create chart
         JFreeChart chart =
             ChartFactory.createScatterPlot(title, "Intensity (row: " + row.getID() + ")",
@@ -801,18 +809,20 @@ public class MSEcorrGroupWindow extends JFrame {
         // add chart to panel
         chart.setNotify(true);
         chart.fireChartChanged();
-        EChartPanel cp = createChartPanel(chart);
-        subWindow.setMaxICorrPlot(cp);
+        cp = createChartPanel(chart);
       }
     } catch (Exception e) {
       LOG.log(Level.SEVERE, e.getMessage(), e);
     }
+    // show
+    subWindow.setMaxICorrPlot(cp);
   }
 
   /**
-   * All single feature to feature correlations in a plot
+   * All single feature to feature correlations of one row to all other in a plot in raw
    */
   private void createCorrColumnsPlot() {
+    ChartPanel cp = null;
     try {
       // get group
       PKLRowGroup g = peakList.getLastViewedGroup();
@@ -821,7 +831,6 @@ public class MSEcorrGroupWindow extends JFrame {
         PeakListRow row = g.getLastViewedRow();
         int rowI = g.getLastViewedRowI();
         R2GroupCorrelationData corr = g.getCorr(rowI);
-        int rawI = g.getLastViewedRawFileI();
         RawDataFile raw = g.getLastViewedRawFile();
 
         // spectrum or column chart of all correlations
@@ -858,7 +867,7 @@ public class MSEcorrGroupWindow extends JFrame {
           }
         }
         // add plot
-        String title = "Row " + row.getID() + " corr";
+        String title = "Row " + row.getID() + " f2f corr in " + raw.getName();
         JFreeChart chart = ChartFactory.createBarChart(title, "Sample group",
             "Pearson correlation (r)", dataset, PlotOrientation.VERTICAL, false, true, false);
         BarRenderer catRen = (BarRenderer) chart.getCategoryPlot().getRenderer();
@@ -867,17 +876,18 @@ public class MSEcorrGroupWindow extends JFrame {
         axis.setCategoryMargin(0.000);
         axis.setLowerMargin(0.01);
         axis.setUpperMargin(0.01);
-        ChartPanel cp = createChartPanel(chart);
+        cp = createChartPanel(chart);
         // formating
         NumberFormat intensityFormat = MZmineCore.getConfiguration().getIntensityFormat();
         NumberAxis yAxis = (NumberAxis) chart.getCategoryPlot().getRangeAxis();
         yAxis.setNumberFormatOverride(intensityFormat);
         //
-        subWindow.setCorrColumnsChart(cp);
       }
     } catch (Exception e) {
       LOG.log(Level.SEVERE, e.getMessage(), e);
     }
+    // show
+    subWindow.setCorrColumnsChart(cp);
   }
 
   /**
@@ -891,9 +901,9 @@ public class MSEcorrGroupWindow extends JFrame {
           getCbSumPseudoSpectrum().isSelected());
       // theme.apply(chart.getChart());
       pnSpectrum.add(chart, BorderLayout.CENTER);
-      pnSpectrum.revalidate();
-      pnSpectrum.repaint();
     }
+    pnSpectrum.revalidate();
+    pnSpectrum.repaint();
   }
 
   /**
@@ -904,6 +914,7 @@ public class MSEcorrGroupWindow extends JFrame {
     if (g != null) {
       PeakListRow[] rows = g.toArray(new PeakListRow[g.size()]);
       pnNetwork.setPeakListRows(rows);
+      pnNetwork.resetZoom();
       pnNetwork.revalidate();
       pnNetwork.repaint();
     } else {
@@ -919,6 +930,7 @@ public class MSEcorrGroupWindow extends JFrame {
     if (g != null) {
       PeakListRow[] rows = g.toArray(new PeakListRow[g.size()]);
       pnCorrNetwork.setPeakListRows(rows, peakList.getCorrelationMap());
+      pnCorrNetwork.resetZoom();
       pnCorrNetwork.revalidate();
       pnCorrNetwork.repaint();
     } else {

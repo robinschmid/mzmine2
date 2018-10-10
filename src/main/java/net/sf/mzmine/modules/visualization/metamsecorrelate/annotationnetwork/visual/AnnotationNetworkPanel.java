@@ -71,8 +71,7 @@ public class AnnotationNetworkPanel extends JPanel {
       @Override
       public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() == 2) {
-          viewPercent = 1;
-          view.getCamera().resetView();
+          resetZoom();
           e.consume();
         } else if (e.getClickCount() == 1)
           setCenter(e.getX(), e.getY());
@@ -155,8 +154,7 @@ public class AnnotationNetworkPanel extends JPanel {
                 if (row2 != null) {
                   String node1 = toNodeName(row);
                   String node2 = toNodeName(row2);
-                  String edge = node1 + node2;
-                  graph.addEdge(edge, node1, node2);
+                  addNewEdge(node1, node2, Math.abs(row.getAverageMZ() - row2.getAverageMZ()));
                   added++;
                 }
               }
@@ -171,6 +169,12 @@ public class AnnotationNetworkPanel extends JPanel {
 
       LOG.info("Added " + added + " connections");
     }
+  }
+
+  private void addNewEdge(String node1, String node2, double dmz) {
+    String edge = node1 + node2;
+    graph.addEdge(edge, node1, node2);
+    graph.getEdge(edge).addAttribute("ui.label", "\u0394" + mzForm.format(dmz));
   }
 
   private PeakListRow findRowByID(int id, PeakListRow[] rows) {
@@ -220,6 +224,11 @@ public class AnnotationNetworkPanel extends JPanel {
     Point3 c = view.getCamera().getViewCenter();
     Point3 p = view.getCamera().transformPxToGu(x, y);
     view.getCamera().setViewCenter(p.x, p.y, c.z);
+  }
+
+  public void resetZoom() {
+    viewPercent = 1;
+    view.getCamera().resetView();
   }
 
 }
