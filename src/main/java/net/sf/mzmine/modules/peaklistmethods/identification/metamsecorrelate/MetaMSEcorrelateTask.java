@@ -292,7 +292,10 @@ public class MetaMSEcorrelateTask extends AbstractTask {
           // has a minimum number/% of overlapping features in all samples / in at least one groups
           if (!useMinFInSamplesFilter
               || minFFilter.filterMinFeaturesOverlap(project, raw, row, row2, rtTolerance)) {
-            boolean rtInRange = checkRTRange(raw, row, row2, noiseLevelShapeCorr, rtTolerance);
+
+            // still check retention time if minFeatureFilter was not performed
+            boolean rtInRange = useMinFInSamplesFilter
+                || checkRTRange(raw, row, row2, noiseLevelShapeCorr, rtTolerance);
 
             // correlate if in rt range
             if (rtInRange) {
@@ -321,18 +324,21 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     }
 
     // number of f2f correlations
+    int nR2Rcorr = 0;
     int nF2F = 0;
     for (R2RCorrelationData r2r : map.values()) {
-      if (r2r.hasFeatureShapeCorrelation())
+      if (r2r.hasFeatureShapeCorrelation()) {
+        nR2Rcorr++;
         nF2F += r2r.getCorrPeakShape().size();
+      }
     }
 
     LOG.info(MessageFormat.format(
-        "Corr: Correlations done with {0} R2R correlations and {1} F2F correlations", map.size(),
+        "Corr: Correlations done with {0} R2R correlations and {1} F2F correlations", nR2Rcorr,
         nF2F));
 
     if (searchAdducts) {
-      LOG.info("Corr: A total of " + compared + " row2row comparisons with " + annotPairs
+      LOG.info("Corr: A total of " + compared + " row2row adduct comparisons with " + annotPairs
           + " annotation pairs");
 
       //
@@ -353,18 +359,15 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    */
   public boolean checkRTRange(RawDataFile[] raw, PeakListRow row, PeakListRow row2,
       double minHeight, RTTolerance rtTolerance) {
-    boolean hasFit = false;
     for (int r = 0; r < raw.length; r++) {
       Feature f = row.getPeak(raw[r]);
       Feature f2 = row2.getPeak(raw[r]);
-      if (f != null && f2 != null && f.getHeight() >= minHeight && f2.getHeight() >= minHeight) {
-        if (rtTolerance.checkWithinTolerance(f.getRT(), f2.getRT()))
-          hasFit = true;
-        else
-          return false;
+      if (f != null && f2 != null && f.getHeight() >= minHeight && f2.getHeight() >= minHeight
+          && rtTolerance.checkWithinTolerance(f.getRT(), f2.getRT())) {
+        return true;
       }
     }
-    return hasFit;
+    return false;
   }
 
   /**
