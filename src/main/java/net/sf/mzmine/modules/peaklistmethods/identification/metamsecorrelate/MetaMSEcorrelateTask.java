@@ -288,9 +288,10 @@ public class MetaMSEcorrelateTask extends AbstractTask {
           PeakListRow row2 = rows[x];
           // is present in min % of samples
           if (filterMinFeaturesInSampleSet(raw, row2)) {
+            boolean rtInRange = checkRTRange(raw, row, row2, noiseLevelShapeCorr, rtTolerance);
 
             // correlate if in rt range
-            if (rtTolerance.checkWithinTolerance(row.getAverageRT(), row2.getAverageRT())) {
+            if (rtInRange) {
               R2RCorrelationData corr =
                   corrR2R(raw, row, row2, minDPMaxICorr, minCorrelatedDataPoints);
               if (corr != null) {
@@ -335,6 +336,31 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       return MSAnnotationNetworkLogic.createAnnotationNetworks(groupedPKL, true);
     }
     return null;
+  }
+
+  /**
+   * direct exclusion for high level filtering check rt of all peaks of all raw files
+   * 
+   * @param row
+   * @param row2
+   * @param minHeight minimum feature height to check for RT
+   * @return true only if there was at least one RawDataFile with features in both rows with
+   *         height>minHeight and within rtTolerance
+   */
+  public boolean checkRTRange(RawDataFile[] raw, PeakListRow row, PeakListRow row2,
+      double minHeight, RTTolerance rtTolerance) {
+    boolean hasFit = false;
+    for (int r = 0; r < raw.length; r++) {
+      Feature f = row.getPeak(raw[r]);
+      Feature f2 = row2.getPeak(raw[r]);
+      if (f != null && f2 != null && f.getHeight() >= minHeight && f2.getHeight() >= minHeight) {
+        if (rtTolerance.checkWithinTolerance(f.getRT(), f2.getRT()))
+          hasFit = true;
+        else
+          return false;
+      }
+    }
+    return hasFit;
   }
 
   /**
