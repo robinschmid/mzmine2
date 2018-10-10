@@ -214,7 +214,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       LOG.info("Corr: Starting to group by correlation");
       stage = Stage.GROUPING;
       finishedRows = 0;
-      PKLRowGroupList groups = corrMap.createCorrGroups(groupedPKL);
+      PKLRowGroupList groups = corrMap.createCorrGroups(groupedPKL, minShapeCorrR);
 
       if (isCanceled())
         return;
@@ -225,6 +225,13 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         // set groups to pkl
         groupedPKL.setCorrelationMap(corrMap);
         groupedPKL.setGroups(groups);
+
+        //
+        if (searchAdducts) {
+          // show all annotations with the highest count of links
+          LOG.info("Corr: show most likely annotations");
+          MSAnnotationNetworkLogic.showMostlikelyAnnotations(groupedPKL);
+        }
 
         // add to project
         project.addPeakList(groupedPKL);
@@ -327,10 +334,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     if (searchAdducts) {
       LOG.info("Corr: A total of " + compared + " row2row comparisons with " + annotPairs
           + " annotation pairs");
-
-      // show all annotations with the highest count of links
-      LOG.info("Corr: show most likely annotations");
-      MSAnnotationNetworkLogic.showMostlikelyAnnotations(groupedPKL);
 
       //
       LOG.info("Corr: create annotation network numbers");

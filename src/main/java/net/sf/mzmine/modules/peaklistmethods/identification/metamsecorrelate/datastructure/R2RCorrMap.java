@@ -63,7 +63,7 @@ public class R2RCorrMap extends TreeMap<String, R2RCorrelationData> {
    * @param rows
    * @return
    */
-  public PKLRowGroupList createCorrGroups(PeakList pkl) {
+  public PKLRowGroupList createCorrGroups(PeakList pkl, double minShapeR) {
     LOG.info("Corr: Creating correlation groups");
 
     try {
@@ -77,34 +77,39 @@ public class R2RCorrMap extends TreeMap<String, R2RCorrelationData> {
       Iterator<Entry<String, R2RCorrelationData>> entries = this.entrySet().iterator();
       while (entries.hasNext()) {
         Entry<String, R2RCorrelationData> e = entries.next();
-        int[] ids = toKeyIDs(e.getKey());
-        // already added?
-        PKLRowGroup group = used.get(ids[0]);
-        PKLRowGroup group2 = used.get(ids[1]);
-        // merge groups if both present
-        if (group != null && group2 != null && group.getGroupID() != group2.getGroupID()) {
-          // copy all to group1 and remove g2
-          for (int g2 = 0; g2 < group2.size(); g2++) {
-            PeakListRow r = group2.get(g2);
-            group.add(r);
-            used.put(r.getID(), group);
+
+        R2RCorrelationData data = e.getValue();
+        if (data.hasFeatureShapeCorrelation() && data.getAvgPeakShapeR() >= minShapeR) {
+
+          int[] ids = toKeyIDs(e.getKey());
+          // already added?
+          PKLRowGroup group = used.get(ids[0]);
+          PKLRowGroup group2 = used.get(ids[1]);
+          // merge groups if both present
+          if (group != null && group2 != null && group.getGroupID() != group2.getGroupID()) {
+            // copy all to group1 and remove g2
+            for (int g2 = 0; g2 < group2.size(); g2++) {
+              PeakListRow r = group2.get(g2);
+              group.add(r);
+              used.put(r.getID(), group);
+            }
+            groups.remove(group2);
+          } else if (group == null && group2 == null) {
+            // create new group with both rows
+            group = new PKLRowGroup(raw, groups.size());
+            group.add(pkl.findRowByID(ids[0]));
+            group.add(pkl.findRowByID(ids[1]));
+            groups.add(group);
+            // mark as used
+            used.put(ids[0], group);
+            used.put(ids[1], group);
+          } else if (group2 == null) {
+            group.add(pkl.findRowByID(ids[1]));
+            used.put(ids[1], group);
+          } else if (group == null) {
+            group2.add(pkl.findRowByID(ids[0]));
+            used.put(ids[0], group2);
           }
-          groups.remove(group2);
-        } else if (group == null && group2 == null) {
-          // create new group with both rows
-          group = new PKLRowGroup(raw, groups.size());
-          group.add(pkl.findRowByID(ids[0]));
-          group.add(pkl.findRowByID(ids[1]));
-          groups.add(group);
-          // mark as used
-          used.put(ids[0], group);
-          used.put(ids[1], group);
-        } else if (group2 == null) {
-          group.add(pkl.findRowByID(ids[1]));
-          used.put(ids[1], group);
-        } else if (group == null) {
-          group2.add(pkl.findRowByID(ids[0]));
-          used.put(ids[0], group2);
         }
       }
       // reset index

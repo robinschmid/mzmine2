@@ -9,6 +9,7 @@ import java.text.NumberFormat;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 import javax.swing.JPanel;
+import org.graphstream.graph.Edge;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.MultiGraph;
@@ -196,7 +197,8 @@ public class CorrNetworkPanel extends JPanel {
           String node1 = toNodeName(a);
           String node2 = toNodeName(b);
           String edge = node1 + node2;
-          graph.addEdge(edge, node1, node2);
+          Edge e = graph.addEdge(edge, node1, node2);
+          e.addAttribute("ui.label", r2r.getAvgPeakShapeR());
           added++;
         }
       }
