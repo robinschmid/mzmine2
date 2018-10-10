@@ -121,7 +121,7 @@ public class MSEcorrGroupWindow extends JFrame {
   public MSEcorrGroupWindow(MZmineProject project, final MSEGroupedPeakList peakList,
       PKLRowGroupList groups, int index) {
     // sub window for more charts
-    subWindow = new MSEcorrGroupSubWindow();
+    subWindow = new MSEcorrGroupSubWindow(this);
 
     // data
     this.peakList = peakList;

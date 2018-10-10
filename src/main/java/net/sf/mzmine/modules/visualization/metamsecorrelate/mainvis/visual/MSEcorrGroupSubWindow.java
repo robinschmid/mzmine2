@@ -1,43 +1,35 @@
 package net.sf.mzmine.modules.visualization.metamsecorrelate.mainvis.visual;
 
 import java.awt.BorderLayout;
-import java.awt.EventQueue;
 import java.awt.GridLayout;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.border.EmptyBorder;
 import org.jfree.chart.ChartPanel;
 
-public class MSEcorrGroupSubWindow extends JFrame {
+/**
+ * Holds more charts for data reviewing
+ * 
+ * @author Robin Schmid
+ *
+ */
+public class MSEcorrGroupSubWindow extends JFrame implements KeyListener {
 
   private JPanel contentPane;
   private JPanel pnBoxPlot;
   private JPanel pnMaxICorr;
   private JPanel pnShapeCorr, pnShape, pnCorrColumns;
   private JPanel pnTotalShapeCorr;
-
-  /**
-   * Launch the application.
-   */
-  public static void main(String[] args) {
-    EventQueue.invokeLater(new Runnable() {
-      @Override
-      public void run() {
-        try {
-          MSEcorrGroupSubWindow frame = new MSEcorrGroupSubWindow();
-          frame.setVisible(true);
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-      }
-    });
-  }
+  private MSEcorrGroupWindow mainWnd;
 
   /**
    * Create the frame.
    */
-  public MSEcorrGroupSubWindow() {
+  public MSEcorrGroupSubWindow(MSEcorrGroupWindow mainWnd) {
+    this.mainWnd = mainWnd;
     setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
     setBounds(100, 100, 853, 586);
     contentPane = new JPanel();
@@ -85,6 +77,8 @@ public class MSEcorrGroupSubWindow extends JFrame {
     pnMaxICorr = new JPanel(new BorderLayout());
     bottom.add(pnBoxPlot);
     bottom.add(pnMaxICorr);
+
+    this.addKeyListener(this);
   }
 
   public void setBoxPlot(ChartPanel chart) {
@@ -132,6 +126,21 @@ public class MSEcorrGroupSubWindow extends JFrame {
 
   public JPanel getPnTotalShapeCorr() {
     return pnTotalShapeCorr;
+  }
+
+  @Override
+  public void keyTyped(KeyEvent e) {
+    mainWnd.dispatchEvent(e);
+  }
+
+  @Override
+  public void keyPressed(KeyEvent e) {
+    mainWnd.dispatchEvent(e);
+  }
+
+  @Override
+  public void keyReleased(KeyEvent e) {
+    mainWnd.dispatchEvent(e);
   }
 
 }
