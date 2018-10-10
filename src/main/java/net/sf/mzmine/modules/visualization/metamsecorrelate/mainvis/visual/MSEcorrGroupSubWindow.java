@@ -2,11 +2,14 @@ package net.sf.mzmine.modules.visualization.metamsecorrelate.mainvis.visual;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import javax.swing.AbstractAction;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
+import javax.swing.KeyStroke;
 import javax.swing.border.EmptyBorder;
 import org.jfree.chart.ChartPanel;
 
@@ -16,7 +19,7 @@ import org.jfree.chart.ChartPanel;
  * @author Robin Schmid
  *
  */
-public class MSEcorrGroupSubWindow extends JFrame implements KeyListener {
+public class MSEcorrGroupSubWindow extends JFrame {
 
   private JPanel contentPane;
   private JPanel pnBoxPlot;
@@ -78,7 +81,7 @@ public class MSEcorrGroupSubWindow extends JFrame implements KeyListener {
     bottom.add(pnBoxPlot);
     bottom.add(pnMaxICorr);
 
-    this.addKeyListener(this);
+    addKeyBindings();
   }
 
   public void setBoxPlot(ChartPanel chart) {
@@ -128,19 +131,68 @@ public class MSEcorrGroupSubWindow extends JFrame implements KeyListener {
     return pnTotalShapeCorr;
   }
 
-  @Override
-  public void keyTyped(KeyEvent e) {
-    mainWnd.dispatchEvent(e);
-  }
 
-  @Override
-  public void keyPressed(KeyEvent e) {
-    mainWnd.dispatchEvent(e);
-  }
+  private void addKeyBindings() {
+    JPanel pn = (JPanel) this.getContentPane();
 
-  @Override
-  public void keyReleased(KeyEvent e) {
-    mainWnd.dispatchEvent(e);
+    // group and row controls
+    final String[] commands = {"released UP", "released DOWN", "released LEFT", "released RIGHT",
+        "released PLUS", "released MINUS"};
+    pn.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+        .put(KeyStroke.getKeyStroke(commands[0]), commands[0]);
+    pn.getActionMap().put(commands[0], new AbstractAction() {
+      @Override
+      public void actionPerformed(ActionEvent ae) {
+        mainWnd.prevRow();
+      }
+    });
+    pn.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+        .put(KeyStroke.getKeyStroke(commands[1]), commands[1]);
+    pn.getActionMap().put(commands[1], new AbstractAction() {
+      @Override
+      public void actionPerformed(ActionEvent ae) {
+        mainWnd.nextRow();
+      }
+    });
+    pn.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+        .put(KeyStroke.getKeyStroke(commands[2]), commands[2]);
+    pn.getActionMap().put(commands[2], new AbstractAction() {
+      @Override
+      public void actionPerformed(ActionEvent ae) {
+        mainWnd.prevGroup();
+      }
+    });
+    pn.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+        .put(KeyStroke.getKeyStroke(commands[3]), commands[3]);
+    pn.getActionMap().put(commands[3], new AbstractAction() {
+      @Override
+      public void actionPerformed(ActionEvent ae) {
+        mainWnd.nextGroup();
+      }
+    });
+    pn.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+        .put(KeyStroke.getKeyStroke(KeyEvent.VK_ADD, 0), commands[4]);
+    pn.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+        .put(KeyStroke.getKeyStroke(KeyEvent.VK_PLUS, 0), commands[4]);
+    pn.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+        .put(KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, KeyEvent.SHIFT_DOWN_MASK), commands[4]);
+    pn.getActionMap().put(commands[4], new AbstractAction() {
+      @Override
+      public void actionPerformed(ActionEvent ae) {
+        mainWnd.nextRaw();
+      }
+    });
+    pn.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+        .put(KeyStroke.getKeyStroke(KeyEvent.VK_SUBTRACT, 0), commands[5]);
+    pn.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+        .put(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, 0), commands[5]);
+    pn.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+        .put(KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, KeyEvent.SHIFT_DOWN_MASK), commands[5]);
+    pn.getActionMap().put(commands[5], new AbstractAction() {
+      @Override
+      public void actionPerformed(ActionEvent ae) {
+        mainWnd.prevRaw();
+      }
+    });
   }
-
 }

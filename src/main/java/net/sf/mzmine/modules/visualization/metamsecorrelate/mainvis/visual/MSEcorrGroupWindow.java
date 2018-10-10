@@ -208,14 +208,7 @@ public class MSEcorrGroupWindow extends JFrame {
 
     btnPreviousRow = new JButton("Previous");
     btnPreviousRow.setToolTipText("DOWN key");
-    btnPreviousRow.addActionListener(new ActionListener() {
-      @Override
-      public void actionPerformed(ActionEvent arg0) {
-        PKLRowGroup g = peakList.getLastViewedGroup();
-        if (g.getLastViewedRowI() > 0)
-          setCurrentRowView(g.getLastViewedRowI() - 1);
-      }
-    });
+    btnPreviousRow.addActionListener(e -> prevRow());
     panel_1.add(btnPreviousRow, "cell 0 1");
 
     txtRow = new JTextField();
@@ -226,26 +219,12 @@ public class MSEcorrGroupWindow extends JFrame {
 
     JButton btnNextRow = new JButton("Next");
     btnNextRow.setToolTipText("UP key");
-    btnNextRow.addActionListener(new ActionListener() {
-      @Override
-      public void actionPerformed(ActionEvent arg0) {
-        PKLRowGroup g = peakList.getLastViewedGroup();
-        if (g.getLastViewedRowI() + 1 < g.size())
-          setCurrentRowView(g.getLastViewedRowI() + 1);
-      }
-    });
+    btnNextRow.addActionListener(e -> nextRow());
     panel_1.add(btnNextRow, "cell 2 1");
 
     JButton btnNextGroup = new JButton("Next");
     btnNextGroup.setToolTipText("RIGHT key");
-    btnNextGroup.addActionListener(new ActionListener() {
-      @Override
-      public void actionPerformed(ActionEvent arg0) {
-        if (peakList.getLastViewedIndex() + 1 < peakList.getGroups().size()) {
-          setCurrentGroupView(peakList.getLastViewedIndex() + 1);
-        }
-      }
-    });
+    btnNextGroup.addActionListener(e -> nextGroup());
     panel.add(btnNextGroup, "cell 0 1");
 
     panel_3 = new JPanel();
@@ -343,14 +322,7 @@ public class MSEcorrGroupWindow extends JFrame {
     });
     cbSampleSummary.setToolTipText("Average peak shape correlation column chart.");
 
-    btnPreviousGroup.addActionListener(new ActionListener() {
-      @Override
-      public void actionPerformed(ActionEvent arg0) {
-        if (peakList.getLastViewedIndex() > 0) {
-          setCurrentGroupView(peakList.getLastViewedIndex() - 1);
-        }
-      }
-    });
+    btnPreviousGroup.addActionListener(e -> prevGroup());
 
     JScrollPane scrollPane = new JScrollPane();
     pnTable.add(scrollPane, BorderLayout.CENTER);
@@ -424,9 +396,7 @@ public class MSEcorrGroupWindow extends JFrame {
     pn.getActionMap().put(commands[0], new AbstractAction() {
       @Override
       public void actionPerformed(ActionEvent ae) {
-        PKLRowGroup g = peakList.getLastViewedGroup();
-        if (g.getLastViewedRowI() > 0)
-          setCurrentRowView(g.getLastViewedRowI() - 1);
+        prevRow();
       }
     });
     pn.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
@@ -434,9 +404,7 @@ public class MSEcorrGroupWindow extends JFrame {
     pn.getActionMap().put(commands[1], new AbstractAction() {
       @Override
       public void actionPerformed(ActionEvent ae) {
-        PKLRowGroup g = peakList.getLastViewedGroup();
-        if (g.getLastViewedRowI() + 1 < g.size())
-          setCurrentRowView(g.getLastViewedRowI() + 1);
+        nextRow();
       }
     });
     pn.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
@@ -444,8 +412,7 @@ public class MSEcorrGroupWindow extends JFrame {
     pn.getActionMap().put(commands[2], new AbstractAction() {
       @Override
       public void actionPerformed(ActionEvent ae) {
-        if (peakList.getLastViewedIndex() > 0)
-          setCurrentGroupView(peakList.getLastViewedIndex() - 1);
+        prevGroup();
       }
     });
     pn.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
@@ -453,8 +420,7 @@ public class MSEcorrGroupWindow extends JFrame {
     pn.getActionMap().put(commands[3], new AbstractAction() {
       @Override
       public void actionPerformed(ActionEvent ae) {
-        if (peakList.getLastViewedIndex() + 1 < peakList.getGroups().size())
-          setCurrentGroupView(peakList.getLastViewedIndex() + 1);
+        nextGroup();
       }
     });
     pn.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
@@ -466,9 +432,7 @@ public class MSEcorrGroupWindow extends JFrame {
     pn.getActionMap().put(commands[4], new AbstractAction() {
       @Override
       public void actionPerformed(ActionEvent ae) {
-        PKLRowGroup g = peakList.getLastViewedGroup();
-        if (g.getLastViewedRawFileI() + 1 < g.size())
-          setCurrentRawView(g.getLastViewedRawFileI() + 1);
+        nextRaw();
       }
     });
     pn.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
@@ -480,11 +444,43 @@ public class MSEcorrGroupWindow extends JFrame {
     pn.getActionMap().put(commands[5], new AbstractAction() {
       @Override
       public void actionPerformed(ActionEvent ae) {
-        PKLRowGroup g = peakList.getLastViewedGroup();
-        if (g.getLastViewedRawFileI() > 0)
-          setCurrentRawView(g.getLastViewedRawFileI() - 1);
+        prevRaw();
       }
     });
+  }
+
+  public void nextRaw() {
+    PKLRowGroup g = peakList.getLastViewedGroup();
+    if (g.getLastViewedRawFileI() + 1 < peakList.getRawDataFiles().length)
+      setCurrentRawView(g.getLastViewedRawFileI() + 1);
+  }
+
+  public void prevRaw() {
+    PKLRowGroup g = peakList.getLastViewedGroup();
+    if (g.getLastViewedRawFileI() > 0)
+      setCurrentRawView(g.getLastViewedRawFileI() - 1);
+  }
+
+  public void prevGroup() {
+    if (peakList.getLastViewedIndex() > 0)
+      setCurrentGroupView(peakList.getLastViewedIndex() - 1);
+  }
+
+  public void nextGroup() {
+    if (peakList.getLastViewedIndex() + 1 < peakList.getGroups().size())
+      setCurrentGroupView(peakList.getLastViewedIndex() + 1);
+  }
+
+  public void prevRow() {
+    PKLRowGroup g = peakList.getLastViewedGroup();
+    if (g.getLastViewedRowI() > 0)
+      setCurrentRowView(g.getLastViewedRowI() - 1);
+  }
+
+  public void nextRow() {
+    PKLRowGroup g = peakList.getLastViewedGroup();
+    if (g.getLastViewedRowI() + 1 < g.size())
+      setCurrentRowView(g.getLastViewedRowI() + 1);
   }
 
   /**
