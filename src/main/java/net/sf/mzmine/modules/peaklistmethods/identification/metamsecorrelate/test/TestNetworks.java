@@ -54,6 +54,7 @@ public class TestNetworks {
       node.addAttribute("ui.label", node.getId());
     }
 
+
     explore(graph.getNode("A"));
   }
 
@@ -97,6 +98,8 @@ public class TestNetworks {
     graph.addEdge("DE", "D", "E");
     graph.addEdge("DF", "D", "F");
     graph.addEdge("EF", "E", "F");
+
+    graph.getEdge("AB").addAttribute("ui.label", "EDGE");
 
     for (Node node : graph) {
       node.addAttribute("ui.label", node.getId());
