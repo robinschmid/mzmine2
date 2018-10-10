@@ -27,8 +27,9 @@ import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
-import net.sf.mzmine.parameters.parametertypes.tolerances.AbsoluteNRelative;
-import net.sf.mzmine.parameters.parametertypes.tolerances.AbsoluteNRelativeParameter;
+import net.sf.mzmine.parameters.parametertypes.absrel.AbsoluteNRelativeInt;
+import net.sf.mzmine.parameters.parametertypes.absrel.AbsoluteNRelativeInt.Mode;
+import net.sf.mzmine.parameters.parametertypes.absrel.AbsoluteNRelativeIntParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTToleranceParameter;
 import net.sf.mzmine.util.ExitCode;
 
@@ -49,17 +50,17 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
 
   // minimum of samples per group (with the feature detected or filled in (min height?)
   // ... showing RT<=tolerance and height>=minHeight
-  public static final AbsoluteNRelativeParameter MIN_SAMPLES_GROUP = new AbsoluteNRelativeParameter(
-      "Min samples in group",
-      "Minimum of samples per group (with the feature detected or filled in) matching the conditions (in RT-range).",
-      0, 0);
+  public static final AbsoluteNRelativeIntParameter MIN_SAMPLES_GROUP =
+      new AbsoluteNRelativeIntParameter("Min samples in group",
+          "Minimum of samples per group (with the feature detected or filled in) matching the conditions (in RT-range).",
+          0, 0, Mode.ROUND_DOWN);
 
   // minimum of samples per all (with the feature detected or filled in (min height?)
   // ... showing RT<=tolerance and height>=minHeight
-  public static final AbsoluteNRelativeParameter MIN_SAMPLES_ALL = new AbsoluteNRelativeParameter(
-      "Min samples in all",
-      "Minimum of samples per group (with the feature detected or filled in) matching the conditions (in RT-range).",
-      0, 0);
+  public static final AbsoluteNRelativeIntParameter MIN_SAMPLES_ALL =
+      new AbsoluteNRelativeIntParameter("Min samples in all",
+          "Minimum of samples per group (with the feature detected or filled in) matching the conditions (in RT-range).",
+          0, 0, Mode.ROUND_DOWN);
 
   /**
    * Filter by minimum height
@@ -92,8 +93,8 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
    * @return
    */
   public MinimumFeatureFilter createFilter() {
-    AbsoluteNRelative minFInSamples = this.getParameter(MIN_SAMPLES_ALL).getValue();
-    AbsoluteNRelative minFInGroups = this.getParameter(MIN_SAMPLES_GROUP).getValue();
+    AbsoluteNRelativeInt minFInSamples = this.getParameter(MIN_SAMPLES_ALL).getValue();
+    AbsoluteNRelativeInt minFInGroups = this.getParameter(MIN_SAMPLES_GROUP).getValue();
     double minFeatureHeight = this.getParameter(MIN_HEIGHT).getValue();
     return new MinimumFeatureFilter(minFInSamples, minFInGroups, minFeatureHeight);
   }

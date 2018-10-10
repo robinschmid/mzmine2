@@ -7,7 +7,7 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.parameters.UserParameter;
-import net.sf.mzmine.parameters.parametertypes.tolerances.AbsoluteNRelative;
+import net.sf.mzmine.parameters.parametertypes.absrel.AbsoluteNRelativeInt;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 
 public class MinimumFeatureFilter {
@@ -15,8 +15,8 @@ public class MinimumFeatureFilter {
   /**
    * Minimum percentage of samples (in group if useGroup) that have to contain a feature
    */
-  private final AbsoluteNRelative minFInSamples;
-  private final AbsoluteNRelative minFInGroups;
+  private final AbsoluteNRelativeInt minFInSamples;
+  private final AbsoluteNRelativeInt minFInGroups;
   private final double minFeatureHeight;
 
   // sample group size
@@ -25,7 +25,7 @@ public class MinimumFeatureFilter {
   private boolean filterGroups = false;
 
 
-  public MinimumFeatureFilter(AbsoluteNRelative minFInSamples, AbsoluteNRelative minFInGroups,
+  public MinimumFeatureFilter(AbsoluteNRelativeInt minFInSamples, AbsoluteNRelativeInt minFInGroups,
       double minFeatureHeight) {
     super();
     this.minFInSamples = minFInSamples;
