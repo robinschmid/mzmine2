@@ -22,6 +22,7 @@ import java.awt.Window;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.FeatureShapeCorrelationParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.InterSampleIntCorrParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.UserParameter;
@@ -51,11 +52,16 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
           "Paremeter defining the sample set of each sample. (Set them in Project/Set sample parameters)",
           new Object[0]));
 
-  // minimum of samples per set (with the feature detected or filled in (min height?)
-  // ... showing RT<=tolerance and r>=MIN_PEARSON_R
-  public static final PercentParameter MIN_SAMPLES = new PercentParameter("Min samples",
-      "Minimum of samples per group (with the feature detected or filled in) matching the conditions (RT, R^2).",
-      0.30, 0, 1);
+
+  /**
+   * Filter out by minimum number of features in all samples and/or in at least one sample group
+   * features with height>=minHeight
+   */
+  public static final OptionalModuleParameter MIN_SAMPLES_FILTER =
+      new OptionalModuleParameter("Min samples filter",
+          "Filter out by min number of features in all samples and in sample groups",
+          new MinimumFeaturesFilterParameters(true));
+
 
   // Sub parameters of correlation grouping
   public static final SubModuleParameter FSHAPE_CORRELATION = new SubModuleParameter(
@@ -92,7 +98,7 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
   public MetaMSEcorrelateParameters() {
     super(new Parameter[] {PEAK_LISTS, RT_TOLERANCE,
         // Group and minimum samples filter
-        GROUPSPARAMETER, MIN_SAMPLES,
+        GROUPSPARAMETER, MIN_SAMPLES_FILTER,
         // feature shape correlation
         FSHAPE_CORRELATION,
         // intensity max correlation

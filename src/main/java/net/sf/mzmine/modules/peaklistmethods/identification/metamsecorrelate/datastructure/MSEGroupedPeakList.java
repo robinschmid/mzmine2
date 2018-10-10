@@ -21,7 +21,7 @@ public class MSEGroupedPeakList extends SimplePeakList {
   // parameter which groups the sample sets
   private UserParameter<?, ?> sgroupPara = null;
   // sample sets and size of this set as values
-  private HashMap<Object, Integer> sgroups = null;
+  private HashMap<String, Integer> sgroups = null;
 
   // hashmap of all row2row correlations
   private R2RCorrMap corrMap = null;
@@ -157,7 +157,7 @@ public class MSEGroupedPeakList extends SimplePeakList {
     this.sgroupPara = sgroupPara;
   }
 
-  public void setSampleGroups(HashMap<Object, Integer> sgroups) {
+  public void setSampleGroups(HashMap<String, Integer> sgroups) {
     this.sgroups = sgroups;
   }
 
@@ -165,7 +165,7 @@ public class MSEGroupedPeakList extends SimplePeakList {
     return sgroupPara;
   }
 
-  public HashMap<Object, Integer> getSampleGroups() {
+  public HashMap<String, Integer> getSampleGroups() {
     return sgroups;
   }
 }

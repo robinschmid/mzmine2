@@ -45,12 +45,13 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.AnnotationNetwork;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationParameters;
 import net.sf.mzmine.parameters.ParameterSet;
-import net.sf.mzmine.parameters.UserParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
@@ -82,27 +83,24 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   private final double adductBonusR;
 
   // GROUP and MIN SAMPLES FILTER
-  private boolean useGroups;
+  private final boolean useGroups;
   private final String groupingParameter;
   /**
    * Minimum percentage of samples (in group if useGroup) that have to contain a feature
    */
-  private double percContainedInSamples;
-  // sample group size
-  private UserParameter<?, ?> sgroupPara;
-  private HashMap<Object, Integer> sgroupSize;
-  private boolean hasToFilterMinFInSampleSets;
+  private final boolean useMinFInSamplesFilter;
+  private final MinimumFeatureFilter minFFilter;
 
   // FEATURE SHAPE CORRELATION
   // pearson correlation r to identify negative correlation
-  private final double mainPeakIntensity;
   private final double minShapeCorrR;
-  private static double noiseLevelShapeCorr = 1E4;
-  private static int minCorrelatedDataPoints = 3;
+  private final double noiseLevelShapeCorr;
+  private final int minCorrelatedDataPoints;
 
   // MAX INTENSITY PROFILE CORRELATION ACROSS SAMPLES
-  private double minMaxICorr;
-  private int minDPMaxICorr;
+  private final boolean useMaxICorrFilter;
+  private final double minMaxICorr;
+  private final int minDPMaxICorr;
 
 
   private Stage stage;
@@ -131,8 +129,11 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     groupingParameter = (String) parameters.getParameter(MetaMSEcorrelateParameters.GROUPSPARAMETER)
         .getEmbeddedParameter().getValue();
     // by min percentage of samples in a sample set that contain this feature MIN_SAMPLES
-    percContainedInSamples =
-        parameterSet.getParameter(MetaMSEcorrelateParameters.MIN_SAMPLES).getValue();
+    useMinFInSamplesFilter =
+        parameterSet.getParameter(MetaMSEcorrelateParameters.MIN_SAMPLES_FILTER).getValue();
+    MinimumFeaturesFilterParameters minS = (MinimumFeaturesFilterParameters) parameterSet
+        .getParameter(MetaMSEcorrelateParameters.MIN_SAMPLES_FILTER).getEmbeddedParameters();
+    minFFilter = minS.createFilter();
 
     // tolerances
     rtTolerance = parameterSet.getParameter(MetaMSEcorrelateParameters.RT_TOLERANCE).getValue();
@@ -144,8 +145,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     // start with high abundant features >= mainPeakIntensity
     // In this way we directly filter out groups with no abundant features
     // fill in smaller features after
-    mainPeakIntensity =
-        corrp.getParameter(FeatureShapeCorrelationParameters.MAIN_PEAK_HEIGHT).getValue();
     minShapeCorrR =
         corrp.getParameter(FeatureShapeCorrelationParameters.MIN_R_SHAPE_INTRA).getValue();
     noiseLevelShapeCorr =
@@ -165,6 +164,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     library = new MSAnnotationLibrary(annParam);
 
     // intensity correlation across samples
+    useMaxICorrFilter =
+        parameterSet.getParameter(MetaMSEcorrelateParameters.IMAX_CORRELATION).getValue();
     minMaxICorr = parameterSet.getParameter(MetaMSEcorrelateParameters.IMAX_CORRELATION)
         .getEmbeddedParameters().getParameter(InterSampleIntCorrParameters.MIN_CORRELATION)
         .getValue();
@@ -194,9 +195,11 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       // create new PKL for grouping
       groupedPKL = new MSEGroupedPeakList(peakList.getRawDataFiles(), peakList);
       // find groups and size
-      setSampleGroups(groupedPKL);
-      groupedPKL.setSampleGroupsParameter(sgroupPara);
-      groupedPKL.setSampleGroups(sgroupSize);
+      if (useGroups) {
+        minFFilter.setSampleGroups(project, groupedPKL, groupingParameter);
+        groupedPKL.setSampleGroupsParameter(minFFilter.getGroupParam());
+        groupedPKL.setSampleGroups(minFFilter.getGroupSizeMap());
+      }
 
       // create correlation map
       stage = Stage.CORRELATION_ANNOTATION;
@@ -279,21 +282,22 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     for (int i = 0; i < totalRows - 1; i++) {
       PeakListRow row = rows[i];
 
-      // is present in min % of samples
-      if (filterMinFeaturesInSampleSet(raw, row)) {
+      // has a minimum number/% of features in all samples / in at least one groups
+      if (!useMinFInSamplesFilter || minFFilter.filterMinFeatures(project, raw, row)) {
         for (int x = i + 1; x < totalRows; x++) {
           if (isCanceled())
             return null;
 
           PeakListRow row2 = rows[x];
-          // is present in min % of samples
-          if (filterMinFeaturesInSampleSet(raw, row2)) {
+          // has a minimum number/% of overlapping features in all samples / in at least one groups
+          if (!useMinFInSamplesFilter
+              || minFFilter.filterMinFeaturesOverlap(project, raw, row, row2)) {
             boolean rtInRange = checkRTRange(raw, row, row2, noiseLevelShapeCorr, rtTolerance);
 
             // correlate if in rt range
             if (rtInRange) {
-              R2RCorrelationData corr =
-                  corrR2R(raw, row, row2, minDPMaxICorr, minCorrelatedDataPoints);
+              R2RCorrelationData corr = corrR2R(raw, row, row2, minDPMaxICorr,
+                  minCorrelatedDataPoints, noiseLevelShapeCorr);
               if (corr != null) {
                 // deletes correlations if criteria is not met
                 corr.validate(minMaxICorr, minShapeCorrR);
@@ -372,10 +376,10 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    * @return R2R correlation or null if invalid/no correlation
    */
   public static R2RCorrelationData corrR2R(RawDataFile[] raw, PeakListRow testRow, PeakListRow row,
-      int minDPMaxICorr, int minCorrelatedDataPoints) throws Exception {
+      int minDPMaxICorr, int minCorrelatedDataPoints, double noiseLevelShapeCorr) throws Exception {
     CorrelationData iProfileR = corrRowToRowIProfile(raw, testRow, row, minDPMaxICorr);
     Map<RawDataFile, CorrelationData> fCorr =
-        corrRowToRowFeatureShape(raw, testRow, row, minCorrelatedDataPoints);
+        corrRowToRowFeatureShape(raw, testRow, row, minCorrelatedDataPoints, noiseLevelShapeCorr);
 
     if (fCorr.isEmpty())
       fCorr = null;
@@ -386,88 +390,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     else
       return null;
   }
-
-
-  /**
-   * gets called to initialise variables for next peaklist
-   * 
-   * @param peakList
-   */
-  private void setSampleGroups(PeakList peakList) {
-    if (groupingParameter == null || groupingParameter.length() == 0) {
-      this.sgroupSize = null;
-      hasToFilterMinFInSampleSets = false;
-      return;
-    } else {
-      HashMap<Object, Integer> sgroupSize = new HashMap<Object, Integer>();
-      UserParameter<?, ?> params[] = project.getParameters();
-      for (UserParameter<?, ?> p : params) {
-        if (groupingParameter.equals(p.getName())) {
-          // save parameter for sample groups
-          sgroupPara = p;
-          break;
-        }
-      }
-      int max = 0;
-      // calc size of sample groups
-      for (RawDataFile file : peakList.getRawDataFiles()) {
-        String parameterValue = sgroupOf(file);
-
-        Integer v = sgroupSize.get(parameterValue);
-        int val = v == null ? 0 : v;
-        sgroupSize.put(parameterValue, val + 1);
-        if (val + 1 > max)
-          max = val + 1;
-      }
-      this.sgroupSize = sgroupSize;
-      // has to filter minimum samples with a feature in a set?
-      // only if sample set has to contain more than one sample with a feature
-      hasToFilterMinFInSampleSets = ((int) (max * percContainedInSamples)) > 1;
-    }
-  }
-
-  /**
-   * 
-   * @param file
-   * @return sample group value of raw file
-   */
-  private String sgroupOf(RawDataFile file) {
-    return String.valueOf(project.getParameterValue(sgroupPara, file));
-  }
-
-  /**
-   * only keep rows which contain features in at least X % samples in a set called before starting
-   * row processing
-   * 
-   * @param raw
-   * @param row
-   * @return
-   */
-  private boolean filterMinFeaturesInSampleSet(final RawDataFile raw[], PeakListRow row) {
-    // short cut if minimum is only one sample in a set
-    if (!hasToFilterMinFInSampleSets || sgroupSize == null)
-      return true;
-    // is present in X % samples of a sample set?
-    // count sample in groups (no feature in a sample group->no occurrence in map)
-    HashMap<Object, Integer> counter = new HashMap<Object, Integer>();
-    for (RawDataFile file : raw) {
-      if (row.hasPeak(file)) {
-        String sgroup = sgroupOf(file);
-        if (counter.containsKey(sgroup)) {
-          counter.put(sgroup, counter.get(sgroup) + 1);
-        } else {
-          counter.put(sgroup, 1);
-        }
-      }
-    }
-    // only go on if feature was present in X % of the samples
-    for (Object sg : counter.keySet()) {
-      if (counter.get(sg) < sgroupSize.get(sg) * percContainedInSamples)
-        return false;
-    }
-    return true;
-  }
-
 
   /**
    * correlates the height profile of one row to another NO escape routine
@@ -509,7 +431,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    * @throws Exception
    */
   public static Map<RawDataFile, CorrelationData> corrRowToRowFeatureShape(final RawDataFile raw[],
-      PeakListRow row, PeakListRow g, int minCorrelatedDataPoints) throws Exception {
+      PeakListRow row, PeakListRow g, int minCorrelatedDataPoints, double noiseLevelShapeCorr)
+      throws Exception {
     HashMap<RawDataFile, CorrelationData> corrData = new HashMap<>();
     // go through all raw files
     for (int r = 0; r < raw.length; r++) {
@@ -517,7 +440,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       Feature f2 = g.getPeak(raw[r]);
       if (f1 != null && f2 != null) {
         // peak shape correlation
-        CorrelationData data = corrFeatureShape(f1, f2, true);
+        CorrelationData data =
+            corrFeatureShape(f1, f2, true, minCorrelatedDataPoints, noiseLevelShapeCorr);
         // enough data points
         if (data != null && data.getDPCount() >= minCorrelatedDataPoints)
           corrData.put(raw[r], data);
@@ -535,8 +459,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    *         correlation
    * @throws Exception
    */
-  public static CorrelationData corrFeatureShape(Feature f1, Feature f2, boolean sameRawFile)
-      throws Exception {
+  public static CorrelationData corrFeatureShape(Feature f1, Feature f2, boolean sameRawFile,
+      int minCorrelatedDataPoints, double noiseLevelShapeCorr) throws Exception {
     // Range<Double> rt1 = f1.getRawDataPointsRTRange();
     // Range<Double> rt2 = f2.getRawDataPointsRTRange();
     if (sameRawFile) {
