@@ -4,12 +4,12 @@ import java.awt.BorderLayout;
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.text.DecimalFormat;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 import javax.swing.JPanel;
-import org.graphstream.graph.Edge;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.MultiGraph;
@@ -32,6 +32,7 @@ public class CorrNetworkPanel extends JPanel {
       "node {" + "   fill-color: black;" + "}" + "node.marked {" + "   fill-color: red;" + "}";
 
   private NumberFormat mzForm = MZmineCore.getConfiguration().getMZFormat();
+  private NumberFormat percForm = new DecimalFormat("0.000");
 
   // visual
   private Graph graph;
@@ -145,7 +146,8 @@ public class CorrNetworkPanel extends JPanel {
     // add all connections
     int added = 0;
     for (Entry<String, R2RCorrelationData> e : map.entrySet()) {
-      if (e.getValue().getAvgPeakShapeR() >= minR) {
+      R2RCorrelationData r2r = e.getValue();
+      if (r2r != null && r2r.hasFeatureShapeCorrelation() && r2r.getAvgPeakShapeR() > minR) {
         int[] ids = R2RCorrMap.toKeyIDs(e.getKey());
         PeakListRow a = pkl.findRowByID(ids[0]);
         PeakListRow b = pkl.findRowByID(ids[1]);
@@ -153,8 +155,7 @@ public class CorrNetworkPanel extends JPanel {
         if (a != null && b != null) {
           String node1 = toNodeName(a);
           String node2 = toNodeName(b);
-          String edge = node1 + node2;
-          graph.addEdge(edge, node1, node2);
+          addNewEdge(node1, node2, r2r.getAvgPeakShapeR());
           added++;
         }
       }
@@ -196,9 +197,7 @@ public class CorrNetworkPanel extends JPanel {
         if (r2r != null && r2r.hasFeatureShapeCorrelation() && r2r.getAvgPeakShapeR() > minR) {
           String node1 = toNodeName(a);
           String node2 = toNodeName(b);
-          String edge = node1 + node2;
-          Edge e = graph.addEdge(edge, node1, node2);
-          e.addAttribute("ui.label", r2r.getAvgPeakShapeR());
+          addNewEdge(node1, node2, r2r.getAvgPeakShapeR());
           added++;
         }
       }
@@ -209,6 +208,12 @@ public class CorrNetworkPanel extends JPanel {
       node.addAttribute("ui.label", node.getId());
     }
     LOG.info("Added " + added + " connections");
+  }
+
+  private void addNewEdge(String node1, String node2, double corr) {
+    String edge = node1 + node2;
+    graph.addEdge(edge, node1, node2);
+    graph.getEdge(edge).addAttribute("ui.label", "r=" + percForm.format(corr));
   }
 
 
