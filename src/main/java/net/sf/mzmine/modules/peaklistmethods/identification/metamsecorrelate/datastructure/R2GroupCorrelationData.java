@@ -69,12 +69,11 @@ public class R2GroupCorrelationData {
         if (r2r.getMaxPeakShapeR() > maxPeakShapeR)
           maxPeakShapeR = r2r.getMaxPeakShapeR();
       }
-
-      avgTotalPeakShapeR = avgTotalPeakShapeR / cPeakShape;
-      avgIProfileR = avgIProfileR / cImax;
-      avgDPCount = avgDPCount / cPeakShape;
-      avgPeakShapeR = avgPeakShapeR / cPeakShape;
     }
+    avgTotalPeakShapeR = avgTotalPeakShapeR / cPeakShape;
+    avgIProfileR = avgIProfileR / cImax;
+    avgDPCount = avgDPCount / cPeakShape;
+    avgPeakShapeR = avgPeakShapeR / cPeakShape;
   }
 
   public double getMaxHeight() {

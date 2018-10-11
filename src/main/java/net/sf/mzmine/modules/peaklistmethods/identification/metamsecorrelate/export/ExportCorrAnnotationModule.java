@@ -30,14 +30,12 @@ import net.sf.mzmine.util.ExitCode;
 
 public class ExportCorrAnnotationModule implements MZmineProcessingModule {
 
-  private static final String NAME = "MS annotations";
+  private static final String NAME = "Export correlation annotation networks";
 
-  private static final String DESCRIPTION =
-      "This method searches for adducts, in-source fragments and clusters";
+  private static final String DESCRIPTION = "Export resutls from correlation/MS annotation";
 
   @Override
   public @Nonnull String getName() {
-
     return NAME;
   }
 
