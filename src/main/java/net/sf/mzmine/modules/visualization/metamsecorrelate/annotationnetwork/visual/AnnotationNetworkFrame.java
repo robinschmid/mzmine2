@@ -29,6 +29,7 @@ public class AnnotationNetworkFrame extends JFrame {
    * Create the frame.
    */
   public AnnotationNetworkFrame() {
+    setTitle("Annotation networks");
     setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
     setBounds(100, 100, 450, 300);
     contentPane = new AnnotationNetworkPanel();

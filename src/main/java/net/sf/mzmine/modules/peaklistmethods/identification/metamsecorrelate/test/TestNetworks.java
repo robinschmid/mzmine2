@@ -101,6 +101,8 @@ public class TestNetworks {
 
     graph.getEdge("AB").addAttribute("ui.label", "EDGE");
 
+    graph.getNode("A").addAttribute("ui.class", "big, important");
+
     for (Node node : graph) {
       node.addAttribute("ui.label", node.getId());
     }
@@ -218,5 +220,6 @@ public class TestNetworks {
 
 
   protected String styleSheet =
-      "node {" + "   fill-color: black;" + "}" + "node.marked {" + "   fill-color: red;" + "}";
+      "node {fill-color: black; size: 10px; stroke-mode: plain; stroke-color: black; stroke-width: 1px;} "
+          + "node.important{fill-color: red;} " + "node.big {size: 15px;}";
 }
