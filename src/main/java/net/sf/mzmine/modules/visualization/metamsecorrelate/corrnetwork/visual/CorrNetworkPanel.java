@@ -5,6 +5,7 @@ import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
+import org.graphstream.graph.Node;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
@@ -48,7 +49,7 @@ public class CorrNetworkPanel extends NetworkPanel {
         createNewGraph(pkl, map);
       }
     } else
-      graph.clear();
+      clear();
   }
 
   /**
@@ -62,12 +63,12 @@ public class CorrNetworkPanel extends NetworkPanel {
     if (pkl != null && map != null) {
       createNewGraph(pkl, map);
     } else
-      graph.clear();
+      clear();
   }
 
   public void createNewGraph(PeakList pkl, R2RCorrMap map) {
     LOG.info("Adding all corr >" + minR + " to a network");
-    graph.clear();
+    clear();
 
     // add all connections
     int added = 0;
@@ -100,7 +101,7 @@ public class CorrNetworkPanel extends NetworkPanel {
     if (rows != null && map != null) {
       createNewGraph(rows, map);
     } else
-      graph.clear();
+      clear();
   }
 
   /**
@@ -111,7 +112,7 @@ public class CorrNetworkPanel extends NetworkPanel {
    */
   public void createNewGraph(PeakListRow[] rows, R2RCorrMap map) {
     LOG.info("Adding all corr >" + minR + " to a network");
-    graph.clear();
+    clear();
 
     // add all connections
     int added = 0;
@@ -175,5 +176,13 @@ public class CorrNetworkPanel extends NetworkPanel {
 
   public double getMinR() {
     return minR;
+  }
+
+
+  public void setSelectedRow(PeakListRow row) {
+    String node = toNodeName(row);
+    // set selected
+    Node n = graph.getNode(node);
+    setSelectedNode(n);
   }
 }

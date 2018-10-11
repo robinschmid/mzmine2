@@ -42,7 +42,7 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     if (pkl != null) {
       createNewGraph(pkl.getRows());
     } else
-      graph.clear();
+      clear();
   }
 
   /**
@@ -56,13 +56,13 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     if (rows != null) {
       createNewGraph(rows);
     } else {
-      graph.clear();
+      clear();
     }
   }
 
   public void createNewGraph(PeakListRow[] rows) {
     LOG.info("Adding all annotations to a network");
-    graph.clear();
+    clear();
 
     if (rows != null) {
       // sort by rt
@@ -107,9 +107,7 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     String node = toNodeName(row);
     // set selected
     Node n = graph.getNode(node);
-    if (n != null) {
-      setSelectedNode(n);
-    }
+    setSelectedNode(n);
   }
 
   private void addNewEdge(String node1, String node2, double dmz) {

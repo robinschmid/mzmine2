@@ -45,7 +45,6 @@ public class NetworkPanel extends JPanel {
     selectedNodes = new ArrayList<Node>();
 
     graph = new MultiGraph(title);
-    // graph.addAttribute("ui.quality");
     // graph.addAttribute("ui.antialias");
     graph.addAttribute("ui.stylesheet", styleSheet);
     graph.setAutoCreate(true);
@@ -109,10 +108,12 @@ public class NetworkPanel extends JPanel {
   public void setStyleSheet(String styleSheet) {
     this.styleSheet = styleSheet;
     graph.addAttribute("ui.stylesheet", styleSheet);
+    graph.addAttribute("ui.quality", 3);
   }
 
   public void clear() {
     graph.clear();
+    setStyleSheet(styleSheet);
   }
 
   public Graph getGraph() {
@@ -138,8 +139,10 @@ public class NetworkPanel extends JPanel {
   }
 
   public void addSelection(Node node) {
-    node.addAttribute("ui.class", "important, big");
-    selectedNodes.add(node);
+    if (node != null) {
+      node.addAttribute("ui.class", "big, important");
+      selectedNodes.add(node);
+    }
   }
 
   public void clearSelections() {

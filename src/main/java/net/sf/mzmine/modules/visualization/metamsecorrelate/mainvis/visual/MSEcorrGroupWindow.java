@@ -109,7 +109,7 @@ public class MSEcorrGroupWindow extends JFrame {
   private JSplitPane splitChart;
   private JSplitPane splitNetwork;
   private JPanel pnSpectrum;
-  private AnnotationNetworkPanel pnNetwork;
+  private AnnotationNetworkPanel pnAnnNetwork;
   private CorrNetworkPanel pnCorrNetwork;
 
   /**
@@ -159,8 +159,8 @@ public class MSEcorrGroupWindow extends JFrame {
     splitNetwork.setResizeWeight(0.5);
     splitChart.setLeftComponent(splitNetwork);
 
-    pnNetwork = new AnnotationNetworkPanel();
-    splitNetwork.setRightComponent(pnNetwork);
+    pnAnnNetwork = new AnnotationNetworkPanel();
+    splitNetwork.setRightComponent(pnAnnNetwork);
 
     pnCorrNetwork = new CorrNetworkPanel();
     splitNetwork.setLeftComponent(pnCorrNetwork);
@@ -564,6 +564,10 @@ public class MSEcorrGroupWindow extends JFrame {
 
     PKLRowGroup g = peakList.getLastViewedGroup();
     g.setLastViewedRowI(i);
+    // set selected in networks
+    PeakListRow row = g.get(i);
+    pnAnnNetwork.setSelectedRow(row);
+    pnCorrNetwork.setSelectedRow(row);
     // auto show raw file containing lastViewed row
     boolean renewRaw = checkAutoShowRawFile();
     renewAllPlots(renewRaw, true, true, false);
@@ -913,12 +917,12 @@ public class MSEcorrGroupWindow extends JFrame {
     PKLRowGroup g = peakList.getLastViewedGroup();
     if (g != null) {
       PeakListRow[] rows = g.toArray(new PeakListRow[g.size()]);
-      pnNetwork.setPeakListRows(rows);
-      pnNetwork.resetZoom();
-      pnNetwork.revalidate();
-      pnNetwork.repaint();
+      pnAnnNetwork.setPeakListRows(rows);
+      pnAnnNetwork.resetZoom();
+      pnAnnNetwork.revalidate();
+      pnAnnNetwork.repaint();
     } else {
-      pnNetwork.setPeakListRows(null);
+      pnAnnNetwork.setPeakListRows(null);
     }
   }
 
@@ -934,7 +938,7 @@ public class MSEcorrGroupWindow extends JFrame {
       pnCorrNetwork.revalidate();
       pnCorrNetwork.repaint();
     } else {
-      pnNetwork.setPeakListRows(null);
+      pnAnnNetwork.setPeakListRows(null);
     }
   }
 
