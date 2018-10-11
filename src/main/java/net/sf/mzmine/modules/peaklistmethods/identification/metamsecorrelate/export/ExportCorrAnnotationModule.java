@@ -48,7 +48,7 @@ public class ExportCorrAnnotationModule implements MZmineProcessingModule {
   @Override
   public @Nonnull MZmineModuleCategory getModuleCategory() {
 
-    return MZmineModuleCategory.IDENTIFICATION;
+    return MZmineModuleCategory.PEAKLISTEXPORT;
   }
 
   @Override

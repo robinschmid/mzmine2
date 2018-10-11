@@ -21,6 +21,7 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.ex
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
+import net.sf.mzmine.parameters.parametertypes.PercentParameter;
 import net.sf.mzmine.parameters.parametertypes.filenames.FileNameParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 
@@ -30,12 +31,8 @@ public class ExportCorrAnnotationParameters extends SimpleParameterSet {
   // General parameters
   public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter();
 
-  public static final FileNameParameter FILENAME = new FileNameParameter("Filename",
-      "Name of the output MGF file. "
-          + "Use pattern \"{}\" in the file name to substitute with peak list name. "
-          + "(i.e. \"blah{}blah.mgf\" would become \"blahSourcePeakListNameblah.mgf\"). "
-          + "If the file already exists, it will be overwritten.",
-      "mgf");
+  public static final FileNameParameter FILENAME =
+      new FileNameParameter("Filename", "File name", "csv");
 
   public static final BooleanParameter EX_ANNOTATIONS =
       new BooleanParameter("Export annotations", "Exports annotations by MS annotate", true);
@@ -43,6 +40,10 @@ public class ExportCorrAnnotationParameters extends SimpleParameterSet {
       new BooleanParameter("Export average correlations",
           "Exports the average row-2-row correlation of separate correlations in different files",
           true);
+
+  public static final PercentParameter MIN_AVGCORR =
+      new PercentParameter("Min avg corr", "Minimum r of avg corr", 0.85);
+
   public static final BooleanParameter EX_TOTALCORR = new BooleanParameter(
       "Export total correlations",
       "Exports the total row-2-row correlation of all data points of all features shapes across all samples",
@@ -53,8 +54,8 @@ public class ExportCorrAnnotationParameters extends SimpleParameterSet {
 
   // Constructor
   public ExportCorrAnnotationParameters() {
-    super(new Parameter[] {PEAK_LISTS, FILENAME, EX_ANNOTATIONS, EX_AVGCORR, EX_TOTALCORR,
-        EX_IMAX_CORR});
+    super(new Parameter[] {PEAK_LISTS, FILENAME, EX_ANNOTATIONS, EX_AVGCORR, MIN_AVGCORR,
+        EX_TOTALCORR, EX_IMAX_CORR});
   }
 
 }

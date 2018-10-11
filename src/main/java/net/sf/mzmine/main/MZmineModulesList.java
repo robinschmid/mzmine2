@@ -50,6 +50,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.formulapredictionpea
 import net.sf.mzmine.modules.peaklistmethods.identification.fragmentsearch.FragmentSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.lipididentification.LipidSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.MetaMSEcorrelateModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.export.ExportCorrAnnotationModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ms2search.Ms2SearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.nist.NistMsSearchModule;
@@ -157,7 +158,7 @@ public class MZmineModulesList {
       CSVExportModule.class, MetaboAnalystExportModule.class, MzTabExportModule.class,
       SQLExportModule.class, XMLExportModule.class, CasmiImportModule.class,
       MzTabImportModule.class, XMLImportModule.class, MSPExportModule.class, MGFExportModule.class,
-      GNPSExportModule.class, SiriusExportModule.class,
+      GNPSExportModule.class, SiriusExportModule.class, ExportCorrAnnotationModule.class,
 
       // Gap filling
       PeakFinderModule.class, MultiThreadPeakFinderModule.class, SameRangeGapFillerModule.class,
