@@ -19,11 +19,15 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.export;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.lang3.StringUtils;
 import net.sf.mzmine.datamodel.MZmineProject;
+import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.MetaMSEcorrelateModule;
@@ -35,12 +39,18 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msa
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
+import net.sf.mzmine.util.PeakListRowSorter;
+import net.sf.mzmine.util.SortingDirection;
+import net.sf.mzmine.util.SortingProperty;
+import net.sf.mzmine.util.files.FileAndPathUtil;
 import net.sf.mzmine.util.io.TxtWriter;
 
 public class ExportCorrAnnotationTask extends AbstractTask {
+  // Logger.
+  private static final Logger LOG = Logger.getLogger(ExportCorrAnnotationTask.class.getName());
 
-  private enum ANNOTATION {
-    ID1, ID2, MZ1, MZ2, DELTA_MZ, DELTA_AVG_RT, ANNOTATION1, ANNOTATION2, ANNO_NETID, AVG_CORR, AVG_DP, CORRELATED_F2F, TOTAL_CORR, IMAX_CORR;
+  public enum ANNOTATION {
+    ID1, ID2, ANNOTATION1, ANNOTATION2, ANNO_NETID, MZ1, MZ2, DELTA_MZ, DELTA_AVG_RT, RT1, RT2, INTENSITY, AREA, AVG_CORR, AVG_DP, CORRELATED_F2F, TOTAL_CORR, IMAX_CORR;
     private String header;
 
     ANNOTATION() {
@@ -57,11 +67,7 @@ public class ExportCorrAnnotationTask extends AbstractTask {
     }
   }
 
-  // Logger.
-  private static final Logger LOG = Logger.getLogger(ExportCorrAnnotationTask.class.getName());
-
-  private int finishedRows;
-  private int totalRows;
+  private Double progress = 0d;
 
   private final PeakList peakList;
 
@@ -73,15 +79,13 @@ public class ExportCorrAnnotationTask extends AbstractTask {
   /**
    * {@link MetaMSEcorrelateModule} or {@link MSAnnotationModule}
    */
-  private boolean exAnnotations;
+  private boolean exAnnotationsFile;
   /**
    * by {@link MetaMSEcorrelateModule}
    */
-  private boolean exAvgCorr;
+  private boolean exAvgCorrFile;
 
-  private boolean exImaxCorr;
-
-  private boolean exTotalCorr;
+  private boolean exMZ, exDMZ, exDRT, exRT, exI, exArea;
 
   private double minR;
 
@@ -96,22 +100,24 @@ public class ExportCorrAnnotationTask extends AbstractTask {
     this.peakList = peakLists;
     parameters = parameterSet;
 
-    finishedRows = 0;
-    totalRows = 0;
-
     // tolerances
     filename = parameterSet.getParameter(ExportCorrAnnotationParameters.FILENAME).getValue();
-    exAnnotations =
-        parameterSet.getParameter(ExportCorrAnnotationParameters.EX_ANNOTATIONS).getValue();
-    exAvgCorr = parameterSet.getParameter(ExportCorrAnnotationParameters.EX_AVGCORR).getValue();
-    exTotalCorr = parameterSet.getParameter(ExportCorrAnnotationParameters.EX_TOTALCORR).getValue();
-    exImaxCorr = parameterSet.getParameter(ExportCorrAnnotationParameters.EX_IMAX_CORR).getValue();
+    exAnnotationsFile =
+        parameterSet.getParameter(ExportCorrAnnotationParameters.EX_ANNOTATIONS_FILE).getValue();
+    exAvgCorrFile =
+        parameterSet.getParameter(ExportCorrAnnotationParameters.EX_AVGCORR_FILE).getValue();
+    exMZ = parameterSet.getParameter(ExportCorrAnnotationParameters.EX_MZ).getValue();
+    exDMZ = parameterSet.getParameter(ExportCorrAnnotationParameters.EX_DMZ).getValue();
+    exRT = parameterSet.getParameter(ExportCorrAnnotationParameters.EX_RT).getValue();
+    exDRT = parameterSet.getParameter(ExportCorrAnnotationParameters.EX_DRT).getValue();
+    exI = parameterSet.getParameter(ExportCorrAnnotationParameters.EX_I).getValue();
+    exArea = parameterSet.getParameter(ExportCorrAnnotationParameters.EX_AREA).getValue();
     minR = parameterSet.getParameter(ExportCorrAnnotationParameters.MIN_AVGCORR).getValue();
   }
 
   @Override
   public double getFinishedPercentage() {
-    return totalRows == 0 ? 0 : finishedRows / totalRows;
+    return progress;
   }
 
   @Override
@@ -129,50 +135,234 @@ public class ExportCorrAnnotationTask extends AbstractTask {
       MSEGroupedPeakList pkl = (MSEGroupedPeakList) peakList;
       R2RCorrMap corrMap = pkl.getCorrelationMap();
 
-      // sort not needed? TODO
-      totalRows = corrMap.size();
+      // export annotation networks to file
+      if (exAnnotationsFile) {
+        ANNOTATION[] ann = createColumns(exMZ, exDMZ, exDRT, exRT, exI, exArea, false);
+        exportAnnotationsToCSV(pkl, filename, progress, ann, this);
+      }
+      // export r2rcorr map to file
+      if (exAvgCorrFile) {
+        ANNOTATION[] ann = createColumns(exMZ, exDMZ, exDRT, exRT, exI, exArea, true);
+        exportCorrelationMapToCSV(pkl, corrMap, minR, filename, progress, ann, this);
+      }
+    } catch (Exception t) {
+      LOG.log(Level.SEVERE, "Export of correlation and MS annotation results error", t);
+      setStatus(TaskStatus.ERROR);
+      setErrorMessage(t.getMessage());
+    }
 
-      // start document
-      StringBuilder ann;
+    setStatus(TaskStatus.FINISHED);
+  }
 
-      ann = new StringBuilder();
+  /**
+   * Creates columns with filter
+   * 
+   * @param exMZ
+   * @param exDMZ
+   * @param exDRT
+   * @param exRT
+   * @param exI
+   * @param exArea
+   * @param exCorr
+   * @return
+   */
+  public static ANNOTATION[] createColumns(boolean exMZ, boolean exDMZ, boolean exDRT, boolean exRT,
+      boolean exI, boolean exArea, boolean exCorr) {
+    List<ANNOTATION> ann = new ArrayList<>();
+    // add all
+    ann.add(ANNOTATION.ID1);
+    ann.add(ANNOTATION.ID2);
+    ann.add(ANNOTATION.ANNOTATION1);
+    ann.add(ANNOTATION.ANNOTATION2);
+    ann.add(ANNOTATION.ANNO_NETID);
+    if (exMZ) {
+      ann.add(ANNOTATION.MZ1);
+      ann.add(ANNOTATION.MZ2);
+    }
+    if (exDMZ) {
+      ann.add(ANNOTATION.DELTA_MZ);
+    }
+    if (exDRT) {
+      ann.add(ANNOTATION.DELTA_AVG_RT);
+    }
+    if (exRT) {
+      ann.add(ANNOTATION.RT1);
+      ann.add(ANNOTATION.RT2);
+    }
+    if (exI)
+      ann.add(ANNOTATION.INTENSITY);
+    if (exArea)
+      ann.add(ANNOTATION.AREA);
+    if (exCorr) {
+      ann.add(ANNOTATION.AVG_CORR);
+      ann.add(ANNOTATION.AVG_DP);
+      ann.add(ANNOTATION.CORRELATED_F2F);
+      ann.add(ANNOTATION.TOTAL_CORR);
+      ann.add(ANNOTATION.IMAX_CORR);
+    }
+    return ann.toArray(new ANNOTATION[ann.size()]);
+  }
+
+  public static boolean exportAnnotationsToCSV(MSEGroupedPeakList pkl, File filename,
+      Double progress, ANNOTATION[] col, AbstractTask task) {
+    try {
+      PeakListRow[] rows = pkl.getRows();
+      Arrays.sort(rows, new PeakListRowSorter(SortingProperty.ID, SortingDirection.Ascending));
+      int totalRows = rows.length;
+
+      StringBuilder ann = new StringBuilder();
 
       // add header
-      ann.append(StringUtils.join(ANNOTATION.values(), ','));
+      ann.append(StringUtils.join(col, ','));
       ann.append("\n");
 
-      // all columns
-      ANNOTATION[] col = ANNOTATION.values();
+      int added = 0;
+      // for all rows
+      for (PeakListRow r : rows) {
+        if (task != null && task.isCanceled()) {
+          return false;
+        }
+
+        int rowID = r.getID();
+        for (PeakIdentity pi : r.getPeakIdentities()) {
+          // identity by ms annotation module
+          if (pi instanceof ESIAdductIdentity) {
+            ESIAdductIdentity adduct = (ESIAdductIdentity) pi;
+            int[] ids = adduct.getPartnerRowsID();
+
+            // add all connection for ids>rowID
+            for (int id2 : ids) {
+              if (id2 > rowID) {
+                PeakListRow link = pkl.findRowByID(id2);
+                if (link != null) {
+                  // the data
+                  Object[] data = new Object[col.length];
+                  ESIAdductIdentity id = null;
+                  // add all data
+                  for (int d = 0; d < col.length; d++) {
+                    switch (col[d]) {
+                      case ANNOTATION1:
+                        id = ESIAdductIdentity.getIdentityOf(r, link);
+                        data[d] = id != null ? id.getAdduct() : null;
+                        break;
+                      case ANNOTATION2:
+                        id = ESIAdductIdentity.getIdentityOf(link, r);
+                        data[d] = id != null ? id.getAdduct() : null;
+                        break;
+                      case ANNO_NETID:
+                        id = ESIAdductIdentity.getIdentityOf(r, link);
+                        data[d] = id != null ? id.getNetID() : null;
+                        break;
+                      case DELTA_MZ:
+                        data[d] = link.getAverageMZ() - r.getAverageMZ();
+                        break;
+                      case DELTA_AVG_RT:
+                        data[d] = link.getAverageRT() - r.getAverageRT();
+                        break;
+                      case ID1:
+                        data[d] = r.getID();
+                        break;
+                      case ID2:
+                        data[d] = link.getID();
+                        break;
+                      case MZ1:
+                        data[d] = r.getAverageMZ();
+                        break;
+                      case MZ2:
+                        data[d] = link.getAverageMZ();
+                        break;
+                    }
+                  }
+                  // replace null
+                  for (int j = 0; j < data.length; j++) {
+                    if (data[j] == null)
+                      data[j] = "";
+                  }
+                  // add data
+                  ann.append(StringUtils.join(data, ','));
+                  ann.append("\n");
+                  added++;
+                }
+                progress += 1.0 / totalRows;
+              }
+            }
+          }
+        }
+      }
+
+
+      LOG.info("ALl data created for export. Total of " + added + " links");
+      // export ann
+      // Filename
+      TxtWriter writer = new TxtWriter();
+      File realFile = FileAndPathUtil.getRealFilePath(filename.getParentFile(),
+          filename.getName() + "_annotations", ".csv");
+      writer.openNewFileOutput(realFile);
+      writer.write(ann.toString());
+      writer.closeDatOutput();
+      LOG.info("File created: " + realFile);
+      return true;
+    } catch (Exception t) {
+      LOG.log(Level.SEVERE, "Export of MS annotation results error", t);
+      if (task != null) {
+        task.setStatus(TaskStatus.ERROR);
+        task.setErrorMessage(t.getMessage());
+      }
+      return false;
+    }
+  }
+
+  /**
+   * Export correlation map to CSV
+   * 
+   * @param pkl
+   * @param corrMap
+   * @param minR
+   * @param filename
+   * @param progress
+   * @param task can be null
+   * @return
+   */
+  public static boolean exportCorrelationMapToCSV(MSEGroupedPeakList pkl, R2RCorrMap corrMap,
+      double minR, File filename, Double progress, ANNOTATION[] col, AbstractTask task) {
+    try {
+      int totalRows = corrMap.size();
+      StringBuilder ann = new StringBuilder();
+
+      // add header
+      ann.append(StringUtils.join(col, ','));
+      ann.append("\n");
 
       // for all rows
       for (Entry<String, R2RCorrelationData> e : corrMap.entrySet()) {
-        if (isCanceled()) {
-          cancelExport();
-          return;
+        if (task != null && task.isCanceled()) {
+          return false;
         }
 
         // for correlation
         R2RCorrelationData r2r = e.getValue();
         if (r2r.hasFeatureShapeCorrelation() && r2r.getAvgPeakShapeR() >= minR) {
-          int[] ids = corrMap.toKeyIDs(e.getKey());
+          int[] ids = R2RCorrMap.toKeyIDs(e.getKey());
           PeakListRow r = pkl.findRowByID(ids[0]);
           PeakListRow link = pkl.findRowByID(ids[1]);
 
           // the data
           Object[] data = new Object[col.length];
+          ESIAdductIdentity id = null;
           // add all data
           for (int d = 0; d < col.length; d++) {
             switch (col[d]) {
               case ANNOTATION1:
-                data[d] = ESIAdductIdentity.getIdentityOf(r, link);
+                id = ESIAdductIdentity.getIdentityOf(r, link);
+                data[d] = id != null ? id.getAdduct() : null;
                 break;
               case ANNOTATION2:
-                data[d] = ESIAdductIdentity.getIdentityOf(link, r);
+                id = ESIAdductIdentity.getIdentityOf(link, r);
+                data[d] = id != null ? id.getAdduct() : null;
                 break;
               case ANNO_NETID:
-                ESIAdductIdentity id = ESIAdductIdentity.getIdentityOf(r, link);
-                if (id != null)
-                  data[d] = id.getNetID();
+                id = ESIAdductIdentity.getIdentityOf(r, link);
+                data[d] = id != null ? id.getNetID() : null;
                 break;
               case DELTA_MZ:
                 data[d] = link.getAverageMZ() - r.getAverageMZ();
@@ -218,27 +408,28 @@ public class ExportCorrAnnotationTask extends AbstractTask {
           ann.append(StringUtils.join(data, ','));
           ann.append("\n");
         }
-        finishedRows++;
+        progress += 1.0 / totalRows;
       }
 
       LOG.info("ALl data created for export");
       // export ann
       // Filename
       TxtWriter writer = new TxtWriter();
-      writer.openNewFileOutput(filename);
+      File realFile = FileAndPathUtil.getRealFilePath(filename.getParentFile(),
+          filename.getName() + "_correlations", ".csv");
+      writer.openNewFileOutput(realFile);
       writer.write(ann.toString());
       writer.closeDatOutput();
-      LOG.info("File created: " + filename);
+      LOG.info("File created: " + realFile);
+      return true;
     } catch (Exception t) {
       LOG.log(Level.SEVERE, "Export of correlation and MS annotation results error", t);
-      setStatus(TaskStatus.ERROR);
-      setErrorMessage(t.getMessage());
+      if (task != null) {
+        task.setStatus(TaskStatus.ERROR);
+        task.setErrorMessage(t.getMessage());
+      }
+      return false;
     }
-
-    setStatus(TaskStatus.FINISHED);
   }
 
-  private void cancelExport() {
-
-  }
 }

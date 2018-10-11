@@ -34,28 +34,27 @@ public class ExportCorrAnnotationParameters extends SimpleParameterSet {
   public static final FileNameParameter FILENAME =
       new FileNameParameter("Filename", "File name", "csv");
 
-  public static final BooleanParameter EX_ANNOTATIONS =
-      new BooleanParameter("Export annotations", "Exports annotations by MS annotate", true);
-  public static final BooleanParameter EX_AVGCORR =
-      new BooleanParameter("Export average correlations",
-          "Exports the average row-2-row correlation of separate correlations in different files",
-          true);
+  public static final BooleanParameter EX_ANNOTATIONS_FILE = new BooleanParameter(
+      "Create annotations file", "Exports all annotations by MS annotate to a csv file", true);
+  public static final BooleanParameter EX_AVGCORR_FILE = new BooleanParameter(
+      "Create average correlations file",
+      "Exports the average row-2-row correlation to a csv file (also exports annotations, but only those with r>minR)",
+      true);
 
   public static final PercentParameter MIN_AVGCORR =
       new PercentParameter("Min avg corr", "Minimum r of avg corr", 0.85);
 
-  public static final BooleanParameter EX_TOTALCORR = new BooleanParameter(
-      "Export total correlations",
-      "Exports the total row-2-row correlation of all data points of all features shapes across all samples",
-      true);
-  public static final BooleanParameter EX_IMAX_CORR =
-      new BooleanParameter("Export max intensity correlations",
-          "Exports the correlation of the maximum intensities across all samples", true);
+  public static final BooleanParameter EX_MZ = new BooleanParameter("Export m/z", "", true);
+  public static final BooleanParameter EX_DMZ = new BooleanParameter("Export dm/z", "", true);
+  public static final BooleanParameter EX_DRT = new BooleanParameter("Export dRT", "", true);
+  public static final BooleanParameter EX_RT = new BooleanParameter("Export RT", "", true);
+  public static final BooleanParameter EX_I = new BooleanParameter("Export intensity", "", true);
+  public static final BooleanParameter EX_AREA = new BooleanParameter("Export  area", "", true);
 
   // Constructor
   public ExportCorrAnnotationParameters() {
-    super(new Parameter[] {PEAK_LISTS, FILENAME, EX_ANNOTATIONS, EX_AVGCORR, MIN_AVGCORR,
-        EX_TOTALCORR, EX_IMAX_CORR});
+    super(new Parameter[] {PEAK_LISTS, FILENAME, EX_ANNOTATIONS_FILE, EX_AVGCORR_FILE, MIN_AVGCORR,
+        EX_MZ, EX_DMZ, EX_DRT, EX_RT, EX_I, EX_AREA});
   }
 
 }
