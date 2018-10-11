@@ -40,7 +40,7 @@ import net.sf.mzmine.util.io.TxtWriter;
 public class ExportCorrAnnotationTask extends AbstractTask {
 
   private enum ANNOTATION {
-    ID1, ID2, MZ1, MZ2, DELTA_MZ, DELTA_AVG_RT, ANNOTATION1, ANNOTATION2, AVG_CORR, AVG_DP, CORRELATED_F2F, TOTAL_CORR, IMAX_CORR;
+    ID1, ID2, MZ1, MZ2, DELTA_MZ, DELTA_AVG_RT, ANNOTATION1, ANNOTATION2, ANNO_NETID, AVG_CORR, AVG_DP, CORRELATED_F2F, TOTAL_CORR, IMAX_CORR;
     private String header;
 
     ANNOTATION() {
@@ -169,6 +169,11 @@ public class ExportCorrAnnotationTask extends AbstractTask {
               case ANNOTATION2:
                 data[d] = ESIAdductIdentity.getIdentityOf(link, r);
                 break;
+              case ANNO_NETID:
+                ESIAdductIdentity id = ESIAdductIdentity.getIdentityOf(r, link);
+                if (id != null)
+                  data[d] = id.getNetID();
+                break;
               case DELTA_MZ:
                 data[d] = link.getAverageMZ() - r.getAverageMZ();
                 break;
@@ -188,10 +193,10 @@ public class ExportCorrAnnotationTask extends AbstractTask {
                 data[d] = link.getAverageMZ();
                 break;
               case IMAX_CORR:
-                data[d] = r2r.getCorrIProfile();
+                data[d] = r2r.getCorrIProfile().getR();
                 break;
               case TOTAL_CORR:
-                data[d] = r2r.getTotalCorrelation();
+                data[d] = r2r.getTotalCorrelation().getR();
                 break;
               case AVG_CORR:
                 data[d] = r2r.getAvgPeakShapeR();
