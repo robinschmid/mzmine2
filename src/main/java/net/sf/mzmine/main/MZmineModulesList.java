@@ -111,6 +111,7 @@ import net.sf.mzmine.modules.visualization.metamsecorrelate.annotationnetwork.An
 import net.sf.mzmine.modules.visualization.metamsecorrelate.corrhisto.CorrHistoModule;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.corrnetwork.CorrNetworkModule;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.mainvis.MSECorrGroupVisualizerModule;
+import net.sf.mzmine.modules.visualization.metamsecorrelate.rtnetwork.RTNetworkModule;
 import net.sf.mzmine.modules.visualization.msms.MsMsVisualizerModule;
 import net.sf.mzmine.modules.visualization.mzhistogram.MZDistributionHistoModule;
 import net.sf.mzmine.modules.visualization.neutralloss.NeutralLossVisualizerModule;
@@ -198,7 +199,7 @@ public class MZmineModulesList {
       MSMSExportModule.class, ScatterPlotVisualizerModule.class, HistogramVisualizerModule.class,
       InfoVisualizerModule.class, IntensityPlotModule.class, KendrickMassPlotModule.class,
       VanKrevelenDiagramModule.class, MSECorrGroupVisualizerModule.class, CorrHistoModule.class,
-      AnnotationNetworkModule.class, CorrNetworkModule.class,
+      AnnotationNetworkModule.class, CorrNetworkModule.class, RTNetworkModule.class,
 
       // Tools
       MzRangeMassCalculatorModule.class, MzRangeFormulaCalculatorModule.class,
