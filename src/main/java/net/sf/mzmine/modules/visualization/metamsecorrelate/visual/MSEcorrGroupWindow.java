@@ -852,26 +852,27 @@ public class MSEcorrGroupWindow extends JFrame {
         PeakListRow row = g.getLastViewedRow();
         int rowI = g.getLastViewedRowI();
         R2GroupCorrelationData corr = g.getCorr(rowI);
-        RawDataFile raw = g.getLastViewedRawFile();
 
         // spectrum or column chart of all correlations
         // add plot of all correlations (this row to all other rows in all raw files)
         // data set
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
         // go through all raw files
-        for (int r = 0; r < peakList.getRawDataFiles().length; r++) {
-          RawDataFile rfile = peakList.getRawDataFile(r);
-          String rawSG = peakList.getSampleGroupsParameter() == null ? ""
-              : String
-                  .valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), rfile));
 
-          // for each row: correlation of row to row in all raw files
-          for (int i = 0; i < g.size(); i++) {
-            PeakListRow trow = g.get(i);
-            if (rowI != i) {
-              // get correlation data (row to row)
-              R2RCorrelationData corrRows = corr.getCorrelationToRowI(trow.getID());
-              if (corrRows != null) {
+        // for each row: correlation of row to row in all raw files
+        for (int i = 0; i < g.size(); i++) {
+          PeakListRow trow = g.get(i);
+          if (rowI != i) {
+            // get correlation data (row to row)
+            R2RCorrelationData corrRows = corr.getCorrelationToRowI(trow.getID());
+            if (corrRows != null) {
+              // for all raw data files
+              for (int r = 0; r < peakList.getRawDataFiles().length; r++) {
+                RawDataFile raw = peakList.getRawDataFile(r);
+                String rawSG = peakList.getSampleGroupsParameter() == null ? ""
+                    : String.valueOf(
+                        project.getParameterValue(peakList.getSampleGroupsParameter(), raw));
+
                 // get correlation of feature-feature in selected raw file
                 CorrelationData fCorr = corrRows.getCorrPeakShape(raw);
                 // regression
@@ -879,16 +880,16 @@ public class MSEcorrGroupWindow extends JFrame {
                   SimpleRegression reg = fCorr.getReg();
                   // for summary of samples
                   if (getCbSampleSummary().isSelected())
-                    dataset.addValue(reg.getR(), rawSG, rfile.getName());
+                    dataset.addValue(reg.getR(), rawSG, raw.getName());
                   else
-                    dataset.addValue(reg.getR(), rawSG, rfile.getName() + "(" + trow.getID() + ")");
+                    dataset.addValue(reg.getR(), rawSG, raw.getName() + "(" + trow.getID() + ")");
                 }
               }
             }
           }
         }
         // add plot
-        String title = "Row " + row.getID() + " f2f corr in " + raw.getName();
+        String title = "Row " + row.getID() + " f2f corr";
         JFreeChart chart = ChartFactory.createBarChart(title, "Sample group",
             "Pearson correlation (r)", dataset, PlotOrientation.VERTICAL, false, true, false);
         BarRenderer catRen = (BarRenderer) chart.getCategoryPlot().getRenderer();
@@ -988,6 +989,7 @@ public class MSEcorrGroupWindow extends JFrame {
   private EChartPanel createChartPanel(JFreeChart chart) {
     EChartPanel cp = new EChartPanel(chart);
     try {
+      // TODO change theme once
       theme.setPlotBackgroundPaint(new Color(235, 235, 235));
       theme.setShowSubtitles(true);
       theme.apply(chart);
