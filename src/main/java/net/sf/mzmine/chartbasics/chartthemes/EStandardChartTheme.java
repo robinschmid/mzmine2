@@ -242,7 +242,7 @@ public class EStandardChartTheme extends StandardChartTheme {
     this.masterFontColor = masterFontColor;
   }
 
-  public void getShowSubtitles(boolean subtitleVisible) {
+  public void setShowSubtitles(boolean subtitleVisible) {
     this.subtitleVisible = subtitleVisible;
   }
 

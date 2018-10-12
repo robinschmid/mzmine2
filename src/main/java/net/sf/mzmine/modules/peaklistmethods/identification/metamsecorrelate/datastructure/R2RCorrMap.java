@@ -11,6 +11,8 @@ import java.util.logging.Logger;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter;
+import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 
 /**
  * Correlation of row 2 row
@@ -25,7 +27,13 @@ public class R2RCorrMap extends TreeMap<String, R2RCorrelationData> {
    */
   private static final long serialVersionUID = 1L;
 
-  public R2RCorrMap() {
+  private RTTolerance rtTolerance;
+  private boolean useMinFFilter;
+  private MinimumFeatureFilter minFFilter;
+
+  public R2RCorrMap(RTTolerance rtTolerance, boolean useMinFFilter,
+      MinimumFeatureFilter minFFilter) {
+    // sorted
     super(new Comparator<String>() {
       @Override
       public int compare(String s1, String s2) {
@@ -40,6 +48,22 @@ public class R2RCorrMap extends TreeMap<String, R2RCorrelationData> {
         return compareA != 0 ? compareA : Integer.compare(b1, b2);
       }
     });
+    //
+    this.rtTolerance = rtTolerance;
+    this.useMinFFilter = useMinFFilter;
+    this.minFFilter = minFFilter;
+  }
+
+  public RTTolerance getRtTolerance() {
+    return rtTolerance;
+  }
+
+  public MinimumFeatureFilter getMinFeatureFilter() {
+    return minFFilter;
+  }
+
+  public boolean isUseMinFFilter() {
+    return useMinFFilter;
   }
 
   /**

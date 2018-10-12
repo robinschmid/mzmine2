@@ -204,7 +204,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       // create correlation map
       stage = Stage.CORRELATION_ANNOTATION;
       finishedRows = 0;
-      R2RCorrMap corrMap = new R2RCorrMap();
+      R2RCorrMap corrMap = new R2RCorrMap(rtTolerance, useMinFInSamplesFilter, minFFilter);
       List<AnnotationNetwork> annNet = doR2RComparison(groupedPKL, corrMap);
       if (isCanceled())
         return;

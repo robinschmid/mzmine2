@@ -38,7 +38,11 @@ public class RTNetworkPanel extends NetworkPanel {
    * Create the panel.
    */
   public RTNetworkPanel() {
-    super("Annotation networks");
+    this(false);
+  }
+
+  public RTNetworkPanel(boolean showTitle) {
+    super("Retention time networks", showTitle);
   }
 
   /**
@@ -59,7 +63,7 @@ public class RTNetworkPanel extends NetworkPanel {
    * 
    * @param pkl
    */
-  public void setRows(PeakListRow[] pkl) {
+  public void setPeakListRows(PeakListRow[] pkl) {
     this.rows = pkl;
     if (pkl != null) {
       createNewGraph(pkl);

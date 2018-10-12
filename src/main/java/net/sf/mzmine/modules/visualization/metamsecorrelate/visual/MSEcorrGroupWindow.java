@@ -1,6 +1,7 @@
 package net.sf.mzmine.modules.visualization.metamsecorrelate.visual;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Paint;
@@ -51,6 +52,8 @@ import org.jfree.data.statistics.DefaultBoxAndWhiskerCategoryDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import net.miginfocom.swing.MigLayout;
+import net.sf.mzmine.chartbasics.chartthemes.ChartThemeFactory;
+import net.sf.mzmine.chartbasics.chartthemes.EStandardChartTheme;
 import net.sf.mzmine.chartbasics.gui.swing.EChartPanel;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
@@ -63,9 +66,11 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.annotationnetwork.visual.AnnotationNetworkPanel;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.corrnetwork.visual.CorrNetworkPanel;
+import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.rtnetwork.visual.RTNetworkPanel;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.pseudospectra.PseudoSpectrum;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.table.GroupedPeakListTable;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.table.GroupedPeakListTableModel;
@@ -79,6 +84,8 @@ public class MSEcorrGroupWindow extends JFrame {
   private final Paint colors[];
   // sub window for more charts
   private MSEcorrGroupSubWindow subWindow;
+
+  private EStandardChartTheme theme;
 
   // data
   private MSEGroupedPeakList peakList;
@@ -108,9 +115,11 @@ public class MSEcorrGroupWindow extends JFrame {
   private JSplitPane splitPane;
   private JSplitPane splitChart;
   private JSplitPane splitNetwork;
+  private JSplitPane splitNetworkSub;
   private JPanel pnSpectrum;
   private AnnotationNetworkPanel pnAnnNetwork;
   private CorrNetworkPanel pnCorrNetwork;
+  private RTNetworkPanel pnRTNetwork;
 
   /**
    * Create the frame.
@@ -123,6 +132,7 @@ public class MSEcorrGroupWindow extends JFrame {
       PKLRowGroupList groups, int index) {
     // sub window for more charts
     subWindow = new MSEcorrGroupSubWindow(this);
+    theme = ChartThemeFactory.getStandardTheme();
 
     // data
     this.peakList = peakList;
@@ -156,14 +166,27 @@ public class MSEcorrGroupWindow extends JFrame {
 
 
     splitNetwork = new JSplitPane();
-    splitNetwork.setResizeWeight(0.5);
+    splitNetwork.setResizeWeight(0.666);
     splitChart.setLeftComponent(splitNetwork);
 
-    pnAnnNetwork = new AnnotationNetworkPanel();
+    pnAnnNetwork = new AnnotationNetworkPanel(true);
     splitNetwork.setRightComponent(pnAnnNetwork);
 
-    pnCorrNetwork = new CorrNetworkPanel();
-    splitNetwork.setLeftComponent(pnCorrNetwork);
+    // sub split for rt and corr net
+    splitNetworkSub = new JSplitPane();
+    splitNetworkSub.setResizeWeight(0.5);
+    splitNetwork.setLeftComponent(splitNetworkSub);
+
+    pnCorrNetwork = new CorrNetworkPanel(true);
+    splitNetworkSub.setRightComponent(pnCorrNetwork);
+
+    pnRTNetwork = new RTNetworkPanel(true);
+    pnRTNetwork.setTitle("Average retention time network");
+    splitNetworkSub.setLeftComponent(pnRTNetwork);
+    // crucial need to set up
+    R2RCorrMap map = peakList.getR2RCorrMap();
+    if (map != null)
+      pnRTNetwork.setAll(project, peakList, map.getRtTolerance(), false, map.getMinFeatureFilter());
 
     // scroll table
     mainScroll = new JScrollPane();
@@ -330,15 +353,6 @@ public class MSEcorrGroupWindow extends JFrame {
 
     tableGroupMembers = new GroupedPeakListTable(this, peakListTableParameters, peakList);
     scrollPane.setViewportView(tableGroupMembers);
-
-    /*
-     * JFreeChart chart = createCombinedChart(); ChartPanel panel = new ChartPanel(chart, true,
-     * true, true, false, true); contentPane.add(panel, BorderLayout.CENTER);
-     * 
-     * 
-     * chart = createCombinedChart(); panel = new ChartPanel(chart, true, true, true, false, true);
-     * contentPane.add(panel, BorderLayout.SOUTH);
-     */
 
     // close also sub window
     setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -568,6 +582,7 @@ public class MSEcorrGroupWindow extends JFrame {
     PeakListRow row = g.get(i);
     pnAnnNetwork.setSelectedRow(row);
     pnCorrNetwork.setSelectedRow(row);
+    pnRTNetwork.setSelectedRow(row);
     // auto show raw file containing lastViewed row
     boolean renewRaw = checkAutoShowRawFile();
     renewAllPlots(renewRaw, true, true, false);
@@ -599,6 +614,8 @@ public class MSEcorrGroupWindow extends JFrame {
       createAnnotationNetwork();
       // create correlation network
       createCorrelationNetwork();
+      // create RT network
+      createRTNetwork();
     }
     // plotIProfile
     if (iProfile)
@@ -880,7 +897,11 @@ public class MSEcorrGroupWindow extends JFrame {
         axis.setCategoryMargin(0.000);
         axis.setLowerMargin(0.01);
         axis.setUpperMargin(0.01);
+
+        chart.getCategoryPlot().getRangeAxis().setRange(0.85, 1.0);
+
         cp = createChartPanel(chart);
+
         // formating
         NumberFormat intensityFormat = MZmineCore.getConfiguration().getIntensityFormat();
         NumberAxis yAxis = (NumberAxis) chart.getCategoryPlot().getRangeAxis();
@@ -927,6 +948,22 @@ public class MSEcorrGroupWindow extends JFrame {
   }
 
   /**
+   * RT network
+   */
+  private void createRTNetwork() {
+    PKLRowGroup g = peakList.getLastViewedGroup();
+    if (g != null) {
+      PeakListRow[] rows = g.toArray(new PeakListRow[g.size()]);
+      pnRTNetwork.setPeakListRows(rows);
+      pnRTNetwork.resetZoom();
+      pnRTNetwork.revalidate();
+      pnRTNetwork.repaint();
+    } else {
+      pnRTNetwork.setPeakListRows(null);
+    }
+  }
+
+  /**
    * Correlation network
    */
   private void createCorrelationNetwork() {
@@ -950,6 +987,13 @@ public class MSEcorrGroupWindow extends JFrame {
    */
   private EChartPanel createChartPanel(JFreeChart chart) {
     EChartPanel cp = new EChartPanel(chart);
+    try {
+      theme.setPlotBackgroundPaint(new Color(235, 235, 235));
+      theme.setShowSubtitles(true);
+      theme.apply(chart);
+    } catch (Exception e) {
+      LOG.log(Level.WARNING, "Cannot apply theme to chart " + chart.getID(), e);
+    }
     return cp;
   }
 

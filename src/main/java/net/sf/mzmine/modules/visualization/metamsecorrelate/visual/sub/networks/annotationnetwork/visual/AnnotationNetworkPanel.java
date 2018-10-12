@@ -29,7 +29,11 @@ public class AnnotationNetworkPanel extends NetworkPanel {
    * Create the panel.
    */
   public AnnotationNetworkPanel() {
-    super("Annotation networks");
+    this(false);
+  }
+
+  public AnnotationNetworkPanel(boolean showTitle) {
+    super("Annotation networks", showTitle);
   }
 
   /**

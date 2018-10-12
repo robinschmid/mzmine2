@@ -32,7 +32,11 @@ public class CorrNetworkPanel extends NetworkPanel {
    * Create the panel.
    */
   public CorrNetworkPanel() {
-    super("Annotation networks");
+    this(false);
+  }
+
+  public CorrNetworkPanel(boolean showTitle) {
+    super("Correlation networks", showTitle);
   }
 
   /**

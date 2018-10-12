@@ -7,6 +7,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
@@ -32,16 +33,25 @@ public class NetworkPanel extends JPanel {
   // selected node
   private List<Node> selectedNodes;
 
+  private JLabel lbTitle;
+
   /**
    * Create the panel.
    */
-  public NetworkPanel(String title) {
-    this(title, STYLE_SHEET);
+  public NetworkPanel(String title, boolean showTitle) {
+    this(title, STYLE_SHEET, showTitle);
   }
 
-  public NetworkPanel(String title, String styleSheet) {
+  public NetworkPanel(String title, String styleSheet, boolean showTitle) {
     this.styleSheet = styleSheet;
     this.setLayout(new BorderLayout());
+    // add title
+    lbTitle = new JLabel(title);
+    JPanel pn = new JPanel();
+    pn.add(lbTitle);
+    this.add(pn, BorderLayout.NORTH);
+    setShowTitle(showTitle);
+
     selectedNodes = new ArrayList<Node>();
 
     graph = new MultiGraph(title);
@@ -89,6 +99,14 @@ public class NetworkPanel extends JPanel {
       }
     });
     view.addMouseWheelListener(event -> zoom(event.getWheelRotation() < 0));
+  }
+
+  public void setShowTitle(boolean showTitle) {
+    lbTitle.setVisible(showTitle);
+  }
+
+  public void setTitle(String title) {
+    lbTitle.setText(title);
   }
 
   public void showAllLabels(boolean show) {
