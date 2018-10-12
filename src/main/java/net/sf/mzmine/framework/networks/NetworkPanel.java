@@ -19,7 +19,7 @@ public class NetworkPanel extends JPanel {
   private static final Logger LOG = Logger.getLogger(NetworkPanel.class.getName());
 
   public static final String STYLE_SHEET =
-      "node {fill-color: black; size: 10px; stroke-mode: plain; stroke-color: black; stroke-width: 1px;} "
+      "edge {fill-color: rgb(25,85,25); stroke-color: rgb(50,100,50); stroke-width: 1px;}  node {fill-color: black; size: 10px; stroke-mode: plain; stroke-color: rgb(50,100,50); stroke-width: 1px;} "
           + "node.important{fill-color: red;} " + "node.big {size: 15px;}";
 
   protected String styleSheet;
@@ -45,8 +45,7 @@ public class NetworkPanel extends JPanel {
     selectedNodes = new ArrayList<Node>();
 
     graph = new MultiGraph(title);
-    // graph.addAttribute("ui.antialias");
-    graph.addAttribute("ui.stylesheet", styleSheet);
+    setStyleSheet(styleSheet);
     graph.setAutoCreate(true);
     graph.setStrict(false);
 
@@ -109,6 +108,7 @@ public class NetworkPanel extends JPanel {
     this.styleSheet = styleSheet;
     graph.addAttribute("ui.stylesheet", styleSheet);
     graph.addAttribute("ui.quality", 3);
+    graph.addAttribute("ui.antialias");
   }
 
   public void clear() {
