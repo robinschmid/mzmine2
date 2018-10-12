@@ -149,8 +149,9 @@ public class RTNetworkPanel extends NetworkPanel {
           id += " (Net" + esi.getNetIDString() + ")";
       }
     }
-    return MessageFormat.format("{0} (mz={1}) {2}", row.getID(), mzForm.format(row.getAverageMZ()),
-        id);
+    return MessageFormat.format("{0} (rt={1}, mz={2}, n={3}) {4}", row.getID(),
+        rtForm.format(row.getAverageRT()), mzForm.format(row.getAverageMZ()),
+        row.getNumberOfPeaks(), id);
   }
 
   public void setSelectedRow(PeakListRow row) {
