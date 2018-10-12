@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.modules.visualization.metamsecorrelate.corrnetwork;
+package net.sf.mzmine.modules.visualization.metamsecorrelate.networks.rtnetwork;
 
 import java.util.Collection;
 import javax.annotation.Nonnull;
@@ -24,19 +24,21 @@ import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.modules.MZmineModuleCategory;
 import net.sf.mzmine.modules.MZmineRunnableModule;
-import net.sf.mzmine.modules.visualization.metamsecorrelate.corrnetwork.visual.CorrNetworkFrame;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeaturesFilterParameters;
+import net.sf.mzmine.modules.visualization.metamsecorrelate.networks.rtnetwork.visual.RTNetworkFrame;
 import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 import net.sf.mzmine.taskcontrol.Task;
 import net.sf.mzmine.util.ExitCode;
 
 /**
  * TIC/XIC visualizer using JFreeChart library
  */
-public class CorrNetworkModule implements MZmineRunnableModule {
+public class RTNetworkModule implements MZmineRunnableModule {
 
-  private static final String MODULE_NAME = "Row2Row correlation networks";
-  private static final String MODULE_DESCRIPTION =
-      "Visualise the results of the correlations module";
+  private static final String MODULE_NAME = "Retention time network";
+  private static final String MODULE_DESCRIPTION = "Visualise the results of rt tolerance check";
 
   @Override
   public @Nonnull String getName() {
@@ -54,10 +56,16 @@ public class CorrNetworkModule implements MZmineRunnableModule {
       @Nonnull Collection<Task> tasks) {
 
     PeakList[] pkls =
-        parameters.getParameter(CorrNetworkParameters.PEAK_LISTS).getValue().getMatchingPeakLists();
-    double minR = parameters.getParameter(CorrNetworkParameters.MIN_R).getValue();
+        parameters.getParameter(RTNetworkParameters.PEAK_LISTS).getValue().getMatchingPeakLists();
+    RTTolerance rtTolerance = parameters.getParameter(RTNetworkParameters.RT_TOLERANCE).getValue();
+    boolean useMinFFilter =
+        parameters.getParameter(RTNetworkParameters.MIN_FEATURE_FILTER).getValue();
+    MinimumFeatureFilter minFFilter = ((MinimumFeaturesFilterParameters) parameters
+        .getParameter(RTNetworkParameters.MIN_FEATURE_FILTER).getEmbeddedParameters())
+            .createFilter();
     if (pkls != null && pkls.length > 0) {
-      CorrNetworkFrame f = new CorrNetworkFrame(pkls[0], minR);
+      RTNetworkFrame f = new RTNetworkFrame();
+      f.setUp(project, pkls[0], rtTolerance, useMinFFilter, minFFilter);
       f.setVisible(true);
       return ExitCode.OK;
     }
@@ -71,6 +79,6 @@ public class CorrNetworkModule implements MZmineRunnableModule {
 
   @Override
   public @Nonnull Class<? extends ParameterSet> getParameterSetClass() {
-    return CorrNetworkParameters.class;
+    return RTNetworkParameters.class;
   }
 }

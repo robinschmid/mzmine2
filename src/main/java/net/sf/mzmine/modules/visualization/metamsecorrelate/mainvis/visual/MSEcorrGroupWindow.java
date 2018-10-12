@@ -64,8 +64,8 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
-import net.sf.mzmine.modules.visualization.metamsecorrelate.annotationnetwork.visual.AnnotationNetworkPanel;
-import net.sf.mzmine.modules.visualization.metamsecorrelate.corrnetwork.visual.CorrNetworkPanel;
+import net.sf.mzmine.modules.visualization.metamsecorrelate.networks.annotationnetwork.visual.AnnotationNetworkPanel;
+import net.sf.mzmine.modules.visualization.metamsecorrelate.networks.corrnetwork.visual.CorrNetworkPanel;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.pseudospectra.PseudoSpectrum;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.table.GroupedPeakListTable;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.table.GroupedPeakListTableModel;

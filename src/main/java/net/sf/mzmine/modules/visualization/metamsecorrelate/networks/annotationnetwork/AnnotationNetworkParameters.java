@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.modules.visualization.metamsecorrelate.annotationnetwork;
+package net.sf.mzmine.modules.visualization.metamsecorrelate.networks.annotationnetwork;
 
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;

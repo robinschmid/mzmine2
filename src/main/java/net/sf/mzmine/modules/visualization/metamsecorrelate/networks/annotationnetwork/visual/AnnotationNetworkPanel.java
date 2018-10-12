@@ -1,4 +1,4 @@
-package net.sf.mzmine.modules.visualization.metamsecorrelate.annotationnetwork.visual;
+package net.sf.mzmine.modules.visualization.metamsecorrelate.networks.annotationnetwork.visual;
 
 import java.text.MessageFormat;
 import java.text.NumberFormat;

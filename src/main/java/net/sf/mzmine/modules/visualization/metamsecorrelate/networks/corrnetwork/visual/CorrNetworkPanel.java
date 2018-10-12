@@ -1,4 +1,4 @@
-package net.sf.mzmine.modules.visualization.metamsecorrelate.corrnetwork.visual;
+package net.sf.mzmine.modules.visualization.metamsecorrelate.networks.corrnetwork.visual;
 
 import java.text.DecimalFormat;
 import java.text.MessageFormat;

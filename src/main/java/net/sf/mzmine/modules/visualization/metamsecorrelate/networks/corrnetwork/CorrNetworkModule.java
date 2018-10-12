@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.modules.visualization.metamsecorrelate.annotationnetwork;
+package net.sf.mzmine.modules.visualization.metamsecorrelate.networks.corrnetwork;
 
 import java.util.Collection;
 import javax.annotation.Nonnull;
@@ -24,7 +24,7 @@ import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.modules.MZmineModuleCategory;
 import net.sf.mzmine.modules.MZmineRunnableModule;
-import net.sf.mzmine.modules.visualization.metamsecorrelate.annotationnetwork.visual.AnnotationNetworkFrame;
+import net.sf.mzmine.modules.visualization.metamsecorrelate.networks.corrnetwork.visual.CorrNetworkFrame;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.Task;
 import net.sf.mzmine.util.ExitCode;
@@ -32,11 +32,11 @@ import net.sf.mzmine.util.ExitCode;
 /**
  * TIC/XIC visualizer using JFreeChart library
  */
-public class AnnotationNetworkModule implements MZmineRunnableModule {
+public class CorrNetworkModule implements MZmineRunnableModule {
 
-  private static final String MODULE_NAME = "MS annotation networks";
+  private static final String MODULE_NAME = "Row2Row correlation networks";
   private static final String MODULE_DESCRIPTION =
-      "Visualise the results of the MS annotation module";
+      "Visualise the results of the correlations module";
 
   @Override
   public @Nonnull String getName() {
@@ -53,10 +53,11 @@ public class AnnotationNetworkModule implements MZmineRunnableModule {
   public ExitCode runModule(@Nonnull MZmineProject project, @Nonnull ParameterSet parameters,
       @Nonnull Collection<Task> tasks) {
 
-    PeakList[] pkls = parameters.getParameter(AnnotationNetworkParameters.PEAK_LISTS).getValue()
-        .getMatchingPeakLists();
+    PeakList[] pkls =
+        parameters.getParameter(CorrNetworkParameters.PEAK_LISTS).getValue().getMatchingPeakLists();
+    double minR = parameters.getParameter(CorrNetworkParameters.MIN_R).getValue();
     if (pkls != null && pkls.length > 0) {
-      AnnotationNetworkFrame f = new AnnotationNetworkFrame(pkls[0]);
+      CorrNetworkFrame f = new CorrNetworkFrame(pkls[0], minR);
       f.setVisible(true);
       return ExitCode.OK;
     }
@@ -70,6 +71,6 @@ public class AnnotationNetworkModule implements MZmineRunnableModule {
 
   @Override
   public @Nonnull Class<? extends ParameterSet> getParameterSetClass() {
-    return AnnotationNetworkParameters.class;
+    return CorrNetworkParameters.class;
   }
 }

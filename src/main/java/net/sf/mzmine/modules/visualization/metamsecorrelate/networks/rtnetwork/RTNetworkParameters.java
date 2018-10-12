@@ -16,27 +16,31 @@
  * USA
  */
 
-package net.sf.mzmine.modules.visualization.metamsecorrelate.corrnetwork;
+package net.sf.mzmine.modules.visualization.metamsecorrelate.networks.rtnetwork;
 
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
-import net.sf.mzmine.parameters.parametertypes.PercentParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
+import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
+import net.sf.mzmine.parameters.parametertypes.tolerances.RTToleranceParameter;
 
-public class CorrNetworkParameters extends SimpleParameterSet {
+public class RTNetworkParameters extends SimpleParameterSet {
 
   /**
    * The data file.
    */
   public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter();
 
-  public static final PercentParameter MIN_R =
-      new PercentParameter("Min r", "Minimum correlation", 0.9);
+  public static final OptionalModuleParameter MIN_FEATURE_FILTER = new OptionalModuleParameter(
+      "Minimum shared features", "Only link if both rows have a minimum number of shared feautres",
+      new MinimumFeaturesFilterParameters());
+  public static final RTToleranceParameter RT_TOLERANCE = new RTToleranceParameter();
 
   /**
    * Create the parameter set.
    */
-  public CorrNetworkParameters() {
-    super(new Parameter[] {PEAK_LISTS, MIN_R});
+  public RTNetworkParameters() {
+    super(new Parameter[] {PEAK_LISTS, MIN_FEATURE_FILTER, RT_TOLERANCE});
   }
 }

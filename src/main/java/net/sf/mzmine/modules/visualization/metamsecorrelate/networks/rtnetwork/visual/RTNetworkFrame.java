@@ -1,4 +1,4 @@
-package net.sf.mzmine.modules.visualization.metamsecorrelate.rtnetwork.visual;
+package net.sf.mzmine.modules.visualization.metamsecorrelate.networks.rtnetwork.visual;
 
 import javax.swing.JFrame;
 import net.sf.mzmine.datamodel.MZmineProject;
