@@ -65,10 +65,19 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   private static final Logger LOG = Logger.getLogger(MetaMSEcorrelateTask.class.getName());
 
   public enum Stage {
-    CORRELATION_ANNOTATION, GROUPING, REFINEMENT;
+    CORRELATION_ANNOTATION(0.8), GROUPING(0.9), REFINEMENT(1d);
+    private double finalProgress;
+
+    Stage(double finalProgress) {
+      this.finalProgress = finalProgress;
+    }
+
+    public double getFinalProgress() {
+      return finalProgress;
+    }
   }
 
-  private int finishedRows;
+  private Double stageProgress = 0d;
   private int totalRows;
 
   private final ParameterSet parameters;
@@ -121,7 +130,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     this.peakList = peakList;
     parameters = parameterSet;
 
-    finishedRows = 0;
     totalRows = 0;
 
     // sample groups parameter
@@ -175,8 +183,9 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
   @Override
   public double getFinishedPercentage() {
-    return totalRows == 0 ? 0
-        : (1.d / Stage.values().length) * (stage.ordinal() + (finishedRows / (double) totalRows));
+    double prevProgress =
+        stage.ordinal() == 0 ? 0 : Stage.values()[stage.ordinal() - 1].getFinalProgress();
+    return prevProgress + (stage.getFinalProgress() - prevProgress) * stageProgress;
   }
 
   @Override
@@ -201,18 +210,17 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         groupedPKL.setSampleGroups(minFFilter.getGroupSizeMap());
       }
 
+      // MAIN STEP
       // create correlation map
-      stage = Stage.CORRELATION_ANNOTATION;
-      finishedRows = 0;
+      setStage(Stage.CORRELATION_ANNOTATION);
       R2RCorrMap corrMap = new R2RCorrMap(rtTolerance, useMinFInSamplesFilter, minFFilter);
       List<AnnotationNetwork> annNet = doR2RComparison(groupedPKL, corrMap);
       if (isCanceled())
         return;
 
       LOG.info("Corr: Starting to group by correlation");
-      stage = Stage.GROUPING;
-      finishedRows = 0;
-      PKLRowGroupList groups = corrMap.createCorrGroups(groupedPKL, minShapeCorrR);
+      setStage(Stage.GROUPING);
+      PKLRowGroupList groups = corrMap.createCorrGroups(groupedPKL, minShapeCorrR, stageProgress);
 
       if (isCanceled())
         return;
@@ -257,6 +265,11 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       setErrorMessage(t.getMessage());
       throw new MSDKRuntimeException(t);
     }
+  }
+
+  private void setStage(Stage grouping) {
+    stage = grouping;
+    stageProgress = 0d;
   }
 
   /**
@@ -320,7 +333,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
           }
         }
       }
-      finishedRows = i;
+      stageProgress = i / (double) totalRows;
     }
 
     // number of f2f correlations

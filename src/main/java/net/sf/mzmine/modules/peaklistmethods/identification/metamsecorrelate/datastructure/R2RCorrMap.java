@@ -84,10 +84,13 @@ public class R2RCorrMap extends TreeMap<String, R2RCorrelationData> {
   /**
    * Create list of AnnotationNetworks and set net ID
    * 
+   * 
    * @param rows
+   * @param stageProgress can be null. points to the progress
+   * 
    * @return
    */
-  public PKLRowGroupList createCorrGroups(PeakList pkl, double minShapeR) {
+  public PKLRowGroupList createCorrGroups(PeakList pkl, double minShapeR, Double stageProgress) {
     LOG.info("Corr: Creating correlation groups");
 
     try {
@@ -99,6 +102,7 @@ public class R2RCorrMap extends TreeMap<String, R2RCorrelationData> {
       RawDataFile[] raw = pkl.getRawDataFiles();
       // add all connections
       Iterator<Entry<String, R2RCorrelationData>> entries = this.entrySet().iterator();
+      int c = 0;
       while (entries.hasNext()) {
         Entry<String, R2RCorrelationData> e = entries.next();
 
@@ -135,6 +139,10 @@ public class R2RCorrMap extends TreeMap<String, R2RCorrelationData> {
             used.put(ids[0], group2);
           }
         }
+        // report back progress
+        c++;
+        if (stageProgress != null)
+          stageProgress = c / (double) this.size();
       }
       // sort by retention time
       groups.sortByRT();
