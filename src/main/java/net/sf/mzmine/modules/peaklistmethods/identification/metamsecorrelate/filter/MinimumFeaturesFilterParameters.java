@@ -19,6 +19,8 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter;
 
 import java.awt.Window;
+import net.sf.mzmine.datamodel.MZmineProject;
+import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.UserParameter;
@@ -88,7 +90,25 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
   }
 
   /**
-   * Creates the filter
+   * Creates the filter with groups
+   * 
+   * @param groupingParameter
+   * @param rawDataFiles
+   * @param project
+   * 
+   * @return
+   */
+  public MinimumFeatureFilter createFilterWithGroups(MZmineProject project,
+      RawDataFile[] rawDataFiles, String groupingParameter) {
+    AbsoluteNRelativeInt minFInSamples = this.getParameter(MIN_SAMPLES_ALL).getValue();
+    AbsoluteNRelativeInt minFInGroups = this.getParameter(MIN_SAMPLES_GROUP).getValue();
+    double minFeatureHeight = this.getParameter(MIN_HEIGHT).getValue();
+    return new MinimumFeatureFilter(project, rawDataFiles, groupingParameter, minFInSamples,
+        minFInGroups, minFeatureHeight);
+  }
+
+  /**
+   * Creates the filter without groups
    * 
    * @return
    */

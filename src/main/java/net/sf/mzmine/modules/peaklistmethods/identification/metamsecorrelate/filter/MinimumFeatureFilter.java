@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.MZmineProject;
-import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.parameters.UserParameter;
@@ -24,14 +23,32 @@ public class MinimumFeatureFilter {
   private UserParameter<?, ?> sgroupPara;
   private HashMap<String, Integer> sgroupSize;
   private boolean filterGroups = false;
+  private MZmineProject project;
 
 
   public MinimumFeatureFilter(AbsoluteNRelativeInt minFInSamples, AbsoluteNRelativeInt minFInGroups,
       double minFeatureHeight) {
-    super();
     this.minFInSamples = minFInSamples;
     this.minFInGroups = minFInGroups;
     this.minFeatureHeight = minFeatureHeight;
+  }
+
+  /**
+   * Directly sets up the groups and group sizes
+   * 
+   * @param project
+   * @param raw
+   * @param groupParam
+   * @param minFInSamples
+   * @param minFInGroups
+   * @param minFeatureHeight
+   */
+  public MinimumFeatureFilter(MZmineProject project, RawDataFile[] raw, String groupParam,
+      AbsoluteNRelativeInt minFInSamples, AbsoluteNRelativeInt minFInGroups,
+      double minFeatureHeight) {
+    this(minFInSamples, minFInGroups, minFeatureHeight);
+    this.project = project;
+    setSampleGroups(project, raw, groupParam);
   }
 
 
@@ -48,8 +65,7 @@ public class MinimumFeatureFilter {
    * @param row
    * @return
    */
-  public boolean filterMinFeatures(MZmineProject project, final RawDataFile raw[],
-      PeakListRow row) {
+  public boolean filterMinFeatures(final RawDataFile raw[], PeakListRow row) {
     // filter min samples in all
     if (minFInSamples.isGreaterZero()) {
       int n = 0;
@@ -74,7 +90,7 @@ public class MinimumFeatureFilter {
     for (RawDataFile file : raw) {
       Feature f = row.getPeak(file);
       if (f != null && f.getHeight() >= minFeatureHeight) {
-        String sgroup = sgroupOf(project, file);
+        String sgroup = sgroupOf(file);
 
         MutableInt count = counter.get(sgroup);
         if (count == null) {
@@ -106,9 +122,9 @@ public class MinimumFeatureFilter {
    * @param row2
    * @return
    */
-  public boolean filterMinFeaturesOverlap(MZmineProject project, final RawDataFile raw[],
-      PeakListRow row, PeakListRow row2) {
-    return filterMinFeaturesOverlap(project, raw, row, row2, null);
+  public boolean filterMinFeaturesOverlap(final RawDataFile raw[], PeakListRow row,
+      PeakListRow row2) {
+    return filterMinFeaturesOverlap(raw, row, row2, null);
   }
 
   /**
@@ -122,8 +138,8 @@ public class MinimumFeatureFilter {
    * @param rtTolerance
    * @return
    */
-  public boolean filterMinFeaturesOverlap(MZmineProject project, final RawDataFile raw[],
-      PeakListRow row, PeakListRow row2, RTTolerance rtTolerance) {
+  public boolean filterMinFeaturesOverlap(final RawDataFile raw[], PeakListRow row,
+      PeakListRow row2, RTTolerance rtTolerance) {
     // filter min samples in all
     if (minFInSamples.isGreaterZero()) {
       int n = 0;
@@ -154,7 +170,7 @@ public class MinimumFeatureFilter {
       if (a != null && a.getHeight() >= minFeatureHeight && b != null
           && b.getHeight() >= minFeatureHeight
           && (rtTolerance == null || rtTolerance.checkWithinTolerance(a.getRT(), b.getRT()))) {
-        String sgroup = sgroupOf(project, file);
+        String sgroup = sgroupOf(file);
 
         MutableInt count = counter.get(sgroup);
         if (count == null) {
@@ -185,8 +201,7 @@ public class MinimumFeatureFilter {
    * @param raw all positive raw data files
    * @return
    */
-  public boolean filterMinFeatures(MZmineProject project, RawDataFile[] all,
-      List<RawDataFile> raw) {
+  public boolean filterMinFeatures(RawDataFile[] all, List<RawDataFile> raw) {
     // filter min samples in all
     if (minFInSamples.isGreaterZero()
         && !minFInSamples.checkGreaterEqualMax(all.length, raw.size()))
@@ -200,7 +215,7 @@ public class MinimumFeatureFilter {
     // count sample in groups (no feature in a sample group->no occurrence in map)
     HashMap<String, MutableInt> counter = new HashMap<String, MutableInt>();
     for (RawDataFile file : raw) {
-      String sgroup = sgroupOf(project, file);
+      String sgroup = sgroupOf(file);
 
       MutableInt count = counter.get(sgroup);
       if (count == null) {
@@ -226,7 +241,8 @@ public class MinimumFeatureFilter {
    * 
    * @param peakList
    */
-  public void setSampleGroups(MZmineProject project, PeakList peakList, String groupingParameter) {
+  public void setSampleGroups(MZmineProject project, RawDataFile[] raw, String groupingParameter) {
+    this.project = project;
     if (groupingParameter == null || groupingParameter.length() == 0) {
       this.sgroupSize = null;
       setGroupFilterEnabled(false);
@@ -242,8 +258,8 @@ public class MinimumFeatureFilter {
       }
       int max = 0;
       // calc size of sample groups
-      for (RawDataFile file : peakList.getRawDataFiles()) {
-        String parameterValue = sgroupOf(project, file);
+      for (RawDataFile file : raw) {
+        String parameterValue = sgroupOf(file);
 
         Integer v = sgroupSize.get(parameterValue);
         int val = v == null ? 0 : v;
@@ -261,7 +277,7 @@ public class MinimumFeatureFilter {
    * @param file
    * @return sample group value of raw file
    */
-  public String sgroupOf(MZmineProject project, RawDataFile file) {
+  public String sgroupOf(RawDataFile file) {
     return String.valueOf(project.getParameterValue(sgroupPara, file));
   }
 

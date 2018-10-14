@@ -142,7 +142,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         parameterSet.getParameter(MetaMSEcorrelateParameters.MIN_SAMPLES_FILTER).getValue();
     MinimumFeaturesFilterParameters minS = (MinimumFeaturesFilterParameters) parameterSet
         .getParameter(MetaMSEcorrelateParameters.MIN_SAMPLES_FILTER).getEmbeddedParameters();
-    minFFilter = minS.createFilter();
+    minFFilter =
+        minS.createFilterWithGroups(project, peakList.getRawDataFiles(), groupingParameter);
 
     // tolerances
     rtTolerance = parameterSet.getParameter(MetaMSEcorrelateParameters.RT_TOLERANCE).getValue();
@@ -206,7 +207,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       groupedPKL = new MSEGroupedPeakList(peakList.getRawDataFiles(), peakList);
       // find groups and size
       if (useGroups) {
-        minFFilter.setSampleGroups(project, groupedPKL, groupingParameter);
         groupedPKL.setSampleGroupsParameter(minFFilter.getGroupParam());
         groupedPKL.setSampleGroups(minFFilter.getGroupSizeMap());
       }
@@ -297,7 +297,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       PeakListRow row = rows[i];
 
       // has a minimum number/% of features in all samples / in at least one groups
-      if (!useMinFInSamplesFilter || minFFilter.filterMinFeatures(project, raw, row)) {
+      if (!useMinFInSamplesFilter || minFFilter.filterMinFeatures(raw, row)) {
         for (int x = i + 1; x < totalRows; x++) {
           if (isCanceled())
             return null;
@@ -306,7 +306,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
           // has a minimum number/% of overlapping features in all samples / in at least one groups
           // or check RTRange
           if ((useMinFInSamplesFilter
-              && minFFilter.filterMinFeaturesOverlap(project, raw, row, row2, rtTolerance))
+              && minFFilter.filterMinFeaturesOverlap(raw, row, row2, rtTolerance))
               || (!useMinFInSamplesFilter
                   && checkRTRange(raw, row, row2, noiseLevelShapeCorr, rtTolerance))) {
             // correlate if in rt range
@@ -372,8 +372,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     for (Entry<RawDataFile, CorrelationData> e : corr.getCorrPeakShape().entrySet())
       if (e.getValue() != null && e.getValue().isValid())
         raw.add(e.getKey());
-    boolean hasCorrInSamples =
-        minFFilter.filterMinFeatures(project, peakList.getRawDataFiles(), raw);
+    boolean hasCorrInSamples = minFFilter.filterMinFeatures(peakList.getRawDataFiles(), raw);
     if (!hasCorrInSamples) {
       // delete corr peak shape
       corr.setCorrPeakShape(null);
