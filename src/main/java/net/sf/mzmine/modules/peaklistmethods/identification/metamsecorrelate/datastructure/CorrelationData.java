@@ -95,6 +95,10 @@ public class CorrelationData {
     return data;
   }
 
+  public boolean isValid() {
+    return getDPCount() > 0;
+  }
+
   /**
    *
    * @return X (intensity of row)

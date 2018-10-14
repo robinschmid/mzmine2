@@ -1,6 +1,7 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter;
 
 import java.util.HashMap;
+import java.util.List;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
@@ -175,6 +176,51 @@ public class MinimumFeatureFilter {
     return false;
   }
 
+
+  /**
+   * Checks for any other algorithm.
+   * 
+   * @param project
+   * @param all the total of all raw data files
+   * @param raw all positive raw data files
+   * @return
+   */
+  public boolean filterMinFeatures(MZmineProject project, RawDataFile[] all,
+      List<RawDataFile> raw) {
+    // filter min samples in all
+    if (minFInSamples.isGreaterZero()
+        && !minFInSamples.checkGreaterEqualMax(all.length, raw.size()))
+      return false;
+
+    // short cut
+    if (!filterGroups || sgroupSize == null || !minFInGroups.isGreaterZero())
+      return true;
+
+    // is present in X % samples of a sample set?
+    // count sample in groups (no feature in a sample group->no occurrence in map)
+    HashMap<String, MutableInt> counter = new HashMap<String, MutableInt>();
+    for (RawDataFile file : raw) {
+      String sgroup = sgroupOf(project, file);
+
+      MutableInt count = counter.get(sgroup);
+      if (count == null) {
+        // new counter with total N for group size
+        counter.put(sgroup, new MutableInt(sgroupSize.get(sgroup)));
+      } else {
+        count.increment();
+      }
+    }
+    // only needs a minimum number of features in at least one sample group
+    // only go on if feature was present in X % of the samples
+    for (MutableInt v : counter.values()) {
+      // at least one
+      if (minFInGroups.checkGreaterEqualMax(v.total, v.value))
+        return true;
+    }
+    // no fit
+    return false;
+  }
+
   /**
    * gets called to initialise group variables
    * 
@@ -215,7 +261,7 @@ public class MinimumFeatureFilter {
    * @param file
    * @return sample group value of raw file
    */
-  private String sgroupOf(MZmineProject project, RawDataFile file) {
+  public String sgroupOf(MZmineProject project, RawDataFile file) {
     return String.valueOf(project.getParameterValue(sgroupPara, file));
   }
 
@@ -253,4 +299,6 @@ public class MinimumFeatureFilter {
   public UserParameter<?, ?> getGroupParam() {
     return sgroupPara;
   }
+
+
 }

@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import io.github.msdk.MSDKRuntimeException;
@@ -303,32 +304,31 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
           PeakListRow row2 = rows[x];
           // has a minimum number/% of overlapping features in all samples / in at least one groups
-          if (!useMinFInSamplesFilter
-              || minFFilter.filterMinFeaturesOverlap(project, raw, row, row2, rtTolerance)) {
-
-            // still check retention time if minFeatureFilter was not performed
-            boolean rtInRange = useMinFInSamplesFilter
-                || checkRTRange(raw, row, row2, noiseLevelShapeCorr, rtTolerance);
-
+          // or check RTRange
+          if ((useMinFInSamplesFilter
+              && minFFilter.filterMinFeaturesOverlap(project, raw, row, row2, rtTolerance))
+              || (!useMinFInSamplesFilter
+                  && checkRTRange(raw, row, row2, noiseLevelShapeCorr, rtTolerance))) {
             // correlate if in rt range
-            if (rtInRange) {
-              R2RCorrelationData corr = corrR2R(raw, row, row2, minDPMaxICorr,
-                  minCorrelatedDataPoints, noiseLevelShapeCorr);
-              if (corr != null) {
-                // deletes correlations if criteria is not met
-                corr.validate(minMaxICorr, minShapeCorrR);
-                // still valid?
-                if (corr.isValid())
-                  map.add(row, row2, corr);
-              }
+            R2RCorrelationData corr = corrR2R(raw, row, row2, minDPMaxICorr,
+                minCorrelatedDataPoints, noiseLevelShapeCorr);
+            if (corr != null) {
+              // deletes correlations if criteria is not met
+              corr.validate(minMaxICorr, minShapeCorrR);
+              // check for correlation in min samples
+              if (useMinFInSamplesFilter && corr.hasFeatureShapeCorrelation())
+                checkMinFCorrelation(minFFilter, corr);
+              // still valid?
+              if (corr.isValid())
+                map.add(row, row2, corr);
+            }
 
-              if (searchAdducts) {
-                // check for adducts in library
-                ESIAdductType[] id = library.findAdducts(peakList, row, row2);
-                compared++;
-                if (id != null)
-                  annotPairs++;
-              }
+            if (searchAdducts) {
+              // check for adducts in library
+              ESIAdductType[] id = library.findAdducts(peakList, row, row2);
+              compared++;
+              if (id != null)
+                annotPairs++;
             }
           }
         }
@@ -359,6 +359,25 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       return MSAnnotationNetworkLogic.createAnnotationNetworks(groupedPKL, true);
     }
     return null;
+  }
+
+  /**
+   * Final check if there are enough F2FCorrelations in samples and groups
+   * 
+   * @param minFFilter
+   * @param corr
+   */
+  private void checkMinFCorrelation(MinimumFeatureFilter minFFilter, R2RCorrelationData corr) {
+    List<RawDataFile> raw = new ArrayList<>();
+    for (Entry<RawDataFile, CorrelationData> e : corr.getCorrPeakShape().entrySet())
+      if (e.getValue() != null && e.getValue().isValid())
+        raw.add(e.getKey());
+    boolean hasCorrInSamples =
+        minFFilter.filterMinFeatures(project, peakList.getRawDataFiles(), raw);
+    if (!hasCorrInSamples) {
+      // delete corr peak shape
+      corr.setCorrPeakShape(null);
+    }
   }
 
   /**
