@@ -29,21 +29,45 @@ public class AbsoluteNRelativeIntParameter
 
   private String name, description;
   private AbsoluteNRelativeInt value;
+  private Integer minAbs, maxAbs;
 
   public AbsoluteNRelativeIntParameter(String name, String description) {
     this(name, description, 0, 0);
   }
 
   public AbsoluteNRelativeIntParameter(String name, String description, int abs, float rel) {
-    this.name = name;
-    this.description = description;
-    value = new AbsoluteNRelativeInt(abs, rel);
+    this(name, description, abs, rel, AbsoluteNRelativeInt.Mode.ROUND, null, null);
+  }
+
+
+  public AbsoluteNRelativeIntParameter(String name, String description, int abs, float rel,
+      int minAbs) {
+    this(name, description, abs, rel, AbsoluteNRelativeInt.Mode.ROUND, minAbs, null);
+  }
+
+  public AbsoluteNRelativeIntParameter(String name, String description, int abs, float rel,
+      int minAbs, int maxAbs) {
+    this(name, description, abs, rel, AbsoluteNRelativeInt.Mode.ROUND, minAbs, maxAbs);
   }
 
   public AbsoluteNRelativeIntParameter(String name, String description, int abs, float rel,
       AbsoluteNRelativeInt.Mode roundMode) {
     this.name = name;
     this.description = description;
+    value = new AbsoluteNRelativeInt(abs, rel, roundMode);
+  }
+
+  public AbsoluteNRelativeIntParameter(String name, String description, int abs, float rel,
+      AbsoluteNRelativeInt.Mode roundMode, int minAbs) {
+    this(name, description, abs, rel, roundMode, minAbs, null);
+  }
+
+  public AbsoluteNRelativeIntParameter(String name, String description, int abs, float rel,
+      AbsoluteNRelativeInt.Mode roundMode, Integer minAbs, Integer maxAbs) {
+    this.name = name;
+    this.description = description;
+    this.minAbs = minAbs;
+    this.maxAbs = maxAbs;
     value = new AbsoluteNRelativeInt(abs, rel, roundMode);
   }
 
@@ -123,12 +147,21 @@ public class AbsoluteNRelativeIntParameter
   }
 
   @Override
-  public boolean checkValue(Collection<String> errorMessages) {
-    if (value == null) {
+  public boolean checkValue(final Collection<String> errorMessages) {
+    if ((value == null)) {
       errorMessages.add(name + " is not set properly");
       return false;
     }
+
+    if (!checkBounds(value.getAbsolute())) {
+      errorMessages.add(name + " lies outside its bounds: (" + minAbs + " ... " + maxAbs + ')');
+      return false;
+    }
+
     return true;
   }
 
+  private boolean checkBounds(final int abs) {
+    return (minAbs == null || minAbs >= abs) && (maxAbs == null || abs <= maxAbs);
+  }
 }

@@ -62,7 +62,7 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
   public static final AbsoluteNRelativeIntParameter MIN_SAMPLES_ALL =
       new AbsoluteNRelativeIntParameter("Min samples in all",
           "Minimum of samples per group (with the feature detected or filled in) matching the conditions (in RT-range).",
-          0, 0, Mode.ROUND_DOWN);
+          0, 0, Mode.ROUND_DOWN, 1);
 
   /**
    * Filter by minimum height
