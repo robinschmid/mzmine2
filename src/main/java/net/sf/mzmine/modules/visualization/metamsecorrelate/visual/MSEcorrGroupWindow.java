@@ -712,7 +712,7 @@ public class MSEcorrGroupWindow extends JFrame {
         // first chart: correlation of row to all other rows in rawI
         // data set
         XYSeriesCollection data = new XYSeriesCollection();
-        // title
+        // titles
         String sg = "";
         if (peakList.getSampleGroupsParameter() != null)
           sg = String.valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), raw));

@@ -24,7 +24,6 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msa
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
-import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
@@ -42,8 +41,6 @@ public class MSAnnotationParameters extends SimpleParameterSet {
   // RT-tolerance: Grouping
   public static final RTToleranceParameter RT_TOLERANCE = new RTToleranceParameter("RT tolerance",
       "Maximum allowed difference of retention time to set a relationship between peaks");
-  public static final BooleanParameter USE_AVG_RT =
-      new BooleanParameter("Use average RT", "Use average RT or check all raw data files", true);
 
   // INCLUDED in sub
   // MZ-tolerance: deisotoping, adducts
@@ -89,9 +86,8 @@ public class MSAnnotationParameters extends SimpleParameterSet {
     super(isSub ? // no peak list and rt tolerance
         new Parameter[] {MZ_TOLERANCE, CHECK_MODE, MIN_HEIGHT, POSITIVE_MODE, MAX_CHARGE,
             MAX_MOLECULES, MAX_COMBINATION, MAX_MODS, ADDUCTS}
-        : new Parameter[] {PEAK_LISTS, RT_TOLERANCE, USE_AVG_RT, MZ_TOLERANCE, CHECK_MODE,
-            MIN_HEIGHT, POSITIVE_MODE, MAX_CHARGE, MAX_MOLECULES, MAX_COMBINATION, MAX_MODS,
-            ADDUCTS});
+        : new Parameter[] {PEAK_LISTS, RT_TOLERANCE, MZ_TOLERANCE, CHECK_MODE, MIN_HEIGHT,
+            POSITIVE_MODE, MAX_CHARGE, MAX_MOLECULES, MAX_COMBINATION, MAX_MODS, ADDUCTS});
   }
 
   @Override

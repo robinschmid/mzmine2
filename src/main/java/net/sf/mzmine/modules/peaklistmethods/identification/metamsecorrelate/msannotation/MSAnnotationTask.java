@@ -49,7 +49,6 @@ public class MSAnnotationTask extends AbstractTask {
   private int totalRows;
   private final PeakList peakList;
 
-  private boolean useAvgRT;
   private final RTTolerance rtTolerance;
   private MSAnnotationLibrary library;
 
@@ -77,7 +76,6 @@ public class MSAnnotationTask extends AbstractTask {
 
     // tolerances
     rtTolerance = parameterSet.getParameter(MSAnnotationParameters.RT_TOLERANCE).getValue();
-    useAvgRT = parameterSet.getParameter(MSAnnotationParameters.USE_AVG_RT).getValue();
     minHeight = parameterSet.getParameter(MSAnnotationParameters.MIN_HEIGHT).getValue();
     checkMode = parameterSet.getParameter(MSAnnotationParameters.CHECK_MODE).getValue();
   }
@@ -102,6 +100,9 @@ public class MSAnnotationTask extends AbstractTask {
       // create library
       LOG.info("Creating annotation library");
       library = new MSAnnotationLibrary((MSAnnotationParameters) parameters);
+
+      // use average RT
+      boolean useAvgRT = CheckMode.AVGERAGE.equals(checkMode);
 
       // work
       RawDataFile[] raw = peakList.getRawDataFiles();
