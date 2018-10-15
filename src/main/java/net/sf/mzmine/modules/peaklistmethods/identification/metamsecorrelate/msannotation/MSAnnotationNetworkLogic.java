@@ -9,6 +9,7 @@ import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductType;
 import net.sf.mzmine.util.PeakListRowSorter;
 import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
@@ -18,22 +19,25 @@ public class MSAnnotationNetworkLogic {
 
 
   /**
-   * Show the annotation with the highest numbers of links
+   * Show the annotation with the highest numbers of links. Prefers charge state.
    * 
    * @param mseGroupedPeakList
    */
   public static void showMostlikelyAnnotations(PeakList mseGroupedPeakList) {
     for (PeakListRow row : mseGroupedPeakList.getRows()) {
       int maxLinks = 0;
-      PeakIdentity best = null;
+      ESIAdductIdentity best = null;
 
       for (PeakIdentity id : row.getPeakIdentities()) {
         if (id instanceof ESIAdductIdentity) {
           ESIAdductIdentity esi = (ESIAdductIdentity) id;
           int links = esi.getPartnerRowsID().length;
-          if (links > maxLinks) {
+          if (best != null && links == maxLinks
+              && (compareCharge(best, esi) || (isTheUnmodified(best) && !isTheUnmodified(esi)))) {
+            best = esi;
+          } else if (links > maxLinks) {
             maxLinks = links;
-            best = id;
+            best = esi;
           }
         }
       }
@@ -42,6 +46,33 @@ public class MSAnnotationNetworkLogic {
         row.setPreferredPeakIdentity(best);
     }
   }
+
+
+  /**
+   * Checks if this identity is the unmodified reference. e.g., for [M (unmodified)] --> [M+H]
+   * 
+   * @param a
+   * @return
+   */
+  private static boolean isTheUnmodified(ESIAdductIdentity a) {
+    return a.getA().equals(ESIAdductType.M_UNMODIFIED);
+  }
+
+
+  /**
+   * 
+   * @param a
+   * @param b
+   * @return True if b is a better choice
+   */
+  private static boolean compareCharge(ESIAdductIdentity a, ESIAdductIdentity b) {
+    int ca = a.getA().getAbsCharge();
+    int cb = b.getA().getAbsCharge();
+    return cb != 0 // a is better if b is uncharged
+        && ((ca == 0 && cb > 0) // b is better if charged and a uncharged
+            || (ca > cb)); // b is better if charge is lower
+  }
+
 
   /**
    * Create list of AnnotationNetworks and set net ID

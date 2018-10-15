@@ -13,7 +13,12 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
   private NumberFormat mzForm = MZmineCore.getConfiguration().getMZFormat();
 
   // values
+  // unmodified molecule for mod connection [M] -> [M-H2O]
+  public static final ESIAdductType M_UNMODIFIED =
+      new ESIAdductType("(unmodified)", 0.00054858, 0, 1);
+
   // use combinations of X adducts (2H++; -H+Na2+) and modifications
+  public static final ESIAdductType M_PLUS = new ESIAdductType("e", -0.00054858, 1, 1);
   public static final ESIAdductType H = new ESIAdductType("H", 1.007276, 1, 1);
   private static final ESIAdductType NA = new ESIAdductType("Na", 22.989218, 1, 1);
   private static final ESIAdductType NH4 = new ESIAdductType("NH4", 18.033823, 1, 1);
@@ -22,18 +27,21 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
   private static final ESIAdductType CA = new ESIAdductType("Ca", 39.961493820, 2, 1);
 
   // NEGATIVE
+  public static final ESIAdductType M_MINUS = new ESIAdductType("e", +0.00054858, -1, 1);
   public static final ESIAdductType H_NEG = new ESIAdductType("H", -1.007276, -1, 1);
   private static final ESIAdductType CL = new ESIAdductType("Cl", 34.969401, -1, 1);
   private static final ESIAdductType BR = new ESIAdductType("Br", 78.918886, -1, 1);
   private static final ESIAdductType FA = new ESIAdductType("FA", 44.99820285, -1, 1);
 
   // modifications
+  private static final ESIAdductType H2 = new ESIAdductType("C2H4", -2.015650, 0, 1);
   private static final ESIAdductType C2H4 = new ESIAdductType("C2H4", -28.031301, 0, 1);
   private static final ESIAdductType MEOH = new ESIAdductType("MeOH", 32.026215, 0, 1);
   private static final ESIAdductType HFA = new ESIAdductType("HFA", 46.005479, 0, 1);
   private static final ESIAdductType HAc = new ESIAdductType("HAc", 60.021129, 0, 1);
   private static final ESIAdductType ACN = new ESIAdductType("ACN", 41.026549, 0, 1);
   private static final ESIAdductType H2O = new ESIAdductType("H2O", -18.010565, 0, 1);
+
   private static final ESIAdductType NH3 = new ESIAdductType("NH3", -17.026549, 0, 1);
   private static final ESIAdductType CO = new ESIAdductType("CO", -27.994915, 0, 1);
   private static final ESIAdductType CO2 = new ESIAdductType("CO2", -43.989829, 0, 1);
@@ -42,8 +50,8 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
   public static final ESIAdductType C13 = new ESIAdductType("(13C)", 1.003354838, 0, 1);
 
   // default values
-  private static final ESIAdductType[] DEFAULT_VALUES_POSITIVE = {H, NA, K, NH4, CA, FE};
-  private static final ESIAdductType[] DEFAULT_VALUES_NEGATIVE = {H_NEG, NA, CL, BR, FA};
+  private static final ESIAdductType[] DEFAULT_VALUES_POSITIVE = {M_PLUS, H, NA, K, NH4, CA, FE};
+  private static final ESIAdductType[] DEFAULT_VALUES_NEGATIVE = {M_MINUS, H_NEG, NA, CL, BR, FA};
   // default modifications
   private static final ESIAdductType[] DEFAULT_VALUES_MODIFICATIONS =
       {H2O, NH3, CO, CO2, C2H4, HFA, HAc, MEOH, ACN, ISOPROP};
@@ -75,7 +83,8 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    */
   public ESIAdductType(ESIAdductType a) {
     super();
-    this.modification = a.getModification().clone();
+    if (a.getModification() != null)
+      this.modification = a.getModification().clone();
     this.massDifference = a.massDifference;
     this.charge = a.charge;
     this.molecules = a.molecules;

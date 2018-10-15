@@ -28,6 +28,8 @@ import net.sf.mzmine.datamodel.impl.SimplePeakIdentity;
 public class ESIAdductIdentity extends SimplePeakIdentity {
 
   private NumberFormat netIDForm = new DecimalFormat("000");
+
+  private ESIAdductType a;
   // identifier like [M+H]+
   private String adduct;
   private String massDifference;
@@ -44,11 +46,16 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
    */
   public ESIAdductIdentity(final PeakListRow originalPeakListRow, final ESIAdductType adduct) {
     super("later");
+    a = adduct;
     this.adduct = adduct.toString(false);
     this.massDifference = adduct.getMassDiffString();
     partnerRows = String.valueOf(originalPeakListRow.getID());
     setPropertyValue(PROPERTY_METHOD, "MS annotation");
     setPropertyValue(PROPERTY_NAME, getIDString());
+  }
+
+  public ESIAdductType getA() {
+    return a;
   }
 
   public String getAdduct() {

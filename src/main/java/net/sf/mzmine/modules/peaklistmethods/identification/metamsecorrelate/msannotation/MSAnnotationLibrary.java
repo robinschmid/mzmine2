@@ -122,8 +122,8 @@ public class MSAnnotationLibrary {
     z1 = Math.abs(z1);
     z2 = Math.abs(z2);
     // check all combinations of adducts
-    for (final ESIAdductType adduct : allAdducts) {
-      for (final ESIAdductType adduct2 : allAdducts) {
+    for (ESIAdductType adduct : allAdducts) {
+      for (ESIAdductType adduct2 : allAdducts) {
         if (adduct.equals(adduct2))
           continue;
 
@@ -134,22 +134,35 @@ public class MSAnnotationLibrary {
           if (checkChargeStates(adduct, adduct2, z1, z2)) {
             // checks each raw file - only true if all m/z are in range
             if (checkAdduct(peakList, row1, row2, adduct, adduct2, mode, minHeight)) {
+              // reduce mol if mol1==mol2
+              // [2M+H] and [2M+Na] --> [M+H] [M+Na]
+              if (adduct.getMolecules() == adduct2.getMolecules()) {
+                adduct = new ESIAdductType(adduct);
+                adduct.setMolecules(1);
+                adduct2 = new ESIAdductType(adduct2);
+                adduct2.setMolecules(1);
+              }
+
               // is a2 a modification of a1? (same adducts - different mods
               if (adduct2.isModificationOf(adduct)) {
                 ESIAdductType mod = adduct2.subtractMods(adduct);
                 mod.addAdductIdentityToRow(row2, row1);
-                MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row2, false);
+                // add unmodified
+                ESIAdductType.M_UNMODIFIED.addAdductIdentityToRow(row1, row2);
               } else if (adduct.isModificationOf(adduct2)) {
-                adduct.subtractMods(adduct2).addAdductIdentityToRow(row1, row2);
-                MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row1, false);
+                ESIAdductType mod = adduct.subtractMods(adduct2);
+                mod.addAdductIdentityToRow(row1, row2);
+                // add unmodified
+                ESIAdductType.M_UNMODIFIED.addAdductIdentityToRow(row2, row1);
               } else {
                 // Add adduct identity and notify GUI.
                 // only if not already present
                 adduct.addAdductIdentityToRow(row1, row2);
-                MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row1, false);
                 adduct2.addAdductIdentityToRow(row2, row1);
-                MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row2, false);
               }
+              // update
+              MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row1, false);
+              MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row2, false);
               // there can only be one hit for a row-row comparison
               return new ESIAdductType[] {adduct, adduct2};
             }
