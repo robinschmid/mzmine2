@@ -31,6 +31,7 @@ import net.sf.mzmine.desktop.Desktop;
 import net.sf.mzmine.desktop.impl.HeadLessDesktop;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary.CheckMode;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
@@ -56,6 +57,9 @@ public class MSAnnotationTask extends AbstractTask {
   private final MZmineProject project;
   private boolean neverStop = false;
 
+  private double minHeight;
+  private CheckMode checkMode;
+
   /**
    * Create the task.
    *
@@ -74,6 +78,8 @@ public class MSAnnotationTask extends AbstractTask {
     // tolerances
     rtTolerance = parameterSet.getParameter(MSAnnotationParameters.RT_TOLERANCE).getValue();
     useAvgRT = parameterSet.getParameter(MSAnnotationParameters.USE_AVG_RT).getValue();
+    minHeight = parameterSet.getParameter(MSAnnotationParameters.MIN_HEIGHT).getValue();
+    checkMode = parameterSet.getParameter(MSAnnotationParameters.CHECK_MODE).getValue();
   }
 
   @Override
@@ -142,8 +148,8 @@ public class MSAnnotationTask extends AbstractTask {
           // check row against row
           if (inRange) {
             // check for adducts in library
-            ESIAdductType[] id =
-                library.findAdducts(peakList, p0, p1, p0.getRowCharge(), p1.getRowCharge());
+            ESIAdductType[] id = library.findAdducts(peakList, p0, p1, p0.getRowCharge(),
+                p1.getRowCharge(), checkMode, minHeight);
             compared++;
             if (id != null)
               annotPairs++;

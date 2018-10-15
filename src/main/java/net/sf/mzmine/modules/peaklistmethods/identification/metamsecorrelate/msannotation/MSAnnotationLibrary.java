@@ -13,6 +13,16 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 public class MSAnnotationLibrary {
   private static final Logger LOG = Logger.getLogger(MSAnnotationLibrary.class.getName());
+
+  public enum CheckMode {
+    AVGERAGE, ONE_FEATURE, ALL_FEATURES;
+
+    @Override
+    public String toString() {
+      return super.toString().replaceAll("_", " ");
+    }
+  }
+
   private MZTolerance mzTolerance;
   // adducts
   private final ESIAdductType[] selectedAdducts, selectedMods;
@@ -24,7 +34,8 @@ public class MSAnnotationLibrary {
   public MSAnnotationLibrary(MSAnnotationParameters parameterSet) {
     mzTolerance = parameterSet.getParameter(MSAnnotationParameters.MZ_TOLERANCE).getValue();
     // adducts stuff
-    isPositive = parameterSet.getParameter(MSAnnotationParameters.POSITIVE_MODE).getValue();
+    isPositive = parameterSet.getParameter(MSAnnotationParameters.POSITIVE_MODE).getValue()
+        .equals("POSITIVE");
     maxMolecules = parameterSet.getParameter(MSAnnotationParameters.MAX_MOLECULES).getValue();
     maxCombinations = parameterSet.getParameter(MSAnnotationParameters.MAX_COMBINATION).getValue();
     maxCharge = parameterSet.getParameter(MSAnnotationParameters.MAX_CHARGE).getValue();
@@ -85,8 +96,9 @@ public class MSAnnotationLibrary {
    * @param possibleAdduct candidate adduct peak.
    */
   public ESIAdductType[] findAdducts(final PeakList peakList, final PeakListRow row1,
-      final PeakListRow row2) {
-    return findAdducts(peakList, row1, row2, row1.getRowCharge(), row2.getRowCharge());
+      final PeakListRow row2, final CheckMode mode, final double minHeight) {
+    return findAdducts(peakList, row1, row2, row1.getRowCharge(), row2.getRowCharge(), mode,
+        minHeight);
   }
 
   /**
@@ -95,22 +107,37 @@ public class MSAnnotationLibrary {
    * @param mainRow main peak.
    * @param possibleAdduct candidate adduct peak.
    */
+  /**
+   * Does only find one adduct
+   * 
+   * @param peakList
+   * @param row1
+   * @param row2
+   * @param z1 -1 or 0 if not set (charge state always positive)
+   * @param z2 -1 or 0 if not set (charge state always positive)
+   * @return
+   */
   public ESIAdductType[] findAdducts(final PeakList peakList, final PeakListRow row1,
-      final PeakListRow row2, final int z1, final int z2) {
+      final PeakListRow row2, int z1, int z2, final CheckMode mode, final double minHeight) {
+    z1 = Math.abs(z1);
+    z2 = Math.abs(z2);
     // check all combinations of adducts
     for (final ESIAdductType adduct : allAdducts) {
       for (final ESIAdductType adduct2 : allAdducts) {
+        if (adduct.equals(adduct2))
+          continue;
+
         // for one adduct use a maximum of 1 modification
         // second can have <=maxMods
-        if (!adduct.equals(adduct2) && !(adduct.getModCount() > 1 && adduct2.getModCount() > 1)) {
-          // check charge state if absCharge is not -1 or 0
-          if ((z1 <= 0 || adduct.getAbsCharge() == z1)
-              && (z2 <= 0 || adduct2.getAbsCharge() == z2)) {
+        if (checkMaxMod(adduct, adduct2)) {
+          // check charge state if absCharge is not -1 or 0 (no charge detected)
+          if (checkChargeStates(adduct, adduct2, z1, z2)) {
             // checks each raw file - only true if all m/z are in range
-            if (checkAdduct(peakList, row1, row2, adduct, adduct2)) {
+            if (checkAdduct(peakList, row1, row2, adduct, adduct2, mode, minHeight)) {
               // is a2 a modification of a1? (same adducts - different mods
               if (adduct2.isModificationOf(adduct)) {
-                adduct2.subtractMods(adduct).addAdductIdentityToRow(row2, row1);
+                ESIAdductType mod = adduct2.subtractMods(adduct);
+                mod.addAdductIdentityToRow(row2, row1);
                 MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row2, false);
               } else if (adduct.isModificationOf(adduct2)) {
                 adduct.subtractMods(adduct2).addAdductIdentityToRow(row1, row2);
@@ -135,36 +162,82 @@ public class MSAnnotationLibrary {
   }
 
   /**
+   * True if a charge state was not detected or if it fits to the adduct
+   * 
+   * @param adduct
+   * @param adduct2
+   * @param z1
+   * @param z2
+   * @return
+   */
+  private boolean checkChargeStates(ESIAdductType adduct, ESIAdductType adduct2, int z1, int z2) {
+    return (z1 <= 0 || adduct.getAbsCharge() == z1) && (z2 <= 0 || adduct2.getAbsCharge() == z2);
+  }
+
+  /**
+   * Only one adduct can have more than 1 modification
+   * 
+   * @param adduct
+   * @param adduct2
+   * @return
+   */
+  private boolean checkMaxMod(ESIAdductType adduct, ESIAdductType adduct2) {
+    return !(adduct.getModCount() > 1 && adduct2.getModCount() > 1);
+  }
+
+  /**
    * Check if candidate peak is a given type of adduct of given main peak. is not checking retention
    * time (has to be checked before)
    * 
-   * @param mainPeak main peak.
-   * @param possibleAdduct candidate adduct peak.
-   * @param adduct adduct.
-   * @return true if mass difference, retention time tolerance and adduct peak height conditions are
-   *         met.
+   * @param peakList
+   * @param row1
+   * @param row2
+   * @param adduct
+   * @param adduct2
+   * @param minHeight exclude smaller peaks as they can have a higher mz difference
+   * @return false if one peak pair with height>=minHeight is outside of mzTolerance
    */
   private boolean checkAdduct(final PeakList peakList, final PeakListRow row1,
-      final PeakListRow row2, final ESIAdductType adduct, final ESIAdductType adduct2) {
-    // for each peak[rawfile] in row
-    boolean hasCommonPeak = false;
-    //
-    for (RawDataFile raw : peakList.getRawDataFiles()) {
-      Feature f1 = row1.getPeak(raw);
-      Feature f2 = row2.getPeak(raw);
-      if (f1 != null && f2 != null) {
-        hasCommonPeak = true;
-        double mz1 = ((f1.getMZ() * adduct.getAbsCharge()) - adduct.getMassDifference())
-            / adduct.getMolecules();
-        double mz2 = ((f2.getMZ() * adduct2.getAbsCharge()) - adduct2.getMassDifference())
-            / adduct2.getMolecules();
-        if (!mzTolerance.checkWithinTolerance(mz1, mz2))
-          return false;
+      final PeakListRow row2, final ESIAdductType adduct, final ESIAdductType adduct2,
+      final CheckMode mode, double minHeight) {
+    // averarge mz
+    if (mode.equals(CheckMode.AVGERAGE)) {
+      double m1 = adduct.getMass(row1.getAverageMZ());
+      double m2 = adduct2.getMass(row2.getAverageMZ());
+      return mzTolerance.checkWithinTolerance(m1, m2);
+    } else {
+      // feature comparison
+      // for each peak[rawfile] in row
+      boolean hasCommonPeak = false;
+      //
+      for (RawDataFile raw : peakList.getRawDataFiles()) {
+        Feature f1 = row1.getPeak(raw);
+        Feature f2 = row2.getPeak(raw);
+        // check for minimum height. Small peaks have a higher delta mz
+        if (f1 != null && f2 != null && f1.getHeight() >= minHeight
+            && f2.getHeight() >= minHeight) {
+          hasCommonPeak = true;
+          double m1 = adduct.getMass(f1.getMZ());
+          double m2 = adduct2.getMass(f2.getMZ());
+          boolean sameMZ = mzTolerance.checkWithinTolerance(m1, m2);
+
+          // short cut
+          switch (mode) {
+            case ONE_FEATURE:
+              if (sameMZ)
+                return true;
+              break;
+            case ALL_FEATURES:
+              if (!sameMZ)
+                return false;
+              break;
+          }
+        }
       }
+      // directly returns false if not in range
+      // so if has common peak = isAdduct
+      return mode.equals(CheckMode.ALL_FEATURES) && hasCommonPeak;
     }
-    // directly returns false if not in range
-    // so if has common peak = isAdduct
-    return hasCommonPeak;
   }
 
   /**

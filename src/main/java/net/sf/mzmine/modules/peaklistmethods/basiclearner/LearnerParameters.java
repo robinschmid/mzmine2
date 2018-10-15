@@ -18,9 +18,11 @@
 
 package net.sf.mzmine.modules.peaklistmethods.basiclearner;
 
+import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
+import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.StringParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
@@ -42,6 +44,10 @@ public class LearnerParameters extends SimpleParameterSet {
 
   public static final IntegerParameter maximumCharge = new IntegerParameter("Maximum charge",
       "Maximum charge to consider for detecting the isotope patterns");
+
+  public static final DoubleParameter minimumHeight = new DoubleParameter("Min height",
+      "Minimum intensity of the highest data point in the chromatogram. If chromatogram height is below this level, it is discarded.",
+      MZmineCore.getConfiguration().getIntensityFormat());
 
   public static final BooleanParameter autoRemove = new BooleanParameter("Remove original peaklist",
       "If checked, original peaklist will be removed and only deisotoped version remains");

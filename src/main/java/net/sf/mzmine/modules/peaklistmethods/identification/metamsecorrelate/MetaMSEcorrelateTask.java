@@ -50,6 +50,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.fil
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.AnnotationNetwork;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary.CheckMode;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationParameters;
 import net.sf.mzmine.parameters.ParameterSet;
@@ -91,6 +92,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   private MSAnnotationLibrary library;
   private final boolean useAdductBonusR, searchAdducts;
   private final double adductBonusR;
+  private CheckMode adductCheckMode;
+  private double minAdductHeight;
 
   // GROUP and MIN SAMPLES FILTER
   private final boolean useGroups;
@@ -172,6 +175,9 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     MSAnnotationParameters annParam = (MSAnnotationParameters) parameterSet
         .getParameter(MetaMSEcorrelateParameters.ADDUCT_LIBRARY).getEmbeddedParameters();
     library = new MSAnnotationLibrary(annParam);
+
+    minAdductHeight = annParam.getParameter(MSAnnotationParameters.MIN_HEIGHT).getValue();
+    adductCheckMode = annParam.getParameter(MSAnnotationParameters.CHECK_MODE).getValue();
 
     // intensity correlation across samples
     useMaxICorrFilter =
@@ -325,7 +331,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
             if (searchAdducts) {
               // check for adducts in library
-              ESIAdductType[] id = library.findAdducts(peakList, row, row2);
+              ESIAdductType[] id =
+                  library.findAdducts(peakList, row, row2, adductCheckMode, minAdductHeight);
               compared++;
               if (id != null)
                 annotPairs++;

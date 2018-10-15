@@ -5,7 +5,6 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Vector;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.main.MZmineCore;
@@ -76,12 +75,12 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    */
   public ESIAdductType(ESIAdductType a) {
     super();
-    this.modification = a.getModification();
+    this.modification = a.getModification().clone();
     this.massDifference = a.massDifference;
     this.charge = a.charge;
     this.molecules = a.molecules;
     this.name = a.name;
-    this.adducts = a.getAdducts();
+    this.adducts = a.getAdducts().clone();
     this.parsedName = parseName();
   }
 
@@ -123,7 +122,7 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    */
   public ESIAdductType(final ESIAdductType[] adduct) {
     // all mods
-    Vector<ESIAdductType> mod = new Vector<ESIAdductType>();
+    List<ESIAdductType> mod = new ArrayList<>();
     for (ESIAdductType a : adduct)
       if (a.getModification() != null)
         for (ESIAdductType m : a.getModification())
@@ -174,7 +173,7 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
     } else
       this.modification = null;
     // all adducts
-    Vector<ESIAdductType> ad = new Vector<ESIAdductType>();
+    List<ESIAdductType> ad = new ArrayList<ESIAdductType>();
     for (ESIAdductType n : a1.getAdducts())
       ad.add(n);
     for (ESIAdductType n : a2.getAdducts())
@@ -339,41 +338,6 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
   }
 
   /**
-   * Get the default adducts.
-   *
-   * @return the list of default adducts.
-   */
-  public static ESIAdductType[] getDefaultValuesPos() {
-    return Arrays.copyOf(DEFAULT_VALUES_POSITIVE, DEFAULT_VALUES_POSITIVE.length);
-  }
-
-  public static ESIAdductType[] getDefaultValuesNeg() {
-    return Arrays.copyOf(DEFAULT_VALUES_NEGATIVE, DEFAULT_VALUES_NEGATIVE.length);
-  }
-
-  public static ESIAdductType[] getDefaultModifications() {
-    return Arrays.copyOf(DEFAULT_VALUES_MODIFICATIONS, DEFAULT_VALUES_MODIFICATIONS.length);
-  }
-
-  public static ESIAdductType[] getDefaultIsotopes() {
-    return Arrays.copyOf(DEFAULT_VALUES_MODIFICATIONS, DEFAULT_VALUES_ISOTOPES.length);
-  }
-
-  @Override
-  public boolean equals(final Object obj) {
-    final boolean eq;
-    if (obj instanceof ESIAdductType) {
-      final ESIAdductType adduct = (ESIAdductType) obj;
-
-      eq = adduct == this
-          || (sameMathDifference(adduct) && nameEquals(adduct) && modsEqual(adduct));
-    } else {
-      eq = false;
-    }
-    return eq;
-  }
-
-  /**
    * checks all sub/raw ESIAdductTypes
    * 
    * @param a
@@ -443,9 +407,24 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
     return MZmineCore.getConfiguration().getMZFormat().format(massDifference) + " m/z";
   }
 
+  /**
+   * Checks mass diff, charge and mol equality
+   * 
+   * @param adduct
+   * @return
+   */
   public boolean sameMathDifference(ESIAdductType adduct) {
-    return Math.abs(massDifference - adduct.massDifference) < 0.000001 && charge == adduct.charge
-        && molecules == adduct.molecules;
+    return sameMassDifference(adduct) && charge == adduct.charge && molecules == adduct.molecules;
+  }
+
+  /**
+   * Checks mass diff
+   * 
+   * @param adduct
+   * @return
+   */
+  public boolean sameMassDifference(ESIAdductType adduct) {
+    return Double.compare(massDifference, adduct.massDifference) == 0;
   }
 
   public int getAbsCharge() {
@@ -464,6 +443,11 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
     molecules = i;
   }
 
+  /**
+   * Is modified
+   * 
+   * @return
+   */
   public boolean hasMods() {
     return modification != null && modification.length > 0;
   }
@@ -490,23 +474,11 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    * @return
    */
   public boolean isModificationOf(ESIAdductType adduct) {
-    return !sameMathDifference(adduct) && molecules == adduct.molecules && charge == adduct.charge
+    return !sameMassDifference(adduct) && molecules == adduct.molecules && charge == adduct.charge
         && nameEquals(adduct)
         && (this.hasMods()
             && (!adduct.hasMods() || (adduct.modification.length < this.modification.length
                 && adduct.modification[0].equals(this.modification[0]))));
-  }
-
-  /**
-   * is a modification of parameter adduct? only if all adducts are the same, mass difference must
-   * be different ALWAYS if one is a mod of the other
-   * 
-   * @param adduct
-   * @return
-   */
-  public boolean sameAdductsButModified(ESIAdductType adduct) {
-    return !sameMathDifference(adduct) && molecules == adduct.molecules && charge == adduct.charge
-        && (adduct.hasMods() || this.hasMods()) && nameEquals(adduct);
   }
 
   /**
@@ -516,6 +488,7 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    * @return
    */
   public ESIAdductType subtractMods(ESIAdductType adduct) {
+    // return an identity with only the modifications
     if (!adduct.hasMods())
       return new ESIAdductType(modification);
     else if (hasMods()) {
@@ -537,15 +510,48 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
   }
 
   /**
-   * trys to calculate if this is a main adduct
+   * ((mz * charge) - deltaMass) / numberOfMolecules
    * 
+   * @param mz
    * @return
    */
-  public boolean isMainAdduct(int maxAdducts) {
-    // is a modification of >=2
-    if (charge == 0 && adducts.length > 1)
-      return false;
+  public double getMass(double mz) {
+    return ((mz * this.getAbsCharge()) - this.getMassDifference()) / this.getMolecules();
+  }
 
-    return adducts.length <= maxAdducts && (!hasMods() || modification.length <= 1);
+
+  /**
+   * Get the default adducts.
+   *
+   * @return the list of default adducts.
+   */
+  public static ESIAdductType[] getDefaultValuesPos() {
+    return Arrays.copyOf(DEFAULT_VALUES_POSITIVE, DEFAULT_VALUES_POSITIVE.length);
+  }
+
+  public static ESIAdductType[] getDefaultValuesNeg() {
+    return Arrays.copyOf(DEFAULT_VALUES_NEGATIVE, DEFAULT_VALUES_NEGATIVE.length);
+  }
+
+  public static ESIAdductType[] getDefaultModifications() {
+    return Arrays.copyOf(DEFAULT_VALUES_MODIFICATIONS, DEFAULT_VALUES_MODIFICATIONS.length);
+  }
+
+  public static ESIAdductType[] getDefaultIsotopes() {
+    return Arrays.copyOf(DEFAULT_VALUES_MODIFICATIONS, DEFAULT_VALUES_ISOTOPES.length);
+  }
+
+  @Override
+  public boolean equals(final Object obj) {
+    final boolean eq;
+    if (obj instanceof ESIAdductType) {
+      final ESIAdductType adduct = (ESIAdductType) obj;
+
+      eq = adduct == this
+          || (sameMathDifference(adduct) && nameEquals(adduct) && modsEqual(adduct));
+    } else {
+      eq = false;
+    }
+    return eq;
   }
 }

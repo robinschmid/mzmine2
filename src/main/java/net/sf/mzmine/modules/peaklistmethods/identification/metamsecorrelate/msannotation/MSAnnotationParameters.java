@@ -19,10 +19,14 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation;
 
 import java.awt.Window;
+import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary.CheckMode;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
+import net.sf.mzmine.parameters.parametertypes.ComboParameter;
+import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.esiadducts.ESIAdductsParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
@@ -46,10 +50,21 @@ public class MSAnnotationParameters extends SimpleParameterSet {
   public static final MZToleranceParameter MZ_TOLERANCE = new MZToleranceParameter("m/z tolerance",
       "Tolerance value of the m/z difference between peaks");
 
+  public static final ComboParameter<CheckMode> CHECK_MODE =
+      new ComboParameter<MSAnnotationLibrary.CheckMode>("Check",
+          "The modes to check for adduct identities. Average compares only the average m/z values (without min. height).\n "
+              + "ALL features and SINGLE feature compares the m/z values of features with height>minHeight in raw data files",
+          CheckMode.values(), CheckMode.ALL_FEATURES);
+
+  public static final DoubleParameter MIN_HEIGHT = new DoubleParameter("Min height",
+      "Minimum height of feature shape (not used for average mode)",
+      MZmineCore.getConfiguration().getIntensityFormat());
+
+
   // adduct finder parameter - taken from the adduct finder
   // search for adducts? Bonus for correlation?
-  public static final BooleanParameter POSITIVE_MODE =
-      new BooleanParameter("Positive MS mode", "Positive or negative mode?", false);
+  public static final ComboParameter<String> POSITIVE_MODE = new ComboParameter<>("MS mode",
+      "Positive or negative mode?", new String[] {"POSITIVE", "NEGATIVE"}, "POSITIVE");
 
   public static final IntegerParameter MAX_CHARGE = new IntegerParameter("Maximum charge",
       "Maximum charge to be used for adduct search.", 2, 1, 100);
@@ -72,10 +87,11 @@ public class MSAnnotationParameters extends SimpleParameterSet {
 
   public MSAnnotationParameters(boolean isSub) {
     super(isSub ? // no peak list and rt tolerance
-        new Parameter[] {MZ_TOLERANCE, POSITIVE_MODE, MAX_CHARGE, MAX_MOLECULES, MAX_COMBINATION,
-            MAX_MODS, ADDUCTS}
-        : new Parameter[] {PEAK_LISTS, RT_TOLERANCE, USE_AVG_RT, MZ_TOLERANCE, POSITIVE_MODE,
-            MAX_CHARGE, MAX_MOLECULES, MAX_COMBINATION, MAX_MODS, ADDUCTS});
+        new Parameter[] {MZ_TOLERANCE, CHECK_MODE, MIN_HEIGHT, POSITIVE_MODE, MAX_CHARGE,
+            MAX_MOLECULES, MAX_COMBINATION, MAX_MODS, ADDUCTS}
+        : new Parameter[] {PEAK_LISTS, RT_TOLERANCE, USE_AVG_RT, MZ_TOLERANCE, CHECK_MODE,
+            MIN_HEIGHT, POSITIVE_MODE, MAX_CHARGE, MAX_MOLECULES, MAX_COMBINATION, MAX_MODS,
+            ADDUCTS});
   }
 
   @Override
