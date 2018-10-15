@@ -68,7 +68,7 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
       new FeatureShapeCorrelationParameters(true));
 
   public static final OptionalModuleParameter IMAX_CORRELATION =
-      new OptionalModuleParameter("Max intensity correlation",
+      new OptionalModuleParameter("Feature height correlation",
           "Feature to feature correlation of the maximum intensities across all samples.",
           new InterSampleIntCorrParameters());
 

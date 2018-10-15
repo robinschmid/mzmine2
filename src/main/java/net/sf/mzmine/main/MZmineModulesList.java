@@ -199,7 +199,8 @@ public class MZmineModulesList {
       MSMSExportModule.class, ScatterPlotVisualizerModule.class, HistogramVisualizerModule.class,
       InfoVisualizerModule.class, IntensityPlotModule.class, KendrickMassPlotModule.class,
       VanKrevelenDiagramModule.class, MSECorrGroupVisualizerModule.class, CorrHistoModule.class,
-      AnnotationNetworkModule.class, CorrNetworkModule.class, RTNetworkModule.class,
+      // vis networks
+      RTNetworkModule.class, AnnotationNetworkModule.class, CorrNetworkModule.class,
 
       // Tools
       MzRangeMassCalculatorModule.class, MzRangeFormulaCalculatorModule.class,

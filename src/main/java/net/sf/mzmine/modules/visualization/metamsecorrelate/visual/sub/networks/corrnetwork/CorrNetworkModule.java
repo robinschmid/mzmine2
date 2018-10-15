@@ -66,7 +66,7 @@ public class CorrNetworkModule implements MZmineRunnableModule {
 
   @Override
   public @Nonnull MZmineModuleCategory getModuleCategory() {
-    return MZmineModuleCategory.VISUALIZATIONPEAKLIST;
+    return MZmineModuleCategory.VISNETWORKS;
   }
 
   @Override

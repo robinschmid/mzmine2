@@ -37,8 +37,9 @@ import net.sf.mzmine.util.ExitCode;
  */
 public class RTNetworkModule implements MZmineRunnableModule {
 
-  private static final String MODULE_NAME = "Retention time network";
-  private static final String MODULE_DESCRIPTION = "Visualise the results of rt tolerance check";
+  private static final String MODULE_NAME = "Avg retention time network";
+  private static final String MODULE_DESCRIPTION =
+      "Visualise the results of RT tolerance check on average retention time";
 
   @Override
   public @Nonnull String getName() {
@@ -74,7 +75,7 @@ public class RTNetworkModule implements MZmineRunnableModule {
 
   @Override
   public @Nonnull MZmineModuleCategory getModuleCategory() {
-    return MZmineModuleCategory.VISUALIZATIONPEAKLIST;
+    return MZmineModuleCategory.VISNETWORKS;
   }
 
   @Override

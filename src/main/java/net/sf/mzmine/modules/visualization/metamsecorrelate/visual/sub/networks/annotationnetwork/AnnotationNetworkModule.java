@@ -34,7 +34,7 @@ import net.sf.mzmine.util.ExitCode;
  */
 public class AnnotationNetworkModule implements MZmineRunnableModule {
 
-  private static final String MODULE_NAME = "MS annotation networks";
+  private static final String MODULE_NAME = "MS annotations networks";
   private static final String MODULE_DESCRIPTION =
       "Visualise the results of the MS annotation module";
 
@@ -65,7 +65,7 @@ public class AnnotationNetworkModule implements MZmineRunnableModule {
 
   @Override
   public @Nonnull MZmineModuleCategory getModuleCategory() {
-    return MZmineModuleCategory.VISUALIZATIONPEAKLIST;
+    return MZmineModuleCategory.VISNETWORKS;
   }
 
   @Override

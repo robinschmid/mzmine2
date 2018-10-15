@@ -38,6 +38,7 @@ public enum MZmineModuleCategory {
   PEAKLISTIMPORT("Peak list import"), //
   VISUALIZATIONRAWDATA("Visualization"), //
   VISUALIZATIONPEAKLIST("Visualization peak list"), //
+  VISNETWORKS("Networks"), //
   DATAANALYSIS("Data analysis"), //
   HELPSYSTEM("Help"), //
   TOOLS("Tools"); //
@@ -48,6 +49,7 @@ public enum MZmineModuleCategory {
     this.name = name;
   }
 
+  @Override
   public String toString() {
     return name;
   }

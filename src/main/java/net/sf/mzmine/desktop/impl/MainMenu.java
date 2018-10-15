@@ -26,13 +26,11 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.logging.Logger;
-
 import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
-
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.RawDataFile;
@@ -62,10 +60,11 @@ public class MainMenu extends JMenuBar implements ActionListener {
 
   private Logger logger = Logger.getLogger(this.getClass().getName());
 
-  private JMenu projectMenu, rawDataMenu, peakListMenu, visualizationMenu, helpMenu,
+  private JMenu projectMenu, rawDataMenu, peakListMenu, visualizationMenu, visNetworkMenu, helpMenu,
       rawDataFilteringMenu, peakDetectionMenu, gapFillingMenu, isotopesMenu,
       peakListPeakPickingMenu, peakListFilteringMenu, alignmentMenu, normalizationMenu,
-      identificationMenu, dataAnalysisMenu, peakListExportMenu, peakListSpectralDeconvolutionMenu, toolsMenu;
+      identificationMenu, dataAnalysisMenu, peakListExportMenu, peakListSpectralDeconvolutionMenu,
+      toolsMenu;
 
   private WindowsMenu windowsMenu;
 
@@ -186,11 +185,14 @@ public class MainMenu extends JMenuBar implements ActionListener {
     this.add(visualizationMenu);
 
     visualizationMenu.addSeparator();
-    
+
+    visNetworkMenu = new JMenu("Networks");
+    visNetworkMenu.setMnemonic(KeyEvent.VK_V);
+    visualizationMenu.add(visNetworkMenu);
     /*
      * Tools menu
      */
-    
+
     toolsMenu = new JMenu("Tools");
     toolsMenu.setMnemonic(KeyEvent.VK_T);
     this.add(toolsMenu);
@@ -202,7 +204,7 @@ public class MainMenu extends JMenuBar implements ActionListener {
     windowsMenu = new WindowsMenu();
     windowsMenu.setMnemonic(KeyEvent.VK_W);
     this.add(windowsMenu);
-    
+
     /*
      * Help menu
      */
@@ -281,6 +283,9 @@ public class MainMenu extends JMenuBar implements ActionListener {
       case VISUALIZATIONPEAKLIST:
         visualizationMenu.add(newItem);
         break;
+      case VISNETWORKS:
+        visNetworkMenu.add(newItem);
+        break;
       case DATAANALYSIS:
         dataAnalysisMenu.add(newItem);
         break;
@@ -325,6 +330,7 @@ public class MainMenu extends JMenuBar implements ActionListener {
   /**
    * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
    */
+  @Override
   public void actionPerformed(ActionEvent e) {
 
     Object src = e.getSource();
