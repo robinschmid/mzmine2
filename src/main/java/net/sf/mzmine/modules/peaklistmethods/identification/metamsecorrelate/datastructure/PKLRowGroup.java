@@ -134,10 +134,13 @@ public class PKLRowGroup extends ArrayList<PeakListRow> {
    */
   public double getCenterRT() {
     double center = 0;
+    int counter = 0;
     for (int i = 0; i < rtSum.length; i++)
-      if (rtValues[i] > 0)
+      if (rtValues[i] > 0) {
         center += rtSum[i] / rtValues[i];
-    return center / rtSum.length;
+        counter++;
+      }
+    return center / counter;
   }
 
   /**
