@@ -185,8 +185,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
   @Override
   public double getFinishedPercentage() {
-    double prevProgress =
-        stage.ordinal() == 0 ? 0 : Stage.values()[stage.ordinal() - 1].getFinalProgress();
+    double prevProgress = stage == null || stage.ordinal() == 0 ? 0
+        : Stage.values()[stage.ordinal() - 1].getFinalProgress();
     return prevProgress + (stage.getFinalProgress() - prevProgress) * stageProgress;
   }
 
