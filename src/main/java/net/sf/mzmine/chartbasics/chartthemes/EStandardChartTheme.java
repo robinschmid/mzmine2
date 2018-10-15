@@ -24,9 +24,20 @@ import java.awt.Paint;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.StandardChartTheme;
 import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.plot.CategoryPlot;
+import org.jfree.chart.plot.FastScatterPlot;
+import org.jfree.chart.plot.MeterPlot;
+import org.jfree.chart.plot.MultiplePiePlot;
+import org.jfree.chart.plot.PiePlot;
+import org.jfree.chart.plot.Plot;
+import org.jfree.chart.plot.PolarPlot;
+import org.jfree.chart.plot.SpiderWebPlot;
+import org.jfree.chart.plot.ThermometerPlot;
+import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.chart.renderer.xy.StandardXYBarPainter;
 import org.jfree.chart.title.PaintScaleLegend;
+import org.jfree.chart.util.Args;
 import net.sf.mzmine.chartbasics.chartthemes.ChartThemeFactory.THEME;
 
 
@@ -55,6 +66,8 @@ public class EStandardChartTheme extends StandardChartTheme {
 
   protected boolean showXGrid = false, showYGrid = false;
   protected boolean showXAxis = true, showYAxis = true;
+
+  protected boolean applyColors = true;
 
 
   public EStandardChartTheme(THEME themeID, String name) {
@@ -103,6 +116,14 @@ public class EStandardChartTheme extends StandardChartTheme {
     masterFontColor = cMaster;
   }
 
+  public boolean isApplyColors() {
+    return applyColors;
+  }
+
+  public void setApplyColors(boolean applyColors) {
+    this.applyColors = applyColors;
+  }
+
 
   @Override
   public void apply(JFreeChart chart) {
@@ -145,6 +166,47 @@ public class EStandardChartTheme extends StandardChartTheme {
     chart.setAntiAlias(isAntiAliased());
     chart.getTitle().setVisible(isShowTitle());
     chart.getPlot().setBackgroundAlpha(isNoBackground() ? 0 : 1);
+  }
+
+  /**
+   * Applies the attributes of this theme to a plot.
+   *
+   * @param plot the plot ({@code null}).
+   */
+  @Override
+  protected void applyToPlot(Plot plot) {
+    Args.nullNotPermitted(plot, "plot");
+    if (applyColors && plot.getDrawingSupplier() != null) {
+      plot.setDrawingSupplier(getDrawingSupplier());
+    }
+    if (plot.getBackgroundPaint() != null) {
+      plot.setBackgroundPaint(this.getPlotBackgroundPaint());
+    }
+    plot.setOutlinePaint(this.getPlotOutlinePaint());
+
+    // now handle specific plot types (and yes, I know this is some
+    // really ugly code that has to be manually updated any time a new
+    // plot type is added - I should have written something much cooler,
+    // but I didn't and neither did anyone else).
+    if (plot instanceof PiePlot) {
+      applyToPiePlot((PiePlot) plot);
+    } else if (plot instanceof MultiplePiePlot) {
+      applyToMultiplePiePlot((MultiplePiePlot) plot);
+    } else if (plot instanceof CategoryPlot) {
+      applyToCategoryPlot((CategoryPlot) plot);
+    } else if (plot instanceof XYPlot) {
+      applyToXYPlot((XYPlot) plot);
+    } else if (plot instanceof FastScatterPlot) {
+      applyToFastScatterPlot((FastScatterPlot) plot);
+    } else if (plot instanceof MeterPlot) {
+      applyToMeterPlot((MeterPlot) plot);
+    } else if (plot instanceof ThermometerPlot) {
+      applyToThermometerPlot((ThermometerPlot) plot);
+    } else if (plot instanceof SpiderWebPlot) {
+      applyToSpiderWebPlot((SpiderWebPlot) plot);
+    } else if (plot instanceof PolarPlot) {
+      applyToPolarPlot((PolarPlot) plot);
+    }
   }
 
   public boolean isNoBackground() {

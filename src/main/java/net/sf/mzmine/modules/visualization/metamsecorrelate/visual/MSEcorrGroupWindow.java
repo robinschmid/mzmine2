@@ -43,6 +43,7 @@ import org.jfree.chart.labels.BoxAndWhiskerToolTipGenerator;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.CombinedRangeCategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.renderer.AbstractRenderer;
 import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.chart.renderer.category.BoxAndWhiskerRenderer;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
@@ -133,6 +134,10 @@ public class MSEcorrGroupWindow extends JFrame {
     // sub window for more charts
     subWindow = new MSEcorrGroupSubWindow(this);
     theme = ChartThemeFactory.getStandardTheme();
+    theme.setPlotBackgroundPaint(new Color(235, 235, 235));
+    theme.setShowSubtitles(true);
+    // do not change colors of series
+    theme.setApplyColors(false);
 
     // data
     this.peakList = peakList;
@@ -644,6 +649,8 @@ public class MSEcorrGroupWindow extends JFrame {
       JFreeChart chart = ChartFactory.createXYLineChart(title, "retention time | min", "Intensity",
           data, PlotOrientation.VERTICAL, true, true, false);
       XYItemRenderer renderer = chart.getXYPlot().getRenderer();
+      setRendererKeepColors(renderer);
+
       // formating
       NumberFormat rtFormat = MZmineCore.getConfiguration().getRTFormat();
       NumberFormat intensityFormat = MZmineCore.getConfiguration().getIntensityFormat();
@@ -717,6 +724,7 @@ public class MSEcorrGroupWindow extends JFrame {
             ChartFactory.createScatterPlot(title, "Intensity (row: " + row.getID() + ")",
                 "Intensity (other rows)", data, PlotOrientation.VERTICAL, true, true, false);
         XYItemRenderer renderer = chart.getXYPlot().getRenderer();
+        setRendererKeepColors(renderer);
         // formating
         NumberFormat intensityFormat = MZmineCore.getConfiguration().getIntensityFormat();
         NumberAxis xAxis = (NumberAxis) chart.getXYPlot().getDomainAxis();
@@ -768,6 +776,28 @@ public class MSEcorrGroupWindow extends JFrame {
 
 
   /**
+   * Changes the renderer to not change color at theme.apply
+   * 
+   * @param renderer
+   */
+  private void setRendererKeepColors(XYItemRenderer renderer) {
+    if (renderer instanceof AbstractRenderer) {
+      setRendererKeepColors(((AbstractRenderer) renderer));
+    }
+  }
+
+  /**
+   * Changes the renderer to not change color at theme.apply
+   * 
+   * @param renderer
+   */
+  private void setRendererKeepColors(AbstractRenderer renderer) {
+    renderer.setAutoPopulateSeriesPaint(false);
+    renderer.setAutoPopulateSeriesFillPaint(false);
+    renderer.setAutoPopulateSeriesOutlinePaint(false);
+  }
+
+  /**
    * Correlation of the maximum intensitites. One series per f2f correlation over all raw data
    * files.
    */
@@ -796,6 +826,7 @@ public class MSEcorrGroupWindow extends JFrame {
             ChartFactory.createScatterPlot(title, "Intensity (row: " + row.getID() + ")",
                 "Intensity (other rows)", data, PlotOrientation.VERTICAL, true, true, false);
         XYItemRenderer renderer = chart.getXYPlot().getRenderer();
+        setRendererKeepColors(renderer);
         // formating
         NumberFormat intensityFormat = MZmineCore.getConfiguration().getIntensityFormat();
         NumberAxis xAxis = (NumberAxis) chart.getXYPlot().getDomainAxis();
@@ -893,6 +924,7 @@ public class MSEcorrGroupWindow extends JFrame {
         JFreeChart chart = ChartFactory.createBarChart(title, "Sample group",
             "Pearson correlation (r)", dataset, PlotOrientation.VERTICAL, false, true, false);
         BarRenderer catRen = (BarRenderer) chart.getCategoryPlot().getRenderer();
+        setRendererKeepColors(catRen);
         catRen.setItemMargin(0.0);
         CategoryAxis axis = chart.getCategoryPlot().getDomainAxis();
         axis.setCategoryMargin(0.000);
@@ -989,9 +1021,6 @@ public class MSEcorrGroupWindow extends JFrame {
   private EChartPanel createChartPanel(JFreeChart chart) {
     EChartPanel cp = new EChartPanel(chart);
     try {
-      // TODO change theme once
-      theme.setPlotBackgroundPaint(new Color(235, 235, 235));
-      theme.setShowSubtitles(true);
       theme.apply(chart);
     } catch (Exception e) {
       LOG.log(Level.WARNING, "Cannot apply theme to chart " + chart.getID(), e);
@@ -1159,6 +1188,7 @@ public class MSEcorrGroupWindow extends JFrame {
     //
     yAxis.setAutoRangeIncludesZero(true);
     BoxAndWhiskerRenderer renderer = new BoxAndWhiskerRenderer();
+    setRendererKeepColors(renderer);
     renderer.setSeriesPaint(0, colorRowI);
     renderer.setDefaultToolTipGenerator(new BoxAndWhiskerToolTipGenerator());
     renderer.setFillBox(true);
@@ -1213,6 +1243,7 @@ public class MSEcorrGroupWindow extends JFrame {
     NumberAxis yAxis = new NumberAxis("Height");
     yAxis.setAutoRangeIncludesZero(true);
     BoxAndWhiskerRenderer renderer = new BoxAndWhiskerRenderer();
+    setRendererKeepColors(renderer);
     renderer.setFillBox(true);
     CategoryPlot plot = new CategoryPlot(dataset, xAxis, yAxis, renderer);
     renderer.setDefaultToolTipGenerator(new BoxAndWhiskerToolTipGenerator());
