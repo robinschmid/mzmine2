@@ -30,7 +30,6 @@ import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
-import net.sf.mzmine.parameters.parametertypes.PercentParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
 import net.sf.mzmine.parameters.parametertypes.submodules.SubModuleParameter;
@@ -89,11 +88,6 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
           "Build adduct, in-source fragment, cluster,.. library and match all features",
           new MSAnnotationParameters(true));
 
-  public static final OptionalParameter<PercentParameter> ADDUCT_BONUSR =
-      new OptionalParameter<>(new PercentParameter("Bonus for adduct",
-          "Bonus correlation r that is added to the peak shape correlation before checking with the minimal r.",
-          0.10, 0, 1));
-
   // Constructor
   public MetaMSEcorrelateParameters() {
     super(new Parameter[] {PEAK_LISTS, RT_TOLERANCE,
@@ -104,7 +98,7 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
         // intensity max correlation
         IMAX_CORRELATION,
         // adducts
-        ADDUCT_LIBRARY, ADDUCT_BONUSR});
+        ADDUCT_LIBRARY});
   }
 
   @Override

@@ -90,8 +90,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
   // ADDUCTS
   private MSAnnotationLibrary library;
-  private final boolean useAdductBonusR, searchAdducts;
-  private final double adductBonusR;
+  private final boolean searchAdducts;
   private CheckMode adductCheckMode;
   private double minAdductHeight;
 
@@ -166,11 +165,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         corrp.getParameter(FeatureShapeCorrelationParameters.MIN_DP_CORR_PEAK_SHAPE).getValue();
 
     // ADDUCTS
-    useAdductBonusR =
-        parameterSet.getParameter(MetaMSEcorrelateParameters.ADDUCT_BONUSR).getValue();
-    adductBonusR = parameterSet.getParameter(MetaMSEcorrelateParameters.ADDUCT_BONUSR)
-        .getEmbeddedParameter().getValue();
-
     searchAdducts = parameterSet.getParameter(MetaMSEcorrelateParameters.ADDUCT_LIBRARY).getValue();
     MSAnnotationParameters annParam = (MSAnnotationParameters) parameterSet
         .getParameter(MetaMSEcorrelateParameters.ADDUCT_LIBRARY).getEmbeddedParameters();

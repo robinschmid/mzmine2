@@ -154,7 +154,10 @@ public class AbsoluteNRelativeIntParameter
     }
 
     if (!checkBounds(value.getAbsolute())) {
-      errorMessages.add(name + " lies outside its bounds: (" + minAbs + " ... " + maxAbs + ')');
+      String max = maxAbs != null ? "" + maxAbs : "";
+      String min = minAbs != null ? "" + minAbs : "";
+
+      errorMessages.add(name + " lies outside its bounds: (" + min + " ... " + max + ')');
       return false;
     }
 
