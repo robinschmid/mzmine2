@@ -162,6 +162,6 @@ public class AbsoluteNRelativeIntParameter
   }
 
   private boolean checkBounds(final int abs) {
-    return (minAbs == null || minAbs >= abs) && (maxAbs == null || abs <= maxAbs);
+    return (minAbs == null || minAbs <= abs) && (maxAbs == null || abs <= maxAbs);
   }
 }
