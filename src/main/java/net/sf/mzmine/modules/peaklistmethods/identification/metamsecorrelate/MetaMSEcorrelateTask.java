@@ -25,8 +25,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.IntStream;
 import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
@@ -286,7 +288,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   private List<AnnotationNetwork> doR2RComparison(MSEGroupedPeakList peakList, R2RCorrMap map)
       throws Exception {
     LOG.info("Corr: Creating row2row correlation map");
-
     PeakListRow rows[] = peakList.getRows();
     totalRows = rows.length;
     final RawDataFile raw[] = peakList.getRawDataFiles();
@@ -295,51 +296,56 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     Arrays.sort(rows, new PeakListRowSorter(SortingProperty.RT, SortingDirection.Ascending));
 
     // for all rows
-    int annotPairs = 0;
-    int compared = 0;
-    for (int i = 0; i < totalRows - 1; i++) {
-      PeakListRow row = rows[i];
+    AtomicInteger annotPairs = new AtomicInteger(0);
+    AtomicInteger compared = new AtomicInteger(0);
 
-      // has a minimum number/% of features in all samples / in at least one groups
-      if (!useMinFInSamplesFilter || minFFilter.filterMinFeatures(raw, row)) {
-        for (int x = i + 1; x < totalRows; x++) {
-          if (isCanceled())
-            return null;
+    IntStream.range(0, rows.length - 1).parallel().forEach(i -> {
+      try {
+        PeakListRow row = rows[i];
+        // has a minimum number/% of features in all samples / in at least one groups
+        if (!useMinFInSamplesFilter || minFFilter.filterMinFeatures(raw, row)) {
+          for (int x = i + 1; x < totalRows; x++) {
+            if (isCanceled())
+              break;
 
-          PeakListRow row2 = rows[x];
-          // has a minimum number/% of overlapping features in all samples / in at least one groups
-          // or check RTRange
-          if ((useMinFInSamplesFilter
-              && minFFilter.filterMinFeaturesOverlap(raw, row, row2, rtTolerance))
-              || (!useMinFInSamplesFilter
-                  && checkRTRange(raw, row, row2, noiseLevelShapeCorr, rtTolerance))) {
-            // correlate if in rt range
-            R2RCorrelationData corr = corrR2R(raw, row, row2, minDPMaxICorr,
-                minCorrelatedDataPoints, noiseLevelShapeCorr);
-            if (corr != null) {
-              // deletes correlations if criteria is not met
-              corr.validate(minMaxICorr, minShapeCorrR);
-              // check for correlation in min samples
-              if (useMinFInSamplesFilter && corr.hasFeatureShapeCorrelation())
-                checkMinFCorrelation(minFFilter, corr);
-              // still valid?
-              if (corr.isValid())
-                map.add(row, row2, corr);
-            }
+            PeakListRow row2 = rows[x];
+            // has a minimum number/% of overlapping features in all samples / in at least one
+            // groups
+            // or check RTRange
+            if ((useMinFInSamplesFilter
+                && minFFilter.filterMinFeaturesOverlap(raw, row, row2, rtTolerance))
+                || (!useMinFInSamplesFilter
+                    && checkRTRange(raw, row, row2, noiseLevelShapeCorr, rtTolerance))) {
+              // correlate if in rt range
+              R2RCorrelationData corr = corrR2R(raw, row, row2, minDPMaxICorr,
+                  minCorrelatedDataPoints, noiseLevelShapeCorr);
+              if (corr != null) {
+                // deletes correlations if criteria is not met
+                corr.validate(minMaxICorr, minShapeCorrR);
+                // check for correlation in min samples
+                if (useMinFInSamplesFilter && corr.hasFeatureShapeCorrelation())
+                  checkMinFCorrelation(minFFilter, corr);
+                // still valid?
+                if (corr.isValid())
+                  map.add(row, row2, corr);
+              }
 
-            if (searchAdducts) {
-              // check for adducts in library
-              ESIAdductType[] id =
-                  library.findAdducts(peakList, row, row2, adductCheckMode, minAdductHeight);
-              compared++;
-              if (id != null)
-                annotPairs++;
+              if (searchAdducts) {
+                // check for adducts in library
+                ESIAdductType[] id =
+                    library.findAdducts(peakList, row, row2, adductCheckMode, minAdductHeight);
+                compared.incrementAndGet();
+                if (id != null)
+                  annotPairs.incrementAndGet();
+              }
             }
           }
         }
+        stageProgress = i / (double) totalRows;
+      } catch (Exception e) {
+        throw new MSDKRuntimeException(e);
       }
-      stageProgress = i / (double) totalRows;
-    }
+    });
 
     // number of f2f correlations
     int nR2Rcorr = 0;
@@ -356,8 +362,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         nF2F));
 
     if (searchAdducts) {
-      LOG.info("Corr: A total of " + compared + " row2row adduct comparisons with " + annotPairs
-          + " annotation pairs");
+      LOG.info("Corr: A total of " + compared.get() + " row2row adduct comparisons with "
+          + annotPairs.get() + " annotation pairs");
 
       //
       LOG.info("Corr: create annotation network numbers");
