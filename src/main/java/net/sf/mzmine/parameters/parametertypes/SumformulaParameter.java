@@ -145,8 +145,9 @@ public class SumformulaParameter implements UserParameter<String, StringComponen
       } catch (Exception e) {
         throw e;
       }
-    } else
+    } else if (valueRequired)
       throw new MSDKRuntimeException("Could not set up formula. Invalid input.");
+    return 0;
   }
 
   public IMolecularFormula getFormula() throws MSDKRuntimeException {
@@ -164,8 +165,9 @@ public class SumformulaParameter implements UserParameter<String, StringComponen
       } catch (Exception e) {
         throw new MSDKRuntimeException("Could not set up formula. Invalid input.");
       }
-    } else
+    } else if (valueRequired)
       throw new MSDKRuntimeException("Could not set up formula. Invalid input.");
+    return null;
   }
 
   @Override
