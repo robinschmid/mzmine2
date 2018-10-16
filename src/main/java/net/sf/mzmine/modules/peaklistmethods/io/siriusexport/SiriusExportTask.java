@@ -12,22 +12,33 @@
 
 package net.sf.mzmine.modules.peaklistmethods.io.siriusexport;
 
-import net.sf.mzmine.datamodel.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.regex.Pattern;
+import org.apache.commons.math3.special.Erf;
+import net.sf.mzmine.datamodel.DataPoint;
+import net.sf.mzmine.datamodel.Feature;
+import net.sf.mzmine.datamodel.PeakList;
+import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
+import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
 import net.sf.mzmine.util.DataPointSorter;
 import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
-import org.apache.commons.math3.special.Erf;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.*;
-import java.util.regex.Pattern;
 
 public class SiriusExportTask extends AbstractTask {
 
@@ -45,11 +56,18 @@ public class SiriusExportTask extends AbstractTask {
   protected double progress, totalProgress;
   protected final SiriusExportParameters.MERGE_MODE mergeMsMs;
 
+  // by robin
+  private NumberFormat mzForm = MZmineCore.getConfiguration().getMZFormat();
+  private NumberFormat intensityForm = MZmineCore.getConfiguration().getIntensityFormat();
+  // seconds
+  private NumberFormat rtsForm = new DecimalFormat("0.###");
 
+  @Override
   public double getFinishedPercentage() {
     return (totalProgress == 0 ? 0 : progress / totalProgress);
   }
 
+  @Override
   public String getTaskDescription() {
     return "Exporting peak list(s) " + Arrays.toString(peakLists) + " to MGF file(s)";
   }
@@ -68,6 +86,7 @@ public class SiriusExportTask extends AbstractTask {
     this.mergeMsMs = parameters.getParameter(SiriusExportParameters.MERGE).getValue();
   }
 
+  @Override
   public void run() {
     this.progress = 0d;
     setStatus(TaskStatus.PROCESSING);
@@ -242,7 +261,7 @@ public class SiriusExportTask extends AbstractTask {
   }
 
   private void exportPeakList(PeakList peakList, BufferedWriter writer) throws IOException {
-
+    // Raw data file, scan numbers
     final HashMap<String, int[]> fragmentScans = getFragmentScans(peakList.getRawDataFiles());
 
     for (PeakListRow row : peakList.getRows()) {
@@ -374,14 +393,14 @@ public class SiriusExportTask extends AbstractTask {
     writer.write(String.valueOf(row.getID()));
     writer.newLine();
     writer.write("PEPMASS=");
-    writer.write(String.valueOf(row.getBestPeak().getMZ()));
+    writer.write(mzForm.format(row.getBestPeak().getMZ()));
     writer.newLine();
     writer.write("CHARGE=");
     writer.write(String.valueOf(Math.abs(row.getRowCharge())));
     writer.write(polarity);
     writer.newLine();
     writer.write("RTINSECONDS=");
-    writer.write(String.valueOf(feature.getRT() * 60d));
+    writer.write(rtsForm.format(feature.getRT() * 60d));
     writer.newLine();
     switch (msType) {
       case CORRELATED:
@@ -427,7 +446,7 @@ public class SiriusExportTask extends AbstractTask {
       writeSpectrum(writer, feature.getIsotopePattern().getDataPoints());
     } else {
       // write nothing
-      writer.write(String.valueOf(feature.getMZ()));
+      writer.write(mzForm.format(feature.getMZ()));
       writer.write(' ');
       writer.write("100.0");
       writer.newLine();
@@ -439,9 +458,9 @@ public class SiriusExportTask extends AbstractTask {
 
   private void writeSpectrum(BufferedWriter writer, DataPoint[] dps) throws IOException {
     for (DataPoint dp : dps) {
-      writer.write(String.valueOf(dp.getMZ()));
+      writer.write(mzForm.format(dp.getMZ()));
       writer.write(' ');
-      writer.write(String.valueOf(dp.getIntensity()));
+      writer.write(intensityForm.format(dp.getIntensity()));
       writer.newLine();
 
     }
