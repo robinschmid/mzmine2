@@ -10,36 +10,28 @@
  * Credit to the Du-Lab development team for the initial commitment to the MGF export module.
  */
 
-package net.sf.mzmine.modules.peaklistmethods.io.siriusexport;
+package net.sf.mzmine.modules.peaklistmethods.io.siriusexport.kai;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import org.apache.commons.math3.special.Erf;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
-import net.sf.mzmine.datamodel.IsotopePattern;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
-import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
+import net.sf.mzmine.modules.peaklistmethods.io.siriusexport.SiriusExportParameters;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
@@ -47,7 +39,7 @@ import net.sf.mzmine.util.DataPointSorter;
 import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
 
-public class SiriusExportTask extends AbstractTask {
+public class SiriusExportTaskNew extends AbstractTask {
 
   private final static String plNamePattern = "{}";
   protected static final Comparator<DataPoint> CompareDataPointsByMz = new Comparator<DataPoint>() {
@@ -61,15 +53,7 @@ public class SiriusExportTask extends AbstractTask {
   // private final boolean fractionalMZ;
   private final String massListName;
   protected double progress, totalProgress;
-  protected final SiriusExportParameters.MERGE_MODE mergeMsMs;
 
-  // by robin
-  private NumberFormat mzForm = MZmineCore.getConfiguration().getMZFormat();
-  private NumberFormat intensityForm = MZmineCore.getConfiguration().getIntensityFormat();
-  // seconds
-  private NumberFormat rtsForm = new DecimalFormat("0.###");
-  // correlation
-  private NumberFormat corrForm = new DecimalFormat("0.0000");
 
   @Override
   public double getFinishedPercentage() {
@@ -81,18 +65,11 @@ public class SiriusExportTask extends AbstractTask {
     return "Exporting peak list(s) " + Arrays.toString(peakLists) + " to MGF file(s)";
   }
 
-  SiriusExportTask(ParameterSet parameters) {
+  SiriusExportTaskNew(ParameterSet parameters) {
     this.peakLists = parameters.getParameter(SiriusExportParameters.PEAK_LISTS).getValue()
         .getMatchingPeakLists();
-
     this.fileName = parameters.getParameter(SiriusExportParameters.FILENAME).getValue();
-
-    // this.fractionalMZ =
-    // parameters.getParameter(SiriusExportParameters.FRACTIONAL_MZ)
-    // .getValue();
-
     this.massListName = parameters.getParameter(SiriusExportParameters.MASS_LIST).getValue();
-    this.mergeMsMs = parameters.getParameter(SiriusExportParameters.MERGE).getValue();
   }
 
   @Override
@@ -256,11 +233,11 @@ public class SiriusExportTask extends AbstractTask {
     }
   }
 
-  public void runSingleRow(PeakList peakList, PeakListRow row) {
+  public void runSingleRow(PeakListRow row) {
     this.progress = 0d;
     setStatus(TaskStatus.PROCESSING);
     try (final BufferedWriter bw = new BufferedWriter(new FileWriter(fileName, true))) {
-      exportPeakListRow(peakList, row, bw, getFragmentScans(row.getRawDataFiles()));
+      exportPeakListRow(row, bw, getFragmentScans(row.getRawDataFiles()));
     } catch (IOException e) {
       setStatus(TaskStatus.ERROR);
       setErrorMessage("Could not open file " + fileName + " for writing.");
@@ -270,11 +247,11 @@ public class SiriusExportTask extends AbstractTask {
   }
 
   private void exportPeakList(PeakList peakList, BufferedWriter writer) throws IOException {
-    // Raw data file, scan numbers
+
     final HashMap<String, int[]> fragmentScans = getFragmentScans(peakList.getRawDataFiles());
 
     for (PeakListRow row : peakList.getRows()) {
-      exportPeakListRow(peakList, row, writer, fragmentScans);
+      exportPeakListRow(row, writer, fragmentScans);
     }
   }
 
@@ -296,10 +273,19 @@ public class SiriusExportTask extends AbstractTask {
     return fragmentScans;
   }
 
-  private void exportPeakListRow(PeakList peakList, PeakListRow row, BufferedWriter writer,
+  private static Logger logger = Logger.getLogger(SiriusExportTaskNew.class.getName());
+
+  private void exportPeakListRow(PeakListRow row, BufferedWriter writer,
       final HashMap<String, int[]> fragmentScans) throws IOException {
-    if (isSkipRow(row))
+
+    final int skipRow = searchForMs1AndMs2InRow(row);
+
+    if (skipRow == 0)
       return;
+    else if (skipRow == 1) {
+      logger.warning("Alignment of row " + row.getID()
+          + " is suspicous: There is neither an isotope pattern nor an MSMS scan associated with any detected feature in this row. However, there are isotope patterns or MSMS scans for ESTIMATED features in this row. This might be an indication for an alignment problem. We highly recommend to check the deconvolution and alignment parameters!");
+    }
     // get row charge and polarity
     char polarity = 0;
     for (Feature f : row.getPeaks()) {
@@ -316,76 +302,81 @@ public class SiriusExportTask extends AbstractTask {
     }
     // write correlation spectrum
     writeHeader(writer, row, row.getBestPeak().getDataFile(), polarity, MsType.CORRELATED, -1);
-    writeCorrelationSpectrum(writer, peakList, row);
+    if (skipRow == 1) {
+      writer.write("WARNING=POSSIBLE ALIGNMENT ERROR\n");
+    }
+    writeCorrelationSpectrum(writer, row.getBestPeak());
 
     List<DataPoint[]> toMerge = new ArrayList<>();
     List<String> sources = new ArrayList<>();
 
+    boolean hasDetectedMs2 = false;
+    for (Feature f : row.getPeaks()) {
+      if (f.getFeatureStatus() == Feature.FeatureStatus.DETECTED
+          && f.getMostIntenseFragmentScanNumber() >= 0)
+        hasDetectedMs2 = true;
+    }
+
     // for each MS/MS write corresponding MS1 and MSMS spectrum
     for (Feature f : row.getPeaks()) {
-      if (mergeMsMs == SiriusExportParameters.MERGE_MODE.MERGE_CONSECUTIVE_SCANS)
-        toMerge.clear();
       if (f.getFeatureStatus() == Feature.FeatureStatus.DETECTED
-          && f.getMostIntenseFragmentScanNumber() >= 0) {
+          && f.getMostIntenseFragmentScanNumber() >= 0
+          || (!hasDetectedMs2 && f.getFeatureStatus() == Feature.FeatureStatus.ESTIMATED
+              && f.getMostIntenseFragmentScanNumber() >= 0)) {
         final int[] scanNumbers = f.getScanNumbers().clone();
         Arrays.sort(scanNumbers);
-        int[] fs = fragmentScans.get(f.getDataFile().getName());
-        int startWith = scanNumbers[0];
-        int j = Arrays.binarySearch(fs, startWith);
-        if (j < 0)
-          j = (-j - 1);
-        for (int k = j; k < fs.length; ++k) {
-          final Scan scan = f.getDataFile().getScan(fs[k]);
-          if (scan.getMSLevel() > 1 && Math.abs(scan.getPrecursorMZ() - f.getMZ()) < 0.1) {
-            /*
-             * if (includeMs1) { // find precursor scan int prec = Arrays.binarySearch(scanNumbers,
-             * fs[k]); if (prec < 0) prec = -prec - 1; prec = Math.max(0, prec - 1); for (; prec <
-             * scanNumbers.length && scanNumbers[prec] < fs[k]; ++prec) { final Scan precursorScan =
-             * f.getDataFile().getScan(scanNumbers[prec]); if (precursorScan.getMSLevel() == 1) {
-             * writeHeader(writer, row, f.getDataFile(), polarity, MsType.MS,
-             * precursorScan.getScanNumber()); writeSpectrum(writer, massListName != null ?
-             * precursorScan.getMassList(massListName).getDataPoints() :
-             * precursorScan.getDataPoints()); } } }
-             */ // Do not include MS1 scans (except for isotope pattern)
-            if (mergeMsMs == SiriusExportParameters.MERGE_MODE.NO_MERGE) {
-              writeHeader(writer, row, f.getDataFile(), polarity, MsType.MSMS,
-                  scan.getScanNumber());
+        final int fscan = f.getMostIntenseFragmentScanNumber();
+        final Scan scan = f.getDataFile().getScan(fscan);
+        if (scan.getMSLevel() > 1 && Math.abs(scan.getPrecursorMZ() - f.getMZ()) < 0.1) {
+          // find precursor scan
+          int prec = Arrays.binarySearch(scanNumbers, fscan);
+          if (prec < 0)
+            prec = -prec - 1;
+          prec = Math.max(0, prec - 1);
+          for (; prec < scanNumbers.length && scanNumbers[prec] < fscan; ++prec) {
+            final Scan precursorScan = f.getDataFile().getScan(scanNumbers[prec]);
+            if (precursorScan.getMSLevel() == 1) {
+              writeHeader(writer, row, f.getDataFile(), polarity, MsType.MS,
+                  precursorScan.getScanNumber());
               writeSpectrum(writer,
-                  massListName != null ? scan.getMassList(massListName).getDataPoints()
-                      : scan.getDataPoints());
-            } else {
-              if (mergeMsMs == SiriusExportParameters.MERGE_MODE.MERGE_OVER_SAMPLES)
-                sources.add(f.getDataFile().getName());
-              toMerge.add(massListName != null ? scan.getMassList(massListName).getDataPoints()
-                  : scan.getDataPoints());
+                  massListName != null ? precursorScan.getMassList(massListName).getDataPoints()
+                      : precursorScan.getDataPoints());
             }
           }
-        }
-        if (mergeMsMs == SiriusExportParameters.MERGE_MODE.MERGE_CONSECUTIVE_SCANS
-            && toMerge.size() > 0) {
-          writeHeader(writer, row, f.getDataFile(), polarity, MsType.MSMS, null);
-          writeSpectrum(writer, merge(f.getMZ(), toMerge));
+          writeHeader(writer, row, f.getDataFile(), polarity, MsType.MSMS, scan.getScanNumber());
+          writeSpectrum(writer,
+              massListName != null ? scan.getMassList(massListName).getDataPoints()
+                  : scan.getDataPoints());
         }
       }
       ++progress;
     }
-    if (mergeMsMs == SiriusExportParameters.MERGE_MODE.MERGE_OVER_SAMPLES && toMerge.size() > 0) {
-      writeHeader(writer, row, row.getBestPeak().getDataFile(), polarity, MsType.MSMS, null,
-          sources);
-      writeSpectrum(writer, merge(row.getAverageMZ(), toMerge));
-    }
   }
 
   private boolean isSkipRow(PeakListRow row) {
+    return searchForMs1AndMs2InRow(row) == 0;
+  }
+
+  // 2 ok
+  // 1 suspicuous
+  // 0 none
+  private int searchForMs1AndMs2InRow(PeakListRow row) {
     // skip rows which have no isotope pattern and no MS/MS spectrum
+    boolean atLeastOne = false;
     for (Feature f : row.getPeaks()) {
       if (f.getFeatureStatus() == Feature.FeatureStatus.DETECTED) {
         if ((f.getIsotopePattern() != null && f.getIsotopePattern().getDataPoints().length > 1)
-            || f.getMostIntenseFragmentScanNumber() >= 0)
-          return false;
+            || f.getMostIntenseFragmentScanNumber() >= 0) {
+          return 2;
+        }
+      } else if (f.getFeatureStatus() == Feature.FeatureStatus.ESTIMATED) {
+        if ((f.getIsotopePattern() != null && f.getIsotopePattern().getDataPoints().length > 1)
+            || f.getMostIntenseFragmentScanNumber() >= 0) {
+          atLeastOne = true;
+        }
       }
     }
-    return true;
+    return atLeastOne ? 1 : 0;
   }
 
   private void writeHeader(BufferedWriter writer, PeakListRow row, RawDataFile raw, char polarity,
@@ -402,14 +393,14 @@ public class SiriusExportTask extends AbstractTask {
     writer.write(String.valueOf(row.getID()));
     writer.newLine();
     writer.write("PEPMASS=");
-    writer.write(mzForm.format(row.getBestPeak().getMZ()));
+    writer.write(String.valueOf(row.getBestPeak().getMZ()));
     writer.newLine();
     writer.write("CHARGE=");
     writer.write(String.valueOf(Math.abs(row.getRowCharge())));
     writer.write(polarity);
     writer.newLine();
     writer.write("RTINSECONDS=");
-    writer.write(rtsForm.format(feature.getRT() * 60d));
+    writer.write(String.valueOf(feature.getRT() * 60d));
     writer.newLine();
     switch (msType) {
       case CORRELATED:
@@ -450,112 +441,11 @@ public class SiriusExportTask extends AbstractTask {
     }
   }
 
-  /**
-   * Write all correlated features (adducts, in-source fragments, istotopes)
-   * 
-   * @param writer
-   * @param feature
-   * @throws IOException
-   */
-  private void writeCorrelationSpectrum(BufferedWriter writer, PeakList pkl, PeakListRow row)
-      throws IOException {
-    /*
-     * Grouped by metaMSEcorrelate Annotations by MS annotations in module
-     */
-    if (pkl instanceof MSEGroupedPeakList) {
-      MSEGroupedPeakList peakList = (MSEGroupedPeakList) pkl;
-      R2RCorrMap map = peakList.getCorrelationMap();
-
-      // get all rows in corr group
-      PKLRowGroup g = peakList.getGroup(row);
-      writeCorrelationSpectrum(writer, g, map);
-    } else {
-      Feature feature = row.getBestPeak();
-      if (feature.getIsotopePattern() != null) {
-        writeSpectrum(writer, feature.getIsotopePattern().getDataPoints());
-      } else {
-        // write nothing
-        writer.write(mzForm.format(feature.getMZ()));
-        writer.write(' ');
-        writer.write("100.0");
-        writer.newLine();
-        writer.write("END IONS");
-        writer.newLine();
-        writer.newLine();
-      }
-    }
-  }
-
-  private void writeCorrelationSpectrum(BufferedWriter writer, PKLRowGroup g, R2RCorrMap map)
-      throws IOException {
-
-    for (int i = 0; i < g.size(); ++i) {
-      PeakListRow row = g.get(i);
-      R2GroupCorrelationData corr = g.getCorr(i);
-      double r = corr.getAvgPeakShapeR();
-      Feature best = row.getBestPeak();
-      ESIAdductIdentity id = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, g);
-
-      // TODO : best feature mz or avg?
-      // intensity?
-      writer.write(mzForm.format(row.getAverageMZ()));
-      writer.write(' ');
-      writer.write(intensityForm.format(best.getHeight()));
-      writer.write(' ');
-      writer.write(corrForm.format(r));
-      if (id != null) {
-        writer.write(' ');
-        writer.write(id.getAdduct());
-        // TODO added by Robin
-        // need to check if this is conform to the standards
-        writer.write(' ');
-        writer.write("by=" + id.getPartnerRowsID().length);
-      }
-      writer.newLine();
-      // export isotope pattern
-      writeCorrelationIsotopes(writer, row);
-    }
-    writer.write("END IONS");
-    writer.newLine();
-    writer.newLine();
-  }
-
-  /**
-   * Write detected isotope pattern
-   * 
-   * @param writer
-   * @param row
-   * @throws IOException
-   */
-  private void writeCorrelationIsotopes(BufferedWriter writer, PeakListRow row) throws IOException {
-    IsotopePattern pattern = row.getBestIsotopePattern();
-    if (pattern != null) {
-      double mz0 = 0;
-      for (DataPoint dp : pattern.getDataPoints()) {
-        if (mz0 == 0) {
-          // do not export first ( it is already)
-          mz0 = dp.getMZ();
-        } else {
-          // TODO : best feature mz or avg?
-          // intensity?
-          writer.write(mzForm.format(dp.getMZ()));
-          writer.write(' ');
-          writer.write(intensityForm.format(dp.getIntensity()));
-
-          // isotope
-          writer.write(' ');
-          writer.write("+" + Math.round((float) (dp.getMZ() - mz0)));
-          writer.newLine();
-        }
-      }
-    }
-  }
-
   private void writeSpectrum(BufferedWriter writer, DataPoint[] dps) throws IOException {
     for (DataPoint dp : dps) {
-      writer.write(mzForm.format(dp.getMZ()));
+      writer.write(String.valueOf(dp.getMZ()));
       writer.write(' ');
-      writer.write(intensityForm.format(dp.getIntensity()));
+      writer.write(String.valueOf(dp.getIntensity()));
       writer.newLine();
 
     }
@@ -571,6 +461,53 @@ public class SiriusExportTask extends AbstractTask {
   private static enum MsType {
     MS, MSMS, CORRELATED
   }
+
+  /**
+   * Write all adducts and coeluting features into pseudo spectrum
+   * 
+   * @param writer
+   * @param feature
+   * @throws IOException
+   */
+  private void writeCorrelationSpectrum(BufferedWriter writer, Feature feature) throws IOException {
+    // TODO export all coeluting features with ID and
+
+    //// final CoelutingPeaks peaks = feature.get(CoelutingPeaks.class, null);
+    // if (peaks != null) {
+    // writeCorrelationSpectrum(writer, peaks);
+    // } else if (feature.getIsotopePattern() != null) {
+    // writeSpectrum(writer, feature.getIsotopePattern().getDataPoints());
+    // } else {
+    // // write nothing
+    // writer.write(String.valueOf(feature.getMZ()));
+    // writer.write(' ');
+    // writer.write("100.0");
+    // writer.newLine();
+    // writer.write("END IONS");
+    // writer.newLine();
+    // writer.newLine();
+    // }
+  }
+
+  // private void writeCorrelationSpectrum(BufferedWriter writer, CoelutingPeaks peaks)
+  // throws IOException {
+  // for (int i = 0; i < peaks.size(); ++i) {
+  // writer.write(String.valueOf(peaks.getMz(i)));
+  // writer.write(' ');
+  // writer.write(String.valueOf(peaks.getIntensity(i)));
+  // writer.write(' ');
+  // writer.write(String.valueOf(peaks.getCorrelation(i)));
+  // if (!peaks.getAnnotation(i).isUnknown() || peaks.getAnnotation(i).getIsotopicPeak() > 0
+  // || (i + 1 < peaks.size() && peaks.getAnnotation(i + 1).getIsotopicPeak() > 0)) {
+  // writer.write(' ');
+  // writer.write(peaks.getAnnotation(i).toString());
+  // }
+  // writer.newLine();
+  // }
+  // writer.write("END IONS");
+  // writer.newLine();
+  // writer.newLine();
+  // }
 
 
 
