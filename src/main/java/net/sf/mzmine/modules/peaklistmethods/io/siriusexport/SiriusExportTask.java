@@ -70,6 +70,7 @@ public class SiriusExportTask extends AbstractTask {
   // correlation
   private NumberFormat corrForm = new DecimalFormat("0.0000");
 
+
   @Override
   public double getFinishedPercentage() {
     return (totalProgress == 0 ? 0 : progress / totalProgress);
@@ -553,6 +554,8 @@ public class SiriusExportTask extends AbstractTask {
           writer.write(intensityForm.format(dp.getIntensity()));
 
           // isotope
+          writer.write(' ');
+          writer.write(' '); // skip correlation
           writer.write(' ');
           writer.write("+" + Math.round((float) (dp.getMZ() - mz0)));
           writer.newLine();
