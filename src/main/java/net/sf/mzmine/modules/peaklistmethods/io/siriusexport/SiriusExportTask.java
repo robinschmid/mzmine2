@@ -37,7 +37,6 @@ import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.parameters.ParameterSet;
@@ -462,14 +461,18 @@ public class SiriusExportTask extends AbstractTask {
     /*
      * Grouped by metaMSEcorrelate Annotations by MS annotations in module
      */
-    if (pkl instanceof MSEGroupedPeakList) {
+    boolean exported = false;
+    if (pkl != null && pkl instanceof MSEGroupedPeakList) {
       MSEGroupedPeakList peakList = (MSEGroupedPeakList) pkl;
-      R2RCorrMap map = peakList.getCorrelationMap();
-
       // get all rows in corr group
       PKLRowGroup g = peakList.getGroup(row);
-      writeCorrelationSpectrum(writer, g, map);
-    } else {
+      if (g != null && g.size() > 1) {
+        writeCorrelationSpectrum(writer, g);
+        exported = true;
+      }
+    }
+    // export isotopes if failed
+    if (!exported) {
       Feature feature = row.getBestPeak();
       if (feature.getIsotopePattern() != null) {
         writeSpectrum(writer, feature.getIsotopePattern().getDataPoints());
@@ -486,9 +489,15 @@ public class SiriusExportTask extends AbstractTask {
     }
   }
 
-  private void writeCorrelationSpectrum(BufferedWriter writer, PKLRowGroup g, R2RCorrMap map)
-      throws IOException {
-
+  /**
+   * Export all grouped features and their isotope pattern. Export correlation and annotation
+   * 
+   * @param writer
+   * @param g
+   * @param map
+   * @throws IOException
+   */
+  private void writeCorrelationSpectrum(BufferedWriter writer, PKLRowGroup g) throws IOException {
     for (int i = 0; i < g.size(); ++i) {
       PeakListRow row = g.get(i);
       R2GroupCorrelationData corr = g.getCorr(i);
