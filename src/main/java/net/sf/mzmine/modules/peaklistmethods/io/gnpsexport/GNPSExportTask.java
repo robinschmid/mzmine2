@@ -15,12 +15,12 @@ package net.sf.mzmine.modules.peaklistmethods.io.gnpsexport;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.regex.Pattern;
-
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
-import net.sf.mzmine.datamodel.IsotopePattern;
 import net.sf.mzmine.datamodel.MassList;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
@@ -38,8 +38,15 @@ public class GNPSExportTask extends AbstractTask {
   private final File fileName;
   private final String plNamePattern = "{}";
   private int currentIndex = 0;
-
   private final String massListName;
+
+  // by robin
+  private NumberFormat mzForm = MZmineCore.getConfiguration().getMZFormat();
+  private NumberFormat intensityForm = MZmineCore.getConfiguration().getIntensityFormat();
+  // seconds
+  private NumberFormat rtsForm = new DecimalFormat("0.###");
+  // correlation
+  private NumberFormat corrForm = new DecimalFormat("0.0000");
 
   GNPSExportTask(ParameterSet parameters) {
     this.peakLists =
@@ -169,13 +176,13 @@ public class GNPSExportTask extends AbstractTask {
         if (rowID != null)
           writer.write("FEATURE_ID=" + rowID + newLine);
 
-        String mass = Double.toString(Math.round(row.getAverageMZ() * 10000) / 10000.);
+        String mass = mzForm.format(row.getAverageMZ());
         if (mass != null)
           writer.write("PEPMASS=" + mass + newLine);
 
         if (rowID != null) {
           writer.write("SCANS=" + rowID + newLine);
-          writer.write("RTINSECONDS=" + retTimeInSeconds + newLine);
+          writer.write("RTINSECONDS=" + rtsForm.format(retTimeInSeconds) + newLine);
         }
 
         int msmsCharge = msmsScan.getPrecursorCharge();
@@ -192,7 +199,8 @@ public class GNPSExportTask extends AbstractTask {
 
         DataPoint peaks[] = massList.getDataPoints();
         for (DataPoint peak : peaks) {
-          writer.write(peak.getMZ() + " " + peak.getIntensity() + newLine);
+          writer.write(mzForm.format(peak.getMZ()) + " " + intensityForm.format(peak.getIntensity())
+              + newLine);
         }
 
         writer.write("END IONS" + newLine);
@@ -202,6 +210,7 @@ public class GNPSExportTask extends AbstractTask {
 
   }
 
+  @Override
   public String getTaskDescription() {
     return "Exporting GNPS of peak list(s) " + Arrays.toString(peakLists) + " to MGF file(s)";
   }
