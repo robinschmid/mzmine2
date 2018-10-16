@@ -55,10 +55,6 @@ public class MSEGroupedPeakList extends SimplePeakList {
     }
   }
 
-  public R2RCorrMap getR2RCorrMap() {
-    return corrMap;
-  }
-
   /**
    * adds the groups to this peak list adds annotation to each feature in a group recalculates
    * correlation of each row to the group

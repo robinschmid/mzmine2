@@ -189,7 +189,7 @@ public class MSEcorrGroupWindow extends JFrame {
     pnRTNetwork.setTitle("Average retention time network");
     splitNetworkSub.setLeftComponent(pnRTNetwork);
     // crucial need to set up
-    R2RCorrMap map = peakList.getR2RCorrMap();
+    R2RCorrMap map = peakList.getCorrelationMap();
     if (map != null)
       pnRTNetwork.setAll(project, peakList, map.getRtTolerance(), false, map.getMinFeatureFilter());
 
