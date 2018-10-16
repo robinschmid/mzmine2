@@ -336,6 +336,7 @@ public class SiriusExportTask extends AbstractTask {
         for (int k = j; k < fs.length; ++k) {
           final Scan scan = f.getDataFile().getScan(fs[k]);
           if (scan.getMSLevel() > 1 && Math.abs(scan.getPrecursorMZ() - f.getMZ()) < 0.1) {
+            // TODO check if to include MS1 precursor scan
             /*
              * if (includeMs1) { // find precursor scan int prec = Arrays.binarySearch(scanNumbers,
              * fs[k]); if (prec < 0) prec = -prec - 1; prec = Math.max(0, prec - 1); for (; prec <
