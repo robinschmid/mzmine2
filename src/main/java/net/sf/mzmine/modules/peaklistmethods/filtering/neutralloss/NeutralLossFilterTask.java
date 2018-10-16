@@ -94,6 +94,7 @@ public class NeutralLossFilterTask extends AbstractTask {
   /**
    * @see net.sf.mzmine.taskcontrol.Task#getFinishedPercentage()
    */
+  @Override
   public double getFinishedPercentage() {
     if (totalRows == 0)
       return 0.0;
@@ -103,6 +104,7 @@ public class NeutralLossFilterTask extends AbstractTask {
   /**
    * @see net.sf.mzmine.taskcontrol.Task#getTaskDescription()
    */
+  @Override
   public String getTaskDescription() {
     return message;
   }
@@ -138,11 +140,6 @@ public class NeutralLossFilterTask extends AbstractTask {
 
     for (int i = 0; i < totalRows; i++) {
       // i will represent the index of the row in peakList
-      if (peakList.getRow(i).getPeakIdentities().length > 0) {
-        finishedRows++;
-        continue;
-      }
-
       message = "Row " + i + "/" + totalRows;
 
       // now get all peaks that lie within RT and maxIsotopeMassRange: pL[index].mz ->
@@ -213,7 +210,7 @@ public class NeutralLossFilterTask extends AbstractTask {
       if (resultMap.containsID(child.getID()))
         comChild += resultMap.getRowByID(child.getID()).getComment();
 
-      comChild += "Parent ID: " + candidates.get(1).getCandID();
+      comChild += "Parent ID=" + candidates.get(1).getCandID();
       addComment(child, comChild);
 
       resultMap.addRow(child); // add results to resultPeakList
@@ -228,13 +225,14 @@ public class NeutralLossFilterTask extends AbstractTask {
         if (resultMap.containsID(parent.getID()))
           comParent += resultMap.getRowByID(parent.getID()).getComment();
 
-        comParent += ("[--IS PARENT-- child ID: " + child.getID() + " ] | ");
+        comParent += ("Parent ID=" + candidates.get(1).getCandID() + " [--IS PARENT-- child ID: "
+            + child.getID() + " ] | ");
         addComment(parent, comParent);
 
         addComment(child,
             " m/z shift(ppm): "
-                + round(((parent.getAverageMZ() - child.getAverageMZ()) - diff.get(1))
-                    / parent.getAverageMZ() * 1E6, 2)
+                + round((Math.abs(parent.getAverageMZ() - child.getAverageMZ()) - diff.get(1))
+                    / diff.get(1) * 1E6, 2)
                 + " ");
 
         resultMap.addRow(parent);
@@ -281,7 +279,8 @@ public class NeutralLossFilterTask extends AbstractTask {
 
     diff.add(0.0);
 
-    if (!molecule.equals("")) {
+    if (molecule != null && !molecule.isEmpty()) {
+      // use molecule
       double diffBuffer = 0.0;
 
       IChemObjectBuilder builder = SilentChemObjectBuilder.getInstance();
@@ -295,6 +294,7 @@ public class NeutralLossFilterTask extends AbstractTask {
       diff.add(dMassLoss);
       logger.info("Mass of molecule: " + molecule + " = " + diffBuffer);
     } else {
+      // just use defined delta mass
       diff.add(dMassLoss);
     }
 
@@ -325,7 +325,7 @@ public class NeutralLossFilterTask extends AbstractTask {
       if (r.getAverageHeight() < minHeight)
         continue;
 
-      if (!rtTolerance.checkWithinTolerance(rt, r.getAverageRT()) && checkRT)
+      if (checkRT && !rtTolerance.checkWithinTolerance(rt, r.getAverageRT()))
         continue;
 
       if (pL[i].getAverageMZ() > mz

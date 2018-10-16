@@ -20,23 +20,12 @@ package net.sf.mzmine.modules.peaklistmethods.filtering.neutralloss;
 
 import java.text.NumberFormat;
 import java.util.Locale;
-import net.sf.mzmine.datamodel.IonizationType;
-import net.sf.mzmine.datamodel.MassList;
-import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.elements.ElementsParameter;
-import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.restrictions.elements.ElementalHeuristicParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
-import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
-import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
-import net.sf.mzmine.parameters.parametertypes.MassListParameter;
-import net.sf.mzmine.parameters.parametertypes.MultiChoiceParameter;
-import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
-import net.sf.mzmine.parameters.parametertypes.PercentParameter;
 import net.sf.mzmine.parameters.parametertypes.StringParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
-import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTToleranceParameter;
 
@@ -60,7 +49,7 @@ public class NeutralLossFilterParameters extends SimpleParameterSet {
 
   public static final StringParameter molecule = new StringParameter("Molecule",
       "String of a neutral loss compound (e.g. HI). If this textbox is not empty, the \"Neutral loss\" field will be ignored.",
-      "");
+      "", false);
 
   public static final StringParameter suffix = new StringParameter("Name suffix",
       "Suffix to be added to peak list name. If \"auto\" then this module will create a suffix.",
