@@ -84,6 +84,9 @@ public class PKLRowGroup extends ArrayList<PeakListRow> {
     return corr[row];
   }
 
+  /**
+   * Insert sort by ascending avg mz
+   */
   @Override
   public synchronized boolean add(PeakListRow e) {
     for (int i = 0; i < rtSum.length; i++) {
@@ -98,6 +101,14 @@ public class PKLRowGroup extends ArrayList<PeakListRow> {
           max[i] = f.getRT();
       }
     }
+    // insert sort find position
+    for (int i = 0; i < size(); i++) {
+      if (e.getAverageMZ() <= get(i).getAverageMZ()) {
+        super.add(i, e);
+        return true;
+      }
+    }
+    // last position
     return super.add(e);
   }
 
@@ -108,8 +119,18 @@ public class PKLRowGroup extends ArrayList<PeakListRow> {
    * @return
    */
   public boolean contains(PeakListRow row) {
+    return contains(row.getID());
+  }
+
+  /**
+   * checks for the same ID
+   * 
+   * @param row
+   * @return
+   */
+  public boolean contains(int id) {
     for (PeakListRow r : this)
-      if (r.getID() == row.getID())
+      if (r.getID() == id)
         return true;
     return false;
   }

@@ -8,6 +8,8 @@ import java.util.logging.Logger;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductType;
 import net.sf.mzmine.util.PeakListRowSorter;
@@ -22,30 +24,77 @@ public class MSAnnotationNetworkLogic {
    * Show the annotation with the highest numbers of links. Prefers charge state.
    * 
    * @param mseGroupedPeakList
+   * @param g can be null. can be used to limit the number of links
    */
-  public static void showMostlikelyAnnotations(PeakList mseGroupedPeakList) {
-    for (PeakListRow row : mseGroupedPeakList.getRows()) {
-      int maxLinks = 0;
-      ESIAdductIdentity best = null;
-
-      for (PeakIdentity id : row.getPeakIdentities()) {
-        if (id instanceof ESIAdductIdentity) {
-          ESIAdductIdentity esi = (ESIAdductIdentity) id;
-          int links = esi.getPartnerRowsID().length;
-          if (best != null && links == maxLinks
-              && (compareCharge(best, esi) || (isTheUnmodified(best) && !isTheUnmodified(esi)))) {
-            best = esi;
-          } else if (links > maxLinks) {
-            maxLinks = links;
-            best = esi;
-          }
-        }
-      }
+  public static void showMostlikelyAnnotations(PeakList pkl) {
+    for (PeakListRow row : pkl.getRows()) {
+      ESIAdductIdentity best = getMostLikelyAnnotation(row, null);
       // set best
       if (best != null)
         row.setPreferredPeakIdentity(best);
     }
   }
+
+  /**
+   * Show the annotation with the highest numbers of links. Prefers charge state.
+   * 
+   * @param mseGroupedPeakList
+   * @param g can be null. can be used to limit the number of links
+   */
+  public static void showMostlikelyAnnotations(MSEGroupedPeakList pkl, boolean useGroups) {
+    for (PeakListRow row : pkl.getRows()) {
+      ESIAdductIdentity best = getMostLikelyAnnotation(row, useGroups ? pkl.getGroup(row) : null);
+      // set best
+      if (best != null)
+        row.setPreferredPeakIdentity(best);
+    }
+  }
+
+  /**
+   * 
+   * @param row
+   * @param g can be null. can be used to limit the number of links
+   * @return
+   */
+  public static ESIAdductIdentity getMostLikelyAnnotation(PeakListRow row, PKLRowGroup g) {
+    ESIAdductIdentity best = null;
+    int maxLinks = 0;
+    for (PeakIdentity id : row.getPeakIdentities()) {
+      if (id instanceof ESIAdductIdentity) {
+        ESIAdductIdentity esi = (ESIAdductIdentity) id;
+        int links = getLinksTo(esi, g);
+        if (best != null && links == maxLinks
+            && (compareCharge(best, esi) || (isTheUnmodified(best) && !isTheUnmodified(esi)))) {
+          best = esi;
+        } else if (links > maxLinks) {
+          maxLinks = links;
+          best = esi;
+        }
+      }
+    }
+    return best;
+  }
+
+  /**
+   * 
+   * @param row
+   * @param g can be null. can be used to limit the number of links
+   * @return
+   */
+  public static int getLinksTo(ESIAdductIdentity esi, PKLRowGroup g) {
+    // TODO change to real links after refinement
+    if (g == null)
+      return esi.getPartnerRowsID().length;
+    else {
+      int c = 0;
+      for (int id : esi.getPartnerRowsID())
+        if (g.contains(id))
+          c++;
+
+      return c;
+    }
+  }
+
 
 
   /**
@@ -209,4 +258,5 @@ public class MSAnnotationNetworkLogic {
     }
     return connections;
   }
+
 }

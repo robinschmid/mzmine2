@@ -185,9 +185,13 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
   @Override
   public double getFinishedPercentage() {
-    double prevProgress = stage == null || stage.ordinal() == 0 ? 0
-        : Stage.values()[stage.ordinal() - 1].getFinalProgress();
-    return prevProgress + (stage.getFinalProgress() - prevProgress) * stageProgress;
+    if (stage == null)
+      return 0;
+    else {
+      double prevProgress =
+          stage.ordinal() == 0 ? 0 : Stage.values()[stage.ordinal() - 1].getFinalProgress();
+      return prevProgress + (stage.getFinalProgress() - prevProgress) * stageProgress;
+    }
   }
 
   @Override
@@ -237,7 +241,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         if (searchAdducts) {
           // show all annotations with the highest count of links
           LOG.info("Corr: show most likely annotations");
-          MSAnnotationNetworkLogic.showMostlikelyAnnotations(groupedPKL);
+          MSAnnotationNetworkLogic.showMostlikelyAnnotations(groupedPKL, true);
         }
 
         // add to project

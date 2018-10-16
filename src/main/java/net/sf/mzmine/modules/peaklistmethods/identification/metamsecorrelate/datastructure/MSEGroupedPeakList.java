@@ -5,6 +5,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.Feature;
+import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
@@ -97,6 +98,21 @@ public class MSEGroupedPeakList extends SimplePeakList {
   }
 
   /**
+   * 
+   * @param row
+   * @return The group of this row or null
+   */
+  public PKLRowGroup getGroup(PeakListRow row) {
+    if (groups == null)
+      return null;
+    for (PeakIdentity pi : row.getPeakIdentities())
+      if (pi instanceof MSEGroupPeakIdentity)
+        return ((MSEGroupPeakIdentity) pi).getGroup();
+
+    return null;
+  }
+
+  /**
    * Index of the last active group
    * 
    * @return
@@ -168,5 +184,6 @@ public class MSEGroupedPeakList extends SimplePeakList {
   public HashMap<String, Integer> getSampleGroups() {
     return sgroups;
   }
+
 
 }
