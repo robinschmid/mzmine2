@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import com.google.common.util.concurrent.AtomicDouble;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
@@ -90,7 +91,8 @@ public class R2RCorrMap extends TreeMap<String, R2RCorrelationData> {
    * 
    * @return
    */
-  public PKLRowGroupList createCorrGroups(PeakList pkl, double minShapeR, Double stageProgress) {
+  public PKLRowGroupList createCorrGroups(PeakList pkl, double minShapeR,
+      AtomicDouble stageProgress) {
     LOG.info("Corr: Creating correlation groups");
 
     try {
@@ -142,7 +144,7 @@ public class R2RCorrMap extends TreeMap<String, R2RCorrelationData> {
         // report back progress
         c++;
         if (stageProgress != null)
-          stageProgress = c / (double) this.size();
+          stageProgress.addAndGet(1d / this.size());
       }
       // sort by retention time
       groups.sortByRT();

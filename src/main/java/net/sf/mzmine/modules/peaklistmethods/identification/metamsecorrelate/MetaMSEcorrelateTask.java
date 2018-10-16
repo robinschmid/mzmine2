@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
+import com.google.common.util.concurrent.AtomicDouble;
 import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
@@ -81,7 +82,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     }
   }
 
-  private Double stageProgress = 0d;
+
+  private AtomicDouble stageProgress = new AtomicDouble(0);
   private int totalRows;
 
   private final ParameterSet parameters;
@@ -192,7 +194,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     else {
       double prevProgress =
           stage.ordinal() == 0 ? 0 : Stage.values()[stage.ordinal() - 1].getFinalProgress();
-      return prevProgress + (stage.getFinalProgress() - prevProgress) * stageProgress;
+      return prevProgress + (stage.getFinalProgress() - prevProgress) * stageProgress.get();
     }
   }
 
@@ -276,7 +278,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
   private void setStage(Stage grouping) {
     stage = grouping;
-    stageProgress = 0d;
+    stageProgress.set(0d);
   }
 
   /**
@@ -341,8 +343,9 @@ public class MetaMSEcorrelateTask extends AbstractTask {
             }
           }
         }
-        stageProgress = i / (double) totalRows;
+        stageProgress.addAndGet(1d / totalRows);
       } catch (Exception e) {
+        LOG.log(Level.SEVERE, "Error in parallel R2Rcomparison", e);
         throw new MSDKRuntimeException(e);
       }
     });
