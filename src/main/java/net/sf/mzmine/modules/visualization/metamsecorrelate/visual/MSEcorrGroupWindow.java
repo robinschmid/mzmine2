@@ -78,6 +78,8 @@ import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.table.Gro
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.table.GroupedPeakListTableModel;
 import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableModule;
 import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.util.SortingDirection;
+import net.sf.mzmine.util.SortingProperty;
 
 public class MSEcorrGroupWindow extends JFrame {
   // Logger.
@@ -639,7 +641,8 @@ public class MSEcorrGroupWindow extends JFrame {
       // MSMS window
       if (msmsWindow.isVisible()) {
         PKLRowGroup g = peakList.getLastViewedGroup();
-        msmsWindow.setData(g.toArray(new PeakListRow[0]), null);
+        msmsWindow.setData(g.toArray(new PeakListRow[0]), null, SortingProperty.MZ,
+            SortingDirection.Ascending);
       }
     }
     // plotIProfile

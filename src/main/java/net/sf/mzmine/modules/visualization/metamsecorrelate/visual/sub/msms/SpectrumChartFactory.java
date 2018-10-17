@@ -1,6 +1,7 @@
 package net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.msms;
 
 import java.awt.Color;
+import java.text.MessageFormat;
 import java.text.NumberFormat;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
@@ -37,7 +38,8 @@ public class SpectrumChartFactory {
     if (scan != null) {
       // data
       PseudoSpectrumDataSet series =
-          new PseudoSpectrumDataSet("MSMS for m/z=" + mzForm.format(scan.getPrecursorMZ()), true);
+          new PseudoSpectrumDataSet(MessageFormat.format("MSMS for m/z={0} RT={1}",
+              mzForm.format(scan.getPrecursorMZ()), rtForm.format(scan.getRetentionTime())), true);
       // for each row
       for (DataPoint dp : scan.getDataPoints()) {
         series.addDP(dp.getMZ(), dp.getIntensity(), null);
@@ -47,7 +49,8 @@ public class SpectrumChartFactory {
       return null;
   }
 
-  public static EChartPanel createChart(PeakListRow row, RawDataFile raw) {
+  public static EChartPanel createChart(PeakListRow row, RawDataFile raw, boolean showTitle,
+      boolean showLegend) {
     PseudoSpectrumDataSet dataset = createMSMSDataSet(row, raw);
     //
     if (dataset == null)
@@ -57,16 +60,17 @@ public class SpectrumChartFactory {
     NumberFormat rtForm = MZmineCore.getConfiguration().getRTFormat();
     NumberFormat intensityFormat = MZmineCore.getConfiguration().getIntensityFormat();
 
-    JFreeChart chart =
-        ChartFactory.createXYLineChart("MSMS for m/z=" + mzForm.format(row.getAverageMZ()), // title
-            "m/z", // x-axis label
-            "Intensity", // y-axis label
-            dataset, // data set
-            PlotOrientation.VERTICAL, // orientation
-            true, // isotopeFlag, // create legend?
-            true, // generate tooltips?
-            false // generate URLs?
-        );
+    JFreeChart chart = ChartFactory.createXYLineChart(
+        MessageFormat.format("MSMS for m/z={0} RT={1}", mzForm.format(row.getAverageMZ()),
+            rtForm.format(row.getAverageRT())), // title
+        "m/z", // x-axis label
+        "Intensity", // y-axis label
+        dataset, // data set
+        PlotOrientation.VERTICAL, // orientation
+        true, // isotopeFlag, // create legend?
+        true, // generate tooltips?
+        false // generate URLs?
+    );
     chart.setBackgroundPaint(Color.white);
     chart.getTitle().setVisible(false);
     // set the plot properties
@@ -107,6 +111,9 @@ public class SpectrumChartFactory {
     renderer.setDefaultItemLabelsVisible(true);
     renderer.setDefaultItemLabelPaint(Color.BLACK);
     renderer.setSeriesItemLabelGenerator(0, labelGenerator);
+
+    chart.getTitle().setVisible(showTitle);
+    chart.getLegend().setVisible(showLegend);
     //
     return pn;
   }
