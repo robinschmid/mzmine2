@@ -1,11 +1,19 @@
 package net.sf.mzmine.chartbasics.chartgroups;
 
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.ValueAxis;
+import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.Range;
+import net.sf.mzmine.chartbasics.gestures.ChartGesture;
+import net.sf.mzmine.chartbasics.gestures.ChartGesture.Entity;
+import net.sf.mzmine.chartbasics.gestures.ChartGesture.Event;
+import net.sf.mzmine.chartbasics.gestures.ChartGestureHandler;
 import net.sf.mzmine.chartbasics.gui.wrapper.ChartViewWrapper;
+import net.sf.mzmine.chartbasics.gui.wrapper.GestureMouseAdapter;
 import net.sf.mzmine.chartbasics.listener.AxisRangeChangedListener;
 
 /**
@@ -22,37 +30,84 @@ public class ChartGroup {
   // combine zoom of axes
   private boolean combineRangeAxes = false;
   private boolean combineDomainAxes = false;
+  // click marker
+  private boolean showClickDomainMarker = false;
+  private boolean showClickRangeMarker = false;
 
-  private List<JFreeChart> list = null;
+  private List<ChartViewWrapper> list = null;
   private List<AxisRangeChangedListener> rangeListener;
   private List<AxisRangeChangedListener> domainListener;
 
 
-  public ChartGroup(boolean combineDomainAxes, boolean combineRangeAxes) {
+  public ChartGroup(boolean showClickDomainMarker, boolean showClickRangeMarker,
+      boolean combineDomainAxes, boolean combineRangeAxes) {
     this.combineRangeAxes = combineRangeAxes;
     this.combineDomainAxes = combineDomainAxes;
+    this.showClickDomainMarker = showClickDomainMarker;
+    this.showClickRangeMarker = showClickRangeMarker;
   }
 
-  public void add(JFreeChart chart) {
+  public void add(ChartViewWrapper chart) {
     if (list == null)
       list = new ArrayList<>();
     list.add(chart);
 
     // only if selected
-    combineAxes(chart);
-    addChartToMaxRange(chart);
+    combineAxes(chart.getChart());
+    addChartToMaxRange(chart.getChart());
+    addClickMarker(chart);
   }
 
-  public void add(JFreeChart[] charts) {
-    for (JFreeChart c : charts)
+  public void add(ChartViewWrapper[] charts) {
+    for (ChartViewWrapper c : charts)
       add(c);
   }
 
-  public void add(List<JFreeChart> charts) {
-    for (JFreeChart c : charts)
+  public void add(List<ChartViewWrapper> charts) {
+    for (ChartViewWrapper c : charts)
       add(c);
   }
 
+  /**
+   * Click marker to all charts
+   * 
+   * @param chart
+   */
+  private void addClickMarker(ChartViewWrapper chart) {
+    GestureMouseAdapter m = chart.getGestureAdapter();
+    if (m != null) {
+      m.addGestureHandler(new ChartGestureHandler(new ChartGesture(Entity.PLOT, Event.MOVED), e -> {
+        setCrosshair(e.getCoordinates());
+      }));
+    }
+  }
+
+  private void setCrosshair(Point2D pos) {
+    if (pos == null)
+      return;
+
+    forAllCharts(chart -> {
+      XYPlot p = chart.getXYPlot();
+      if (showClickDomainMarker) {
+        p.setDomainCrosshairValue(pos.getX());
+        p.setDomainCrosshairVisible(true);
+      }
+      if (showClickRangeMarker) {
+        p.setRangeCrosshairValue(pos.getY());
+        p.setRangeCrosshairVisible(true);
+      }
+    });
+  }
+
+  /**
+   * Perform operation on all charts
+   * 
+   * @param op
+   */
+  public void forAllCharts(Consumer<JFreeChart> op) {
+    for (ChartViewWrapper c : list)
+      op.accept(c.getChart());
+  }
 
   /**
    * adds the charts range and domain range to the max ranges
@@ -172,13 +227,13 @@ public class ChartGroup {
    */
   private void domainHasChanged(Range range) {
     if (combineDomainAxes) {
-      for (JFreeChart c : list) {
+      forAllCharts(c -> {
         if (hasDomainAxis(c)) {
           ValueAxis axis = c.getXYPlot().getDomainAxis();
           if (!axis.getRange().equals(range))
             axis.setRange(range);
         }
-      }
+      });
     }
   }
 
@@ -189,13 +244,13 @@ public class ChartGroup {
    */
   private void rangeHasChanged(Range range) {
     if (combineRangeAxes) {
-      for (JFreeChart c : list) {
+      forAllCharts(c -> {
         if (hasRangeAxis(c)) {
           ValueAxis axis = c.getXYPlot().getRangeAxis();
           if (!axis.getRange().equals(range))
             axis.setRange(range);
         }
-      }
+      });
     }
   }
 
@@ -230,8 +285,9 @@ public class ChartGroup {
       rangeListener = null;
       this.combineRangeAxes = combineRangeAxes;
       this.combineDomainAxes = combineDomainAxes;
-      for (JFreeChart c : list)
+      forAllCharts(c -> {
         combineAxes(c);
+      });
     }
   }
 
