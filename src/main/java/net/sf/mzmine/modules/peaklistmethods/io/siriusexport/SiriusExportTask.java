@@ -314,8 +314,10 @@ public class SiriusExportTask extends AbstractTask {
         polarity = pol;
       }
     }
+    // find ion species by annotation (can be null)
+    String ion = findIonAnnotation(peakList, row);
     // write correlation spectrum
-    writeHeader(writer, row, row.getBestPeak().getDataFile(), polarity, MsType.CORRELATED, -1);
+    writeHeader(writer, row, row.getBestPeak().getDataFile(), polarity, MsType.CORRELATED, -1, ion);
     writeCorrelationSpectrum(writer, peakList, row);
 
     List<DataPoint[]> toMerge = new ArrayList<>();
@@ -349,8 +351,8 @@ public class SiriusExportTask extends AbstractTask {
              * precursorScan.getDataPoints()); } } }
              */ // Do not include MS1 scans (except for isotope pattern)
             if (mergeMsMs == SiriusExportParameters.MERGE_MODE.NO_MERGE) {
-              writeHeader(writer, row, f.getDataFile(), polarity, MsType.MSMS,
-                  scan.getScanNumber());
+              writeHeader(writer, row, f.getDataFile(), polarity, MsType.MSMS, scan.getScanNumber(),
+                  ion);
               writeSpectrum(writer,
                   massListName != null ? scan.getMassList(massListName).getDataPoints()
                       : scan.getDataPoints());
@@ -364,7 +366,7 @@ public class SiriusExportTask extends AbstractTask {
         }
         if (mergeMsMs == SiriusExportParameters.MERGE_MODE.MERGE_CONSECUTIVE_SCANS
             && toMerge.size() > 0) {
-          writeHeader(writer, row, f.getDataFile(), polarity, MsType.MSMS, null);
+          writeHeader(writer, row, f.getDataFile(), polarity, MsType.MSMS, null, ion);
           writeSpectrum(writer, merge(f.getMZ(), toMerge));
         }
       }
@@ -372,9 +374,29 @@ public class SiriusExportTask extends AbstractTask {
     }
     if (mergeMsMs == SiriusExportParameters.MERGE_MODE.MERGE_OVER_SAMPLES && toMerge.size() > 0) {
       writeHeader(writer, row, row.getBestPeak().getDataFile(), polarity, MsType.MSMS, null,
-          sources);
+          sources, ion);
       writeSpectrum(writer, merge(row.getAverageMZ(), toMerge));
     }
+  }
+
+  /**
+   * Ion or null
+   * 
+   * @param peakList
+   * @param row
+   * @return
+   */
+  private String findIonAnnotation(PeakList peakList, PeakListRow row) {
+    String ion = null;
+    // find by MS annotation
+    PKLRowGroup g = null;
+    if (peakList instanceof MSEGroupedPeakList)
+      g = ((MSEGroupedPeakList) peakList).getGroup(row);
+    ESIAdductIdentity id = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, g);
+    if (id != null)
+      ion = id.getAdduct();
+
+    return ion;
   }
 
   private boolean isSkipRow(PeakListRow row) {
@@ -390,12 +412,12 @@ public class SiriusExportTask extends AbstractTask {
   }
 
   private void writeHeader(BufferedWriter writer, PeakListRow row, RawDataFile raw, char polarity,
-      MsType msType, Integer scanNumber) throws IOException {
-    writeHeader(writer, row, raw, polarity, msType, scanNumber, null);
+      MsType msType, Integer scanNumber, String ion) throws IOException {
+    writeHeader(writer, row, raw, polarity, msType, scanNumber, null, ion);
   }
 
   private void writeHeader(BufferedWriter writer, PeakListRow row, RawDataFile raw, char polarity,
-      MsType msType, Integer scanNumber, List<String> sources) throws IOException {
+      MsType msType, Integer scanNumber, List<String> sources, String ion) throws IOException {
     final Feature feature = row.getPeak(raw);
     writer.write("BEGIN IONS");
     writer.newLine();
@@ -405,6 +427,12 @@ public class SiriusExportTask extends AbstractTask {
     writer.write("PEPMASS=");
     writer.write(mzForm.format(row.getBestPeak().getMZ()));
     writer.newLine();
+
+    if (ion != null && !ion.isEmpty()) {
+      writer.write("ION=");
+      writer.write(ion);
+      writer.newLine();
+    }
     writer.write("CHARGE=");
     writer.write(String.valueOf(Math.abs(row.getRowCharge())));
     writer.write(polarity);
