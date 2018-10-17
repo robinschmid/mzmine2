@@ -28,6 +28,10 @@ import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimpleFeature;
 import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
 import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
@@ -134,8 +138,11 @@ public class GNPSExportTask extends AbstractTask {
 
     for (PeakListRow row : peakList.getRows()) {
       String rowID = Integer.toString(row.getID());
-
       String retTimeInSeconds = Double.toString(Math.round(row.getAverageRT() * 60 * 100) / 100.);
+
+      // find ion species by annotation (can be null)
+      String ion = findIonAnnotation(peakList, row);
+
       // Get the MS/MS scan number
       Feature bestPeak = row.getBestPeak();
       if (bestPeak == null)
@@ -147,7 +154,6 @@ public class GNPSExportTask extends AbstractTask {
         bestPeak = copyRow.getBestPeak();
 
         // Get the MS/MS scan number
-
         msmsScanNumber = bestPeak.getMostIntenseFragmentScanNumber();
         while (msmsScanNumber < 1) {
           copyRow.removePeak(bestPeak.getDataFile());
@@ -179,6 +185,10 @@ public class GNPSExportTask extends AbstractTask {
         String mass = mzForm.format(row.getAverageMZ());
         if (mass != null)
           writer.write("PEPMASS=" + mass + newLine);
+
+        // ion annotation
+        if (ion != null && !ion.isEmpty())
+          writer.write("ION=" + ion + newLine);
 
         if (rowID != null) {
           writer.write("SCANS=" + rowID + newLine);
@@ -236,4 +246,24 @@ public class GNPSExportTask extends AbstractTask {
     return newRow;
   }
 
+
+  /**
+   * Ion or null
+   * 
+   * @param peakList
+   * @param row
+   * @return
+   */
+  private String findIonAnnotation(PeakList peakList, PeakListRow row) {
+    String ion = null;
+    // find by MS annotation
+    PKLRowGroup g = null;
+    if (peakList instanceof MSEGroupedPeakList)
+      g = ((MSEGroupedPeakList) peakList).getGroup(row);
+    ESIAdductIdentity id = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, g);
+    if (id != null)
+      ion = id.getAdduct();
+
+    return ion;
+  }
 }
