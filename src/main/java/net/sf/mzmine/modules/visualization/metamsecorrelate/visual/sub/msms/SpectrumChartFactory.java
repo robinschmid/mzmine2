@@ -10,14 +10,12 @@ import org.jfree.chart.plot.DatasetRenderingOrder;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.ui.RectangleInsets;
-import net.sf.mzmine.chartbasics.gui.swing.EChartPanel;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.pseudospectra.PseudoSpectraItemLabelGenerator;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.pseudospectra.PseudoSpectraRenderer;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.pseudospectra.PseudoSpectrumDataSet;
 
@@ -49,7 +47,7 @@ public class SpectrumChartFactory {
       return null;
   }
 
-  public static EChartPanel createChart(PeakListRow row, RawDataFile raw, boolean showTitle,
+  public static JFreeChart createChart(PeakListRow row, RawDataFile raw, boolean showTitle,
       boolean showLegend) {
     PseudoSpectrumDataSet dataset = createMSMSDataSet(row, raw);
     //
@@ -106,15 +104,10 @@ public class SpectrumChartFactory {
     renderer.setSeriesVisibleInLegend(1, false);
     renderer.setSeriesPaint(2, Color.ORANGE);
     //
-    EChartPanel pn = new EChartPanel(chart);
-    PseudoSpectraItemLabelGenerator labelGenerator = new PseudoSpectraItemLabelGenerator(pn);
-    renderer.setDefaultItemLabelsVisible(true);
-    renderer.setDefaultItemLabelPaint(Color.BLACK);
-    renderer.setSeriesItemLabelGenerator(0, labelGenerator);
 
     chart.getTitle().setVisible(showTitle);
     chart.getLegend().setVisible(showLegend);
     //
-    return pn;
+    return chart;
   }
 }
