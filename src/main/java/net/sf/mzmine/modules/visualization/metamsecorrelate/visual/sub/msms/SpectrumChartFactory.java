@@ -104,6 +104,9 @@ public class SpectrumChartFactory {
     renderer.setSeriesVisibleInLegend(1, false);
     renderer.setSeriesPaint(2, Color.ORANGE);
     //
+    SpectraItemLabelGenerator itemLabelGenerator = new SpectraItemLabelGenerator();
+    renderer.setDefaultItemLabelGenerator(itemLabelGenerator);
+    renderer.setSeriesItemLabelsVisible(0, true);
 
     chart.getTitle().setVisible(showTitle);
     chart.getLegend().setVisible(showLegend);
