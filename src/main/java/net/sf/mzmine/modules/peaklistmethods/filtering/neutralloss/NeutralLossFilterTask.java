@@ -232,7 +232,7 @@ public class NeutralLossFilterTask extends AbstractTask {
         addComment(child,
             " m/z shift(ppm): "
                 + round((Math.abs(parent.getAverageMZ() - child.getAverageMZ()) - diff.get(1))
-                    / diff.get(1) * 1E6, 2)
+                    / parent.getAverageMZ() * 1E6, 2)
                 + " ");
 
         resultMap.addRow(parent);
