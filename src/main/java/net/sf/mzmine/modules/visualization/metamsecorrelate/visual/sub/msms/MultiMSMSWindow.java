@@ -9,6 +9,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import org.jfree.chart.JFreeChart;
+import net.sf.mzmine.chartbasics.chartgroups.ChartGroup;
 import net.sf.mzmine.chartbasics.gui.swing.EChartPanel;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
@@ -68,12 +69,15 @@ public class MultiMSMSWindow extends JFrame {
    */
   public void setData(PeakListRow[] rows, RawDataFile raw) {
     pnCharts.removeAll();
+    ChartGroup group = new ChartGroup(true, false);
     List<EChartPanel> charts = new ArrayList<>();
     for (PeakListRow row : rows) {
       JFreeChart c =
           SpectrumChartFactory.createChart(row, alwaysShowBest ? null : raw, true, false);
-      if (c != null)
+      if (c != null) {
         charts.add(new EChartPanel(c));
+        group.add(c);
+      }
     }
 
     if (charts.size() > 0) {
