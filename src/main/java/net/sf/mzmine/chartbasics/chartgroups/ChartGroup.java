@@ -77,7 +77,7 @@ public class ChartGroup {
       nd = addRanges(maxRange[1], getRangeRange(chart));
       maxRange[1] = nd;
       if (nd != null && (maxRange[0] == null || !nd.equals(maxRange[0])))
-        domainHasChanged(nd);
+        rangeHasChanged(nd);
     }
   }
 
