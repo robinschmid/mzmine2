@@ -3,6 +3,7 @@ package net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.msms;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -10,6 +11,9 @@ import javax.swing.border.EmptyBorder;
 import net.sf.mzmine.chartbasics.gui.swing.EChartPanel;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.util.PeakListRowSorter;
+import net.sf.mzmine.util.SortingDirection;
+import net.sf.mzmine.util.SortingProperty;
 
 /**
  * Holds more charts for data reviewing
@@ -23,6 +27,7 @@ public class MultiMSMSWindow extends JFrame {
   private JPanel pnCharts;
   private int col = 4;
   private boolean autoCol = true;
+  private boolean alwaysShowBest = false;
 
   /**
    * Create the frame.
@@ -40,12 +45,31 @@ public class MultiMSMSWindow extends JFrame {
     pnCharts.setLayout(new GridLayout(0, 4));
   }
 
+  /**
+   * Sort rows
+   * 
+   * @param rows
+   * @param raw
+   * @param sorting
+   * @param direction
+   */
+  public void setData(PeakListRow[] rows, RawDataFile raw, SortingProperty sorting,
+      SortingDirection direction) {
+    Arrays.sort(rows, new PeakListRowSorter(sorting, direction));
+    setData(rows, raw);
+  }
+
+  /**
+   * Create charts and show
+   * 
+   * @param rows
+   * @param raw
+   */
   public void setData(PeakListRow[] rows, RawDataFile raw) {
     pnCharts.removeAll();
-
     List<EChartPanel> charts = new ArrayList<>();
     for (PeakListRow row : rows) {
-      EChartPanel c = SpectrumChartFactory.createChart(row, raw);
+      EChartPanel c = SpectrumChartFactory.createChart(row, alwaysShowBest ? null : raw);
       if (c != null)
         charts.add(c);
     }

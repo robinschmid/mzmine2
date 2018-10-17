@@ -42,6 +42,7 @@ import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.FormulaPredictionModule;
@@ -51,6 +52,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.sirius.SiriusProcess
 import net.sf.mzmine.modules.peaklistmethods.io.siriusexport.SiriusExportModule;
 import net.sf.mzmine.modules.rawdatamethods.peakpicking.manual.ManualPeakPickerModule;
 import net.sf.mzmine.modules.visualization.intensityplot.IntensityPlotModule;
+import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.msms.MultiMSMSWindow;
 import net.sf.mzmine.modules.visualization.peaklisttable.export.IsotopePatternExportModule;
 import net.sf.mzmine.modules.visualization.peaklisttable.export.MSMSExportModule;
 import net.sf.mzmine.modules.visualization.peaklisttable.table.CommonColumnType;
@@ -63,6 +65,8 @@ import net.sf.mzmine.modules.visualization.tic.TICVisualizerModule;
 import net.sf.mzmine.modules.visualization.twod.TwoDVisualizerModule;
 import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelection;
 import net.sf.mzmine.util.GUIUtils;
+import net.sf.mzmine.util.SortingDirection;
+import net.sf.mzmine.util.SortingProperty;
 
 /**
  * Peak-list table pop-up menu.
@@ -446,18 +450,23 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
     }
 
     if (showMSMSItem.equals(src)) {
-
-      final Feature showPeak = getSelectedPeak();
-      if (showPeak != null) {
-
-        final int scanNumber = showPeak.getMostIntenseFragmentScanNumber();
-        if (scanNumber > 0) {
-          SpectraVisualizerModule.showNewSpectrumWindow(showPeak.getDataFile(), scanNumber);
-        } else {
-          MZmineCore.getDesktop().displayMessage(window,
-              "There is no fragment for "
-                  + MZmineCore.getConfiguration().getMZFormat().format(showPeak.getMZ())
-                  + " m/z in the current raw data.");
+      if (allClickedPeakListRows != null && allClickedPeakListRows.length > 1) {
+        MultiMSMSWindow multi = new MultiMSMSWindow();
+        multi.setData(allClickedPeakListRows, clickedDataFile, SortingProperty.MZ,
+            SortingDirection.Ascending);
+        multi.setVisible(true);
+      } else {
+        Feature showPeak = getSelectedPeakForMSMS();
+        if (showPeak != null) {
+          final int scanNumber = showPeak.getMostIntenseFragmentScanNumber();
+          if (scanNumber > 0) {
+            SpectraVisualizerModule.showNewSpectrumWindow(showPeak.getDataFile(), scanNumber);
+          } else {
+            MZmineCore.getDesktop().displayMessage(window,
+                "There is no fragment for "
+                    + MZmineCore.getConfiguration().getMZFormat().format(showPeak.getMZ())
+                    + " m/z in the current raw data.");
+          }
         }
       }
     }
@@ -643,9 +652,26 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
    * @return the peak.
    */
   private Feature getSelectedPeak() {
-
     return clickedDataFile != null ? clickedPeakListRow.getPeak(clickedDataFile)
         : clickedPeakListRow.getBestPeak();
+  }
+
+  /**
+   * Get the selected peak. If no specific raw data file was clicked return highest peak with MS/MS
+   * 
+   * @return the peak.
+   */
+  private Feature getSelectedPeakForMSMS() {
+    Feature peak = getSelectedPeak();
+    // always return if a raw data file was clicked
+    if (clickedDataFile != null || peak != null)
+      return peak;
+    else {
+      // no specific raw data file was chosen and bestPeak has no MSMS
+      // try to find highest peak with MSMS
+      Scan scan = clickedPeakListRow.getBestFragmentation();
+      return scan == null ? null : clickedPeakListRow.getPeak(scan.getDataFile());
+    }
   }
 }
 
