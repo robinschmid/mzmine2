@@ -69,6 +69,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
+import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.msms.MultiMSMSWindow;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.annotationnetwork.visual.AnnotationNetworkPanel;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.corrnetwork.visual.CorrNetworkPanel;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.rtnetwork.visual.RTNetworkPanel;
@@ -85,6 +86,7 @@ public class MSEcorrGroupWindow extends JFrame {
   private final Paint colors[];
   // sub window for more charts
   private MSEcorrGroupSubWindow subWindow;
+  private MultiMSMSWindow msmsWindow;
 
   private EStandardChartTheme theme;
 
@@ -121,6 +123,8 @@ public class MSEcorrGroupWindow extends JFrame {
   private AnnotationNetworkPanel pnAnnNetwork;
   private CorrNetworkPanel pnCorrNetwork;
   private RTNetworkPanel pnRTNetwork;
+  private JButton btnSubWindow;
+  private JButton btnMsmsWindow;
 
   /**
    * Create the frame.
@@ -133,6 +137,7 @@ public class MSEcorrGroupWindow extends JFrame {
       PKLRowGroupList groups, int index) {
     // sub window for more charts
     subWindow = new MSEcorrGroupSubWindow(this);
+    msmsWindow = new MultiMSMSWindow();
     theme = ChartThemeFactory.getStandardTheme();
     theme.setPlotBackgroundPaint(new Color(235, 235, 235));
     theme.setShowSubtitles(true);
@@ -150,7 +155,7 @@ public class MSEcorrGroupWindow extends JFrame {
     // peak list table parameters
     ParameterSet peakListTableParameters =
         MZmineCore.getConfiguration().getModuleParameters(PeakListTableModule.class);
-    setBounds(100, 100, 911, 480);
+    setBounds(100, 100, 1369, 667);
     contentPane = new JPanel();
     contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
     contentPane.setLayout(new BorderLayout(0, 0));
@@ -336,13 +341,9 @@ public class MSEcorrGroupWindow extends JFrame {
     cbSumPseudoSpectrum.setSelected(true);
     panel_6.add(cbSumPseudoSpectrum);
 
-    panel_7 = new JPanel();
-    pnMenu.add(panel_7);
-    panel_7.setLayout(new BoxLayout(panel_7, BoxLayout.Y_AXIS));
-
 
     cbSampleSummary = new JCheckBox("Sample summary");
-    panel_7.add(cbSampleSummary);
+    panel_6.add(cbSampleSummary);
     cbSampleSummary.addItemListener(new ItemListener() {
       @Override
       public void itemStateChanged(ItemEvent e) {
@@ -350,6 +351,18 @@ public class MSEcorrGroupWindow extends JFrame {
       }
     });
     cbSampleSummary.setToolTipText("Average peak shape correlation column chart.");
+
+    panel_7 = new JPanel();
+    pnMenu.add(panel_7);
+    panel_7.setLayout(new BoxLayout(panel_7, BoxLayout.Y_AXIS));
+
+    btnSubWindow = new JButton("Sub window");
+    btnSubWindow.addActionListener(e -> subWindow.setVisible(true));
+    panel_7.add(btnSubWindow);
+
+    btnMsmsWindow = new JButton("MSMS window");
+    btnMsmsWindow.addActionListener(e -> msmsWindow.setVisible(true));
+    panel_7.add(btnMsmsWindow);
 
     btnPreviousGroup.addActionListener(e -> prevGroup());
 
@@ -365,6 +378,7 @@ public class MSEcorrGroupWindow extends JFrame {
       @Override
       public void windowClosing(java.awt.event.WindowEvent windowEvent) {
         subWindow.setVisible(false);
+        msmsWindow.setVisible(false);
       }
     });
 
@@ -621,6 +635,12 @@ public class MSEcorrGroupWindow extends JFrame {
       createCorrelationNetwork();
       // create RT network
       createRTNetwork();
+
+      // MSMS window
+      if (msmsWindow.isVisible()) {
+        PKLRowGroup g = peakList.getLastViewedGroup();
+        msmsWindow.setData(g.toArray(new PeakListRow[0]), null);
+      }
     }
     // plotIProfile
     if (iProfile)
