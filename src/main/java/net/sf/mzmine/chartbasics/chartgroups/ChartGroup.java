@@ -1,5 +1,6 @@
 package net.sf.mzmine.chartbasics.chartgroups;
 
+import java.awt.BasicStroke;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
@@ -79,6 +80,9 @@ public class ChartGroup {
       m.addGestureHandler(new ChartGestureHandler(new ChartGesture(Entity.PLOT, Event.MOVED), e -> {
         setCrosshair(e.getCoordinates());
       }));
+      m.addGestureHandler(new ChartGestureHandler(new ChartGesture(Entity.PLOT, Event.CLICK), e -> {
+        setCrosshair(e.getCoordinates());
+      }));
     }
   }
 
@@ -89,11 +93,15 @@ public class ChartGroup {
     forAllCharts(chart -> {
       XYPlot p = chart.getXYPlot();
       if (showClickDomainMarker) {
+        p.setDomainCrosshairLockedOnData(false);
         p.setDomainCrosshairValue(pos.getX());
+        p.setDomainCrosshairStroke(new BasicStroke(1.5f));
         p.setDomainCrosshairVisible(true);
       }
       if (showClickRangeMarker) {
+        p.setRangeCrosshairLockedOnData(false);
         p.setRangeCrosshairValue(pos.getY());
+        p.setRangeCrosshairStroke(new BasicStroke(1.5f));
         p.setRangeCrosshairVisible(true);
       }
     });
@@ -105,6 +113,8 @@ public class ChartGroup {
    * @param op
    */
   public void forAllCharts(Consumer<JFreeChart> op) {
+    if (list == null)
+      return;
     for (ChartViewWrapper c : list)
       op.accept(c.getChart());
   }

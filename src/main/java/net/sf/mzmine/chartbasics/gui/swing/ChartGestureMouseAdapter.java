@@ -87,6 +87,7 @@ public class ChartGestureMouseAdapter extends MouseAdapter implements GestureMou
    * @param g
    * @param handler
    */
+  @Override
   public void addDragGestureHandler(DragHandler[] handler, Key[] key, Entity entity, Button button,
       Orientation orient, Object[] param) {
     ChartGestureHandler h =
@@ -100,6 +101,7 @@ public class ChartGestureMouseAdapter extends MouseAdapter implements GestureMou
    * @param g
    * @param handler
    */
+  @Override
   public void addGestureHandler(Handler handler, Entity entity, Event[] event, Button button,
       Key key, Object[] param) {
     ChartGestureHandler h = ChartGestureHandler.createHandler(handler,
@@ -113,6 +115,7 @@ public class ChartGestureMouseAdapter extends MouseAdapter implements GestureMou
    * @param g
    * @param handler
    */
+  @Override
   public void addGestureHandler(ChartGestureHandler handler) {
     if (gestureHandlers == null) {
       gestureHandlers = new ArrayList<ChartGestureHandler>();
@@ -131,6 +134,7 @@ public class ChartGestureMouseAdapter extends MouseAdapter implements GestureMou
    * @param g
    * @param handler
    */
+  @Override
   public void removeGestureHandler(ChartGestureHandler handler) {
     if (gestureHandlers == null)
       return;

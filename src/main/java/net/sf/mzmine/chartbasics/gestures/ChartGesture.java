@@ -145,7 +145,8 @@ public class ChartGesture {
     else {
       ChartGesture g = (ChartGesture) obj;
       return this.getEntity().equals(g.getEntity()) && this.getEvent().equals(g.getEvent())
-          && this.getButton().equals(g.getButton()) && this.getKey().equals(g.getKey());
+          && this.getButton().equals(g.getButton())
+          && (this.getKey() == null || this.getKey().equals(g.getKey()));
     }
   }
 
