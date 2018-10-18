@@ -34,8 +34,8 @@ public class ChartGroup {
   private boolean combineRangeAxes = false;
   private boolean combineDomainAxes = false;
   // click marker
-  private boolean showClickDomainMarker = false;
-  private boolean showClickRangeMarker = false;
+  private boolean showCrosshairDomain = false;
+  private boolean showCrosshairRange = false;
 
   private List<ChartViewWrapper> list = null;
   private List<AxisRangeChangedListener> rangeListener;
@@ -46,8 +46,8 @@ public class ChartGroup {
       boolean combineDomainAxes, boolean combineRangeAxes) {
     this.combineRangeAxes = combineRangeAxes;
     this.combineDomainAxes = combineDomainAxes;
-    this.showClickDomainMarker = showClickDomainMarker;
-    this.showClickRangeMarker = showClickRangeMarker;
+    this.showCrosshairDomain = showClickDomainMarker;
+    this.showCrosshairRange = showClickRangeMarker;
   }
 
   public void add(ChartViewWrapper chart) {
@@ -58,7 +58,7 @@ public class ChartGroup {
     // only if selected
     combineAxes(chart.getChart());
     addChartToMaxRange(chart.getChart());
-    addClickMarker(chart);
+    addCrosshair(chart);
   }
 
   public void add(ChartViewWrapper[] charts) {
@@ -71,12 +71,17 @@ public class ChartGroup {
       add(c);
   }
 
+
+  public int size() {
+    return list == null ? 0 : list.size();
+  }
+
   /**
    * Click marker to all charts
    * 
    * @param chart
    */
-  private void addClickMarker(ChartViewWrapper chart) {
+  private void addCrosshair(ChartViewWrapper chart) {
     GestureMouseAdapter m = chart.getGestureAdapter();
     if (m != null) {
       m.addGestureHandler(new ChartGestureHandler(
@@ -95,13 +100,13 @@ public class ChartGroup {
 
     forAllCharts(chart -> {
       XYPlot p = chart.getXYPlot();
-      if (showClickDomainMarker) {
+      if (showCrosshairDomain) {
         p.setDomainCrosshairLockedOnData(false);
         p.setDomainCrosshairValue(pos.getX());
         p.setDomainCrosshairStroke(stroke);
         p.setDomainCrosshairVisible(true);
       }
-      if (showClickRangeMarker) {
+      if (showCrosshairRange) {
         p.setRangeCrosshairLockedOnData(false);
         p.setRangeCrosshairValue(pos.getY());
         p.setRangeCrosshairStroke(stroke);
@@ -302,6 +307,11 @@ public class ChartGroup {
         combineAxes(c);
       });
     }
+  }
+
+  public void setShowCrosshair(boolean showCrosshairDomain, boolean showCrosshairRange) {
+    this.showCrosshairDomain = showCrosshairDomain;
+    this.showCrosshairRange = showCrosshairRange;
   }
 
 }
