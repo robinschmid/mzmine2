@@ -530,6 +530,19 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
 
 
   /**
+   * neutral mass of M to mz of yM+X]charge
+   * 
+   * (mass*mol + deltaMass) /charge
+   * 
+   * @param mz
+   * @return
+   */
+  public double getMZ(double neutralmass) {
+    return (neutralmass * getMolecules() + getMassDifference()) / getAbsCharge();
+  }
+
+
+  /**
    * Get the default adducts.
    *
    * @return the list of default adducts.

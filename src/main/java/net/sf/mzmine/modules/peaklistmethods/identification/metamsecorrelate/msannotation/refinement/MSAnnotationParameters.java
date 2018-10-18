@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation;
+package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement;
 
 import java.awt.Window;
 import net.sf.mzmine.main.MZmineCore;
@@ -27,6 +27,7 @@ import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
+import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
 import net.sf.mzmine.parameters.parametertypes.esiadducts.ESIAdductsParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
@@ -75,6 +76,12 @@ public class MSAnnotationParameters extends SimpleParameterSet {
 
   public static final ESIAdductsParameter ADDUCTS = new ESIAdductsParameter("Adducts",
       "List of adducts, each one refers a specific distance in m/z axis between related peaks");
+
+  // MSMS part
+  public static final OptionalParameter<MZToleranceParameter> MSMS_MZ_TOL =
+      new OptionalParameter<MZToleranceParameter>(new MZToleranceParameter(
+          "Check multimers MSMS m/z tolerance", "Checks multimers in MSMS "));
+
 
   // Constructor
   public MSAnnotationParameters() {
