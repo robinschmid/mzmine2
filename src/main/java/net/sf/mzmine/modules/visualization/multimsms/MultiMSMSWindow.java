@@ -18,8 +18,11 @@ import org.jfree.chart.axis.ValueAxis;
 import net.sf.mzmine.chartbasics.chartgroups.ChartGroup;
 import net.sf.mzmine.chartbasics.gui.swing.EChartPanel;
 import net.sf.mzmine.chartbasics.gui.wrapper.ChartViewWrapper;
+import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.datamodel.Scan;
+import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.pseudospectra.PseudoSpectrum;
 import net.sf.mzmine.util.PeakListRowSorter;
 import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
@@ -32,7 +35,12 @@ import net.sf.mzmine.util.SortingProperty;
  */
 public class MultiMSMSWindow extends JFrame {
 
+  // MS 1
+  private ChartViewWrapper msone;
+
+  // MS 2
   private ChartGroup group;
+  //
   private JPanel contentPane;
   private JPanel pnCharts;
   private int col = 4;
@@ -149,10 +157,10 @@ public class MultiMSMSWindow extends JFrame {
    * @param sorting
    * @param direction
    */
-  public void setData(PeakListRow[] rows, RawDataFile raw, SortingProperty sorting,
-      SortingDirection direction) {
+  public void setData(PeakListRow[] rows, RawDataFile raw, boolean createMS1,
+      SortingProperty sorting, SortingDirection direction) {
     Arrays.sort(rows, new PeakListRowSorter(sorting, direction));
-    setData(rows, raw);
+    setDataAndCreatePseudoMS1(rows, raw);
   }
 
   /**
@@ -161,11 +169,75 @@ public class MultiMSMSWindow extends JFrame {
    * @param rows
    * @param raw
    */
-  public void setData(PeakListRow[] rows, RawDataFile raw) {
+  public void setData(PeakListRow[] rows, RawDataFile raw, boolean createMS1) {
+    msone = null;
     group = new ChartGroup(showCrosshair, showCrosshair, true, false);
+    // MS1
+    if (createMS1) {
+      Scan scan = null;
+      Feature best = null;
+      for (PeakListRow r : rows) {
+        Feature f = raw == null ? r.getBestPeak() : r.getPeak(raw);
+        if (f != null && (best == null || f.getHeight() > best.getHeight())) {
+          best = f;
+        }
+      }
+      if (best != null) {
+        scan = raw.getScan(best.getRepresentativeScanNumber());
+        EChartPanel cp = SpectrumChartFactory.createChartPanel(scan, showTitle, showLegend);
+        if (cp != null)
+          msone = new ChartViewWrapper(cp);
+      }
+    }
+    if (msone != null)
+      group.add(msone);
+
+    // MS2 of all rows
     for (PeakListRow row : rows) {
-      EChartPanel c =
-          SpectrumChartFactory.createChartPanel(row, alwaysShowBest ? null : raw, showTitle, false);
+      EChartPanel c = SpectrumChartFactory.createMSMSChartPanel(row, alwaysShowBest ? null : raw,
+          showTitle, showLegend);
+      if (c != null) {
+        group.add(new ChartViewWrapper(c));
+      }
+    }
+    renewCharts(group);
+  }
+
+  /**
+   * Create charts and show
+   * 
+   * @param rows
+   * @param raw
+   */
+  public void setDataAndCreatePseudoMS1(PeakListRow[] rows, RawDataFile raw) {
+    msone = null;
+    group = new ChartGroup(showCrosshair, showCrosshair, true, false);
+    // MS1
+
+    Scan scan = null;
+    Feature best = null;
+    for (PeakListRow r : rows) {
+      Feature f = raw == null ? r.getBestPeak() : r.getPeak(raw);
+      if (f != null && (best == null || f.getHeight() > best.getHeight())) {
+        best = f;
+      }
+    }
+    if (best != null) {
+      scan = raw.getScan(best.getRepresentativeScanNumber());
+      EChartPanel cp = PseudoSpectrum.createChartPanel(rows, raw, false, "pseudo");
+      cp.getChart().getLegend().setVisible(showLegend);
+      cp.getChart().getTitle().setVisible(showTitle);
+      if (cp != null)
+        msone = new ChartViewWrapper(cp);
+    }
+
+    if (msone != null)
+      group.add(msone);
+
+    // MS2 of all rows
+    for (PeakListRow row : rows) {
+      EChartPanel c = SpectrumChartFactory.createMSMSChartPanel(row, alwaysShowBest ? null : raw,
+          showTitle, false);
       if (c != null) {
         group.add(new ChartViewWrapper(c));
       }
@@ -177,7 +249,7 @@ public class MultiMSMSWindow extends JFrame {
    * 
    * @param group
    */
-  private void renewCharts(ChartGroup group) {
+  public void renewCharts(ChartGroup group) {
     pnCharts.removeAll();
     if (group != null && group.size() > 0) {
       realCol = autoCol ? (int) Math.ceil(Math.sqrt(group.size())) : col;

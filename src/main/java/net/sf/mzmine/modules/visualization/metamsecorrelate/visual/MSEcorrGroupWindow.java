@@ -641,7 +641,7 @@ public class MSEcorrGroupWindow extends JFrame {
       // MSMS window
       if (msmsWindow.isVisible()) {
         PKLRowGroup g = peakList.getLastViewedGroup();
-        msmsWindow.setData(g.toArray(new PeakListRow[0]), null, SortingProperty.MZ,
+        msmsWindow.setData(g.toArray(new PeakListRow[0]), null, true, SortingProperty.MZ,
             SortingDirection.Ascending);
       }
     }
@@ -978,7 +978,7 @@ public class MSEcorrGroupWindow extends JFrame {
     pnSpectrum.removeAll();
     PKLRowGroup g = peakList.getLastViewedGroup();
     if (g != null) {
-      EChartPanel chart = PseudoSpectrum.createChart(g, g.getLastViewedRawFile(),
+      EChartPanel chart = PseudoSpectrum.createChartPanel(g, g.getLastViewedRawFile(),
           getCbSumPseudoSpectrum().isSelected());
       // theme.apply(chart.getChart());
       pnSpectrum.add(chart, BorderLayout.CENTER);

@@ -8,6 +8,7 @@ import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.plot.DatasetRenderingOrder;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYItemRenderer;
 import org.jfree.chart.ui.RectangleInsets;
 import org.jfree.data.xy.XYSeries;
 import net.sf.mzmine.chartbasics.gui.swing.EChartPanel;
@@ -24,10 +25,10 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 
 public class PseudoSpectrum {
 
-  public static PseudoSpectrumDataSet createDataSet(PKLRowGroup group, RawDataFile raw,
+  public static PseudoSpectrumDataSet createDataSet(PeakListRow[] group, RawDataFile raw,
       boolean sum) {
     // data
-    PseudoSpectrumDataSet series = new PseudoSpectrumDataSet("G" + group.getGroupID(), true);
+    PseudoSpectrumDataSet series = new PseudoSpectrumDataSet("pseudo", true);
     // add all isotopes as a second series:
     XYSeries isoSeries = new XYSeries("Isotopes", true);
     // raw isotopes in a different color
@@ -67,11 +68,34 @@ public class PseudoSpectrum {
     return series;
   }
 
-  public static EChartPanel createChart(PKLRowGroup group, RawDataFile raw, boolean sum) {
-    PseudoSpectrumDataSet dataset = createDataSet(group, raw, sum);
+  public static EChartPanel createChartPanel(PeakListRow[] group, RawDataFile raw, boolean sum,
+      String title) {
+    PseudoSpectrumDataSet data = createDataSet(group, raw, sum);
+    if (data == null)
+      return null;
+    JFreeChart chart = createChart(data, raw, sum, title);
+    if (chart != null) {
+      EChartPanel pn = new EChartPanel(chart);
+      XYItemRenderer renderer = chart.getXYPlot().getRenderer();
+      PseudoSpectraItemLabelGenerator labelGenerator = new PseudoSpectraItemLabelGenerator(pn);
+      renderer.setDefaultItemLabelsVisible(true);
+      renderer.setDefaultItemLabelPaint(Color.BLACK);
+      renderer.setSeriesItemLabelGenerator(0, labelGenerator);
+      return pn;
+    }
 
+    return null;
+  }
+
+  public static EChartPanel createChartPanel(PKLRowGroup group, RawDataFile raw, boolean sum) {
+    return createChartPanel(group.toArray(new PeakListRow[0]), raw, sum,
+        "Pseudo spectrum: G" + group.getGroupID());
+  }
+
+  public static JFreeChart createChart(PseudoSpectrumDataSet dataset, RawDataFile raw, boolean sum,
+      String title) {
     //
-    JFreeChart chart = ChartFactory.createXYLineChart("Pseudo spectrum: G" + group.getGroupID(), // title
+    JFreeChart chart = ChartFactory.createXYLineChart(title, // title
         "m/z", // x-axis label
         "Intensity", // y-axis label
         dataset, // data set
@@ -118,12 +142,6 @@ public class PseudoSpectrum {
     renderer.setSeriesVisibleInLegend(1, false);
     renderer.setSeriesPaint(2, Color.ORANGE);
     //
-    EChartPanel pn = new EChartPanel(chart);
-    PseudoSpectraItemLabelGenerator labelGenerator = new PseudoSpectraItemLabelGenerator(pn);
-    renderer.setDefaultItemLabelsVisible(true);
-    renderer.setDefaultItemLabelPaint(Color.BLACK);
-    renderer.setSeriesItemLabelGenerator(0, labelGenerator);
-    //
-    return pn;
+    return chart;
   }
 }

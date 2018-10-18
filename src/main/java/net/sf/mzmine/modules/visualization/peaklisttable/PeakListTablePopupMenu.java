@@ -452,7 +452,7 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
     if (showMSMSItem.equals(src)) {
       if (allClickedPeakListRows != null && allClickedPeakListRows.length > 1) {
         MultiMSMSWindow multi = new MultiMSMSWindow();
-        multi.setData(allClickedPeakListRows, clickedDataFile, SortingProperty.MZ,
+        multi.setData(allClickedPeakListRows, clickedDataFile, true, SortingProperty.MZ,
             SortingDirection.Ascending);
         multi.setVisible(true);
       } else {

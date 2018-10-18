@@ -55,6 +55,25 @@ public class SpectrumChartFactory {
       return null;
   }
 
+  public static PseudoSpectrumDataSet createPseudoDataSet(Scan scan) {
+    NumberFormat mzForm = MZmineCore.getConfiguration().getMZFormat();
+    NumberFormat rtForm = MZmineCore.getConfiguration().getRTFormat();
+
+    if (scan != null) {
+      // data
+      PseudoSpectrumDataSet series =
+          new PseudoSpectrumDataSet(MessageFormat.format("MSMS for m/z={0} RT={1}",
+              mzForm.format(scan.getPrecursorMZ()), rtForm.format(scan.getRetentionTime())), true);
+      // for each row
+      for (DataPoint dp : scan.getDataPoints()) {
+        series.addDP(dp.getMZ(), dp.getIntensity(), null);
+      }
+      return series;
+    } else
+      return null;
+  }
+
+
   /**
    * Also adds the label gen
    * 
@@ -64,9 +83,36 @@ public class SpectrumChartFactory {
    * @param showLegend
    * @return
    */
-  public static EChartPanel createChartPanel(PeakListRow row, RawDataFile raw, boolean showTitle,
-      boolean showLegend) {
-    JFreeChart chart = createChart(row, raw, showTitle, showLegend);
+  public static EChartPanel createChartPanel(Scan scan, boolean showTitle, boolean showLegend) {
+    JFreeChart chart = createChart(scan, showTitle, showLegend);
+
+    if (chart == null)
+      return null;
+    //
+    EChartPanel pn = new EChartPanel(chart);
+    XYItemRenderer renderer = chart.getXYPlot().getRenderer();
+    PseudoSpectraItemLabelGenerator labelGenerator = new PseudoSpectraItemLabelGenerator(pn);
+    renderer.setDefaultItemLabelsVisible(true);
+    renderer.setDefaultItemLabelPaint(Color.BLACK);
+    renderer.setSeriesItemLabelGenerator(0, labelGenerator);
+    return pn;
+  }
+
+  /**
+   * Also adds the label gen
+   * 
+   * @param row
+   * @param raw
+   * @param showTitle
+   * @param showLegend
+   * @return
+   */
+  public static EChartPanel createMSMSChartPanel(PeakListRow row, RawDataFile raw,
+      boolean showTitle, boolean showLegend) {
+    Scan scan = getMSMSScan(row, raw);
+    if (scan == null)
+      return null;
+    JFreeChart chart = createChart(scan, showTitle, showLegend);
 
     if (chart == null)
       return null;
@@ -81,12 +127,7 @@ public class SpectrumChartFactory {
   }
 
 
-  public static JFreeChart createChart(PeakListRow row, RawDataFile raw, boolean showTitle,
-      boolean showLegend) {
-    Scan scan = getMSMSScan(row, raw);
-    if (scan == null)
-      return null;
-
+  public static JFreeChart createChart(Scan scan, boolean showTitle, boolean showLegend) {
     PseudoSpectrumDataSet dataset = createMSMSDataSet(scan);
     //
     if (dataset == null)
@@ -145,7 +186,8 @@ public class SpectrumChartFactory {
     chart.getTitle().setVisible(showTitle);
     chart.getLegend().setVisible(showLegend);
     //
-    addPrecursorMarker(chart, scan);
+    if (scan.getPrecursorMZ() != 0)
+      addPrecursorMarker(chart, scan);
     return chart;
   }
 
