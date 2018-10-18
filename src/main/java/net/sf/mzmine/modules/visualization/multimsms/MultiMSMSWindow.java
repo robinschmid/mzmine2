@@ -3,14 +3,14 @@ package net.sf.mzmine.modules.visualization.multimsms;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.event.ItemListener;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.function.Consumer;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import org.jfree.chart.JFreeChart;
@@ -69,6 +69,21 @@ public class MultiMSMSWindow extends JFrame {
     JMenu settings = new JMenu("Settings");
     menu.add(settings);
 
+    JFrame thisframe = this;
+
+    // set columns
+    JMenuItem setCol = new JMenuItem("set columns");
+    menu.add(setCol);
+    setCol.addActionListener(e -> {
+      try {
+        col = Integer.parseInt(JOptionPane.showInputDialog("Columns", col));
+        setAutoColumns(false);
+        setColumns(col);
+      } catch (Exception e2) {
+      }
+    });
+
+    //
     addCheckBox(settings, "auto columns", autoCol,
         e -> setAutoColumns(((JCheckBoxMenuItem) e.getSource()).isSelected()));
     addCheckBox(settings, "show one axis only", onlyShowOneAxis,
@@ -82,6 +97,11 @@ public class MultiMSMSWindow extends JFrame {
 
 
     this.setJMenuBar(menu);
+  }
+
+  public void setColumns(int col2) {
+    col = col2;
+    renewCharts(group);
   }
 
   public void setAutoColumns(boolean selected) {
@@ -142,30 +162,35 @@ public class MultiMSMSWindow extends JFrame {
    * @param raw
    */
   public void setData(PeakListRow[] rows, RawDataFile raw) {
-    pnCharts.removeAll();
     group = new ChartGroup(showCrosshair, showCrosshair, true, false);
-    List<EChartPanel> charts = new ArrayList<>();
     for (PeakListRow row : rows) {
       EChartPanel c =
           SpectrumChartFactory.createChartPanel(row, alwaysShowBest ? null : raw, showTitle, false);
       if (c != null) {
-        charts.add(c);
         group.add(new ChartViewWrapper(c));
       }
     }
+    renewCharts(group);
+  }
 
-    if (charts.size() > 0) {
-      realCol = autoCol ? (int) Math.ceil(Math.sqrt(charts.size())) : col;
+  /**
+   * 
+   * @param group
+   */
+  private void renewCharts(ChartGroup group) {
+    pnCharts.removeAll();
+    if (group != null && group.size() > 0) {
+      realCol = autoCol ? (int) Math.ceil(Math.sqrt(group.size())) : col;
       GridLayout layout = new GridLayout(0, realCol);
       pnCharts.setLayout(layout);
       // add to layout
       int i = 0;
-      for (EChartPanel cp : charts) {
+      for (ChartViewWrapper cp : group.getList()) {
         // show only the last domain axes
         ValueAxis axis = cp.getChart().getXYPlot().getDomainAxis();
-        axis.setVisible(!onlyShowOneAxis || i >= charts.size() - realCol);
+        axis.setVisible(!onlyShowOneAxis || i >= group.size() - realCol);
 
-        pnCharts.add(cp);
+        pnCharts.add(cp.getChartSwing());
         i++;
       }
     }

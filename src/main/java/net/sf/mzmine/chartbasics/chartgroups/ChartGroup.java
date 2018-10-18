@@ -76,6 +76,10 @@ public class ChartGroup {
     return list == null ? 0 : list.size();
   }
 
+  public List<ChartViewWrapper> getList() {
+    return list;
+  }
+
   /**
    * Click marker to all charts
    * 
@@ -312,6 +316,10 @@ public class ChartGroup {
   public void setShowCrosshair(boolean showCrosshairDomain, boolean showCrosshairRange) {
     this.showCrosshairDomain = showCrosshairDomain;
     this.showCrosshairRange = showCrosshairRange;
+    forAllCharts(c -> {
+      c.getXYPlot().setDomainCrosshairVisible(showCrosshairDomain);
+      c.getXYPlot().setRangeCrosshairVisible(showCrosshairRange);
+    });
   }
 
 }
