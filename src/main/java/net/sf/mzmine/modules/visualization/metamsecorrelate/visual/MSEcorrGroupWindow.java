@@ -69,13 +69,13 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
-import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.msms.MultiMSMSWindow;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.annotationnetwork.visual.AnnotationNetworkPanel;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.corrnetwork.visual.CorrNetworkPanel;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.rtnetwork.visual.RTNetworkPanel;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.pseudospectra.PseudoSpectrum;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.table.GroupedPeakListTable;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.table.GroupedPeakListTableModel;
+import net.sf.mzmine.modules.visualization.multimsms.MultiMSMSWindow;
 import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableModule;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.util.SortingDirection;

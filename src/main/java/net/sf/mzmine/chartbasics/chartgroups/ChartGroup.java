@@ -10,8 +10,10 @@ import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.Range;
 import net.sf.mzmine.chartbasics.gestures.ChartGesture;
+import net.sf.mzmine.chartbasics.gestures.ChartGesture.Button;
 import net.sf.mzmine.chartbasics.gestures.ChartGesture.Entity;
 import net.sf.mzmine.chartbasics.gestures.ChartGesture.Event;
+import net.sf.mzmine.chartbasics.gestures.ChartGesture.Key;
 import net.sf.mzmine.chartbasics.gestures.ChartGestureHandler;
 import net.sf.mzmine.chartbasics.gui.wrapper.ChartViewWrapper;
 import net.sf.mzmine.chartbasics.gui.wrapper.GestureMouseAdapter;
@@ -77,12 +79,10 @@ public class ChartGroup {
   private void addClickMarker(ChartViewWrapper chart) {
     GestureMouseAdapter m = chart.getGestureAdapter();
     if (m != null) {
-      m.addGestureHandler(new ChartGestureHandler(new ChartGesture(Entity.PLOT, Event.MOVED), e -> {
-        setCrosshair(e.getCoordinates());
-      }));
-      m.addGestureHandler(new ChartGestureHandler(new ChartGesture(Entity.PLOT, Event.CLICK), e -> {
-        setCrosshair(e.getCoordinates());
-      }));
+      m.addGestureHandler(new ChartGestureHandler(
+          new ChartGesture(Entity.PLOT, Event.MOVED, Button.ALL, Key.ALL), e -> {
+            setCrosshair(e.getCoordinates());
+          }));
     }
   }
 
@@ -90,18 +90,21 @@ public class ChartGroup {
     if (pos == null)
       return;
 
+    BasicStroke stroke = new BasicStroke(1f, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 1f,
+        new float[] {5f, 3f}, 0f);
+
     forAllCharts(chart -> {
       XYPlot p = chart.getXYPlot();
       if (showClickDomainMarker) {
         p.setDomainCrosshairLockedOnData(false);
         p.setDomainCrosshairValue(pos.getX());
-        p.setDomainCrosshairStroke(new BasicStroke(1.5f));
+        p.setDomainCrosshairStroke(stroke);
         p.setDomainCrosshairVisible(true);
       }
       if (showClickRangeMarker) {
         p.setRangeCrosshairLockedOnData(false);
         p.setRangeCrosshairValue(pos.getY());
-        p.setRangeCrosshairStroke(new BasicStroke(1.5f));
+        p.setRangeCrosshairStroke(stroke);
         p.setRangeCrosshairVisible(true);
       }
     });

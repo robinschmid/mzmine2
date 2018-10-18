@@ -52,7 +52,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.sirius.SiriusProcess
 import net.sf.mzmine.modules.peaklistmethods.io.siriusexport.SiriusExportModule;
 import net.sf.mzmine.modules.rawdatamethods.peakpicking.manual.ManualPeakPickerModule;
 import net.sf.mzmine.modules.visualization.intensityplot.IntensityPlotModule;
-import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.msms.MultiMSMSWindow;
+import net.sf.mzmine.modules.visualization.multimsms.MultiMSMSWindow;
 import net.sf.mzmine.modules.visualization.peaklisttable.export.IsotopePatternExportModule;
 import net.sf.mzmine.modules.visualization.peaklisttable.export.MSMSExportModule;
 import net.sf.mzmine.modules.visualization.peaklisttable.table.CommonColumnType;
@@ -258,11 +258,9 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
 
         showIsotopePatternItem
             .setEnabled(clickedPeakListRow.getBestIsotopePattern() != null && oneRowSelected);
-        if (clickedPeakListRow.getBestPeak() != null) {
-          showMSMSItem
-              .setEnabled(clickedPeakListRow.getBestPeak().getMostIntenseFragmentScanNumber() > 0
-                  && oneRowSelected);
-        }
+
+        // always show for multi MSMS window
+        showMSMSItem.setEnabled(!oneRowSelected || getSelectedPeakForMSMS() != null);
       }
     }
 

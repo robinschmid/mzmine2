@@ -1,4 +1,4 @@
-package net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.msms;
+package net.sf.mzmine.modules.visualization.multimsms;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -30,10 +30,9 @@ public class SpectrumChartFactory {
     Scan scan = null;
     if (raw != null) {
       Feature peak = row.getPeak(raw);
-      if (peak == null)
+      if (peak != null)
         scan = raw.getScan(peak.getMostIntenseFragmentScanNumber());
-    }
-    if (scan == null)
+    } else
       scan = row.getBestFragmentation();
     return scan;
   }
@@ -68,6 +67,9 @@ public class SpectrumChartFactory {
   public static EChartPanel createChartPanel(PeakListRow row, RawDataFile raw, boolean showTitle,
       boolean showLegend) {
     JFreeChart chart = createChart(row, raw, showTitle, showLegend);
+
+    if (chart == null)
+      return null;
     //
     EChartPanel pn = new EChartPanel(chart);
     XYItemRenderer renderer = chart.getXYPlot().getRenderer();

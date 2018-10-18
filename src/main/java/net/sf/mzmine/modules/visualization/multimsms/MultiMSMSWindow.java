@@ -1,4 +1,4 @@
-package net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.msms;
+package net.sf.mzmine.modules.visualization.multimsms;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
@@ -96,7 +96,7 @@ public class MultiMSMSWindow extends JFrame {
       for (EChartPanel cp : charts) {
         // show only the last domain axes
         ValueAxis axis = cp.getChart().getXYPlot().getDomainAxis();
-        axis.setVisible(!onlyShowOneAxis || i >= charts.size() - col);
+        axis.setVisible(!onlyShowOneAxis || i >= charts.size() - realCol);
 
         pnCharts.add(cp);
         i++;

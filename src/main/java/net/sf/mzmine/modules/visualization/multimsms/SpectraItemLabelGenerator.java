@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.msms;
+package net.sf.mzmine.modules.visualization.multimsms;
 
 import java.text.NumberFormat;
 import org.jfree.chart.labels.XYItemLabelGenerator;
