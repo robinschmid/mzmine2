@@ -249,8 +249,10 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
         // If we have the peak, enable Show... items
         if (clickedPeak != null && oneRowSelected) {
           showIsotopePatternItem.setEnabled(clickedPeak.getIsotopePattern() != null);
-          showMSMSItem.setEnabled(clickedPeak.getMostIntenseFragmentScanNumber() > 0);
         }
+
+        // always show for multi
+        showMSMSItem.setEnabled(!oneRowSelected || getSelectedPeakForMSMS() != null);
 
       } else {
 
