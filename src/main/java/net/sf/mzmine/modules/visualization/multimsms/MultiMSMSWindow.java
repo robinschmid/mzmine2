@@ -160,7 +160,7 @@ public class MultiMSMSWindow extends JFrame {
   public void setData(PeakListRow[] rows, RawDataFile raw, boolean createMS1,
       SortingProperty sorting, SortingDirection direction) {
     Arrays.sort(rows, new PeakListRowSorter(sorting, direction));
-    setDataAndCreatePseudoMS1(rows, raw);
+    setData(rows, raw, createMS1);
   }
 
   /**
@@ -183,7 +183,7 @@ public class MultiMSMSWindow extends JFrame {
         }
       }
       if (best != null) {
-        scan = raw.getScan(best.getRepresentativeScanNumber());
+        scan = best.getDataFile().getScan(best.getRepresentativeScanNumber());
         EChartPanel cp = SpectrumChartFactory.createChartPanel(scan, showTitle, showLegend);
         if (cp != null)
           msone = new ChartViewWrapper(cp);
@@ -204,6 +204,20 @@ public class MultiMSMSWindow extends JFrame {
   }
 
   /**
+   * Sort rows
+   * 
+   * @param rows
+   * @param raw
+   * @param sorting
+   * @param direction
+   */
+  public void setDataAndCreatePseudoMS1(PeakListRow[] rows, RawDataFile raw,
+      SortingProperty sorting, SortingDirection direction) {
+    Arrays.sort(rows, new PeakListRowSorter(sorting, direction));
+    setDataAndCreatePseudoMS1(rows, raw);
+  }
+
+  /**
    * Create charts and show
    * 
    * @param rows
@@ -214,23 +228,12 @@ public class MultiMSMSWindow extends JFrame {
     group = new ChartGroup(showCrosshair, showCrosshair, true, false);
     // MS1
 
-    Scan scan = null;
-    Feature best = null;
-    for (PeakListRow r : rows) {
-      Feature f = raw == null ? r.getBestPeak() : r.getPeak(raw);
-      if (f != null && (best == null || f.getHeight() > best.getHeight())) {
-        best = f;
-      }
-    }
-    if (best != null) {
-      scan = raw.getScan(best.getRepresentativeScanNumber());
-      EChartPanel cp = PseudoSpectrum.createChartPanel(rows, raw, false, "pseudo");
+    EChartPanel cp = PseudoSpectrum.createChartPanel(rows, raw, false, "pseudo");
+    if (cp != null) {
       cp.getChart().getLegend().setVisible(showLegend);
       cp.getChart().getTitle().setVisible(showTitle);
-      if (cp != null)
-        msone = new ChartViewWrapper(cp);
+      msone = new ChartViewWrapper(cp);
     }
-
     if (msone != null)
       group.add(msone);
 
