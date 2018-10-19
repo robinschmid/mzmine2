@@ -98,6 +98,14 @@ public interface PeakList {
    */
   public PeakListRow[] getRows();
 
+
+  /**
+   * Creates a (parallel) stream of PeakListRows (convinience method)
+   * 
+   * @return
+   */
+  public Stream<PeakListRow> stream(boolean parallel);
+
   /**
    * Creates a stream of PeakListRows
    * 
@@ -111,6 +119,7 @@ public interface PeakList {
    * @return
    */
   public Stream<PeakListRow> parallelStream();
+
 
   /**
    * Returns all rows with average retention time within given range

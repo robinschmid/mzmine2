@@ -281,6 +281,11 @@ public class SimplePeakList implements PeakList {
   }
 
   @Override
+  public Stream<PeakListRow> stream(boolean parallel) {
+    return parallel ? parallelStream() : stream();
+  }
+
+  @Override
   public Stream<PeakListRow> stream() {
     return peakListRows.stream();
   }
