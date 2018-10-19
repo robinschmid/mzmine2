@@ -2,6 +2,7 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.ms
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.MassList;
 import net.sf.mzmine.datamodel.Scan;
@@ -15,6 +16,8 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 public class MSMSLogic {
 
+  // Logger.
+  private static final Logger LOG = Logger.getLogger(MSMSLogic.class.getName());
 
   /**
    * Checks the MSMS scan for matches of x-mers to the x-mer precursorMZ
