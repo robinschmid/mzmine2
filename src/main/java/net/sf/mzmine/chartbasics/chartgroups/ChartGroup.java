@@ -28,7 +28,7 @@ import net.sf.mzmine.chartbasics.listener.AxisRangeChangedListener;
 public class ChartGroup {
 
   // max range of all charts
-  private Range[] maxRange;
+  private Range[] maxRange = new Range[2];
 
   // combine zoom of axes
   private boolean combineRangeAxes = false;
@@ -137,24 +137,28 @@ public class ChartGroup {
    * @param chart
    */
   private void addChartToMaxRange(JFreeChart chart) {
-    if (maxRange == null) {
-      maxRange = new Range[2];
-      if (hasDomainAxis(chart))
-        maxRange[0] = chart.getXYPlot().getDomainAxis().getRange();
-      if (hasRangeAxis(chart))
-        maxRange[1] = chart.getXYPlot().getRangeAxis().getRange();
-    } else {
-      // domain
-      Range nd = addRanges(maxRange[0], getDomainRange(chart));
-      if (nd != null && (maxRange[0] == null || !nd.equals(maxRange[0])))
-        domainHasChanged(nd);
+    // domain
+    Range nd = addRanges(maxRange[0], getDomainRange(chart));
+    if (nd != null && (maxRange[0] == null || !nd.equals(maxRange[0]))) {
       maxRange[0] = nd;
+      // apply to auto range
+      forAllCharts(c -> {
+        if (hasDomainAxis(c))
+          c.getXYPlot().getDomainAxis().setDefaultAutoRange(maxRange[0]);
+      });
+      domainHasChanged(nd);
+    }
 
-      // range axis
-      nd = addRanges(maxRange[1], getRangeRange(chart));
+    // range axis
+    nd = addRanges(maxRange[1], getRangeRange(chart));
+    if (nd != null && (maxRange[1] == null || !nd.equals(maxRange[1]))) {
       maxRange[1] = nd;
-      if (nd != null && (maxRange[0] == null || !nd.equals(maxRange[0])))
-        rangeHasChanged(nd);
+      // apply to auto range
+      forAllCharts(c -> {
+        if (hasRangeAxis(c))
+          c.getXYPlot().getRangeAxis().setDefaultAutoRange(maxRange[1]);
+      });
+      rangeHasChanged(nd);
     }
   }
 
