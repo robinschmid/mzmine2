@@ -20,12 +20,15 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.ms
 
 import java.awt.Window;
 import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.MSAnnMSMSCheckTask.NeutralLossCheck;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
+import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.MassListParameter;
+import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
 import net.sf.mzmine.util.ExitCode;
@@ -56,6 +59,12 @@ public class MSAnnMSMSCheckParameters extends SimpleParameterSet {
   public static final BooleanParameter CHECK_MULTIMERS = new BooleanParameter("Check for multimers",
       "Checks the truth of the multimer identification by searching the MS/MS spectra for the connection yM -> xM (x<y)");
 
+  public static final OptionalParameter<ComboParameter<NeutralLossCheck>> CHECK_NEUTRALLOSSES =
+      new OptionalParameter<ComboParameter<NeutralLossCheck>>(new ComboParameter<NeutralLossCheck>(
+          "Check neutral losses (MS1->MS2)",
+          "If M-H2O was detected in MS1 this modification is searched for the precursor m/z or any signal (+precursor)",
+          NeutralLossCheck.values(), NeutralLossCheck.PRECURSOR));
+
   // Constructor
   public MSAnnMSMSCheckParameters() {
     this(false);
@@ -63,8 +72,9 @@ public class MSAnnMSMSCheckParameters extends SimpleParameterSet {
 
   public MSAnnMSMSCheckParameters(boolean isSub) {
     super(isSub ? // no peak list and rt tolerance
-        new Parameter[] {MASS_LIST, MZ_TOLERANCE, MIN_HEIGHT, CHECK_MULTIMERS}
-        : new Parameter[] {PEAK_LISTS, MASS_LIST, MZ_TOLERANCE, MIN_HEIGHT, CHECK_MULTIMERS});
+        new Parameter[] {MASS_LIST, MZ_TOLERANCE, MIN_HEIGHT, CHECK_MULTIMERS, CHECK_NEUTRALLOSSES}
+        : new Parameter[] {PEAK_LISTS, MASS_LIST, MZ_TOLERANCE, MIN_HEIGHT, CHECK_MULTIMERS,
+            CHECK_NEUTRALLOSSES});
   }
 
   @Override

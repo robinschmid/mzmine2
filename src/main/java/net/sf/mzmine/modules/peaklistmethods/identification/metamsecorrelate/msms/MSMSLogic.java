@@ -7,7 +7,10 @@ import net.sf.mzmine.datamodel.MassList;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIdentityList;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIonRelationIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSMultimerIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.interf.AbstractMSMSIdentity;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 public class MSMSLogic {
@@ -24,7 +27,7 @@ public class MSMSLogic {
    * @param mzTolerance
    * @return List of identities. The first is always the one for the precursor
    */
-  public static List<MSMSMultimerIdentity> checkMultiMolCluster(Scan scan, String masslist,
+  public static MSMSIdentityList checkMultiMolCluster(Scan scan, String masslist,
       double precursorMZ, ESIAdductType adduct, MZTolerance mzTolerance, double minHeight) {
     return checkMultiMolCluster(scan, masslist, precursorMZ, adduct, adduct.getMolecules(),
         mzTolerance, minHeight);
@@ -42,7 +45,7 @@ public class MSMSLogic {
    * @param mzTolerance
    * @return List of identities. The first is always the one for the precursor
    */
-  public static List<MSMSMultimerIdentity> checkMultiMolCluster(Scan scan, String masslist,
+  public static MSMSIdentityList checkMultiMolCluster(Scan scan, String masslist,
       double precursorMZ, ESIAdductType adduct, int maxM, MZTolerance mzTolerance,
       double minHeight) {
     MassList masses = scan.getMassList(masslist);
@@ -58,8 +61,8 @@ public class MSMSLogic {
     }
 
     // result best with the highest number of identities
-    List<MSMSMultimerIdentity> ident = null;
-    List<MSMSMultimerIdentity> best = null;
+    MSMSIdentityList ident = null;
+    MSMSIdentityList best = null;
 
     // datapoints of masslist
     DataPoint[] dps = masses.getDataPoints();
@@ -71,7 +74,7 @@ public class MSMSLogic {
 
     // check each adduct againt all other
     for (int i = 1; i < list.size(); i++) {
-      ident = new ArrayList<>();
+      ident = new MSMSIdentityList();
       ESIAdductType b = list.get(i);
       double massb = b.getMass(precursorMZ);
       for (int k = 0; k < i; k++) {
@@ -87,7 +90,8 @@ public class MSMSLogic {
           // find out if there are already some identities
           MSMSMultimerIdentity ia = null;
           MSMSMultimerIdentity ib = null;
-          for (MSMSMultimerIdentity old : ident) {
+          for (AbstractMSMSIdentity o : ident) {
+            MSMSMultimerIdentity old = (MSMSMultimerIdentity) o;
             if (old.getType().equals(a))
               ia = old;
             if (old.getType().equals(b))
@@ -116,6 +120,49 @@ public class MSMSLogic {
     return best;
   }
 
+
+  /**
+   * Checks the MSMS scan for matches of x-mers to the x-mer precursorMZ
+   * 
+   * @param scan
+   * @param masslist
+   * @param precursorMZ
+   * @param adduct only the basic information is taken (charge and deltaMass, molecules are then
+   *        added from 1-maxM)
+   * @param maxM maximum M
+   * @param mzTolerance
+   * @return List of identities. The first is always the one for the precursor
+   */
+  public static MSMSIdentityList checkNeutralLoss(DataPoint[] dps, ESIAdductType adduct,
+      MZTolerance mzTolerance, double minHeight) {
+    if (dps == null || dps.length == 0)
+      return null;
+
+    // generate all M adducts 3M+X -> 2M+X -> M+X
+    ESIAdductType mod = adduct.getModifiedOnly();
+    if (mod == null)
+      return null;
+
+    // delta
+    double dmz = mod.getMassDifference();
+
+    // result best with the highest number of identities
+    MSMSIdentityList ident = new MSMSIdentityList();
+
+    // check all data points
+    for (DataPoint dp : dps) {
+      double mz = dp.getMZ();
+
+      // check with precursor mz
+      DataPoint loss = findDPAt(dps, mz - dmz, mzTolerance, minHeight);
+      if (loss != null) {
+        // id found
+        MSMSIonRelationIdentity relation = new MSMSIonRelationIdentity(mzTolerance, loss, mod, dp);
+        ident.add(relation);
+      }
+    }
+    return ident;
+  }
 
   /**
    * Heighest dp within mzTolerance

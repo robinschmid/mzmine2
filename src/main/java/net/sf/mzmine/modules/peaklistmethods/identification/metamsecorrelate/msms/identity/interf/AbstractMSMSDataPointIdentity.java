@@ -5,7 +5,7 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 public abstract class AbstractMSMSDataPointIdentity extends AbstractMSMSIdentity {
 
-  private DataPoint dp;
+  protected DataPoint dp;
 
   public AbstractMSMSDataPointIdentity(MZTolerance mzTolerance, DataPoint dp) {
     super(mzTolerance);

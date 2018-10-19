@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductType;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.interf.AbstractMSMSDataPointIdentity;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 /**
@@ -13,15 +12,13 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
  * @author Robin Schmid (robinschmid@uni-muenster.de)
  *
  */
-public class MSMSMultimerIdentity extends AbstractMSMSDataPointIdentity {
+public class MSMSMultimerIdentity extends MSMSIonIdentity {
 
   // the identified x-mer
-  private ESIAdductType type;
   private List<MSMSMultimerIdentity> links;
 
   public MSMSMultimerIdentity(MZTolerance mzTolerance, DataPoint dp, ESIAdductType type) {
-    super(mzTolerance, dp);
-    this.type = type;
+    super(mzTolerance, dp, type);
   }
 
   public List<MSMSMultimerIdentity> getLinks() {
@@ -34,20 +31,12 @@ public class MSMSMultimerIdentity extends AbstractMSMSDataPointIdentity {
     links.add(l);
   }
 
-  @Override
-  public String getName() {
-    return type.toString(false);
-  }
-
   public int getLinksCount() {
     return links == null ? 0 : links.size();
   }
 
   public int getMCount() {
-    return type.getMolecules();
+    return getType().getMolecules();
   }
 
-  public ESIAdductType getType() {
-    return type;
-  }
 }

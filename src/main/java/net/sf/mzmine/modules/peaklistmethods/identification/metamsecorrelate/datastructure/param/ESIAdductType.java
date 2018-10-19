@@ -510,6 +510,19 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
       return null;
   }
 
+
+  /**
+   * 
+   * @return modifications only or null
+   */
+  public ESIAdductType getModifiedOnly() {
+    ESIAdductType[] all = getModification();
+    if (all == null)
+      return null;
+
+    return new ESIAdductType(all);
+  }
+
   /**
    * 
    * @return count of modification

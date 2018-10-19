@@ -5,7 +5,7 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 public abstract class AbstractMSMSIdentity {
 
   // the mz tolerance that was used to find identity
-  private MZTolerance mzTolerance;
+  protected MZTolerance mzTolerance;
 
 
   public AbstractMSMSIdentity(MZTolerance mzTolerance) {

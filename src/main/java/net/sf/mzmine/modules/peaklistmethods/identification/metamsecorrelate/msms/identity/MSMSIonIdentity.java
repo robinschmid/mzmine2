@@ -12,7 +12,7 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
  */
 public class MSMSIonIdentity extends AbstractMSMSDataPointIdentity {
 
-  private ESIAdductType type;
+  protected ESIAdductType type;
 
   public MSMSIonIdentity(MZTolerance mzTolerance, DataPoint dp, ESIAdductType type) {
     super(mzTolerance, dp);

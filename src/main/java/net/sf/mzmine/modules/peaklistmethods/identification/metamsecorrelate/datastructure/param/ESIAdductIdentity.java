@@ -21,11 +21,11 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.da
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
-import java.util.List;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.impl.SimplePeakIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSMultimerIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIdentityList;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.interf.AbstractMSMSIdentity;
 
 public class ESIAdductIdentity extends SimplePeakIdentity {
 
@@ -43,7 +43,7 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
   /**
    * List of MSMS identities. e.g., multimers/monomers that were found in MS/MS data
    */
-  private List<MSMSMultimerIdentity> msmsIdent;
+  private MSMSIdentityList msmsIdent;
 
   /**
    * Create the identity.
@@ -171,11 +171,17 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
     return Arrays.stream(getPartnerRowsID()).anyMatch(pid -> pid == id);
   }
 
-  public void setMSMSIdentities(List<MSMSMultimerIdentity> msmsIdent) {
+  public void setMSMSIdentities(MSMSIdentityList msmsIdent) {
     this.msmsIdent = msmsIdent;
   }
 
-  public List<MSMSMultimerIdentity> getMSMSIdentities() {
+  public void addMSMSIdentity(AbstractMSMSIdentity ident) {
+    if (this.msmsIdent == null)
+      msmsIdent = new MSMSIdentityList();
+    msmsIdent.add(ident);
+  }
+
+  public MSMSIdentityList getMSMSIdentities() {
     return msmsIdent;
   }
 
