@@ -72,6 +72,12 @@ public class MSAnnotationNetworkLogic {
         // always if M>1 backed by MSMS
         else if (compareMSMSMolIdentity(best, esi))
           best = esi;
+        // keep if insource fragment verified by MSMS
+        else if (compareMSMSNeutralLossIdentity(esi, best))
+          continue;
+        // keep if insource fragment verified by MSMS
+        else if (compareMSMSNeutralLossIdentity(best, esi))
+          best = esi;
         else if (links == maxLinks
             && (compareCharge(best, esi) || (isTheUnmodified(best) && !isTheUnmodified(esi)))) {
           best = esi;
@@ -92,6 +98,20 @@ public class MSAnnotationNetworkLogic {
    */
   private static boolean compareMSMSMolIdentity(ESIAdductIdentity best, ESIAdductIdentity esi) {
     if (best.getMSMSMultimerCount() == 0 && esi.getMSMSMultimerCount() > 0)
+      return true;
+    else
+      return false;
+  }
+
+  /**
+   * 
+   * @param best
+   * @param esi
+   * @return onyl true if best was not verified by MSMS and and esi is
+   */
+  private static boolean compareMSMSNeutralLossIdentity(ESIAdductIdentity best,
+      ESIAdductIdentity esi) {
+    if (best.getMSMSModVerify(best) == 0 && esi.getMSMSModVerify(esi) > 0)
       return true;
     else
       return false;

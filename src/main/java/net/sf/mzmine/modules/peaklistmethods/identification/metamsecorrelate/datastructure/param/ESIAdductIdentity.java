@@ -25,6 +25,9 @@ import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.impl.SimplePeakIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIdentityList;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIonRelationIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIonRelationIdentity.Relation;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSMultimerIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.interf.AbstractMSMSIdentity;
 
 public class ESIAdductIdentity extends SimplePeakIdentity {
@@ -191,7 +194,20 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
    * @return
    */
   public int getMSMSMultimerCount() {
-    return msmsIdent == null || msmsIdent.isEmpty() ? 0 : msmsIdent.size() - 1;
+    if (msmsIdent == null || msmsIdent.isEmpty())
+      return 0;
+
+    return (int) msmsIdent.stream().filter(id -> id instanceof MSMSMultimerIdentity).count() - 1;
+  }
+
+  public int getMSMSModVerify(ESIAdductIdentity best) {
+    if (msmsIdent == null || msmsIdent.isEmpty())
+      return 0;
+
+    return (int) msmsIdent.stream()
+        .filter(id -> id instanceof MSMSIonRelationIdentity
+            && ((MSMSIonRelationIdentity) id).getRelation().equals(Relation.NEUTRAL_LOSS))
+        .count() - 1;
   }
 
 }
