@@ -170,6 +170,10 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
 
     int c = 0;
     for (ESIAdductIdentity ad : ident) {
+      // do not test the unmodified
+      if (ad.getA().equals(ESIAdductType.M_UNMODIFIED))
+        continue;
+
       ESIAdductType mod = ad.getA().getAbsCharge() == 0 ? ad.getA() : ad.getA().getModifiedOnly();
 
       if (mod == null)

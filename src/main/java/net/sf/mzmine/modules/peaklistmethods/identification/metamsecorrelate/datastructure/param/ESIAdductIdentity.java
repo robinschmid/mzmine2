@@ -116,11 +116,6 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
     return getIDString();
   }
 
-  @Override
-  public String getName() {
-    return super.toString();
-  }
-
   public boolean equalsAdduct(ESIAdductType acompare) {
     return acompare.toString(false).equals(this.adduct);
   }
@@ -187,12 +182,14 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
 
   public void setMSMSIdentities(MSMSIdentityList msmsIdent) {
     this.msmsIdent = msmsIdent;
+    setPropertyValue(PROPERTY_NAME, getIDString());
   }
 
   public void addMSMSIdentity(AbstractMSMSIdentity ident) {
     if (this.msmsIdent == null)
       msmsIdent = new MSMSIdentityList();
     msmsIdent.add(ident);
+    setPropertyValue(PROPERTY_NAME, getIDString());
   }
 
   public MSMSIdentityList getMSMSIdentities() {
