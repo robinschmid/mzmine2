@@ -322,4 +322,19 @@ public class ChartGroup {
     });
   }
 
+  public void resetZoom() {
+    resetDomainZoom();
+    resetRangeZoom();
+  }
+
+  public void resetDomainZoom() {
+    if (maxRange != null)
+      domainHasChanged(maxRange[0]);
+  }
+
+  public void resetRangeZoom() {
+    if (maxRange != null)
+      rangeHasChanged(maxRange[1]);
+  }
+
 }

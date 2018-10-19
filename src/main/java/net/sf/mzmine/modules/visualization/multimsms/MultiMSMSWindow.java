@@ -91,6 +91,14 @@ public class MultiMSMSWindow extends JFrame {
       }
     });
 
+    // reset zoom
+    JMenuItem resetZoom = new JMenuItem("reset zoom");
+    menu.add(resetZoom);
+    resetZoom.addActionListener(e -> {
+      if (group != null)
+        group.resetZoom();
+    });
+
     //
     addCheckBox(settings, "auto columns", autoCol,
         e -> setAutoColumns(((JCheckBoxMenuItem) e.getSource()).isSelected()));
