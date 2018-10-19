@@ -13,7 +13,7 @@ public class MSMSIonRelationIdentity extends MSMSIonIdentity {
 
   private DataPoint parentDP;
   protected double parentMZ;
-  protected Relation relation;
+  protected Relation relation = Relation.NEUTRAL_LOSS;
 
   public enum Relation {
     NEUTRAL_LOSS;
