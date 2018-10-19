@@ -10,11 +10,11 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
  * @author Robin Schmid (robinschmid@uni-muenster.de)
  *
  */
-public class MSMSPrecursorIdentity extends AbstractMSMSDataPointIdentity {
+public class MSMSIonIdentity extends AbstractMSMSDataPointIdentity {
 
   private ESIAdductType type;
 
-  public MSMSPrecursorIdentity(MZTolerance mzTolerance, DataPoint dp, ESIAdductType type) {
+  public MSMSIonIdentity(MZTolerance mzTolerance, DataPoint dp, ESIAdductType type) {
     super(mzTolerance, dp);
     this.type = type;
   }

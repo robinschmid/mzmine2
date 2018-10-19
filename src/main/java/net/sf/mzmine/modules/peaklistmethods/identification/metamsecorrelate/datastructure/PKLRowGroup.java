@@ -243,4 +243,17 @@ public class PKLRowGroup extends ArrayList<PeakListRow> {
       lastViewedRawFile = raw.length - 1;
     this.lastViewedRawFile = lastViewedRawFile;
   }
+
+  /**
+   * 
+   * @param row
+   * @return
+   */
+  public static PKLRowGroup from(PeakListRow row) {
+    MSEGroupPeakIdentity pi = MSEGroupPeakIdentity.getIdentityOf(row);
+    if (pi != null)
+      return pi.getGroup();
+    else
+      return null;
+  }
 }

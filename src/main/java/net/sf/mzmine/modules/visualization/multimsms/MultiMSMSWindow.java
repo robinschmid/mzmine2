@@ -24,8 +24,11 @@ import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
+import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIonIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.interf.AbstractMSMSIdentity;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.pseudospectra.PseudoSpectrum;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.pseudospectra.PseudoSpectrumDataSet;
@@ -190,6 +193,10 @@ public class MultiMSMSWindow extends JFrame {
    * @param raw
    */
   public void setData(PeakListRow[] rows, RawDataFile raw, boolean createMS1) {
+    // use raw?
+    if (alwaysShowBest)
+      raw = null;
+
     msone = null;
     group = new ChartGroup(showCrosshair, showCrosshair, true, false);
     // MS1
@@ -214,25 +221,40 @@ public class MultiMSMSWindow extends JFrame {
 
     // MS2 of all rows
     for (PeakListRow row : rows) {
-      EChartPanel c = SpectrumChartFactory.createMSMSChartPanel(row, alwaysShowBest ? null : raw,
-          showTitle, showLegend);
+      EChartPanel c = SpectrumChartFactory.createMSMSChartPanel(row, raw, showTitle, showLegend);
       if (c != null) {
         group.add(new ChartViewWrapper(c));
       }
     }
 
     // add all MSMS annotations
-    addAllMSMSAnnotations(rows);
+    addAllMSMSAnnotations(rows, raw);
 
     renewCharts(group);
   }
 
 
-  public void addAllMSMSAnnotations(PeakListRow[] rows) {
-    for (PeakListRow row : rows)
+  public void addAllMSMSAnnotations(PeakListRow[] rows, RawDataFile raw) {
+    for (PeakListRow row : rows) {
+      // add MS1 annotations
+      // limited by correlation group
+      PKLRowGroup group = PKLRowGroup.from(row);
+
+      ESIAdductIdentity best = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, group);
+      if (best == null)
+        continue;
+
+      Scan scan = SpectrumChartFactory.getMSMSScan(row, raw);
+      double precursorMZ = row.getPeak(scan.getDataFile()).getMZ();
+      // add ms1 adduct annotation
+      addMSMSAnnotation(
+          new MSMSIonIdentity(mzTolerance, new SimpleDataPoint(precursorMZ, 1f), best.getA()));
+
+      // add all MSMS annotations (found in MSMS)
       for (ESIAdductIdentity id : MSAnnotationNetworkLogic.getAllAnnotations(row)) {
         addMSMSAnnotations(id.getMSMSIdentities());
       }
+    }
   }
 
   /**
@@ -256,10 +278,13 @@ public class MultiMSMSWindow extends JFrame {
    * @param raw
    */
   public void setDataAndCreatePseudoMS1(PeakListRow[] rows, RawDataFile raw) {
+    // use raw?
+    if (alwaysShowBest)
+      raw = null;
+
     msone = null;
     group = new ChartGroup(showCrosshair, showCrosshair, true, false);
     // MS1
-
     EChartPanel cp = PseudoSpectrum.createChartPanel(rows, raw, false, "pseudo");
     if (cp != null) {
       cp.getChart().getLegend().setVisible(showLegend);
@@ -271,14 +296,13 @@ public class MultiMSMSWindow extends JFrame {
 
     // MS2 of all rows
     for (PeakListRow row : rows) {
-      EChartPanel c = SpectrumChartFactory.createMSMSChartPanel(row, alwaysShowBest ? null : raw,
-          showTitle, false);
+      EChartPanel c = SpectrumChartFactory.createMSMSChartPanel(row, raw, showTitle, false);
       if (c != null) {
         group.add(new ChartViewWrapper(c));
       }
     }
     // add all MSMS annotations
-    addAllMSMSAnnotations(rows);
+    addAllMSMSAnnotations(rows, raw);
 
     renewCharts(group);
   }
@@ -346,7 +370,8 @@ public class MultiMSMSWindow extends JFrame {
    */
   public void setMzTolerance(MZTolerance mzTolerance) {
     boolean changed =
-        (this.mzTolerance == null && mzTolerance != null) || !this.mzTolerance.equals(mzTolerance);
+        mzTolerance == this.mzTolerance || (this.mzTolerance == null && mzTolerance != null)
+            || !this.mzTolerance.equals(mzTolerance);
     this.mzTolerance = mzTolerance;
 
     if (changed)
@@ -370,10 +395,11 @@ public class MultiMSMSWindow extends JFrame {
   }
 
   private void addAnnotationToCharts(AbstractMSMSIdentity ann) {
-    forAllCharts(c -> {
-      PseudoSpectrumDataSet data = (PseudoSpectrumDataSet) c.getXYPlot().getDataset(0);
-      data.addIdentity(mzTolerance, ann);
-    });
+    if (mzTolerance != null)
+      forAllCharts(c -> {
+        PseudoSpectrumDataSet data = (PseudoSpectrumDataSet) c.getXYPlot().getDataset(0);
+        data.addIdentity(mzTolerance, ann);
+      });
   }
 
   public MZTolerance getMzTolerance() {
