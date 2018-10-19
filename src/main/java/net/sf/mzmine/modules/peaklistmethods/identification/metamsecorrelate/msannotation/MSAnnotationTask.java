@@ -32,6 +32,8 @@ import net.sf.mzmine.desktop.impl.HeadLessDesktop;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary.CheckMode;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.MSAnnMSMSCheckParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.MSAnnMSMSCheckTask;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
@@ -59,6 +61,11 @@ public class MSAnnotationTask extends AbstractTask {
   private double minHeight;
   private CheckMode checkMode;
 
+  // MSMS
+  private boolean doMSMSchecks;
+  private MSAnnMSMSCheckParameters msmsChecks;
+
+
   /**
    * Create the task.
    *
@@ -78,6 +85,11 @@ public class MSAnnotationTask extends AbstractTask {
     rtTolerance = parameterSet.getParameter(MSAnnotationParameters.RT_TOLERANCE).getValue();
     minHeight = parameterSet.getParameter(MSAnnotationParameters.MIN_HEIGHT).getValue();
     checkMode = parameterSet.getParameter(MSAnnotationParameters.CHECK_MODE).getValue();
+
+    // MSMS refinement
+    doMSMSchecks = parameterSet.getParameter(MSAnnotationParameters.MSMS_CHECK).getValue();
+    msmsChecks =
+        parameterSet.getParameter(MSAnnotationParameters.MSMS_CHECK).getEmbeddedParameters();
   }
 
   @Override
@@ -157,6 +169,12 @@ public class MSAnnotationTask extends AbstractTask {
           }
         }
         finishedRows = i;
+      }
+
+      // do MSMS check for multimers
+      if (doMSMSchecks) {
+        MSAnnMSMSCheckTask task = new MSAnnMSMSCheckTask(project, msmsChecks, peakList);
+        task.run();
       }
 
       LOG.info("A total of " + compared + " row2row comparisons with " + annotPairs

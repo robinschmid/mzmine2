@@ -21,12 +21,30 @@ public class MSMSLogic {
    * @param precursorMZ
    * @param adduct only the basic information is taken (charge and deltaMass, molecules are then
    *        added from 1-maxM)
-   * @param maxM
    * @param mzTolerance
    * @return List of identities. The first is always the one for the precursor
    */
   public static List<MSMSMultimerIdentity> checkMultiMolCluster(Scan scan, String masslist,
-      double precursorMZ, ESIAdductType adduct, int maxM, MZTolerance mzTolerance) {
+      double precursorMZ, ESIAdductType adduct, MZTolerance mzTolerance, double minHeight) {
+    return checkMultiMolCluster(scan, masslist, precursorMZ, adduct, adduct.getMolecules(),
+        mzTolerance, minHeight);
+  }
+
+  /**
+   * Checks the MSMS scan for matches of x-mers to the x-mer precursorMZ
+   * 
+   * @param scan
+   * @param masslist
+   * @param precursorMZ
+   * @param adduct only the basic information is taken (charge and deltaMass, molecules are then
+   *        added from 1-maxM)
+   * @param maxM maximum M
+   * @param mzTolerance
+   * @return List of identities. The first is always the one for the precursor
+   */
+  public static List<MSMSMultimerIdentity> checkMultiMolCluster(Scan scan, String masslist,
+      double precursorMZ, ESIAdductType adduct, int maxM, MZTolerance mzTolerance,
+      double minHeight) {
     MassList masses = scan.getMassList(masslist);
     if (masses == null)
       return null;
@@ -63,7 +81,7 @@ public class MSMSLogic {
         double mza = a.getMZ(massb);
 
         // check with precursor mz
-        DataPoint dp = findDPAt(dps, mza, mzTolerance);
+        DataPoint dp = findDPAt(dps, mza, mzTolerance, minHeight);
         if (dp != null) {
           // id found
           // find out if there are already some identities
@@ -108,9 +126,23 @@ public class MSMSLogic {
    * @return
    */
   public static DataPoint findDPAt(DataPoint[] dps, double precursorMZ, MZTolerance mzTolerance) {
+    return findDPAt(dps, precursorMZ, mzTolerance, 0);
+  }
+
+  /**
+   * Heighest dp within mzTolerance
+   * 
+   * @param dps
+   * @param precursorMZ
+   * @param mzTolerance
+   * @return
+   */
+  public static DataPoint findDPAt(DataPoint[] dps, double precursorMZ, MZTolerance mzTolerance,
+      double minHeight) {
     DataPoint best = null;
     for (DataPoint dp : dps)
-      if ((best == null || dp.getIntensity() > best.getIntensity())
+      if (dp.getIntensity() >= minHeight
+          && (best == null || dp.getIntensity() > best.getIntensity())
           && mzTolerance.checkWithinTolerance(dp.getMZ(), precursorMZ))
         best = dp;
     return best;

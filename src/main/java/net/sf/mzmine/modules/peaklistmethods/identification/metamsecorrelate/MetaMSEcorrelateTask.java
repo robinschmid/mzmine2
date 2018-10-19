@@ -56,6 +56,8 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msa
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary.CheckMode;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.MSAnnMSMSCheckParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.MSAnnMSMSCheckTask;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
@@ -97,6 +99,9 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   private final boolean searchAdducts;
   private CheckMode adductCheckMode;
   private double minAdductHeight;
+  // MSMS refinement
+  private boolean doMSMSchecks;
+  private MSAnnMSMSCheckParameters msmsChecks;
 
   // GROUP and MIN SAMPLES FILTER
   private final boolean useGroups;
@@ -176,6 +181,12 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
     minAdductHeight = annParam.getParameter(MSAnnotationParameters.MIN_HEIGHT).getValue();
     adductCheckMode = annParam.getParameter(MSAnnotationParameters.CHECK_MODE).getValue();
+
+    // MSMS refinement
+    doMSMSchecks = annParam.getParameter(MSAnnotationParameters.MSMS_CHECK).getValue();
+    msmsChecks = annParam.getParameter(MSAnnotationParameters.MSMS_CHECK).getEmbeddedParameters();
+
+    // END OF ADDUCTS AND REFINEMENT
 
     // intensity correlation across samples
     useMaxICorrFilter =
@@ -365,6 +376,13 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         nF2F));
 
     if (searchAdducts) {
+      // refinement of adducts
+      // do MSMS check for multimers
+      if (doMSMSchecks) {
+        MSAnnMSMSCheckTask task = new MSAnnMSMSCheckTask(project, msmsChecks, peakList);
+        task.run();
+      }
+
       LOG.info("Corr: A total of " + compared.get() + " row2row adduct comparisons with "
           + annotPairs.get() + " annotation pairs");
 

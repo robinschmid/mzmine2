@@ -21,9 +21,11 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.da
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
+import java.util.List;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.impl.SimplePeakIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSMultimerIdentity;
 
 public class ESIAdductIdentity extends SimplePeakIdentity {
 
@@ -37,6 +39,11 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
   private String partnerRows;
   // network id (number)
   private int netID = -1;
+
+  /**
+   * List of MSMS identities. e.g., multimers/monomers that were found in MS/MS data
+   */
+  private List<MSMSMultimerIdentity> msmsIdent;
 
   /**
    * Create the identity.
@@ -87,6 +94,11 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
     b.append(adduct);
     b.append(" indentified by ID=");
     b.append(partnerRows);
+
+    // MSMS backed id for multimers
+    if (getMSMSMultimerCount() > 0) {
+      b.append(" (MS/MS:xmer)");
+    }
     return b.toString();
   }
 
@@ -158,4 +170,22 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
   public boolean hasPartnerID(int id) {
     return Arrays.stream(getPartnerRowsID()).anyMatch(pid -> pid == id);
   }
+
+  public void setMSMSIdentities(List<MSMSMultimerIdentity> msmsIdent) {
+    this.msmsIdent = msmsIdent;
+  }
+
+  public List<MSMSMultimerIdentity> getMSMSIdentities() {
+    return msmsIdent;
+  }
+
+  /**
+   * Count of signals that verify this multimer identity
+   * 
+   * @return
+   */
+  public int getMSMSMultimerCount() {
+    return msmsIdent == null || msmsIdent.isEmpty() ? 0 : msmsIdent.size() - 1;
+  }
+
 }

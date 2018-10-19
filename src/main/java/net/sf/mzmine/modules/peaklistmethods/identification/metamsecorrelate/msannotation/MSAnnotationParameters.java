@@ -21,6 +21,7 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.ms
 import java.awt.Window;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary.CheckMode;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.MSAnnMSMSCheckParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
@@ -29,6 +30,7 @@ import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.esiadducts.ESIAdductsParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
+import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTToleranceParameter;
 import net.sf.mzmine.util.ExitCode;
@@ -76,6 +78,12 @@ public class MSAnnotationParameters extends SimpleParameterSet {
   public static final ESIAdductsParameter ADDUCTS = new ESIAdductsParameter("Adducts",
       "List of adducts, each one refers a specific distance in m/z axis between related peaks");
 
+  // MS MS
+  // check for truth MS/MS
+  public static final OptionalModuleParameter<MSAnnMSMSCheckParameters> MSMS_CHECK =
+      new OptionalModuleParameter<MSAnnMSMSCheckParameters>("Check MS/MS",
+          "Check MS/MS for truth of multimers", new MSAnnMSMSCheckParameters(true));
+
   // Constructor
   public MSAnnotationParameters() {
     this(false);
@@ -84,9 +92,10 @@ public class MSAnnotationParameters extends SimpleParameterSet {
   public MSAnnotationParameters(boolean isSub) {
     super(isSub ? // no peak list and rt tolerance
         new Parameter[] {MZ_TOLERANCE, CHECK_MODE, MIN_HEIGHT, POSITIVE_MODE, MAX_CHARGE,
-            MAX_MOLECULES, MAX_COMBINATION, MAX_MODS, ADDUCTS}
+            MAX_MOLECULES, MAX_COMBINATION, MAX_MODS, ADDUCTS, MSMS_CHECK}
         : new Parameter[] {PEAK_LISTS, RT_TOLERANCE, MZ_TOLERANCE, CHECK_MODE, MIN_HEIGHT,
-            POSITIVE_MODE, MAX_CHARGE, MAX_MOLECULES, MAX_COMBINATION, MAX_MODS, ADDUCTS});
+            POSITIVE_MODE, MAX_CHARGE, MAX_MOLECULES, MAX_COMBINATION, MAX_MODS, ADDUCTS,
+            MSMS_CHECK});
   }
 
   @Override

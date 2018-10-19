@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
@@ -63,7 +64,15 @@ public class MSAnnotationNetworkLogic {
       if (id instanceof ESIAdductIdentity) {
         ESIAdductIdentity esi = (ESIAdductIdentity) id;
         int links = getLinksTo(esi, g);
-        if (best != null && links == maxLinks
+        if (best == null)
+          best = esi;
+        // keep if has M>1 and was identified by MSMS
+        else if (compareMSMSMolIdentity(esi, best))
+          continue;
+        // always if M>1 backed by MSMS
+        else if (compareMSMSMolIdentity(best, esi))
+          best = esi;
+        else if (links == maxLinks
             && (compareCharge(best, esi) || (isTheUnmodified(best) && !isTheUnmodified(esi)))) {
           best = esi;
         } else if (links > maxLinks) {
@@ -73,6 +82,19 @@ public class MSAnnotationNetworkLogic {
       }
     }
     return best;
+  }
+
+  /**
+   * 
+   * @param best
+   * @param esi
+   * @return onyl true if best so far was not verified by MSMS and esi was verified
+   */
+  private static boolean compareMSMSMolIdentity(ESIAdductIdentity best, ESIAdductIdentity esi) {
+    if (best.getMSMSMultimerCount() == 0 && esi.getMSMSMultimerCount() > 0)
+      return true;
+    else
+      return false;
   }
 
   /**
@@ -257,6 +279,33 @@ public class MSAnnotationNetworkLogic {
       }
     }
     return connections;
+  }
+
+  /**
+   * 
+   * @param row
+   * @return list of annotations or an empty list
+   */
+  public static List<ESIAdductIdentity> getAllAnnotations(PeakListRow row) {
+    List<ESIAdductIdentity> ident = new ArrayList<>();
+    for (PeakIdentity pi : row.getPeakIdentities()) {
+      if (pi instanceof ESIAdductIdentity)
+        ident.add((ESIAdductIdentity) pi);
+    }
+    return ident;
+  }
+
+  /**
+   * apply operation for each id
+   * 
+   * @param row
+   * @param op
+   */
+  public static void forEachAnnotation(PeakListRow row, Consumer<ESIAdductIdentity> op) {
+    for (PeakIdentity pi : row.getPeakIdentities()) {
+      if (pi instanceof ESIAdductIdentity)
+        op.accept((ESIAdductIdentity) pi);
+    }
   }
 
 }
