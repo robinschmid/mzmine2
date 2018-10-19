@@ -234,6 +234,12 @@ public class MultiMSMSWindow extends JFrame {
   }
 
 
+  /**
+   * Adds all MS1 and MSMS annotations to all charts
+   * 
+   * @param rows
+   * @param raw
+   */
   public void addAllMSMSAnnotations(PeakListRow[] rows, RawDataFile raw) {
     for (PeakListRow row : rows) {
       // add MS1 annotations
