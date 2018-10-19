@@ -209,6 +209,10 @@ public class SumformulaParameter implements UserParameter<String, StringComponen
     xmlElement.setTextContent(value);
   }
 
+  public boolean isEmpty() {
+    return value == null || value.isEmpty();
+  }
+
   public boolean checkValue() {
     return checkValue(null);
   }

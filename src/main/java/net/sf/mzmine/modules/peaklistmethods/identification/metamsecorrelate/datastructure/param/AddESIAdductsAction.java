@@ -74,17 +74,21 @@ public class AddESIAdductsAction extends AbstractAction {
 
         //
         int charge = 0;
-        double mz = 0;
+        Double mz = null;
         String name = parameters.getParameter(AddESIAdductParameters.NAME).getValue();
         // Create new adduct.
         SumformulaParameter form = parameters.getParameter(AddESIAdductParameters.FORMULA);
-        if (form.checkValue()) {
+        if (form.checkValue() && !form.isEmpty()) {
           if (name.isEmpty()) {
             name = form.getValue();
           }
-          mz = form.getMonoisotopicMass();
-          charge = form.getCharge();
-        } else {
+          double test = form.getMonoisotopicMass();
+          if (test != 0) {
+            mz = test;
+            charge = form.getCharge();
+          }
+        }
+        if (mz == null) {
           mz = parameters.getParameter(AddESIAdductParameters.MASS_DIFFERENCE).getValue();
           charge = parameters.getParameter(AddESIAdductParameters.CHARGE).getValue();
         }
