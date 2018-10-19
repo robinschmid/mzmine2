@@ -94,7 +94,7 @@ public class MSAnnotationTask extends AbstractTask {
 
   @Override
   public double getFinishedPercentage() {
-    return totalRows == 0 ? 0 : finishedRows / totalRows;
+    return totalRows == 0 ? 0 : finishedRows / (double) totalRows;
   }
 
   @Override
