@@ -64,8 +64,10 @@ public class MSAnnotationNetworkLogic {
       if (id instanceof ESIAdductIdentity) {
         ESIAdductIdentity esi = (ESIAdductIdentity) id;
         int links = getLinksTo(esi, g);
-        if (best == null)
+        if (best == null || best.getA().equals(ESIAdductType.M_UNMODIFIED))
           best = esi;
+        else if (esi.getA().equals(ESIAdductType.M_UNMODIFIED))
+          continue;
         // keep if has M>1 and was identified by MSMS
         else if (compareMSMSMolIdentity(esi, best))
           continue;

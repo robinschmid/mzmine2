@@ -141,13 +141,8 @@ public class MSMSLogic {
     if (dps == null || dps.length == 0)
       return null;
 
-    // generate all M adducts 3M+X -> 2M+X -> M+X
-    ESIAdductType mod = adduct.getModifiedOnly();
-    if (mod == null)
-      return null;
-
     // delta
-    double dmz = mod.getMassDifference();
+    double dmz = adduct.getMassDifference();
 
     // result best with the highest number of identities
     MSMSIdentityList ident = new MSMSIdentityList();
@@ -160,7 +155,8 @@ public class MSMSLogic {
       DataPoint loss = findDPAt(dps, mz - dmz, mzTolerance, minHeight);
       if (loss != null) {
         // id found
-        MSMSIonRelationIdentity relation = new MSMSIonRelationIdentity(mzTolerance, loss, mod, dp);
+        MSMSIonRelationIdentity relation =
+            new MSMSIonRelationIdentity(mzTolerance, loss, adduct, dp);
         ident.add(relation);
       }
     }

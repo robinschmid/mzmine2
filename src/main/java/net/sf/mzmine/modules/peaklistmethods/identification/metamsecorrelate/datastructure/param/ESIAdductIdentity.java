@@ -103,8 +103,10 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
       b.append(" (MS/MS:xmer)");
     }
     // MSMS backed id for insource frag
-    if (getMSMSModVerify() > 0) {
-      b.append(" (MS/MS:nloss)");
+    if (getA().getModCount() > 0) {
+      if (getMSMSModVerify() > 0) {
+        b.append(" (MS/MS:insource frag)");
+      }
     }
     return b.toString();
   }
@@ -112,6 +114,11 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
   @Override
   public String toString() {
     return getIDString();
+  }
+
+  @Override
+  public String getName() {
+    return super.toString();
   }
 
   public boolean equalsAdduct(ESIAdductType acompare) {

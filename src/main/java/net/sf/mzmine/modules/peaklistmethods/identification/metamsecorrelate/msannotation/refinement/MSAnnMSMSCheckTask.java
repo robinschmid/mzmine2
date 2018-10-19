@@ -18,8 +18,10 @@
 
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement;
 
+import java.text.MessageFormat;
 import java.util.List;
 import java.util.logging.Logger;
+import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.MZmineProject;
@@ -29,6 +31,7 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.MSMSLogic;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIdentityList;
@@ -105,6 +108,10 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
 
   @Override
   public void run() {
+    doCheck();
+  }
+
+  public void doCheck() {
     doCheck(true, peakList, massList, mzTolerance, minHeight, checkMultimers, checkNeutralLosses,
         neutralLossCheck);
   }
@@ -122,21 +129,25 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
   public static void doCheck(PeakList pkl, PeakListRow row, String massList,
       MZTolerance mzTolerance, double minHeight, boolean checkMultimers, boolean checkNeutralLosses,
       NeutralLossCheck neutralLossCheck) {
-    // has MS/MS
-    Scan msmsScan = row.getBestFragmentation();
-    if (msmsScan == null)
-      return;
 
     // has annotations?
     List<ESIAdductIdentity> ident = MSAnnotationNetworkLogic.getAllAnnotations(row);
     if (ident == null || ident.isEmpty())
       return;
 
-    if (checkMultimers)
-      checkMultimers(row, massList, msmsScan, ident, mzTolerance, minHeight);
+    // has MS/MS
+    try {
+      Scan msmsScan = row.getBestFragmentation();
+      if (checkMultimers && msmsScan != null) {
+        checkMultimers(row, massList, msmsScan, ident, mzTolerance, minHeight);
+      }
 
-    if (checkNeutralLosses)
-      checkNeutralLosses(pkl, neutralLossCheck, row, massList, ident, mzTolerance, minHeight);
+      if (checkNeutralLosses) {
+        checkNeutralLosses(pkl, neutralLossCheck, row, massList, ident, mzTolerance, minHeight);
+      }
+    } catch (Exception e) {
+      throw new MSDKRuntimeException(e);
+    }
   }
 
 
@@ -154,9 +165,14 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
   public static void checkNeutralLosses(PeakList pkl, NeutralLossCheck neutralLossCheck,
       PeakListRow row, String massList, List<ESIAdductIdentity> ident, MZTolerance mzTolerance,
       double minHeight) {
-    for (ESIAdductIdentity adduct : ident) {
-      // has MSMS annotations?
-      if (adduct.getA().getModCount() <= 0)
+    if (ident == null || ident.isEmpty())
+      return;
+
+    int c = 0;
+    for (ESIAdductIdentity ad : ident) {
+      ESIAdductType mod = ad.getA().getAbsCharge() == 0 ? ad.getA() : ad.getA().getModifiedOnly();
+
+      if (mod == null)
         continue;
 
       // is in group?
@@ -174,12 +190,14 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
           DataPoint[] dps = masses.getDataPoints();
           Feature f = parent.getPeak(msmsScan.getDataFile());
           double precursorMZ = f.getMZ();
-          checkParentForNeutralLoss(neutralLossCheck, dps, adduct, mzTolerance, minHeight,
-              precursorMZ);
+          boolean result = checkParentForNeutralLoss(neutralLossCheck, dps, ad, mod, mzTolerance,
+              minHeight, precursorMZ);
+          if (result)
+            c++;
         }
       } else {
         // find all annotation edges
-        int[] rows = adduct.getPartnerRowsID();
+        int[] rows = ad.getPartnerRowsID();
         for (int parentid : rows) {
           PeakListRow parent = pkl.findRowByID(parentid);
           if (parent == null)
@@ -195,11 +213,20 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
           DataPoint[] dps = masses.getDataPoints();
           Feature f = parent.getPeak(msmsScan.getDataFile());
           double precursorMZ = f.getMZ();
-          checkParentForNeutralLoss(neutralLossCheck, dps, adduct, mzTolerance, minHeight,
-              precursorMZ);
+          boolean result = checkParentForNeutralLoss(neutralLossCheck, dps, ad, mod, mzTolerance,
+              minHeight, precursorMZ);
+          if (result)
+            c++;
         }
       }
     }
+
+    ESIAdductIdentity best =
+        MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, PKLRowGroup.from(row));
+    LOG.info(MessageFormat.format(
+        "Found {0} MS/MS fragments for neutral loss identifiers of rowID=[1} m/z={2} RT={3} best:{4}",
+        c, row.getID(), row.getAverageMZ(), row.getAverageRT(),
+        best == null ? "" : best.toString()));
   }
 
   /**
@@ -208,30 +235,35 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
    * @param row
    * @param dps
    * @param adduct
+   * @param mod the modification to search for
    * @param mzTolerance
    * @param minHeight
    * @param precursorMZ
    */
-  public static void checkParentForNeutralLoss(NeutralLossCheck neutralLossCheck, DataPoint[] dps,
-      ESIAdductIdentity adduct, MZTolerance mzTolerance, double minHeight, double precursorMZ) {
+  public static boolean checkParentForNeutralLoss(NeutralLossCheck neutralLossCheck,
+      DataPoint[] dps, ESIAdductIdentity identity, ESIAdductType mod, MZTolerance mzTolerance,
+      double minHeight, double precursorMZ) {
+    boolean result = false;
     // loss for precursor mz
     DataPoint loss = MSMSLogic.findDPAt(dps, precursorMZ, mzTolerance, minHeight);
     if (loss != null) {
       MSMSIonRelationIdentity relation =
-          new MSMSIonRelationIdentity(mzTolerance, loss, adduct.getA(), precursorMZ);
-      adduct.addMSMSIdentity(relation);
+          new MSMSIonRelationIdentity(mzTolerance, loss, mod, precursorMZ);
+      identity.addMSMSIdentity(relation);
+      result = true;
     }
 
 
     if (neutralLossCheck.equals(NeutralLossCheck.ANY_SINGAL)) {
-      MSMSIdentityList msmsIdent =
-          MSMSLogic.checkNeutralLoss(dps, adduct.getA(), mzTolerance, minHeight);
+      MSMSIdentityList msmsIdent = MSMSLogic.checkNeutralLoss(dps, mod, mzTolerance, minHeight);
 
       // found?
       for (AbstractMSMSIdentity id : msmsIdent) {
-        adduct.addMSMSIdentity(id);
+        identity.addMSMSIdentity(id);
+        result = true;
       }
     }
+    return result;
   }
 
   public static void checkMultimers(PeakListRow row, String massList, Scan msmsScan,
@@ -249,7 +281,8 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
 
         // found?
         if (msmsIdent != null && msmsIdent.size() > 0) {
-          adduct.setMSMSIdentities(msmsIdent);
+          // add all
+          msmsIdent.stream().forEach(msms -> adduct.addMSMSIdentity(msms));
         }
       }
     }

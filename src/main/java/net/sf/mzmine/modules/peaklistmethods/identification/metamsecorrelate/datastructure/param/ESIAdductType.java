@@ -287,26 +287,28 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
     }
 
     s = null;
-    Arrays.sort(adducts);
     String nname = "";
-    for (int i = 0; i < adducts.length; i++) {
-      String cs = adducts[i].getRawName();
-      if (s == null) {
-        s = cs;
-        counter = 1;
-      } else if (s == cs)
-        counter++;
-      else {
-        add = (adducts[i - 1].getMassDifference() < 0 ? "-" : "+");
-        counterS = counter > 1 ? String.valueOf(counter) : "";
-        nname += add + counterS + s;
-        s = cs;
-        counter = 1;
+    if (adducts != null) {
+      Arrays.sort(adducts);
+      for (int i = 0; i < adducts.length; i++) {
+        String cs = adducts[i].getRawName();
+        if (s == null) {
+          s = cs;
+          counter = 1;
+        } else if (s == cs)
+          counter++;
+        else {
+          add = (adducts[i - 1].getMassDifference() < 0 ? "-" : "+");
+          counterS = counter > 1 ? String.valueOf(counter) : "";
+          nname += add + counterS + s;
+          s = cs;
+          counter = 1;
+        }
       }
+      add = (adducts[adducts.length - 1].getMassDifference() < 0 ? "-" : "+");
+      counterS = counter > 1 ? String.valueOf(counter) : "";
+      nname += add + counterS + s;
     }
-    add = (adducts[adducts.length - 1].getMassDifference() < 0 ? "-" : "+");
-    counterS = counter > 1 ? String.valueOf(counter) : "";
-    nname += add + counterS + s;
 
     return mod + nname;
   }

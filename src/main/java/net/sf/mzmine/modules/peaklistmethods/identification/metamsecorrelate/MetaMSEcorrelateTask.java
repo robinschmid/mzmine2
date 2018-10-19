@@ -52,7 +52,6 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeaturesFilterParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.AnnotationNetwork;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary.CheckMode;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
@@ -73,7 +72,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   private static final Logger LOG = Logger.getLogger(MetaMSEcorrelateTask.class.getName());
 
   public enum Stage {
-    CORRELATION_ANNOTATION(0.8), GROUPING(0.9), REFINEMENT(1d);
+    CORRELATION_ANNOTATION(0.7), GROUPING(0.75), ANNOTATION(0.95), REFINEMENT(1d);
     private double finalProgress;
 
     Stage(double finalProgress) {
@@ -241,7 +240,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       // create correlation map
       setStage(Stage.CORRELATION_ANNOTATION);
       R2RCorrMap corrMap = new R2RCorrMap(rtTolerance, useMinFInSamplesFilter, minFFilter);
-      List<AnnotationNetwork> annNet = null;
 
       // do R2R comparison correlation
       // might also do annotation if selected
@@ -266,10 +264,15 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
         // annotation at groups stage
         if (searchAdducts && annotateOnlyCorrelated) {
+          LOG.info("Corr: Annotation of groups only");
+          setStage(Stage.ANNOTATION);
           AtomicInteger compared = new AtomicInteger(0);
           AtomicInteger annotPairs = new AtomicInteger(0);
           // for all groups
-          groups.parallelStream().forEach(g -> annotateGroup(g, compared, annotPairs));
+          groups.parallelStream().forEach(g -> {
+            annotateGroup(g, compared, annotPairs);
+            stageProgress.addAndGet(1d / groups.size());
+          });
 
           LOG.info("Corr: A total of " + compared.get() + " row2row adduct comparisons with "
               + annotPairs.get() + " annotation pairs");
@@ -277,15 +280,18 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
         // refinement and network creation
         if (searchAdducts) {
-          // refinement of adducts
-          // do MSMS check for multimers
-          if (doMSMSchecks) {
-            MSAnnMSMSCheckTask task = new MSAnnMSMSCheckTask(project, msmsChecks, peakList);
-            task.run();
-          }
+          setStage(Stage.REFINEMENT);
           // create networks
           LOG.info("Corr: create annotation network numbers");
           MSAnnotationNetworkLogic.createAnnotationNetworks(groupedPKL, true);
+
+          // refinement of adducts
+          // do MSMS check for multimers
+          if (doMSMSchecks) {
+            LOG.info("Corr: MSMS annotation refinement");
+            MSAnnMSMSCheckTask task = new MSAnnMSMSCheckTask(project, msmsChecks, groupedPKL);
+            task.doCheck();
+          }
 
           // show all annotations with the highest count of links
           LOG.info("Corr: show most likely annotations");
