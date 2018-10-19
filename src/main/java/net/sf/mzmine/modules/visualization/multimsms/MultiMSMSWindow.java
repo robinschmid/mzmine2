@@ -3,7 +3,9 @@ package net.sf.mzmine.modules.visualization.multimsms;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.event.ItemListener;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.Consumer;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
@@ -22,7 +24,12 @@ import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.interf.AbstractMSMSIdentity;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.pseudospectra.PseudoSpectrum;
+import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.pseudospectra.PseudoSpectrumDataSet;
+import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.util.PeakListRowSorter;
 import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
@@ -34,6 +41,11 @@ import net.sf.mzmine.util.SortingProperty;
  *
  */
 public class MultiMSMSWindow extends JFrame {
+
+  // annotations for MSMS
+  private List<AbstractMSMSIdentity> msmsAnnotations;
+  // to flag annotations in spectra
+  private MZTolerance mzTolerance;
 
   // MS 1
   private ChartViewWrapper msone;
@@ -208,7 +220,19 @@ public class MultiMSMSWindow extends JFrame {
         group.add(new ChartViewWrapper(c));
       }
     }
+
+    // add all MSMS annotations
+    addAllMSMSAnnotations(rows);
+
     renewCharts(group);
+  }
+
+
+  public void addAllMSMSAnnotations(PeakListRow[] rows) {
+    for (PeakListRow row : rows)
+      for (ESIAdductIdentity id : MSAnnotationNetworkLogic.getAllAnnotations(row)) {
+        addMSMSAnnotations(id.getMSMSIdentities());
+      }
   }
 
   /**
@@ -253,6 +277,9 @@ public class MultiMSMSWindow extends JFrame {
         group.add(new ChartViewWrapper(c));
       }
     }
+    // add all MSMS annotations
+    addAllMSMSAnnotations(rows);
+
     renewCharts(group);
   }
 
@@ -281,8 +308,100 @@ public class MultiMSMSWindow extends JFrame {
     pnCharts.repaint();
   }
 
+  // ANNOTATIONS
+  public void addMSMSAnnotation(AbstractMSMSIdentity ann) {
+    if (msmsAnnotations == null)
+      msmsAnnotations = new ArrayList<>();
+    msmsAnnotations.add(ann);
+
+    // extract mz tolerance
+    if (mzTolerance == null)
+      mzTolerance = ann.getMzTolerance();
+
+    // add to charts
+    addAnnotationToCharts(ann);
+  }
+
+  public void addMSMSAnnotations(List<? extends AbstractMSMSIdentity> ann) {
+    if (ann == null)
+      return;
+    // extract mz tolerance
+    if (mzTolerance == null)
+      for (AbstractMSMSIdentity a : ann)
+        if (a.getMzTolerance() != null) {
+          mzTolerance = a.getMzTolerance();
+          break;
+        }
+
+    // add all
+    for (AbstractMSMSIdentity a : ann)
+      addMSMSAnnotation(a);
+  }
+
+
+  /**
+   * To flag annotations in spectra
+   * 
+   * @param mzTolerance
+   */
+  public void setMzTolerance(MZTolerance mzTolerance) {
+    boolean changed =
+        (this.mzTolerance == null && mzTolerance != null) || !this.mzTolerance.equals(mzTolerance);
+    this.mzTolerance = mzTolerance;
+
+    if (changed)
+      addAllAnnotationsToCharts();
+  }
+
+  private void addAllAnnotationsToCharts() {
+    if (msmsAnnotations == null)
+      return;
+
+    removeAllAnnotationsFromCharts();
+
+    for (AbstractMSMSIdentity a : msmsAnnotations)
+      addAnnotationToCharts(a);
+  }
+
+  private void removeAllAnnotationsFromCharts() {
+    forAllCharts(c -> {
+
+    });
+  }
+
+  private void addAnnotationToCharts(AbstractMSMSIdentity ann) {
+    forAllCharts(c -> {
+      PseudoSpectrumDataSet data = (PseudoSpectrumDataSet) c.getXYPlot().getDataset(0);
+      data.addIdentity(mzTolerance, ann);
+    });
+  }
+
+  public MZTolerance getMzTolerance() {
+    return mzTolerance;
+  }
+
+  /**
+   * all charts (ms1 and MS2)
+   * 
+   * @param op
+   */
   public void forAllCharts(Consumer<JFreeChart> op) {
     if (group != null)
       group.forAllCharts(op);
+  }
+
+
+  /**
+   * only ms2 charts
+   * 
+   * @param op
+   */
+  public void forAllMSMSCharts(Consumer<JFreeChart> op) {
+    if (group == null || group.getList() == null)
+      return;
+
+    int start = msone == null ? 0 : 1;
+    for (int i = start; i < group.getList().size(); i++)
+      op.accept(group.getList().get(i).getChart());
   }
 }

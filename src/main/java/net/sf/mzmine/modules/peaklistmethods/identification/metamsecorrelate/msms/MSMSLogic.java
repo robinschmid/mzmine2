@@ -96,11 +96,11 @@ public class MSMSLogic {
 
           // create new if empty
           if (ib == null) {
-            ib = new MSMSMultimerIdentity(precursorDP, b);
+            ib = new MSMSMultimerIdentity(mzTolerance, precursorDP, b);
             ident.add(ib);
           }
           if (ia == null) {
-            ia = new MSMSMultimerIdentity(dp, a);
+            ia = new MSMSMultimerIdentity(mzTolerance, dp, a);
             ident.add(ia);
           }
 
