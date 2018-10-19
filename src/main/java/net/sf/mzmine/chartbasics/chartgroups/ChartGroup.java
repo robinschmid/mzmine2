@@ -5,6 +5,7 @@ import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.plot.XYPlot;
@@ -26,6 +27,8 @@ import net.sf.mzmine.chartbasics.listener.AxisRangeChangedListener;
  *
  */
 public class ChartGroup {
+  // Logger.
+  private final Logger LOG = Logger.getLogger(getClass().getName());
 
   // max range of all charts
   private Range[] maxRange = new Range[2];
@@ -141,11 +144,6 @@ public class ChartGroup {
     Range nd = addRanges(maxRange[0], getDomainRange(chart));
     if (nd != null && (maxRange[0] == null || !nd.equals(maxRange[0]))) {
       maxRange[0] = nd;
-      // apply to auto range
-      forAllCharts(c -> {
-        if (hasDomainAxis(c))
-          c.getXYPlot().getDomainAxis().setDefaultAutoRange(maxRange[0]);
-      });
       domainHasChanged(nd);
     }
 
@@ -153,11 +151,6 @@ public class ChartGroup {
     nd = addRanges(maxRange[1], getRangeRange(chart));
     if (nd != null && (maxRange[1] == null || !nd.equals(maxRange[1]))) {
       maxRange[1] = nd;
-      // apply to auto range
-      forAllCharts(c -> {
-        if (hasRangeAxis(c))
-          c.getXYPlot().getRangeAxis().setDefaultAutoRange(maxRange[1]);
-      });
       rangeHasChanged(nd);
     }
   }
