@@ -111,7 +111,7 @@ public class MSAnnotationNetworkLogic {
    */
   private static boolean compareMSMSNeutralLossIdentity(ESIAdductIdentity best,
       ESIAdductIdentity esi) {
-    if (best.getMSMSModVerify(best) == 0 && esi.getMSMSModVerify(esi) > 0)
+    if (best.getMSMSModVerify() == 0 && esi.getMSMSModVerify() > 0)
       return true;
     else
       return false;

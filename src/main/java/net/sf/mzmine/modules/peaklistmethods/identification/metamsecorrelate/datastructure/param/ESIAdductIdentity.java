@@ -102,6 +102,10 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
     if (getMSMSMultimerCount() > 0) {
       b.append(" (MS/MS:xmer)");
     }
+    // MSMS backed id for insource frag
+    if (getMSMSModVerify() > 0) {
+      b.append(" (MS/MS:nloss)");
+    }
     return b.toString();
   }
 
@@ -200,7 +204,7 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
     return (int) msmsIdent.stream().filter(id -> id instanceof MSMSMultimerIdentity).count() - 1;
   }
 
-  public int getMSMSModVerify(ESIAdductIdentity best) {
+  public int getMSMSModVerify() {
     if (msmsIdent == null || msmsIdent.isEmpty())
       return 0;
 

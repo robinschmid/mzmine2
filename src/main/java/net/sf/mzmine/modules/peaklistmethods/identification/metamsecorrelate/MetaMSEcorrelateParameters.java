@@ -19,6 +19,7 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate;
 
 import java.awt.Window;
+import javax.swing.JComponent;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.FeatureShapeCorrelationParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.InterSampleIntCorrParameters;
@@ -28,9 +29,11 @@ import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.UserParameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
+import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
+import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleComponent;
 import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
 import net.sf.mzmine.parameters.parametertypes.submodules.SubModuleParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTToleranceParameter;
@@ -72,6 +75,9 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
           "Feature to feature correlation of the maximum intensities across all samples.",
           new InterSampleIntCorrParameters());
 
+  public static final BooleanParameter ANNOTATE_ONLY_GROUPED = new BooleanParameter(
+      "Annotate only corr grouped", "Only rows in a correlation group are checked for annotations");
+
 
   // #####################################################################################
   // Intensity profile correlation
@@ -98,7 +104,7 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
         // intensity max correlation
         IMAX_CORRELATION,
         // adducts
-        ADDUCT_LIBRARY});
+        ADDUCT_LIBRARY, ANNOTATE_ONLY_GROUPED});
   }
 
   @Override
@@ -125,6 +131,13 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
           .setValue(choices[1]);
 
     ParameterSetupDialog dialog = new ParameterSetupDialog(parent, valueCheckRequired, this);
+
+    // enable
+    JComponent com = dialog.getComponentForParameter(ANNOTATE_ONLY_GROUPED);
+    OptionalModuleComponent adducts =
+        (OptionalModuleComponent) dialog.getComponentForParameter(ADDUCT_LIBRARY);
+    adducts.addItemListener(e -> com.setEnabled(adducts.isSelected()));
+
     dialog.setVisible(true);
     return dialog.getExitCode();
   }

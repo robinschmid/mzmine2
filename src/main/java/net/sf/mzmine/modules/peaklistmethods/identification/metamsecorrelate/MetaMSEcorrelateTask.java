@@ -45,6 +45,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.cor
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.InterSampleIntCorrParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
@@ -97,6 +98,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   // ADDUCTS
   private MSAnnotationLibrary library;
   private final boolean searchAdducts;
+  // annotate only the ones in corr groups
+  private boolean annotateOnlyCorrelated;
   private CheckMode adductCheckMode;
   private double minAdductHeight;
   // MSMS refinement
@@ -182,6 +185,10 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     minAdductHeight = annParam.getParameter(MSAnnotationParameters.MIN_HEIGHT).getValue();
     adductCheckMode = annParam.getParameter(MSAnnotationParameters.CHECK_MODE).getValue();
 
+    annotateOnlyCorrelated =
+        annParam.getParameter(MetaMSEcorrelateParameters.ANNOTATE_ONLY_GROUPED).getValue();
+
+
     // MSMS refinement
     doMSMSchecks = annParam.getParameter(MSAnnotationParameters.MSMS_CHECK).getValue();
     msmsChecks = annParam.getParameter(MSAnnotationParameters.MSMS_CHECK).getEmbeddedParameters();
@@ -234,7 +241,11 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       // create correlation map
       setStage(Stage.CORRELATION_ANNOTATION);
       R2RCorrMap corrMap = new R2RCorrMap(rtTolerance, useMinFInSamplesFilter, minFFilter);
-      List<AnnotationNetwork> annNet = doR2RComparison(groupedPKL, corrMap);
+      List<AnnotationNetwork> annNet = null;
+
+      // do R2R comparison correlation
+      // might also do annotation if selected
+      doR2RComparison(groupedPKL, corrMap);
       if (isCanceled())
         return;
 
@@ -251,6 +262,29 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         // set groups to pkl
         groupedPKL.setCorrelationMap(corrMap);
         groupedPKL.setGroups(groups);
+
+
+        // annotation at groups stage
+        if (searchAdducts && annotateOnlyCorrelated) {
+          AtomicInteger compared = new AtomicInteger(0);
+          AtomicInteger annotPairs = new AtomicInteger(0);
+          // for all groups
+          groups.parallelStream().forEach(g -> annotateGroup(g, compared, annotPairs));
+
+          // refinement of adducts
+          // do MSMS check for multimers
+          if (doMSMSchecks) {
+            MSAnnMSMSCheckTask task = new MSAnnMSMSCheckTask(project, msmsChecks, peakList);
+            task.run();
+          }
+
+          LOG.info("Corr: A total of " + compared.get() + " row2row adduct comparisons with "
+              + annotPairs.get() + " annotation pairs");
+
+          //
+          LOG.info("Corr: create annotation network numbers");
+          MSAnnotationNetworkLogic.createAnnotationNetworks(groupedPKL, true);
+        }
 
         //
         if (searchAdducts) {
@@ -279,11 +313,33 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         setStatus(TaskStatus.FINISHED);
         LOG.info("Finished correlation grouping and adducts search in " + peakList);
       }
-    } catch (Exception t) {
+    } catch (
+
+    Exception t) {
       LOG.log(Level.SEVERE, "Correlation and adduct search error", t);
       setStatus(TaskStatus.ERROR);
       setErrorMessage(t.getMessage());
       throw new MSDKRuntimeException(t);
+    }
+  }
+
+  /**
+   * Annotates all rows in a group
+   * 
+   * @param g
+   * @param compared
+   * @param annotPairs
+   */
+  private void annotateGroup(PKLRowGroup g, AtomicInteger compared, AtomicInteger annotPairs) {
+    for (int i = 0; i < g.size() - 1; i++) {
+      for (int k = i + 1; k < g.size(); k++) {
+        compared.incrementAndGet();
+        // check for adducts in library
+        ESIAdductType[] id =
+            library.findAdducts(peakList, g.get(i), g.get(k), adductCheckMode, minAdductHeight);
+        if (id != null)
+          annotPairs.incrementAndGet();
+      }
     }
   }
 
@@ -298,8 +354,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    * @param peakList
    * @return
    */
-  private List<AnnotationNetwork> doR2RComparison(MSEGroupedPeakList peakList, R2RCorrMap map)
-      throws Exception {
+  private void doR2RComparison(MSEGroupedPeakList peakList, R2RCorrMap map) throws Exception {
     LOG.info("Corr: Creating row2row correlation map");
     PeakListRow rows[] = peakList.getRows();
     totalRows = rows.length;
@@ -343,11 +398,12 @@ public class MetaMSEcorrelateTask extends AbstractTask {
                   map.add(row, row2, corr);
               }
 
-              if (searchAdducts) {
+              // search directly? or search later in corr group?
+              if (searchAdducts && !annotateOnlyCorrelated) {
+                compared.incrementAndGet();
                 // check for adducts in library
                 ESIAdductType[] id =
                     library.findAdducts(peakList, row, row2, adductCheckMode, minAdductHeight);
-                compared.incrementAndGet();
                 if (id != null)
                   annotPairs.incrementAndGet();
               }
@@ -374,23 +430,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     LOG.info(MessageFormat.format(
         "Corr: Correlations done with {0} R2R correlations and {1} F2F correlations", nR2Rcorr,
         nF2F));
-
-    if (searchAdducts) {
-      // refinement of adducts
-      // do MSMS check for multimers
-      if (doMSMSchecks) {
-        MSAnnMSMSCheckTask task = new MSAnnMSMSCheckTask(project, msmsChecks, peakList);
-        task.run();
-      }
-
-      LOG.info("Corr: A total of " + compared.get() + " row2row adduct comparisons with "
-          + annotPairs.get() + " annotation pairs");
-
-      //
-      LOG.info("Corr: create annotation network numbers");
-      return MSAnnotationNetworkLogic.createAnnotationNetworks(groupedPKL, true);
-    }
-    return null;
   }
 
   /**
