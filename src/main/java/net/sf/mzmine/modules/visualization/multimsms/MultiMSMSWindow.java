@@ -48,7 +48,9 @@ public class MultiMSMSWindow extends JFrame {
   // annotations for MSMS
   private List<AbstractMSMSIdentity> msmsAnnotations;
   // to flag annotations in spectra
-  private MZTolerance mzTolerance;
+
+  private boolean exchangeTolerance = true;
+  private MZTolerance mzTolerance = new MZTolerance(0.0015, 2.5d);
 
   // MS 1
   private ChartViewWrapper msone;
@@ -345,8 +347,8 @@ public class MultiMSMSWindow extends JFrame {
     msmsAnnotations.add(ann);
 
     // extract mz tolerance
-    if (mzTolerance == null)
-      mzTolerance = ann.getMzTolerance();
+    if (mzTolerance == null || exchangeTolerance)
+      setMzTolerance(ann.getMzTolerance());
 
     // add to charts
     addAnnotationToCharts(ann);
@@ -356,10 +358,10 @@ public class MultiMSMSWindow extends JFrame {
     if (ann == null)
       return;
     // extract mz tolerance
-    if (mzTolerance == null)
+    if (mzTolerance == null || exchangeTolerance)
       for (AbstractMSMSIdentity a : ann)
         if (a.getMzTolerance() != null) {
-          mzTolerance = a.getMzTolerance();
+          setMzTolerance(a.getMzTolerance());
           break;
         }
 
@@ -375,10 +377,14 @@ public class MultiMSMSWindow extends JFrame {
    * @param mzTolerance
    */
   public void setMzTolerance(MZTolerance mzTolerance) {
+    if (mzTolerance == null && this.mzTolerance == null)
+      return;
+
     boolean changed =
-        mzTolerance == this.mzTolerance || (this.mzTolerance == null && mzTolerance != null)
+        mzTolerance != this.mzTolerance || (this.mzTolerance == null && mzTolerance != null)
             || !this.mzTolerance.equals(mzTolerance);
     this.mzTolerance = mzTolerance;
+    exchangeTolerance = false;
 
     if (changed)
       addAllAnnotationsToCharts();
