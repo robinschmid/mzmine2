@@ -271,23 +271,22 @@ public class MetaMSEcorrelateTask extends AbstractTask {
           // for all groups
           groups.parallelStream().forEach(g -> annotateGroup(g, compared, annotPairs));
 
+          LOG.info("Corr: A total of " + compared.get() + " row2row adduct comparisons with "
+              + annotPairs.get() + " annotation pairs");
+        }
+
+        // refinement and network creation
+        if (searchAdducts) {
           // refinement of adducts
           // do MSMS check for multimers
           if (doMSMSchecks) {
             MSAnnMSMSCheckTask task = new MSAnnMSMSCheckTask(project, msmsChecks, peakList);
             task.run();
           }
-
-          LOG.info("Corr: A total of " + compared.get() + " row2row adduct comparisons with "
-              + annotPairs.get() + " annotation pairs");
-
-          //
+          // create networks
           LOG.info("Corr: create annotation network numbers");
           MSAnnotationNetworkLogic.createAnnotationNetworks(groupedPKL, true);
-        }
 
-        //
-        if (searchAdducts) {
           // show all annotations with the highest count of links
           LOG.info("Corr: show most likely annotations");
           MSAnnotationNetworkLogic.showMostlikelyAnnotations(groupedPKL, true);
