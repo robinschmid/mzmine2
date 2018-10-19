@@ -205,17 +205,15 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
     if (msmsIdent == null || msmsIdent.isEmpty())
       return 0;
 
-    return (int) msmsIdent.stream().filter(id -> id instanceof MSMSMultimerIdentity).count() - 1;
+    return (int) msmsIdent.stream().filter(id -> id instanceof MSMSMultimerIdentity).count();
   }
 
   public int getMSMSModVerify() {
     if (msmsIdent == null || msmsIdent.isEmpty())
       return 0;
 
-    return (int) msmsIdent.stream()
-        .filter(id -> id instanceof MSMSIonRelationIdentity
-            && ((MSMSIonRelationIdentity) id).getRelation().equals(Relation.NEUTRAL_LOSS))
-        .count() - 1;
+    return (int) msmsIdent.stream().filter(id -> id instanceof MSMSIonRelationIdentity
+        && ((MSMSIonRelationIdentity) id).getRelation().equals(Relation.NEUTRAL_LOSS)).count();
   }
 
 }
