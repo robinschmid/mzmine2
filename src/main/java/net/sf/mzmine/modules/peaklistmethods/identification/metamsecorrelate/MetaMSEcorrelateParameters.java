@@ -75,17 +75,11 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
           "Feature to feature correlation of the maximum intensities across all samples.",
           new InterSampleIntCorrParameters());
 
-  public static final BooleanParameter ANNOTATE_ONLY_GROUPED = new BooleanParameter(
-      "Annotate only corr grouped", "Only rows in a correlation group are checked for annotations");
 
 
   // #####################################################################################
   // Intensity profile correlation
   // intra group comparison
-
-  // inter group comparison
-
-
 
   // adduct finder parameter - taken from the adduct finder
   // search for adducts? Bonus for correlation?
@@ -93,6 +87,9 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
       new OptionalModuleParameter("MS annotations",
           "Build adduct, in-source fragment, cluster,.. library and match all features",
           new MSAnnotationParameters(true));
+
+  public static final BooleanParameter ANNOTATE_ONLY_GROUPED = new BooleanParameter(
+      "Annotate only corr grouped", "Only rows in a correlation group are checked for annotations");
 
   // Constructor
   public MetaMSEcorrelateParameters() {

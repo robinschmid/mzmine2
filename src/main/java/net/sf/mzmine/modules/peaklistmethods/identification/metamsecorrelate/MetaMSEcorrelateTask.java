@@ -186,7 +186,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     adductCheckMode = annParam.getParameter(MSAnnotationParameters.CHECK_MODE).getValue();
 
     annotateOnlyCorrelated =
-        annParam.getParameter(MetaMSEcorrelateParameters.ANNOTATE_ONLY_GROUPED).getValue();
+        parameterSet.getParameter(MetaMSEcorrelateParameters.ANNOTATE_ONLY_GROUPED).getValue();
 
 
     // MSMS refinement
