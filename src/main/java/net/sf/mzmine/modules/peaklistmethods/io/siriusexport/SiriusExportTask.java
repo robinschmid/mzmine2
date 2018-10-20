@@ -17,12 +17,14 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import org.apache.commons.math3.special.Erf;
 import net.sf.mzmine.datamodel.DataPoint;
@@ -47,6 +49,16 @@ import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
 
 public class SiriusExportTask extends AbstractTask {
+  private Logger logger = Logger.getLogger(this.getClass().getName());
+
+  // based on netID
+  public static String COMPOUND_ID = "COMPOUND_ID=";
+  // based on feature shape correlation (metaMSEcorr)
+  public static String CORR_GROUPID = "CORR_GROUPID=";
+
+  // neutral mass
+  public static String COMPOUND_MASS = "COMPOUND_MASS=";
+
 
   private final static String plNamePattern = "{}";
   protected static final Comparator<DataPoint> CompareDataPointsByMz = new Comparator<DataPoint>() {
@@ -69,6 +81,17 @@ public class SiriusExportTask extends AbstractTask {
   private NumberFormat rtsForm = new DecimalFormat("0.###");
   // correlation
   private NumberFormat corrForm = new DecimalFormat("0.0000");
+
+  private boolean excludeInsourceFrag;
+  private boolean needAnnotation;
+  private boolean excludeMultimers;
+  private boolean excludeMultiCharge;
+
+  /**
+   * Experimental: Export correlated MS1 only once per MS annotation network and link to all MS2 Use
+   * NetID
+   */
+  private boolean exportCorrMSOnce;
 
 
   @Override
@@ -93,6 +116,16 @@ public class SiriusExportTask extends AbstractTask {
 
     this.massListName = parameters.getParameter(SiriusExportParameters.MASS_LIST).getValue();
     this.mergeMsMs = parameters.getParameter(SiriusExportParameters.MERGE).getValue();
+    // new parameters related to MS annotate and metaMSEcorrelate
+    excludeInsourceFrag =
+        parameters.getParameter(SiriusExportParameters.EXCLUDE_INSOURCE_FRAGMENTS).getValue();
+    excludeMultiCharge =
+        parameters.getParameter(SiriusExportParameters.EXCLUDE_MULTICHARGE).getValue();
+    excludeMultimers = parameters.getParameter(SiriusExportParameters.EXCLUDE_MULTIMERS).getValue();
+    needAnnotation = parameters.getParameter(SiriusExportParameters.NEED_ANNOTATION).getValue();
+    // experimental
+    exportCorrMSOnce =
+        parameters.getParameter(SiriusExportParameters.EXPORT_CORRMS1_ONLY_ONCE).getValue();
   }
 
   @Override
@@ -273,9 +306,21 @@ public class SiriusExportTask extends AbstractTask {
     // Raw data file, scan numbers
     final HashMap<String, int[]> fragmentScans = getFragmentScans(peakList.getRawDataFiles());
 
+    int exported = 0;
     for (PeakListRow row : peakList.getRows()) {
-      exportPeakListRow(peakList, row, writer, fragmentScans);
+      boolean fitCharge = !excludeMultiCharge || row.getRowCharge() <= 1;
+      ESIAdductIdentity adduct = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, true);
+      boolean fitAnnotation = !needAnnotation || adduct != null;
+      boolean fitMol = !excludeMultimers || adduct == null || adduct.getA().getMolecules() <= 1;
+      boolean fitFragments = !excludeInsourceFrag || adduct == null || !adduct.getA().isFragment();
+      if (fitAnnotation && fitCharge && fitMol && fitFragments) {
+        if (exportPeakListRow(peakList, row, writer, fragmentScans))
+          exported++;
+      }
     }
+
+    logger.info(
+        MessageFormat.format("exported {0} rows for peaklist {1}", exported, peakList.getName()));
   }
 
   private HashMap<String, int[]> getFragmentScans(RawDataFile[] rawDataFiles) {
@@ -296,10 +341,10 @@ public class SiriusExportTask extends AbstractTask {
     return fragmentScans;
   }
 
-  private void exportPeakListRow(PeakList peakList, PeakListRow row, BufferedWriter writer,
+  private boolean exportPeakListRow(PeakList peakList, PeakListRow row, BufferedWriter writer,
       final HashMap<String, int[]> fragmentScans) throws IOException {
     if (isSkipRow(row))
-      return;
+      return false;
     // get row charge and polarity
     char polarity = 0;
     for (Feature f : row.getPeaks()) {
@@ -309,7 +354,7 @@ public class SiriusExportTask extends AbstractTask {
         setErrorMessage(
             "Joined features have different polarity. This is most likely a bug. If not, please separate them as individual features and/or write a feature request on github.");
         setStatus(TaskStatus.ERROR);
-        return;
+        return false;
       } else {
         polarity = pol;
       }
@@ -377,6 +422,8 @@ public class SiriusExportTask extends AbstractTask {
           sources, ion);
       writeSpectrum(writer, merge(row.getAverageMZ(), toMerge));
     }
+    // exported
+    return true;
   }
 
   /**

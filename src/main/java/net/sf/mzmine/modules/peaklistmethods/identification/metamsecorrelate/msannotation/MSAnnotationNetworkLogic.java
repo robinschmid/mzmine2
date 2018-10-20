@@ -51,6 +51,17 @@ public class MSAnnotationNetworkLogic {
     }
   }
 
+
+  /**
+   * 
+   * @param row
+   * @param useGroup searches for a correlation group or null
+   * @return Most likely annotation or null if none present
+   */
+  public static ESIAdductIdentity getMostLikelyAnnotation(PeakListRow row, boolean useGroup) {
+    return getMostLikelyAnnotation(row, useGroup ? PKLRowGroup.from(row) : null);
+  }
+
   /**
    * 
    * @param row

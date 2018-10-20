@@ -591,4 +591,13 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
     }
     return eq;
   }
+
+  /**
+   * is a fragment
+   * 
+   * @return
+   */
+  public boolean isFragment() {
+    return getModification() != null || getCharge() == 0;
+  }
 }

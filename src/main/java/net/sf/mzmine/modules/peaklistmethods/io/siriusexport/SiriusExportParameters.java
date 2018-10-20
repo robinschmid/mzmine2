@@ -12,28 +12,32 @@
 
 package net.sf.mzmine.modules.peaklistmethods.io.siriusexport;
 
+import java.awt.Window;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
+import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.MassListParameter;
 import net.sf.mzmine.parameters.parametertypes.filenames.FileNameParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 import net.sf.mzmine.util.ExitCode;
 
-import java.awt.*;
-
 
 public class SiriusExportParameters extends SimpleParameterSet {
 
-  public static final ComboParameter<MERGE_MODE> MERGE =
-      new ComboParameter<MERGE_MODE>("Merge mode", "How to merge MS/MS spectra",
-          MERGE_MODE.values(), MERGE_MODE.MERGE_CONSECUTIVE_SCANS);
-
   public SiriusExportParameters() {
-    super(new Parameter[] {PEAK_LISTS, FILENAME, MERGE, MASS_LIST});
+    super(new Parameter[] {PEAK_LISTS, FILENAME, MERGE, MASS_LIST,
+        // metaMSEcorrelate or MS annotate parameters
+        NEED_ANNOTATION, EXCLUDE_MULTICHARGE, EXCLUDE_MULTIMERS, EXCLUDE_INSOURCE_FRAGMENTS,
+        // TODO experimental
+        EXPORT_CORRMS1_ONLY_ONCE});
   }
 
+  // PARAMETER
+  public static final ComboParameter<MERGE_MODE> MERGE =
+      new ComboParameter<MERGE_MODE>("Merge mode MS/MS", "How to merge MS/MS spectra",
+          MERGE_MODE.values(), MERGE_MODE.MERGE_CONSECUTIVE_SCANS);
 
   public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter();
 
@@ -43,6 +47,30 @@ public class SiriusExportParameters extends SimpleParameterSet {
           + "(i.e. \"blah{}blah.mgf\" would become \"blahSourcePeakListNameblah.mgf\"). "
           + "If the file already exists, it will be overwritten.",
       "mgf");
+
+  public static final MassListParameter MASS_LIST = new MassListParameter();
+
+  public static final BooleanParameter NEED_ANNOTATION =
+      new BooleanParameter("Only rows with annotation",
+          "Only export rows with an annotation (run MS annotate or metaMSEcorrelate)", true);
+
+  public static final BooleanParameter EXCLUDE_MULTICHARGE =
+      new BooleanParameter("Exclude multiple charge", "Do not export multiply charged rows", true);
+
+  public static final BooleanParameter EXCLUDE_MULTIMERS = new BooleanParameter("Exclude multimers",
+      "Do not export rows that were annotated as multimers (2M) (run MS annotate or metaMSEcorrelate)",
+      true);
+
+  public static final BooleanParameter EXCLUDE_INSOURCE_FRAGMENTS = new BooleanParameter(
+      "Exclude in-source fragments",
+      "Do not export rows that were annotated as in-source fragments (run MS annotate or metaMSEcorrelate)",
+      true);
+
+
+  public static final BooleanParameter EXPORT_CORRMS1_ONLY_ONCE = new BooleanParameter(
+      "EXPERIMENTAL: export corr. MS1 only once",
+      "Export correlated pseudo MS1 spectrum only once per correlation group and link to all MS2 spectra of all correlated features (run metaMSEcorrelate)",
+      false);
 
   // public static final BooleanParameter FRACTIONAL_MZ = new BooleanParameter(
   // "Fractional m/z values", "If checked, write fractional m/z values",
@@ -54,9 +82,8 @@ public class SiriusExportParameters extends SimpleParameterSet {
    * , true );
    */
 
-  public static final MassListParameter MASS_LIST = new MassListParameter();
 
-  public static enum MERGE_MODE {
+  public enum MERGE_MODE {
     NO_MERGE("Do not merge"), MERGE_CONSECUTIVE_SCANS(
         "Merge consecutive scans"), MERGE_OVER_SAMPLES(
             "Merge all MS/MS belonging to the same feature");
@@ -72,6 +99,7 @@ public class SiriusExportParameters extends SimpleParameterSet {
     }
   }
 
+  @Override
   public ExitCode showSetupDialog(Window parent, boolean valueCheckRequired) {
     String message = "<html>SIRIUS Module Disclaimer:"
         + "<br>    - If you use the SIRIUS export module, cite <a href=\"https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-11-395\">MZmine2 paper</a> and the following articles: "
