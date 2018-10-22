@@ -37,7 +37,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import net.sf.mzmine.modules.peaklistmethods.identification.adductsearch.AdductType;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
 import net.sf.mzmine.parameters.UserParameter;
 import net.sf.mzmine.parameters.parametertypes.MultiChoiceComponent;
 import net.sf.mzmine.parameters.parametertypes.MultiChoiceParameter;

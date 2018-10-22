@@ -39,7 +39,8 @@ import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.AnnotationNetwork;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
@@ -302,7 +303,14 @@ public class SiriusExportTask extends AbstractTask {
       setStatus(TaskStatus.FINISHED);
   }
 
-  private void exportPeakList(PeakList peakList, BufferedWriter writer) throws IOException {
+  /**
+   * 
+   * @param peakList
+   * @param writer
+   * @return number of exported rows
+   * @throws IOException
+   */
+  private int exportPeakList(PeakList peakList, BufferedWriter writer) throws IOException {
     // Raw data file, scan numbers
     final HashMap<String, int[]> fragmentScans = getFragmentScans(peakList.getRawDataFiles());
 
@@ -321,6 +329,7 @@ public class SiriusExportTask extends AbstractTask {
 
     logger.info(
         MessageFormat.format("exported {0} rows for peaklist {1}", exported, peakList.getName()));
+    return exported;
   }
 
   private HashMap<String, int[]> getFragmentScans(RawDataFile[] rawDataFiles) {
@@ -359,8 +368,24 @@ public class SiriusExportTask extends AbstractTask {
         polarity = pol;
       }
     }
+    // MS annotation and feature correlation group
+    // can be null (both)
+    // run MS annotations module or better metaMSEcorrelate
+    PKLRowGroup group = PKLRowGroup.from(row);
+    ESIAdductIdentity adduct = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, group);
+    AnnotationNetwork net = adduct != null ? adduct.getNetwork() : null;
+
     // find ion species by annotation (can be null)
-    String ion = findIonAnnotation(peakList, row);
+    String corrGroupID = group != null ? "" + group.getGroupID() : "";
+
+    String ion = "";
+    String compoundGroupID = "";
+    String compoundMass = "";
+    if (adduct != null) {
+      ion = adduct.getAdduct();
+      compoundGroupID = net.getID() + "";
+      compoundMass = net.getNeutralMass();
+    }
     // write correlation spectrum
     writeHeader(writer, row, row.getBestPeak().getDataFile(), polarity, MsType.CORRELATED, -1, ion);
     writeCorrelationSpectrum(writer, peakList, row);
@@ -424,26 +449,6 @@ public class SiriusExportTask extends AbstractTask {
     }
     // exported
     return true;
-  }
-
-  /**
-   * Ion or null
-   * 
-   * @param peakList
-   * @param row
-   * @return
-   */
-  private String findIonAnnotation(PeakList peakList, PeakListRow row) {
-    String ion = null;
-    // find by MS annotation
-    PKLRowGroup g = null;
-    if (peakList instanceof MSEGroupedPeakList)
-      g = ((MSEGroupedPeakList) peakList).getGroup(row);
-    ESIAdductIdentity id = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, g);
-    if (id != null)
-      ion = id.getAdduct();
-
-    return ion;
   }
 
   private boolean isSkipRow(PeakListRow row) {

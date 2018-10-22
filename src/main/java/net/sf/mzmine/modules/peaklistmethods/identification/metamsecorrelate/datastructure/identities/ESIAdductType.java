@@ -1,4 +1,4 @@
-package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param;
+package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities;
 
 import java.text.MessageFormat;
 import java.text.NumberFormat;

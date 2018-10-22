@@ -2,8 +2,12 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.ms
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 import net.sf.mzmine.datamodel.PeakIdentity;
@@ -11,8 +15,8 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
 import net.sf.mzmine.util.PeakListRowSorter;
 import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
@@ -186,16 +190,16 @@ public class MSAnnotationNetworkLogic {
    */
   public static List<AnnotationNetwork> createAnnotationNetworks(PeakList pkl,
       boolean addNetworkNumber) {
-    return createAnnotationNetworks(pkl.getRows(), addNetworkNumber);
+    return createAnnotationNetworksOld(pkl.getRows(), addNetworkNumber);
   }
 
   /**
-   * Create list of AnnotationNetworks and set net ID
+   * Create list of AnnotationNetworks and set net ID Method 1 ALl edges
    * 
    * @param rows
    * @return
    */
-  public static List<AnnotationNetwork> createAnnotationNetworks(PeakListRow[] rows,
+  public static List<AnnotationNetwork> createAnnotationNetworksOld(PeakListRow[] rows,
       boolean addNetworkNumber) {
     List<AnnotationNetwork> nets = new ArrayList<>();
 
@@ -214,13 +218,13 @@ public class MSAnnotationNetworkLogic {
           nets.add(current);
           // add network number to annotations
           if (addNetworkNumber) {
-            for (Iterator iterator = current.iterator(); iterator.hasNext();) {
+            for (Iterator iterator = current.keySet().iterator();; iterator.hasNext()) {
               PeakListRow r = (PeakListRow) iterator.next();
               for (PeakIdentity pi : r.getPeakIdentities()) {
                 // identity by ms annotation module
                 if (pi instanceof ESIAdductIdentity) {
                   ESIAdductIdentity adduct = (ESIAdductIdentity) pi;
-                  adduct.setNetID(current.getID());
+                  adduct.setNetwork(current);
                 }
               }
             }
@@ -231,6 +235,140 @@ public class MSAnnotationNetworkLogic {
       }
     }
     return nets;
+  }
+
+
+  /**
+   * Method 2: all that point to the same molecule (even without edge)
+   * 
+   * @param rows
+   * @return
+   */
+  public static List<AnnotationNetwork> createAnnotationNetworks(PeakListRow[] rows) {
+
+    // bin neutral masses to annotation networks
+    Collection<AnnotationNetwork> nets = binNeutralMassToNetworks(rows);
+
+    // add network to all identities
+    setNetworksToAllAnnotations(nets);
+
+    // fill in neutral losses [M-H2O] is not iserted yet
+    // they might be if [M+H2O+X]+ was also annotated by another link
+    fillInNeutralLosses(rows, nets);
+
+    return new ArrayList<AnnotationNetwork>(nets);
+  }
+
+
+  /**
+   * fill in neutral losses [M-H2O] is not iserted yet. they might be if [M+H2O+X]+ was also
+   * annotated by another link
+   * 
+   * @param rows
+   * @param nets
+   */
+  private static void fillInNeutralLosses(PeakListRow[] rows, Collection<AnnotationNetwork> nets) {
+    for (PeakListRow row : rows) {
+      for (PeakIdentity pi : row.getPeakIdentities()) {
+        // identity by ms annotation module
+        if (pi instanceof ESIAdductIdentity) {
+          ESIAdductIdentity neutral = (ESIAdductIdentity) pi;
+          // only if charged (neutral losses do not point to the real neutral mass)
+          if (neutral.getA().getAbsCharge() != 0)
+            continue;
+
+          // all partners
+          int[] partnerIDs = neutral.getPartnerRowsID();
+          for (int p : partnerIDs) {
+            PeakListRow partner = findRowByID(p, rows);
+            if (partner == null)
+              continue;
+
+            AnnotationNetwork[] partnerNets = MSAnnotationNetworkLogic.getAllNetworks(partner);
+            // create new net if partner was in no network
+            if (partnerNets == null || partnerNets.length == 0) {
+              // create new and put both
+              AnnotationNetwork newNet = new AnnotationNetwork(nets.size());
+              nets.add(newNet);
+              newNet.put(row, neutral);
+              newNet.put(partner, ESIAdductIdentity.getIdentityOf(partner, row));
+              newNet.setNetworkToAllRows();
+            } else {
+              // add neutral loss to nets
+              // do not if its already in this network (e.g. as adduct)
+              Arrays.stream(partnerNets).filter(pnet -> !pnet.containsKey(row))
+                  .forEach(pnet -> pnet.put(row, neutral));
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * All annotation networks of all annotations of row
+   * 
+   * @param row
+   * @return
+   */
+  public static AnnotationNetwork[] getAllNetworks(PeakListRow row) {
+    return MSAnnotationNetworkLogic.getAllAnnotations(row).stream().map(id -> id.getNetwork())
+        .toArray(AnnotationNetwork[]::new);
+  }
+
+  /**
+   * Set the network to all its children rows
+   * 
+   * @param nets
+   */
+  public static void setNetworksToAllAnnotations(Collection<AnnotationNetwork> nets) {
+    nets.stream().forEach(n -> n.setNetworkToAllRows());
+  }
+
+  /**
+   * Binning of all neutral masses described by all annotations of rows with 0.1 Da binning width
+   * (masses should be very different)
+   * 
+   * @param rows
+   * @return AnnotationNetworks
+   */
+  private static Collection<AnnotationNetwork> binNeutralMassToNetworks(PeakListRow[] rows) {
+    Map<Integer, AnnotationNetwork> map = new HashMap<>();
+    for (PeakListRow row : rows) {
+      for (PeakIdentity pi : row.getPeakIdentities()) {
+        // identity by ms annotation module
+        if (pi instanceof ESIAdductIdentity) {
+          ESIAdductIdentity adduct = (ESIAdductIdentity) pi;
+          // only if charged (neutral losses do not point to the real neutral mass)
+          if (adduct.getA().getAbsCharge() == 0)
+            continue;
+
+          double mass = adduct.getA().getMass(row.getAverageMZ());
+          // bin to 0.1
+          Integer nmass = (int) Math.round(mass * 10.0);
+
+          AnnotationNetwork net = map.get(nmass);
+          if (net == null) {
+            // create new
+            net = new AnnotationNetwork(map.size());
+            map.put(nmass, net);
+          }
+          // add row and id to network
+          net.put(row, adduct);
+        }
+      }
+    }
+    return map.values();
+  }
+
+  /**
+   * Neutral mass of AnnotationNetwork entry (ion and peaklistrow)
+   * 
+   * @param e
+   * @return
+   */
+  public static double calcMass(Entry<PeakListRow, ESIAdductIdentity> e) {
+    return e.getValue().getA().getMass(e.getKey().getAverageMZ());
   }
 
   /**
@@ -250,7 +388,7 @@ public class MSAnnotationNetworkLogic {
 
         // try to add all
         if (current.isEmpty())
-          current.add(row);
+          current.put(row, adduct);
 
         // add all connection for ids>rowID
         int[] ids = adduct.getPartnerRowsID();
@@ -258,9 +396,10 @@ public class MSAnnotationNetworkLogic {
           if (id != masterID) {
             if (id > masterID) {
               PeakListRow row2 = findRowByID(id, rows);
+              ESIAdductIdentity adduct2 = ESIAdductIdentity.getIdentityOf(row2, row);
               // new row found?
-              if (row2 != null && !current.contains(row2)) {
-                current.add(row2);
+              if (row2 != null && !current.containsKey(row2)) {
+                current.put(row2, adduct2);
                 boolean isNewNet = addRow(current, row2, rows, masterID);
                 if (!isNewNet)
                   return false;

@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param;
+package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -24,6 +24,7 @@ import java.util.Arrays;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.impl.SimplePeakIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.AnnotationNetwork;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIdentityList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIonRelationIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIonRelationIdentity.Relation;
@@ -41,7 +42,7 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
   // partner rowIDs
   private String partnerRows;
   // network id (number)
-  private int netID = -1;
+  private AnnotationNetwork network;
 
   /**
    * List of MSMS identities. e.g., multimers/monomers that were found in MS/MS data
@@ -89,7 +90,7 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
 
   public String getIDString() {
     StringBuilder b = new StringBuilder();
-    if (netID != -1) {
+    if (getNetID() != -1) {
       b.append("Net");
       b.append(getNetIDString());
       b.append(" ");
@@ -134,8 +135,8 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
    * 
    * @param id
    */
-  public void setNetID(int id) {
-    netID = id;
+  public void setNetwork(AnnotationNetwork net) {
+    network = net;
     setPropertyValue(PROPERTY_NAME, getIDString());
   }
 
@@ -145,7 +146,7 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
    * @return
    */
   public int getNetID() {
-    return netID;
+    return network == null ? -1 : network.getID();
   }
 
   public String getNetIDString() {
@@ -214,6 +215,10 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
 
     return (int) msmsIdent.stream().filter(id -> id instanceof MSMSIonRelationIdentity
         && ((MSMSIonRelationIdentity) id).getRelation().equals(Relation.NEUTRAL_LOSS)).count();
+  }
+
+  public AnnotationNetwork getNetwork() {
+    return network;
   }
 
 }

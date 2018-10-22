@@ -1,6 +1,6 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.test;
 
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
 
 public class TestAdducts {
 

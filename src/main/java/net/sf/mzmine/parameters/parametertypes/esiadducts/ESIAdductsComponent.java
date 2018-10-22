@@ -28,12 +28,11 @@ import java.util.Arrays;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
-
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.AddESIAdductsAction;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.DefaultESIAdductsAction;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.DefaultESIAdductsNegativeAction;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.DefaultESIModsAction;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ExportESIAdductsAction;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ImportESIAdductsAction;
 import net.sf.mzmine.parameters.parametertypes.MultiChoiceComponent;

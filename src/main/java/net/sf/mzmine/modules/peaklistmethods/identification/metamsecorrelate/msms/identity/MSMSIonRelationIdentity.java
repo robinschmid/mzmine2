@@ -1,7 +1,7 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity;
 
 import net.sf.mzmine.datamodel.DataPoint;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param.ESIAdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 /**
