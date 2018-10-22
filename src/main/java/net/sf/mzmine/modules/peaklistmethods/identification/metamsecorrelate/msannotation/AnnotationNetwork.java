@@ -3,6 +3,7 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.ms
 import java.util.HashMap;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 /**
@@ -12,14 +13,16 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
  *
  */
 public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
+  private MZTolerance mzTolerance;
   private final int id;
   private Double neutralMass = null;
   // maximum deviation from neutral mass average
   private Double maxDev = null;
   private double avgRT;
 
-  public AnnotationNetwork(int id) {
+  public AnnotationNetwork(MZTolerance mzTolerance, int id) {
     super();
+    this.mzTolerance = mzTolerance;
     this.id = id;
   }
 
@@ -91,11 +94,21 @@ public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
 
     double max = 0;
     for (Entry<PeakListRow, ESIAdductIdentity> e : entrySet()) {
-      double mass = e.getValue().getA().getMass(e.getKey().getAverageMZ());
+      double mass = getMass(e);
       max = Math.max(Math.abs(neutralMass - mass), max);
     }
     maxDev = max;
     return maxDev;
+  }
+
+  /**
+   * Neutral mass of entry
+   * 
+   * @param e
+   * @return
+   */
+  public double getMass(Entry<PeakListRow, ESIAdductIdentity> e) {
+    return e.getValue().getA().getMass(e.getKey().getAverageMZ());
   }
 
   public double getMaxDev() {
@@ -120,5 +133,41 @@ public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
 
   public void setNetworkToAllRows() {
     values().stream().forEach(id -> id.setNetwork(this));
+  }
+
+  /**
+   * Checks the calculated neutral mass of the ion annotation against the avg neutral mass
+   * 
+   * @param row
+   * @param pid
+   * @return
+   */
+  public boolean checkForAnnotation(PeakListRow row, ESIAdductType pid) {
+    return mzTolerance.checkWithinTolerance(calcNeutralMass(), pid.getMass(row.getAverageMZ()));
+  }
+
+  /**
+   * Checks for links and adds those as partner rows
+   * 
+   * @param row
+   * @param pid
+   */
+  public void addAllLinksTo(PeakListRow row, ESIAdductIdentity pid) {
+    double nmass = pid.getA().getMass(row.getAverageMZ());
+    this.entrySet().stream().forEach(e -> {
+      double pmass = getMass(e);
+      if (mzTolerance.checkWithinTolerance(pmass, nmass)) {
+        // add to both
+        pid.addPartnerRow(e.getKey());
+        e.getValue().addPartnerRow(row);
+      }
+    });
+  }
+
+  public void delete() {
+    entrySet().stream().forEach(e -> {
+      e.getKey().removePeakIdentity(e.getValue());
+    });
+    clear();
   }
 }

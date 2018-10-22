@@ -179,7 +179,8 @@ public class MSAnnotationTask extends AbstractTask {
 
       LOG.info("A total of " + compared + " row2row comparisons with " + annotPairs
           + " annotation pairs");
-      List net = MSAnnotationNetworkLogic.createAnnotationNetworks(peakList, true);
+      List net = MSAnnotationNetworkLogic.createAnnotationNetworksOld(peakList.getRows(), true,
+          library.getMzTolerance());
       LOG.info("A total of " + net.size() + " networks");
 
       LOG.info("Show most likely annotations");

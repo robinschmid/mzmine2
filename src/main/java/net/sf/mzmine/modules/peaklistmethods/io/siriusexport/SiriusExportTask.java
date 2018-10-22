@@ -59,6 +59,9 @@ public class SiriusExportTask extends AbstractTask {
 
   // neutral mass
   public static String COMPOUND_MASS = "COMPOUND_MASS=";
+  // ION
+  public static String ION = "ION=";
+
 
 
   private final static String plNamePattern = "{}";
@@ -371,23 +374,11 @@ public class SiriusExportTask extends AbstractTask {
     // MS annotation and feature correlation group
     // can be null (both)
     // run MS annotations module or better metaMSEcorrelate
-    PKLRowGroup group = PKLRowGroup.from(row);
-    ESIAdductIdentity adduct = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, group);
-    AnnotationNetwork net = adduct != null ? adduct.getNetwork() : null;
+    String msAnnotationsFlags = createMSAnnotationFlags(row);
 
-    // find ion species by annotation (can be null)
-    String corrGroupID = group != null ? "" + group.getGroupID() : "";
-
-    String ion = "";
-    String compoundGroupID = "";
-    String compoundMass = "";
-    if (adduct != null) {
-      ion = adduct.getAdduct();
-      compoundGroupID = net.getID() + "";
-      compoundMass = net.getNeutralMass();
-    }
     // write correlation spectrum
-    writeHeader(writer, row, row.getBestPeak().getDataFile(), polarity, MsType.CORRELATED, -1, ion);
+    writeHeader(writer, row, row.getBestPeak().getDataFile(), polarity, MsType.CORRELATED, -1,
+        msAnnotationsFlags);
     writeCorrelationSpectrum(writer, peakList, row);
 
     List<DataPoint[]> toMerge = new ArrayList<>();
@@ -422,7 +413,7 @@ public class SiriusExportTask extends AbstractTask {
              */ // Do not include MS1 scans (except for isotope pattern)
             if (mergeMsMs == SiriusExportParameters.MERGE_MODE.NO_MERGE) {
               writeHeader(writer, row, f.getDataFile(), polarity, MsType.MSMS, scan.getScanNumber(),
-                  ion);
+                  msAnnotationsFlags);
               writeSpectrum(writer,
                   massListName != null ? scan.getMassList(massListName).getDataPoints()
                       : scan.getDataPoints());
@@ -436,7 +427,8 @@ public class SiriusExportTask extends AbstractTask {
         }
         if (mergeMsMs == SiriusExportParameters.MERGE_MODE.MERGE_CONSECUTIVE_SCANS
             && toMerge.size() > 0) {
-          writeHeader(writer, row, f.getDataFile(), polarity, MsType.MSMS, null, ion);
+          writeHeader(writer, row, f.getDataFile(), polarity, MsType.MSMS, null,
+              msAnnotationsFlags);
           writeSpectrum(writer, merge(f.getMZ(), toMerge));
         }
       }
@@ -444,11 +436,49 @@ public class SiriusExportTask extends AbstractTask {
     }
     if (mergeMsMs == SiriusExportParameters.MERGE_MODE.MERGE_OVER_SAMPLES && toMerge.size() > 0) {
       writeHeader(writer, row, row.getBestPeak().getDataFile(), polarity, MsType.MSMS, null,
-          sources, ion);
+          sources, msAnnotationsFlags);
       writeSpectrum(writer, merge(row.getAverageMZ(), toMerge));
     }
     // exported
     return true;
+  }
+
+  /**
+   * Creates header for groupID, compoundGroupID compoundMass and ion annotation
+   * 
+   * @param row
+   * @return
+   */
+  private String createMSAnnotationFlags(PeakListRow row) {
+    // MS annotation and feature correlation group
+    // can be null (both)
+    // run MS annotations module or better metaMSEcorrelate
+    PKLRowGroup group = PKLRowGroup.from(row);
+    ESIAdductIdentity adduct = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, group);
+    AnnotationNetwork net = adduct != null ? adduct.getNetwork() : null;
+
+    // find ion species by annotation (can be null)
+    String corrGroupID = group != null ? "" + group.getGroupID() : "";
+
+    String ion = "";
+    String compoundGroupID = "";
+    String compoundMass = "";
+    if (adduct != null) {
+      ion = adduct.getAdduct();
+      compoundGroupID = net.getID() + "";
+      compoundMass = mzForm.format(net.calcNeutralMass());
+    }
+
+    StringBuilder b = new StringBuilder();
+    if (!corrGroupID.isEmpty())
+      b.append(CORR_GROUPID + corrGroupID + "\n");
+    if (!compoundGroupID.isEmpty())
+      b.append(COMPOUND_ID + compoundGroupID + "\n");
+    if (!compoundMass.isEmpty())
+      b.append(COMPOUND_MASS + compoundMass + "\n");
+    if (!ion.isEmpty())
+      b.append(ION + ion + "\n");
+    return b.toString();
   }
 
   private boolean isSkipRow(PeakListRow row) {
@@ -464,12 +494,13 @@ public class SiriusExportTask extends AbstractTask {
   }
 
   private void writeHeader(BufferedWriter writer, PeakListRow row, RawDataFile raw, char polarity,
-      MsType msType, Integer scanNumber, String ion) throws IOException {
-    writeHeader(writer, row, raw, polarity, msType, scanNumber, null, ion);
+      MsType msType, Integer scanNumber, String msAnnotationsFlags) throws IOException {
+    writeHeader(writer, row, raw, polarity, msType, scanNumber, null, msAnnotationsFlags);
   }
 
   private void writeHeader(BufferedWriter writer, PeakListRow row, RawDataFile raw, char polarity,
-      MsType msType, Integer scanNumber, List<String> sources, String ion) throws IOException {
+      MsType msType, Integer scanNumber, List<String> sources, String msAnnotationsFlags)
+      throws IOException {
     final Feature feature = row.getPeak(raw);
     writer.write("BEGIN IONS");
     writer.newLine();
@@ -480,10 +511,8 @@ public class SiriusExportTask extends AbstractTask {
     writer.write(mzForm.format(row.getBestPeak().getMZ()));
     writer.newLine();
 
-    if (ion != null && !ion.isEmpty()) {
-      writer.write("ION=");
-      writer.write(ion);
-      writer.newLine();
+    if (msAnnotationsFlags != null && !msAnnotationsFlags.isEmpty()) {
+      writer.write(msAnnotationsFlags);
     }
     writer.write("CHARGE=");
     writer.write(String.valueOf(Math.abs(row.getRowCharge())));

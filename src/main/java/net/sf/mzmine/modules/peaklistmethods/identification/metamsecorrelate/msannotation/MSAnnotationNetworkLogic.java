@@ -17,6 +17,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
+import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.util.PeakListRowSorter;
 import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
@@ -83,6 +84,10 @@ public class MSAnnotationNetworkLogic {
           best = esi;
         else if (esi.getA().equals(ESIAdductType.M_UNMODIFIED))
           continue;
+        // size of network (ions pointing to the same neutral mass)
+        else if (esi.getNetwork() != null
+            && (best.getNetwork() == null || esi.getNetwork().size() > best.getNetwork().size()))
+          best = esi;
         // keep if has M>1 and was identified by MSMS
         else if (compareMSMSMolIdentity(esi, best))
           continue;
@@ -189,8 +194,8 @@ public class MSAnnotationNetworkLogic {
    * @return
    */
   public static List<AnnotationNetwork> createAnnotationNetworks(PeakList pkl,
-      boolean addNetworkNumber) {
-    return createAnnotationNetworksOld(pkl.getRows(), addNetworkNumber);
+      MZTolerance mzTolerance) {
+    return createAnnotationNetworks(pkl.getRows(), mzTolerance);
   }
 
   /**
@@ -200,14 +205,14 @@ public class MSAnnotationNetworkLogic {
    * @return
    */
   public static List<AnnotationNetwork> createAnnotationNetworksOld(PeakListRow[] rows,
-      boolean addNetworkNumber) {
+      boolean addNetworkNumber, MZTolerance mzTolerance) {
     List<AnnotationNetwork> nets = new ArrayList<>();
 
     if (rows != null) {
       // sort by rt
       Arrays.sort(rows, new PeakListRowSorter(SortingProperty.ID, SortingDirection.Ascending));
 
-      AnnotationNetwork current = new AnnotationNetwork(nets.size());
+      AnnotationNetwork current = new AnnotationNetwork(mzTolerance, nets.size());
       // add all connections
       for (PeakListRow row : rows) {
         current.clear();
@@ -230,7 +235,7 @@ public class MSAnnotationNetworkLogic {
             }
           }
           // new
-          current = new AnnotationNetwork(nets.size());
+          current = new AnnotationNetwork(mzTolerance, nets.size());
         }
       }
     }
@@ -244,19 +249,20 @@ public class MSAnnotationNetworkLogic {
    * @param rows
    * @return
    */
-  public static List<AnnotationNetwork> createAnnotationNetworks(PeakListRow[] rows) {
+  public static List<AnnotationNetwork> createAnnotationNetworks(PeakListRow[] rows,
+      MZTolerance mzTolerance) {
 
     // bin neutral masses to annotation networks
-    Collection<AnnotationNetwork> nets = binNeutralMassToNetworks(rows);
+    List<AnnotationNetwork> nets = new ArrayList<>(binNeutralMassToNetworks(rows, mzTolerance));
 
     // add network to all identities
     setNetworksToAllAnnotations(nets);
 
     // fill in neutral losses [M-H2O] is not iserted yet
     // they might be if [M+H2O+X]+ was also annotated by another link
-    fillInNeutralLosses(rows, nets);
+    fillInNeutralLosses(rows, nets, mzTolerance);
 
-    return new ArrayList<AnnotationNetwork>(nets);
+    return nets;
   }
 
 
@@ -267,14 +273,16 @@ public class MSAnnotationNetworkLogic {
    * @param rows
    * @param nets
    */
-  private static void fillInNeutralLosses(PeakListRow[] rows, Collection<AnnotationNetwork> nets) {
+  private static void fillInNeutralLosses(PeakListRow[] rows, Collection<AnnotationNetwork> nets,
+      MZTolerance mzTolerance) {
     for (PeakListRow row : rows) {
       for (PeakIdentity pi : row.getPeakIdentities()) {
         // identity by ms annotation module
         if (pi instanceof ESIAdductIdentity) {
           ESIAdductIdentity neutral = (ESIAdductIdentity) pi;
           // only if charged (neutral losses do not point to the real neutral mass)
-          if (neutral.getA().getAbsCharge() != 0)
+          if (neutral.getA().getAbsCharge() != 0
+              && !neutral.getA().equals(ESIAdductType.M_UNMODIFIED))
             continue;
 
           // all partners
@@ -288,7 +296,7 @@ public class MSAnnotationNetworkLogic {
             // create new net if partner was in no network
             if (partnerNets == null || partnerNets.length == 0) {
               // create new and put both
-              AnnotationNetwork newNet = new AnnotationNetwork(nets.size());
+              AnnotationNetwork newNet = new AnnotationNetwork(mzTolerance, nets.size());
               nets.add(newNet);
               newNet.put(row, neutral);
               newNet.put(partner, ESIAdductIdentity.getIdentityOf(partner, row));
@@ -296,8 +304,25 @@ public class MSAnnotationNetworkLogic {
             } else {
               // add neutral loss to nets
               // do not if its already in this network (e.g. as adduct)
-              Arrays.stream(partnerNets).filter(pnet -> !pnet.containsKey(row))
-                  .forEach(pnet -> pnet.put(row, neutral));
+              Arrays.stream(partnerNets).filter(pnet -> !pnet.containsKey(row)).forEach(pnet -> {
+                // try to find real annotation
+                ESIAdductType pid = pnet.get(partner).getA();
+                // modified
+                pid = pid.createModified(neutral.getA());
+
+                ESIAdductIdentity realID = neutral;
+                if (pnet.checkForAnnotation(row, pid)) {
+                  // create new
+                  realID = new ESIAdductIdentity(row, pid);
+                  row.addPeakIdentity(realID, false);
+                  realID.setNetwork(pnet);
+                  // set partners
+                  pnet.addAllLinksTo(row, realID);
+                }
+
+                // put
+                pnet.put(row, realID);
+              });
             }
           }
         }
@@ -313,7 +338,7 @@ public class MSAnnotationNetworkLogic {
    */
   public static AnnotationNetwork[] getAllNetworks(PeakListRow row) {
     return MSAnnotationNetworkLogic.getAllAnnotations(row).stream().map(id -> id.getNetwork())
-        .toArray(AnnotationNetwork[]::new);
+        .filter(net -> net != null).toArray(AnnotationNetwork[]::new);
   }
 
   /**
@@ -332,7 +357,8 @@ public class MSAnnotationNetworkLogic {
    * @param rows
    * @return AnnotationNetworks
    */
-  private static Collection<AnnotationNetwork> binNeutralMassToNetworks(PeakListRow[] rows) {
+  private static Collection<AnnotationNetwork> binNeutralMassToNetworks(PeakListRow[] rows,
+      MZTolerance mzTolerance) {
     Map<Integer, AnnotationNetwork> map = new HashMap<>();
     for (PeakListRow row : rows) {
       for (PeakIdentity pi : row.getPeakIdentities()) {
@@ -350,7 +376,7 @@ public class MSAnnotationNetworkLogic {
           AnnotationNetwork net = map.get(nmass);
           if (net == null) {
             // create new
-            net = new AnnotationNetwork(map.size());
+            net = new AnnotationNetwork(mzTolerance, map.size());
             map.put(nmass, net);
           }
           // add row and id to network

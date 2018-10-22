@@ -331,7 +331,7 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    * @param row1 row to add the identity to
    * @param row2 identified by this row
    */
-  public void addAdductIdentityToRow(PeakListRow row1, PeakListRow row2) {
+  public ESIAdductIdentity addAdductIdentityToRow(PeakListRow row1, PeakListRow row2) {
     boolean added = false;
     for (PeakIdentity id : row1.getPeakIdentities()) {
       if (ESIAdductIdentity.class.isInstance(id)) {
@@ -340,12 +340,17 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
         if (a.equalsAdduct(this)) {
           a.addPartnerRow(row2);
           added = true;
-          break;
+          return a;
         }
       }
     }
-    if (!added)
-      row1.addPeakIdentity(new ESIAdductIdentity(row2, this), false);
+    if (!added) {
+      ESIAdductIdentity id = new ESIAdductIdentity(row2, this);
+      row1.addPeakIdentity(id, false);
+      return id;
+    }
+    // shouldnt happen
+    return null;
   }
 
   /**
@@ -599,5 +604,9 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    */
   public boolean isFragment() {
     return getModification() != null || getCharge() == 0;
+  }
+
+  public ESIAdductType createModified(ESIAdductType mod) {
+    return ESIAdductType.createModified(this, mod);
   }
 }

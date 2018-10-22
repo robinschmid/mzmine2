@@ -283,7 +283,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
           setStage(Stage.REFINEMENT);
           // create networks
           LOG.info("Corr: create annotation network numbers");
-          MSAnnotationNetworkLogic.createAnnotationNetworks(groupedPKL, true);
+          MSAnnotationNetworkLogic.createAnnotationNetworks(groupedPKL, library.getMzTolerance());
 
           // refinement of adducts
           // do MSMS check for multimers

@@ -227,10 +227,11 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
 
     ESIAdductIdentity best =
         MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, PKLRowGroup.from(row));
-    LOG.info(MessageFormat.format(
-        "Found {0} MS/MS fragments for neutral loss identifiers of rowID=[1} m/z={2} RT={3} best:{4}",
-        c, row.getID(), row.getAverageMZ(), row.getAverageRT(),
-        best == null ? "" : best.toString()));
+    if (c > 0)
+      LOG.info(MessageFormat.format(
+          "Found {0} MS/MS fragments for neutral loss identifiers of rowID=[1} m/z={2} RT={3} best:{4}",
+          c, row.getID(), row.getAverageMZ(), row.getAverageRT(),
+          best == null ? "" : best.toString()));
   }
 
   /**
