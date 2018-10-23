@@ -25,13 +25,15 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.Feature.FeatureStatus;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
@@ -63,6 +65,7 @@ class CSVExportTask extends AbstractTask {
     idSeparator = parameters.getParameter(CSVExportParameters.idSeparator).getValue();
   }
 
+  @Override
   public double getFinishedPercentage() {
     if (totalRows == 0) {
       return 0;
@@ -70,10 +73,12 @@ class CSVExportTask extends AbstractTask {
     return (double) processedRows / (double) totalRows;
   }
 
+  @Override
   public String getTaskDescription() {
     return "Exporting peak list(s) " + Arrays.toString(peakLists) + " to CSV file(s)";
   }
 
+  @Override
   public void run() {
 
     setStatus(TaskStatus.PROCESSING);
@@ -138,7 +143,6 @@ class CSVExportTask extends AbstractTask {
   }
 
   private void exportPeakList(PeakList peakList, FileWriter writer, File fileName) {
-
     RawDataFile rawDataFiles[] = peakList.getRawDataFiles();
 
     // Buffer for writing
@@ -150,10 +154,16 @@ class CSVExportTask extends AbstractTask {
     int length = commonElements.length;
     String name;
     for (int i = 0; i < length; i++) {
-      name = commonElements[i].toString();
-      name = name.replace("Export ", "");
-      name = escapeStringForCSV(name);
-      line.append(name + fieldSeparator);
+      if (commonElements[i].equals(ExportRowCommonElement.ROW_BEST_ANNOTATION)) {
+        line.append("best annotation" + fieldSeparator);
+        line.append("identified by n=" + fieldSeparator);
+        line.append("auto MS² verify" + fieldSeparator);
+      } else {
+        name = commonElements[i].toString();
+        name = name.replace("Export ", "");
+        name = escapeStringForCSV(name);
+        line.append(name + fieldSeparator);
+      }
     }
 
     // peak Information
@@ -263,6 +273,38 @@ class CSVExportTask extends AbstractTask {
               }
             }
             line.append(numDetected + fieldSeparator);
+            break;
+          case ROW_CORR_GROUP_ID:
+            int id = PKLRowGroup.idFrom(peakListRow);
+            line.append((id == -1 ? "" : id) + fieldSeparator);
+            break;
+          case ROW_BEST_ANNOTATION:
+            ESIAdductIdentity ad =
+                MSAnnotationNetworkLogic.getMostLikelyAnnotation(peakListRow, true);
+            if (ad == null)
+              line.append(fieldSeparator + fieldSeparator + fieldSeparator);
+            else {
+              String msms = "";
+              if (ad.getMSMSModVerify() > 0)
+                msms = "MS/MS verified: nloss";
+              if (ad.getMSMSMultimerCount() > 0)
+                msms += msms.isEmpty() ? "MS/MS verified: xmer" : ", xmer";
+              line.append(ad.getA().toString(false) + fieldSeparator + ad.getPartnerRowsID().length
+                  + fieldSeparator + msms + fieldSeparator);
+            }
+            break;
+          case ROW_MOL_NETWORK_ID:
+            ESIAdductIdentity ad2 =
+                MSAnnotationNetworkLogic.getMostLikelyAnnotation(peakListRow, true);
+            line.append((ad2 == null || ad2.getNetwork() == null ? "" : ad2.getNetwork().getID())
+                + fieldSeparator);
+            break;
+          case ROW_NEUTRAL_MASS:
+            ESIAdductIdentity ad3 =
+                MSAnnotationNetworkLogic.getMostLikelyAnnotation(peakListRow, true);
+            line.append(
+                (ad3 == null || ad3.getNetwork() == null ? "" : ad3.getNetwork().calcNeutralMass())
+                    + fieldSeparator);
             break;
         }
       }

@@ -27,7 +27,11 @@ public enum ExportRowCommonElement {
   ROW_IDENTITY_ALL("Export row identity (all IDs)"), //
   ROW_IDENTITY_DETAILS("Export row identity (main ID + details)"), //
   ROW_COMMENT("Export row comment"), //
-  ROW_PEAK_NUMBER("Export row number of detected peaks");
+  ROW_PEAK_NUMBER("Export row number of detected peaks"), //
+  ROW_CORR_GROUP_ID("Export correlation group ID"), //
+  ROW_MOL_NETWORK_ID("Export annotation network number"), //
+  ROW_BEST_ANNOTATION("Export best ion annotation"), //
+  ROW_NEUTRAL_MASS("Export neutral M mass");
 
   private final String name;
 
@@ -35,6 +39,7 @@ public enum ExportRowCommonElement {
     this.name = name;
   }
 
+  @Override
   public String toString() {
     return this.name;
   }
