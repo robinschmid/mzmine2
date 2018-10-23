@@ -81,33 +81,7 @@ public class AnnotationNetworkPanel extends NetworkPanel {
         int rowID = row.getID();
         for (AnnotationNetwork net : MSAnnotationNetworkLogic.getAllNetworks(row)) {
           if (net.hasSmallestID(row)) {
-            String mnode = MessageFormat.format("M (m={0} Da) Net{1}",
-                mzForm.format(net.getNeutralMass()), net.getID());
-            // add center neutral M
-            net.entrySet().stream().filter(e -> findRowByID(e.getKey().getID(), rows) != null)
-                .forEach(e -> {
-                  String node = toNodeName(e.getKey(), e.getValue());
-                  addNewEdge(mnode, node,
-                      Math.abs(net.getNeutralMass() - e.getKey().getAverageMZ()));
-                  added.incrementAndGet();
-                });
-            // add all edges between ions
-            net.entrySet().stream().filter(e -> findRowByID(e.getKey().getID(), rows) != null)
-                .forEach(e -> {
-                  String node1 = toNodeName(e.getKey(), e.getValue());
-
-                  int[] partnerID = e.getValue().getPartnerRowsID();
-                  for (int id : partnerID) {
-                    PeakListRow prow = findRowByID(id, rows);
-                    if (prow != null) {
-                      ESIAdductIdentity link = ESIAdductIdentity.getIdentityOf(prow, e.getKey());
-                      String node2 = toNodeName(prow, link);
-                      addNewEdge(node1, node2,
-                          Math.abs(e.getKey().getAverageMZ() - prow.getAverageMZ()));
-                      added.incrementAndGet();
-                    }
-                  }
-                });
+            addNetworkToGraph(rows, net, added);
           }
         }
       }
@@ -122,6 +96,34 @@ public class AnnotationNetworkPanel extends NetworkPanel {
 
       LOG.info("Added " + added.get() + " connections");
     }
+  }
+
+  private void addNetworkToGraph(PeakListRow[] rows, AnnotationNetwork net, AtomicInteger added) {
+    String mnode = MessageFormat.format("M (m={0} Da) Net{1} corrID={2}",
+        mzForm.format(net.getNeutralMass()), net.getID(), net.getCorrID());
+    // add center neutral M
+    net.entrySet().stream().filter(e -> e.getValue().getA().getAbsCharge() > 0).forEach(e -> {
+      String node = toNodeName(e.getKey(), e.getValue());
+      addNewEdge(mnode, node, Math.abs(net.getNeutralMass() - e.getKey().getAverageMZ()));
+      added.incrementAndGet();
+    });
+    // add all edges between ions
+    net.entrySet().stream().forEach(e -> {
+      String node1 = toNodeName(e.getKey(), e.getValue());
+
+      int[] partnerID = e.getValue().getPartnerRowsID();
+      for (int id : partnerID) {
+        PeakListRow prow = findRowByID(id, rows);
+        if (prow != null) {
+          ESIAdductIdentity link = net.get(prow);
+          if (link != null) {
+            String node2 = toNodeName(prow, link);
+            addNewEdge(node1, node2, Math.abs(e.getKey().getAverageMZ() - prow.getAverageMZ()));
+            added.incrementAndGet();
+          }
+        }
+      }
+    });
   }
 
   public void setSelectedRow(PeakListRow row) {
