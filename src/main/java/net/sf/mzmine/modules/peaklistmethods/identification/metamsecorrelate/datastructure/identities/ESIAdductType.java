@@ -14,8 +14,7 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
 
   // values
   // unmodified molecule for mod connection [M] -> [M-H2O]
-  public static final ESIAdductType M_UNMODIFIED =
-      new ESIAdductType("(unmodified)", 0.00054858, 0, 1);
+  public static final ESIAdductType M_UNMODIFIED = new ESIAdductType("(unmodified)", 0, 0, 1);
 
   // use combinations of X adducts (2H++; -H+Na2+) and modifications
   public static final ESIAdductType M_PLUS = new ESIAdductType("e", -0.00054858, 1, 1);
