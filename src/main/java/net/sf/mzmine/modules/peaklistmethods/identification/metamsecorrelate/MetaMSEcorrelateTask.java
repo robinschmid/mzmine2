@@ -312,6 +312,10 @@ public class MetaMSEcorrelateTask extends AbstractTask {
                 new AnnotationRefinementTask(project, refineParam, groupedPKL);
             ref.refine();
           }
+
+          // recalc annotation networks
+          MSAnnotationNetworkLogic.recalcAllAnnotationNetworks(nets, true);
+
           // show all annotations with the highest count of links
           LOG.info("Corr: show most likely annotations");
           MSAnnotationNetworkLogic.showMostlikelyAnnotations(groupedPKL, true);

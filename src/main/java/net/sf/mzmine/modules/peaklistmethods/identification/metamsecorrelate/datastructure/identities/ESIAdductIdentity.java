@@ -79,12 +79,18 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
 
   public void addPartnerRow(PeakListRow row) {
     // already a partner?
-    String[] split = partnerRows.split(",");
-    for (String s : split)
-      if (s.equals(String.valueOf(row.getID())))
-        return;
     // add new partner
-    partnerRows += "," + row.getID();
+    if (!hasPartnerID(row.getID())) {
+      if (partnerRows.isEmpty())
+        partnerRows = "" + row.getID();
+      else
+        partnerRows += "," + row.getID();
+      setPropertyValue(PROPERTY_NAME, getIDString());
+    }
+  }
+
+  public void resetLinks() {
+    partnerRows = "";
     setPropertyValue(PROPERTY_NAME, getIDString());
   }
 
@@ -122,6 +128,9 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
   }
 
   public int[] getPartnerRowsID() {
+    if (partnerRows.isEmpty())
+      return new int[0];
+
     String[] split = partnerRows.split(",");
     int[] ids = new int[split.length];
     for (int i = 0; i < split.length; i++)

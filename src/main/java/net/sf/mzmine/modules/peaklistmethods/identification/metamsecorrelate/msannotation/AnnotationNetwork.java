@@ -273,4 +273,15 @@ public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
     id = i;
     setNetworkToAllRows();
   }
+
+  public void recalcConnections() {
+    for (Entry<PeakListRow, ESIAdductIdentity> a : entrySet()) {
+      a.getValue().resetLinks();
+    }
+
+    // add all links
+    for (Entry<PeakListRow, ESIAdductIdentity> a : entrySet()) {
+      addAllLinksTo(a.getKey(), a.getValue());
+    }
+  }
 }

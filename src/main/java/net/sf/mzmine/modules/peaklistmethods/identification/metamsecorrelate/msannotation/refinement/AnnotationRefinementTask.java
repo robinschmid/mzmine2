@@ -89,6 +89,9 @@ public class AnnotationRefinementTask extends AbstractTask {
   public static void refine(PeakList pkl, int trueThreshold, boolean deleteXmersOnMSMS) {
     for (PeakListRow row : pkl.getRows()) {
       ESIAdductIdentity best = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, true);
+      if (best == null)
+        continue;
+
       List<ESIAdductIdentity> all = MSAnnotationNetworkLogic.getAllAnnotationsSorted(row);
       if (deleteXmersOnMSMS) {
         // xmers
@@ -97,6 +100,9 @@ public class AnnotationRefinementTask extends AbstractTask {
           all = MSAnnotationNetworkLogic.getAllAnnotationsSorted(row);
         }
       }
+
+      if (best == null)
+        continue;
 
       if (trueThreshold > 1) {
         int links = getLinks(best);

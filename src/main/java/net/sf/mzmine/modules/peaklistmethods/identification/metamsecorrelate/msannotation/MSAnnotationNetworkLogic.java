@@ -600,4 +600,20 @@ public class MSAnnotationNetworkLogic {
     }
   }
 
+  public static void recalcAllAnnotationNetworks(List<AnnotationNetwork> nets,
+      boolean removeEmpty) {
+    if (removeEmpty) {
+      for (int i = 0; i < nets.size(); i++) {
+        if (nets.get(i).size() < 2) {
+          nets.remove(i);
+          i--;
+        }
+      }
+    }
+    // recalc
+    nets.stream().forEach(net -> {
+      net.recalcConnections();
+    });
+  }
+
 }
