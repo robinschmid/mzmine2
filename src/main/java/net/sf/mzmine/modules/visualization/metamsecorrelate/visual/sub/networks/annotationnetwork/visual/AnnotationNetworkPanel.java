@@ -81,8 +81,8 @@ public class AnnotationNetworkPanel extends NetworkPanel {
         int rowID = row.getID();
         for (AnnotationNetwork net : MSAnnotationNetworkLogic.getAllNetworks(row)) {
           if (net.hasSmallestID(row)) {
-            String mnode =
-                MessageFormat.format("M (m={0} Da)", mzForm.format(net.getNeutralMass()));
+            String mnode = MessageFormat.format("M (m={0} Da) Net{1}",
+                mzForm.format(net.getNeutralMass()), net.getID());
             // add center neutral M
             net.entrySet().stream().filter(e -> findRowByID(e.getKey().getID(), rows) != null)
                 .forEach(e -> {
