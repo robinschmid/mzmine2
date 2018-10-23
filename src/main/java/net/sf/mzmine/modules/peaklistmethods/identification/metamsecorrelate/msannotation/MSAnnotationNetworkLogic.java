@@ -3,6 +3,7 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.ms
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -80,36 +81,51 @@ public class MSAnnotationNetworkLogic {
       if (id instanceof ESIAdductIdentity) {
         ESIAdductIdentity esi = (ESIAdductIdentity) id;
         int links = getLinksTo(esi, g);
-        if (best == null || best.getA().equals(ESIAdductType.M_UNMODIFIED))
+        int compare = compareRows(best, esi, g);
+        if (compare < 0)
           best = esi;
-        else if (esi.getA().equals(ESIAdductType.M_UNMODIFIED))
-          continue;
-        // size of network (ions pointing to the same neutral mass)
-        else if (esi.getNetwork() != null
-            && (best.getNetwork() == null || esi.getNetwork().size() > best.getNetwork().size()))
-          best = esi;
-        // keep if has M>1 and was identified by MSMS
-        else if (compareMSMSMolIdentity(esi, best))
-          continue;
-        // always if M>1 backed by MSMS
-        else if (compareMSMSMolIdentity(best, esi))
-          best = esi;
-        // keep if insource fragment verified by MSMS
-        else if (compareMSMSNeutralLossIdentity(esi, best))
-          continue;
-        // keep if insource fragment verified by MSMS
-        else if (compareMSMSNeutralLossIdentity(best, esi))
-          best = esi;
-        else if (links == maxLinks
-            && (compareCharge(best, esi) || (isTheUnmodified(best) && !isTheUnmodified(esi)))) {
-          best = esi;
-        } else if (links > maxLinks) {
-          maxLinks = links;
-          best = esi;
-        }
       }
     }
     return best;
+  }
+
+  /**
+   * 
+   * @param best
+   * @param esi
+   * @return -1 if esi is better than best 1 if opposite
+   */
+  public static int compareRows(ESIAdductIdentity best, ESIAdductIdentity esi, PKLRowGroup g) {
+    if (best == null || best.getA().equals(ESIAdductType.M_UNMODIFIED))
+      return -1;
+    else if (esi.getA().equals(ESIAdductType.M_UNMODIFIED))
+      return 1;
+    // size of network (ions pointing to the same neutral mass)
+    else if (esi.getNetwork() != null
+        && (best.getNetwork() == null || esi.getNetwork().size() > best.getNetwork().size()))
+      return -1;
+    // keep if has M>1 and was identified by MSMS
+    else if (compareMSMSMolIdentity(esi, best))
+      return 1;
+    // always if M>1 backed by MSMS
+    else if (compareMSMSMolIdentity(best, esi))
+      return -1;
+    // keep if insource fragment verified by MSMS
+    else if (compareMSMSNeutralLossIdentity(esi, best))
+      return 1;
+    // keep if insource fragment verified by MSMS
+    else if (compareMSMSNeutralLossIdentity(best, esi))
+      return -1;
+
+    int esiLinks = getLinksTo(esi, g);
+    int bestLinks = getLinksTo(best, g);
+    if (esiLinks == bestLinks
+        && (compareCharge(best, esi) || (isTheUnmodified(best) && !isTheUnmodified(esi)))) {
+      return -1;
+    } else if (esiLinks > bestLinks) {
+      return -1;
+    }
+    return 1;
   }
 
   /**
@@ -490,6 +506,26 @@ public class MSAnnotationNetworkLogic {
       if (pi instanceof ESIAdductIdentity)
         ident.add((ESIAdductIdentity) pi);
     }
+    return ident;
+  }
+
+  /**
+   * 
+   * @param row
+   * @return list of annotations or an empty list
+   */
+  public static List<ESIAdductIdentity> getAllAnnotationsSorted(PeakListRow row) {
+    List<ESIAdductIdentity> ident = new ArrayList<>();
+    for (PeakIdentity pi : row.getPeakIdentities()) {
+      if (pi instanceof ESIAdductIdentity)
+        ident.add((ESIAdductIdentity) pi);
+    }
+    ident.sort(new Comparator<ESIAdductIdentity>() {
+      @Override
+      public int compare(ESIAdductIdentity a, ESIAdductIdentity b) {
+        return compareRows(a, b, (PKLRowGroup) null);
+      }
+    });
     return ident;
   }
 

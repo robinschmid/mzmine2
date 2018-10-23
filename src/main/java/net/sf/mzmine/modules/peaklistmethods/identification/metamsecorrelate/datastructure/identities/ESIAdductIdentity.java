@@ -221,4 +221,14 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
     return network;
   }
 
+  /**
+   * deletes from network
+   */
+  public void delete(PeakListRow row) {
+    if (network != null) {
+      network.remove(row);
+    }
+    row.removePeakIdentity(this);
+  }
+
 }

@@ -38,6 +38,47 @@ public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
     return neutralMass == null ? calcNeutralMass() : neutralMass;
   }
 
+
+  @Override
+  public ESIAdductIdentity put(PeakListRow key, ESIAdductIdentity value) {
+    ESIAdductIdentity e = super.put(key, value);
+    fireChanged();
+    return e;
+  }
+
+  @Override
+  public ESIAdductIdentity remove(Object key) {
+    ESIAdductIdentity e = super.remove(key);
+    fireChanged();
+    return e;
+  }
+
+  @Override
+  public void clear() {
+    super.clear();
+    fireChanged();
+  }
+
+  @Override
+  public ESIAdductIdentity replace(PeakListRow key, ESIAdductIdentity value) {
+    ESIAdductIdentity e = super.replace(key, value);
+    fireChanged();
+    return e;
+  }
+
+  public void fireChanged() {
+    resetNeutralMass();
+    resetMaxDev();
+  }
+
+  public void resetNeutralMass() {
+    neutralMass = null;
+  }
+
+  public void resetMaxDev() {
+    maxDev = null;
+  }
+
   /**
    * Calculates and sets the neutral mass average
    * 

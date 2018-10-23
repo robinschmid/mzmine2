@@ -52,10 +52,13 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeaturesFilterParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.AnnotationNetwork;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary.CheckMode;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.AnnotationRefinementParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.AnnotationRefinementTask;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.MSAnnMSMSCheckParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.MSAnnMSMSCheckTask;
 import net.sf.mzmine.parameters.ParameterSet;
@@ -130,6 +133,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
   // output
   private MSEGroupedPeakList groupedPKL;
+  private boolean performAnnotationRefinement;
+  private AnnotationRefinementParameters refineParam;
 
 
   /**
@@ -191,6 +196,12 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     // MSMS refinement
     doMSMSchecks = annParam.getParameter(MSAnnotationParameters.MSMS_CHECK).getValue();
     msmsChecks = annParam.getParameter(MSAnnotationParameters.MSMS_CHECK).getEmbeddedParameters();
+
+
+    performAnnotationRefinement =
+        parameterSet.getParameter(MetaMSEcorrelateParameters.ANNOTATION_REFINEMENTS).getValue();
+    refineParam = parameterSet.getParameter(MetaMSEcorrelateParameters.ANNOTATION_REFINEMENTS)
+        .getEmbeddedParameters();
 
     // END OF ADDUCTS AND REFINEMENT
 
@@ -283,7 +294,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
           setStage(Stage.REFINEMENT);
           // create networks
           LOG.info("Corr: create annotation network numbers");
-          MSAnnotationNetworkLogic.createAnnotationNetworks(groupedPKL, library.getMzTolerance());
+          List<AnnotationNetwork> nets = MSAnnotationNetworkLogic
+              .createAnnotationNetworks(groupedPKL, library.getMzTolerance());
 
           // refinement of adducts
           // do MSMS check for multimers
@@ -293,6 +305,13 @@ public class MetaMSEcorrelateTask extends AbstractTask {
             task.doCheck();
           }
 
+          // refinement
+          LOG.info("Corr: Refine annotations");
+          if (performAnnotationRefinement) {
+            AnnotationRefinementTask ref =
+                new AnnotationRefinementTask(project, refineParam, groupedPKL);
+            ref.refine();
+          }
           // show all annotations with the highest count of links
           LOG.info("Corr: show most likely annotations");
           MSAnnotationNetworkLogic.showMostlikelyAnnotations(groupedPKL, true);

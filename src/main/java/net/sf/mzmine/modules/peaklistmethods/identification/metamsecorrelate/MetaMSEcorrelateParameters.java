@@ -25,6 +25,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.cor
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.InterSampleIntCorrParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.AnnotationRefinementParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.UserParameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
@@ -91,6 +92,11 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
   public static final BooleanParameter ANNOTATE_ONLY_GROUPED = new BooleanParameter(
       "Annotate only corr grouped", "Only rows in a correlation group are checked for annotations");
 
+  public static final OptionalModuleParameter<AnnotationRefinementParameters> ANNOTATION_REFINEMENTS =
+      new OptionalModuleParameter<AnnotationRefinementParameters>("Annotation refinement", "",
+          new AnnotationRefinementParameters(true));
+
+
   // Constructor
   public MetaMSEcorrelateParameters() {
     super(new Parameter[] {PEAK_LISTS, RT_TOLERANCE,
@@ -101,7 +107,7 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
         // intensity max correlation
         IMAX_CORRELATION,
         // adducts
-        ADDUCT_LIBRARY, ANNOTATE_ONLY_GROUPED});
+        ADDUCT_LIBRARY, ANNOTATE_ONLY_GROUPED, ANNOTATION_REFINEMENTS});
   }
 
   @Override
