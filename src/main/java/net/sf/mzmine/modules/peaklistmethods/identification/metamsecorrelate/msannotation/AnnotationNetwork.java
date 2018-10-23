@@ -170,4 +170,29 @@ public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
     });
     clear();
   }
+
+  /**
+   * row has smallest id?
+   * 
+   * @param row
+   * @return
+   */
+  public boolean hasSmallestID(PeakListRow row) {
+    if (!containsKey(row))
+      return false;
+    else {
+      return !keySet().stream().anyMatch(r -> r.getID() < row.getID());
+    }
+  }
+
+  /**
+   * row has smallest id?
+   * 
+   * @param id
+   * @return
+   */
+  public boolean hasSmallestID(int id) {
+    return keySet().stream().anyMatch(r -> r.getID() == id)
+        && !keySet().stream().anyMatch(r -> r.getID() < id);
+  }
 }

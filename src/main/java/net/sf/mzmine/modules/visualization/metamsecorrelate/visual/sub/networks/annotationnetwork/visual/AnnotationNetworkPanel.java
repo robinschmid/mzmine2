@@ -3,6 +3,7 @@ package net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import org.graphstream.graph.Node;
 import net.sf.mzmine.datamodel.PeakIdentity;
@@ -11,6 +12,8 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.framework.networks.NetworkPanel;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.AnnotationNetwork;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.util.PeakListRowSorter;
 import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
@@ -72,38 +75,52 @@ public class AnnotationNetworkPanel extends NetworkPanel {
       // sort by rt
       Arrays.sort(rows, new PeakListRowSorter(SortingProperty.ID, SortingDirection.Ascending));
 
-      int added = 0;
+      AtomicInteger added = new AtomicInteger(0);
       // add all connections
       for (PeakListRow row : rows) {
         int rowID = row.getID();
-        for (PeakIdentity pi : row.getPeakIdentities()) {
-          // identity by ms annotation module
-          if (pi instanceof ESIAdductIdentity) {
-            ESIAdductIdentity adduct = (ESIAdductIdentity) pi;
-            int[] ids = adduct.getPartnerRowsID();
+        for (AnnotationNetwork net : MSAnnotationNetworkLogic.getAllNetworks(row)) {
+          if (net.hasSmallestID(row)) {
+            String mnode =
+                MessageFormat.format("M (m={0} Da)", mzForm.format(net.getNeutralMass()));
+            // add center neutral M
+            net.entrySet().stream().filter(e -> findRowByID(e.getKey().getID(), rows) != null)
+                .forEach(e -> {
+                  String node = toNodeName(e.getKey(), e.getValue());
+                  addNewEdge(mnode, node,
+                      Math.abs(net.getNeutralMass() - e.getKey().getAverageMZ()));
+                  added.incrementAndGet();
+                });
+            // add all edges between ions
+            net.entrySet().stream().filter(e -> findRowByID(e.getKey().getID(), rows) != null)
+                .forEach(e -> {
+                  String node1 = toNodeName(e.getKey(), e.getValue());
 
-            // add all connection for ids>rowID
-            for (int id : ids) {
-              if (id > rowID) {
-                PeakListRow row2 = findRowByID(id, rows);
-                if (row2 != null) {
-                  String node1 = toNodeName(row);
-                  String node2 = toNodeName(row2);
-                  addNewEdge(node1, node2, Math.abs(row.getAverageMZ() - row2.getAverageMZ()));
-                  added++;
-                }
-              }
-            }
+                  int[] partnerID = e.getValue().getPartnerRowsID();
+                  for (int id : partnerID) {
+                    PeakListRow prow = findRowByID(id, rows);
+                    if (prow != null) {
+                      ESIAdductIdentity link = ESIAdductIdentity.getIdentityOf(prow, e.getKey());
+                      String node2 = toNodeName(prow, link);
+                      addNewEdge(node1, node2,
+                          Math.abs(e.getKey().getAverageMZ() - prow.getAverageMZ()));
+                      added.incrementAndGet();
+                    }
+                  }
+                });
           }
         }
       }
       // add id name
       for (Node node : graph) {
+        if (node.getId().startsWith("M ("))
+          node.addAttribute("ui.class", "MOL");
+
         node.addAttribute("ui.label", node.getId());
       }
       clearSelections();
 
-      LOG.info("Added " + added + " connections");
+      LOG.info("Added " + added.get() + " connections");
     }
   }
 
@@ -142,6 +159,18 @@ public class AnnotationNetworkPanel extends NetworkPanel {
         if (esi.getNetID() != -1)
           id += " (Net" + esi.getNetIDString() + ")";
       }
+    }
+    return MessageFormat.format("{0} (mz={1}) {2}", row.getID(), mzForm.format(row.getAverageMZ()),
+        id);
+  }
+
+  private String toNodeName(PeakListRow row, ESIAdductIdentity esi) {
+    String id = "";
+    if (esi != null) {
+      id = esi.getAdduct() + " by n=" + esi.getPartnerRowsID().length;
+
+      if (esi.getNetID() != -1)
+        id += " (Net" + esi.getNetIDString() + ")";
     }
     return MessageFormat.format("{0} (mz={1}) {2}", row.getID(), mzForm.format(row.getAverageMZ()),
         id);
