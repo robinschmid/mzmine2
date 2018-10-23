@@ -20,17 +20,23 @@ package net.sf.mzmine.modules.peaklistmethods.io.csvexport;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import com.google.common.collect.Lists;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.Feature.FeatureStatus;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
@@ -40,6 +46,7 @@ import net.sf.mzmine.taskcontrol.TaskStatus;
 import net.sf.mzmine.util.RangeUtils;
 
 class CSVExportTask extends AbstractTask {
+
 
   private PeakList[] peakLists;
   private int processedRows = 0, totalRows = 0;
@@ -54,7 +61,6 @@ class CSVExportTask extends AbstractTask {
   private String idSeparator;
 
   CSVExportTask(ParameterSet parameters) {
-
     this.peakLists =
         parameters.getParameter(CSVExportParameters.peakLists).getValue().getMatchingPeakLists();
     fileName = parameters.getParameter(CSVExportParameters.filename).getValue();
@@ -63,6 +69,15 @@ class CSVExportTask extends AbstractTask {
     dataFileElements = parameters.getParameter(CSVExportParameters.exportDataFileItems).getValue();
     exportAllPeakInfo = parameters.getParameter(CSVExportParameters.exportAllPeakInfo).getValue();
     idSeparator = parameters.getParameter(CSVExportParameters.idSeparator).getValue();
+
+    // if best annotation and best annotation plus support was selected - deselect
+    List<ExportRowCommonElement> list = Lists.newArrayList(commonElements);
+
+    if (list.contains(ExportRowCommonElement.ROW_BEST_ANNOTATION)
+        && list.contains(ExportRowCommonElement.ROW_BEST_ANNOTATION_AND_SUPPORT)) {
+      list.remove(ExportRowCommonElement.ROW_BEST_ANNOTATION);
+      commonElements = list.toArray(new ExportRowCommonElement[list.size()]);
+    }
   }
 
   @Override
@@ -143,6 +158,7 @@ class CSVExportTask extends AbstractTask {
   }
 
   private void exportPeakList(PeakList peakList, FileWriter writer, File fileName) {
+    NumberFormat mzForm = MZmineCore.getConfiguration().getMZFormat();
     RawDataFile rawDataFiles[] = peakList.getRawDataFiles();
 
     // Buffer for writing
@@ -154,10 +170,13 @@ class CSVExportTask extends AbstractTask {
     int length = commonElements.length;
     String name;
     for (int i = 0; i < length; i++) {
-      if (commonElements[i].equals(ExportRowCommonElement.ROW_BEST_ANNOTATION)) {
-        line.append("best annotation" + fieldSeparator);
+      if (commonElements[i].equals(ExportRowCommonElement.ROW_BEST_ANNOTATION_AND_SUPPORT)) {
+        line.append("best ion" + fieldSeparator);
+        line.append("auto MS2 verify" + fieldSeparator);
         line.append("identified by n=" + fieldSeparator);
-        line.append("auto MS² verify" + fieldSeparator);
+        line.append("partners" + fieldSeparator);
+      } else if (commonElements[i].equals(ExportRowCommonElement.ROW_BEST_ANNOTATION)) {
+        line.append("best ion" + fieldSeparator);
       } else {
         name = commonElements[i].toString();
         name = name.replace("Export ", "");
@@ -279,6 +298,15 @@ class CSVExportTask extends AbstractTask {
             line.append((id == -1 ? "" : id) + fieldSeparator);
             break;
           case ROW_BEST_ANNOTATION:
+            ESIAdductIdentity adduct =
+                MSAnnotationNetworkLogic.getMostLikelyAnnotation(peakListRow, true);
+            if (adduct == null)
+              line.append(fieldSeparator);
+            else {
+              line.append(adduct.getA().toString(false) + fieldSeparator);
+            }
+            break;
+          case ROW_BEST_ANNOTATION_AND_SUPPORT:
             ESIAdductIdentity ad =
                 MSAnnotationNetworkLogic.getMostLikelyAnnotation(peakListRow, true);
             if (ad == null)
@@ -289,8 +317,12 @@ class CSVExportTask extends AbstractTask {
                 msms = "MS/MS verified: nloss";
               if (ad.getMSMSMultimerCount() > 0)
                 msms += msms.isEmpty() ? "MS/MS verified: xmer" : ", xmer";
-              line.append(ad.getA().toString(false) + fieldSeparator + ad.getPartnerRowsID().length
-                  + fieldSeparator + msms + fieldSeparator);
+              String partners =
+                  StringUtils.join(ArrayUtils.toObject(ad.getPartnerRowsID()), idSeparator);
+              line.append(ad.getA().toString(false) + fieldSeparator //
+                  + msms + fieldSeparator //
+                  + ad.getPartnerRowsID().length + fieldSeparator //
+                  + partners + fieldSeparator);
             }
             break;
           case ROW_MOL_NETWORK_ID:
@@ -302,9 +334,8 @@ class CSVExportTask extends AbstractTask {
           case ROW_NEUTRAL_MASS:
             ESIAdductIdentity ad3 =
                 MSAnnotationNetworkLogic.getMostLikelyAnnotation(peakListRow, true);
-            line.append(
-                (ad3 == null || ad3.getNetwork() == null ? "" : ad3.getNetwork().calcNeutralMass())
-                    + fieldSeparator);
+            line.append((ad3 == null || ad3.getNetwork() == null ? ""
+                : mzForm.format(ad3.getNetwork().calcNeutralMass())) + fieldSeparator);
             break;
         }
       }

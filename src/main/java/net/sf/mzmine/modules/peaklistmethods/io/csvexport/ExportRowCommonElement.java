@@ -31,6 +31,7 @@ public enum ExportRowCommonElement {
   ROW_CORR_GROUP_ID("Export correlation group ID"), //
   ROW_MOL_NETWORK_ID("Export annotation network number"), //
   ROW_BEST_ANNOTATION("Export best ion annotation"), //
+  ROW_BEST_ANNOTATION_AND_SUPPORT("Export best ion annotation (+support)"), //
   ROW_NEUTRAL_MASS("Export neutral M mass");
 
   private final String name;
