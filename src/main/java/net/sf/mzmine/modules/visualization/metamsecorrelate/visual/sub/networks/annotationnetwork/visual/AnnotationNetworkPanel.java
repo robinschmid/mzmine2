@@ -12,6 +12,7 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.framework.networks.NetworkPanel;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.AnnotationNetwork;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.util.PeakListRowSorter;
@@ -89,6 +90,8 @@ public class AnnotationNetworkPanel extends NetworkPanel {
       for (Node node : graph) {
         if (node.getId().startsWith("M ("))
           node.addAttribute("ui.class", "MOL");
+        if (node.getId().equals("NEUTRAL LOSSES"))
+          node.addAttribute("ui.class", "NEUTRAL");
 
         node.addAttribute("ui.label", node.getId());
       }
@@ -101,11 +104,23 @@ public class AnnotationNetworkPanel extends NetworkPanel {
   private void addNetworkToGraph(PeakListRow[] rows, AnnotationNetwork net, AtomicInteger added) {
     String mnode = MessageFormat.format("M (m={0} Da) Net{1} corrID={2}",
         mzForm.format(net.getNeutralMass()), net.getID(), net.getCorrID());
+
+    String neutralNode = "NEUTRAL LOSSES";
     // add center neutral M
-    net.entrySet().stream().filter(e -> e.getValue().getA().getAbsCharge() > 0).forEach(e -> {
-      String node = toNodeName(e.getKey(), e.getValue());
-      addNewEdge(mnode, node, Math.abs(net.getNeutralMass() - e.getKey().getAverageMZ()));
-      added.incrementAndGet();
+    net.entrySet().stream().forEach(e -> {
+      if (!e.getValue().getA().equals(ESIAdductType.M_UNMODIFIED)) {
+        int charge = e.getValue().getA().getAbsCharge();
+        String node = toNodeName(e.getKey(), e.getValue());
+
+        if (charge > 0)
+          addNewEdge(mnode, node, Math.abs(net.getNeutralMass() - e.getKey().getAverageMZ()));
+        else {
+          // neutral
+          addNewEdge(neutralNode, node);
+          graph.getNode(node).setAttribute("ui.class", "NEUTRAL");
+        }
+        added.incrementAndGet();
+      }
     });
     // add all edges between ions
     net.entrySet().stream().forEach(e -> {
