@@ -1,14 +1,18 @@
 package net.sf.mzmine.modules.visualization.multimsms;
 
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -71,6 +75,21 @@ public class MultiMSMSWindow extends JFrame {
   // click marker in all of the group
   private boolean showCrosshair = true;
 
+
+  private JLabel lbRawIndex;
+  private JPanel pnTopMenu;
+  private JLabel lbRawName;
+  private JButton nextRaw, prevRaw;
+  private JCheckBox cbBestRaw;
+  private JCheckBox cbUseBestForMissingRaw;
+
+  private PeakListRow[] rows;
+  private RawDataFile raw;
+  private RawDataFile[] allRaw;
+  private boolean createMS1;
+  private int rawIndex;
+  private boolean useBestForMissingRaw;
+
   /**
    * Create the frame.
    */
@@ -82,11 +101,101 @@ public class MultiMSMSWindow extends JFrame {
     contentPane.setLayout(new BorderLayout(0, 0));
     setContentPane(contentPane);
 
+
+    pnTopMenu = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+    contentPane.add(pnTopMenu, BorderLayout.NORTH);
+    lbRawIndex = new JLabel("");
+    pnTopMenu.add(lbRawIndex);
+    lbRawName = new JLabel("");
+    pnTopMenu.add(lbRawName);
+
+    prevRaw = new JButton("<");
+    pnTopMenu.add(prevRaw);
+    prevRaw.addActionListener(e -> {
+      prevRaw();
+    });
+
+    nextRaw = new JButton(">");
+    pnTopMenu.add(nextRaw);
+    nextRaw.addActionListener(e -> {
+      nextRaw();
+    });
+
+    cbBestRaw = new JCheckBox("use best for each");
+    pnTopMenu.add(cbBestRaw);
+    cbBestRaw.addItemListener(e -> {
+      setAlwaysShowBest(cbBestRaw.isSelected());
+    });
+
+    cbUseBestForMissingRaw = new JCheckBox("use best missing raw");
+    pnTopMenu.add(cbUseBestForMissingRaw);
+    cbUseBestForMissingRaw.addItemListener(e -> {
+      setUseBestForMissing(cbUseBestForMissingRaw.isSelected());
+    });
+
+
     pnCharts = new JPanel();
     contentPane.add(pnCharts, BorderLayout.CENTER);
     pnCharts.setLayout(new GridLayout(0, 4));
 
+
     addMenu();
+  }
+
+  /**
+   * Show best for missing MSMS in raw (if not selected none is shown)
+   * 
+   * @param selected
+   */
+  public void setUseBestForMissing(boolean selected) {
+    useBestForMissingRaw = selected;
+    updateAllCharts();
+  }
+
+  private void nextRaw() {
+    if (allRaw == null)
+      return;
+    if (rawIndex < allRaw.length - 1) {
+      rawIndex++;
+      setRaw(allRaw[rawIndex], true);
+    }
+  }
+
+  private void prevRaw() {
+    if (allRaw == null)
+      return;
+    if (rawIndex > 0) {
+      rawIndex--;
+      setRaw(allRaw[rawIndex], true);
+    }
+  }
+
+  /**
+   * set raw data file and update
+   * 
+   * @param raw
+   */
+  public void setRaw(RawDataFile raw, boolean update) {
+    this.raw = raw;
+
+    this.rawIndex = 0;
+    if (raw != null) {
+      for (int i = 0; i < allRaw.length; i++) {
+        if (raw.equals(allRaw[i])) {
+          rawIndex = i;
+          break;
+        }
+      }
+    }
+
+    lbRawName.setText(raw == null ? "" : raw.getName());
+    lbRawIndex.setText("(" + rawIndex + ") ");
+    updateAllCharts();
+  }
+
+  public void setAlwaysShowBest(boolean alwaysShowBest) {
+    this.alwaysShowBest = alwaysShowBest;
+    updateAllCharts();
   }
 
   private void addMenu() {
@@ -125,7 +234,7 @@ public class MultiMSMSWindow extends JFrame {
         e -> setShowLegend(((JCheckBoxMenuItem) e.getSource()).isSelected()));
     addCheckBox(settings, "show title", showTitle,
         e -> setShowTitle(((JCheckBoxMenuItem) e.getSource()).isSelected()));
-    addCheckBox(settings, "show click marker", showCrosshair,
+    addCheckBox(settings, "show crosshair", showCrosshair,
         e -> setShowCrosshair(((JCheckBoxMenuItem) e.getSource()).isSelected()));;
 
 
@@ -182,10 +291,10 @@ public class MultiMSMSWindow extends JFrame {
    * @param sorting
    * @param direction
    */
-  public void setData(PeakListRow[] rows, RawDataFile raw, boolean createMS1,
+  public void setData(PeakListRow[] rows, RawDataFile[] allRaw, RawDataFile raw, boolean createMS1,
       SortingProperty sorting, SortingDirection direction) {
     Arrays.sort(rows, new PeakListRowSorter(sorting, direction));
-    setData(rows, raw, createMS1);
+    setData(rows, allRaw, raw, createMS1);
   }
 
   /**
@@ -194,11 +303,21 @@ public class MultiMSMSWindow extends JFrame {
    * @param rows
    * @param raw
    */
-  public void setData(PeakListRow[] rows, RawDataFile raw, boolean createMS1) {
-    // use raw?
-    if (alwaysShowBest)
-      raw = null;
+  public void setData(PeakListRow[] rows, RawDataFile[] allRaw, RawDataFile raw,
+      boolean createMS1) {
+    this.rows = rows;
+    this.allRaw = allRaw;
+    this.createMS1 = createMS1;
+    // set raw and not update
+    setRaw(raw, false);
 
+    updateAllCharts();
+  }
+
+  /**
+   * Create new charts
+   */
+  public void updateAllCharts() {
     msone = null;
     group = new ChartGroup(showCrosshair, showCrosshair, true, false);
     // MS1
@@ -217,13 +336,24 @@ public class MultiMSMSWindow extends JFrame {
         if (cp != null)
           msone = new ChartViewWrapper(cp);
       }
+    } else {
+      // pseudo MS1 from all rows and isotope pattern
+      EChartPanel cp = PseudoSpectrum.createChartPanel(rows, raw, false, "pseudo");
+      if (cp != null) {
+        cp.getChart().getLegend().setVisible(showLegend);
+        cp.getChart().getTitle().setVisible(showTitle);
+        msone = new ChartViewWrapper(cp);
+      }
     }
+
     if (msone != null)
       group.add(msone);
 
+    // COMMON
     // MS2 of all rows
     for (PeakListRow row : rows) {
-      EChartPanel c = SpectrumChartFactory.createMSMSChartPanel(row, raw, showTitle, showLegend);
+      EChartPanel c = SpectrumChartFactory.createMSMSChartPanel(row, raw, showTitle, showLegend,
+          alwaysShowBest, useBestForMissingRaw);
       if (c != null) {
         group.add(new ChartViewWrapper(c));
       }
@@ -234,7 +364,6 @@ public class MultiMSMSWindow extends JFrame {
 
     renewCharts(group);
   }
-
 
   /**
    * Adds all MS1 and MSMS annotations to all charts
@@ -252,7 +381,7 @@ public class MultiMSMSWindow extends JFrame {
       if (best == null)
         continue;
 
-      Scan scan = SpectrumChartFactory.getMSMSScan(row, raw);
+      Scan scan = SpectrumChartFactory.getMSMSScan(row, raw, alwaysShowBest, useBestForMissingRaw);
       double precursorMZ = row.getPeak(scan.getDataFile()).getMZ();
       // add ms1 adduct annotation
       addMSMSAnnotation(
@@ -266,63 +395,15 @@ public class MultiMSMSWindow extends JFrame {
   }
 
   /**
-   * Sort rows
-   * 
-   * @param rows
-   * @param raw
-   * @param sorting
-   * @param direction
-   */
-  public void setDataAndCreatePseudoMS1(PeakListRow[] rows, RawDataFile raw,
-      SortingProperty sorting, SortingDirection direction) {
-    Arrays.sort(rows, new PeakListRowSorter(sorting, direction));
-    setDataAndCreatePseudoMS1(rows, raw);
-  }
-
-  /**
-   * Create charts and show
-   * 
-   * @param rows
-   * @param raw
-   */
-  public void setDataAndCreatePseudoMS1(PeakListRow[] rows, RawDataFile raw) {
-    // use raw?
-    if (alwaysShowBest)
-      raw = null;
-
-    msone = null;
-    group = new ChartGroup(showCrosshair, showCrosshair, true, false);
-    // MS1
-    EChartPanel cp = PseudoSpectrum.createChartPanel(rows, raw, false, "pseudo");
-    if (cp != null) {
-      cp.getChart().getLegend().setVisible(showLegend);
-      cp.getChart().getTitle().setVisible(showTitle);
-      msone = new ChartViewWrapper(cp);
-    }
-    if (msone != null)
-      group.add(msone);
-
-    // MS2 of all rows
-    for (PeakListRow row : rows) {
-      EChartPanel c = SpectrumChartFactory.createMSMSChartPanel(row, raw, showTitle, false);
-      if (c != null) {
-        group.add(new ChartViewWrapper(c));
-      }
-    }
-    // add all MSMS annotations
-    addAllMSMSAnnotations(rows, raw);
-
-    renewCharts(group);
-  }
-
-  /**
    * 
    * @param group
    */
   public void renewCharts(ChartGroup group) {
     pnCharts.removeAll();
     if (group != null && group.size() > 0) {
-      realCol = autoCol ? (int) Math.ceil(Math.sqrt(group.size())) : col;
+      realCol = autoCol ? (int) Math.floor(Math.sqrt(group.size())) - 1 : col;
+      if (realCol < 1)
+        realCol = 1;
       GridLayout layout = new GridLayout(0, realCol);
       pnCharts.setLayout(layout);
       // add to layout

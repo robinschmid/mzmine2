@@ -641,7 +641,7 @@ public class MSEcorrGroupWindow extends JFrame {
       // MSMS window
       if (msmsWindow.isVisible()) {
         PKLRowGroup g = peakList.getLastViewedGroup();
-        msmsWindow.setDataAndCreatePseudoMS1(g.toArray(new PeakListRow[0]), null,
+        msmsWindow.setData(g.toArray(new PeakListRow[0]), peakList.getRawDataFiles(), null, false,
             SortingProperty.MZ, SortingDirection.Ascending);
       }
     }

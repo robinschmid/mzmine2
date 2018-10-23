@@ -26,13 +26,17 @@ import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.pseudospe
 
 public class SpectrumChartFactory {
 
-  public static Scan getMSMSScan(PeakListRow row, RawDataFile raw) {
+  public static Scan getMSMSScan(PeakListRow row, RawDataFile raw, boolean alwaysShowBest,
+      boolean useBestForMissingRaw) {
     Scan scan = null;
-    if (raw != null) {
+    if (alwaysShowBest || raw == null) {
+      scan = row.getBestFragmentation();
+    } else if (raw != null) {
       Feature peak = row.getPeak(raw);
       if (peak != null)
         scan = raw.getScan(peak.getMostIntenseFragmentScanNumber());
-    } else
+    }
+    if (scan == null && useBestForMissingRaw)
       scan = row.getBestFragmentation();
     return scan;
   }
@@ -105,11 +109,13 @@ public class SpectrumChartFactory {
    * @param raw
    * @param showTitle
    * @param showLegend
+   * @param useBestForMissingRaw
+   * @param alwaysShowBest
    * @return
    */
   public static EChartPanel createMSMSChartPanel(PeakListRow row, RawDataFile raw,
-      boolean showTitle, boolean showLegend) {
-    Scan scan = getMSMSScan(row, raw);
+      boolean showTitle, boolean showLegend, boolean alwaysShowBest, boolean useBestForMissingRaw) {
+    Scan scan = getMSMSScan(row, raw, alwaysShowBest, useBestForMissingRaw);
     if (scan == null)
       return null;
     JFreeChart chart = createChart(scan, showTitle, showLegend);
