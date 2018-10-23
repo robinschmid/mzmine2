@@ -276,7 +276,9 @@ public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
 
   public void recalcConnections() {
     for (Entry<PeakListRow, ESIAdductIdentity> a : entrySet()) {
-      a.getValue().resetLinks();
+      ESIAdductIdentity adduct = a.getValue();
+      if (adduct.getA().getAbsCharge() > 0)
+        adduct.resetLinks();
     }
 
     // add all links
