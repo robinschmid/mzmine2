@@ -138,7 +138,7 @@ public class GNPSExportTask extends AbstractTask {
 
     for (PeakListRow row : peakList.getRows()) {
       String rowID = Integer.toString(row.getID());
-      String retTimeInSeconds = Double.toString(Math.round(row.getAverageRT() * 60 * 100) / 100.);
+      double retTimeInSeconds = ((row.getAverageRT() * 60 * 100.0) / 100.);
 
       // find ion species by annotation (can be null)
       String ion = findIonAnnotation(peakList, row);
