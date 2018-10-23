@@ -197,11 +197,13 @@ public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
   public void addAllLinksTo(PeakListRow row, ESIAdductIdentity pid) {
     double nmass = pid.getA().getMass(row.getAverageMZ());
     this.entrySet().stream().forEach(e -> {
-      double pmass = getMass(e);
-      if (mzTolerance.checkWithinTolerance(pmass, nmass)) {
-        // add to both
-        pid.addPartnerRow(e.getKey());
-        e.getValue().addPartnerRow(row);
+      if (e.getKey().getID() != row.getID()) {
+        double pmass = getMass(e);
+        if (mzTolerance.checkWithinTolerance(pmass, nmass)) {
+          // add to both
+          pid.addPartnerRow(e.getKey());
+          e.getValue().addPartnerRow(row);
+        }
       }
     });
   }
@@ -283,7 +285,9 @@ public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
 
     // add all links
     for (Entry<PeakListRow, ESIAdductIdentity> a : entrySet()) {
-      addAllLinksTo(a.getKey(), a.getValue());
+      ESIAdductIdentity adduct = a.getValue();
+      if (adduct.getA().getAbsCharge() > 0)
+        addAllLinksTo(a.getKey(), adduct);
     }
   }
 }
