@@ -256,4 +256,15 @@ public class PKLRowGroup extends ArrayList<PeakListRow> {
     else
       return null;
   }
+
+  /**
+   * 
+   * @param row
+   * @return id or -1
+   */
+  public static int idFrom(PeakListRow row) {
+    PKLRowGroup g = PKLRowGroup.from(row);
+    return g != null ? g.getGroupID() : -1;
+  }
+
 }

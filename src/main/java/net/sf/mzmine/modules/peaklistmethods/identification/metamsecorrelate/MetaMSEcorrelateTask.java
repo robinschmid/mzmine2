@@ -295,7 +295,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
           // create networks
           LOG.info("Corr: create annotation network numbers");
           List<AnnotationNetwork> nets = MSAnnotationNetworkLogic
-              .createAnnotationNetworks(groupedPKL, library.getMzTolerance());
+              .createAnnotationNetworks(groupedPKL, library.getMzTolerance(), true);
 
           // refinement of adducts
           // do MSMS check for multimers
@@ -306,8 +306,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
           }
 
           // refinement
-          LOG.info("Corr: Refine annotations");
           if (performAnnotationRefinement) {
+            LOG.info("Corr: Refine annotations");
             AnnotationRefinementTask ref =
                 new AnnotationRefinementTask(project, refineParam, groupedPKL);
             ref.refine();
@@ -392,52 +392,54 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     AtomicInteger compared = new AtomicInteger(0);
 
     IntStream.range(0, rows.length - 1).parallel().forEach(i -> {
-      try {
-        PeakListRow row = rows[i];
-        // has a minimum number/% of features in all samples / in at least one groups
-        if (!useMinFInSamplesFilter || minFFilter.filterMinFeatures(raw, row)) {
-          for (int x = i + 1; x < totalRows; x++) {
-            if (isCanceled())
-              break;
+      if (!isCanceled()) {
+        try {
+          PeakListRow row = rows[i];
+          // has a minimum number/% of features in all samples / in at least one groups
+          if (!useMinFInSamplesFilter || minFFilter.filterMinFeatures(raw, row)) {
+            for (int x = i + 1; x < totalRows; x++) {
+              if (isCanceled())
+                break;
 
-            PeakListRow row2 = rows[x];
-            // has a minimum number/% of overlapping features in all samples / in at least one
-            // groups
-            // or check RTRange
-            if ((useMinFInSamplesFilter
-                && minFFilter.filterMinFeaturesOverlap(raw, row, row2, rtTolerance))
-                || (!useMinFInSamplesFilter
-                    && checkRTRange(raw, row, row2, noiseLevelShapeCorr, rtTolerance))) {
-              // correlate if in rt range
-              R2RCorrelationData corr = corrR2R(raw, row, row2, minDPMaxICorr,
-                  minCorrelatedDataPoints, noiseLevelShapeCorr);
-              if (corr != null) {
-                // deletes correlations if criteria is not met
-                corr.validate(minMaxICorr, minShapeCorrR);
-                // check for correlation in min samples
-                if (useMinFInSamplesFilter && corr.hasFeatureShapeCorrelation())
-                  checkMinFCorrelation(minFFilter, corr);
-                // still valid?
-                if (corr.isValid())
-                  map.add(row, row2, corr);
-              }
+              PeakListRow row2 = rows[x];
+              // has a minimum number/% of overlapping features in all samples / in at least one
+              // groups
+              // or check RTRange
+              if ((useMinFInSamplesFilter
+                  && minFFilter.filterMinFeaturesOverlap(raw, row, row2, rtTolerance))
+                  || (!useMinFInSamplesFilter
+                      && checkRTRange(raw, row, row2, noiseLevelShapeCorr, rtTolerance))) {
+                // correlate if in rt range
+                R2RCorrelationData corr = corrR2R(raw, row, row2, minDPMaxICorr,
+                    minCorrelatedDataPoints, noiseLevelShapeCorr);
+                if (corr != null) {
+                  // deletes correlations if criteria is not met
+                  corr.validate(minMaxICorr, minShapeCorrR);
+                  // check for correlation in min samples
+                  if (useMinFInSamplesFilter && corr.hasFeatureShapeCorrelation())
+                    checkMinFCorrelation(minFFilter, corr);
+                  // still valid?
+                  if (corr.isValid())
+                    map.add(row, row2, corr);
+                }
 
-              // search directly? or search later in corr group?
-              if (searchAdducts && !annotateOnlyCorrelated) {
-                compared.incrementAndGet();
-                // check for adducts in library
-                ESIAdductType[] id =
-                    library.findAdducts(peakList, row, row2, adductCheckMode, minAdductHeight);
-                if (id != null)
-                  annotPairs.incrementAndGet();
+                // search directly? or search later in corr group?
+                if (searchAdducts && !annotateOnlyCorrelated) {
+                  compared.incrementAndGet();
+                  // check for adducts in library
+                  ESIAdductType[] id =
+                      library.findAdducts(peakList, row, row2, adductCheckMode, minAdductHeight);
+                  if (id != null)
+                    annotPairs.incrementAndGet();
+                }
               }
             }
           }
+          stageProgress.addAndGet(1d / totalRows);
+        } catch (Exception e) {
+          LOG.log(Level.SEVERE, "Error in parallel R2Rcomparison", e);
+          throw new MSDKRuntimeException(e);
         }
-        stageProgress.addAndGet(1d / totalRows);
-      } catch (Exception e) {
-        LOG.log(Level.SEVERE, "Error in parallel R2Rcomparison", e);
-        throw new MSDKRuntimeException(e);
       }
     });
 

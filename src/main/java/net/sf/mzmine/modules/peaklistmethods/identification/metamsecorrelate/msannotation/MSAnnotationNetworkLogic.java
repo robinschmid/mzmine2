@@ -206,12 +206,14 @@ public class MSAnnotationNetworkLogic {
   /**
    * Create list of AnnotationNetworks and set net ID
    * 
+   * @param groups
+   * 
    * @param rows
    * @return
    */
   public static List<AnnotationNetwork> createAnnotationNetworks(PeakList pkl,
-      MZTolerance mzTolerance) {
-    return createAnnotationNetworks(pkl.getRows(), mzTolerance);
+      MZTolerance mzTolerance, boolean useGrouping) {
+    return createAnnotationNetworks(pkl.getRows(), mzTolerance, useGrouping);
   }
 
   /**
@@ -266,10 +268,15 @@ public class MSAnnotationNetworkLogic {
    * @return
    */
   public static List<AnnotationNetwork> createAnnotationNetworks(PeakListRow[] rows,
-      MZTolerance mzTolerance) {
+      MZTolerance mzTolerance, boolean useGrouping) {
 
     // bin neutral masses to annotation networks
     List<AnnotationNetwork> nets = new ArrayList<>(binNeutralMassToNetworks(rows, mzTolerance));
+
+    // split by groups
+    if (useGrouping) {
+      splitByGroups(nets);
+    }
 
     // add network to all identities
     setNetworksToAllAnnotations(nets);
@@ -278,9 +285,60 @@ public class MSAnnotationNetworkLogic {
     // they might be if [M+H2O+X]+ was also annotated by another link
     fillInNeutralLosses(rows, nets, mzTolerance);
 
+    resetNetworkIDs(nets);
     return nets;
   }
 
+
+  public static void resetNetworkIDs(List<AnnotationNetwork> nets) {
+    for (int i = 0; i < nets.size(); i++) {
+      nets.get(i).setID(i);
+    }
+  }
+
+  /**
+   * Need to reset networks to annotations afterwards
+   * 
+   * @param nets
+   */
+  private static void splitByGroups(List<AnnotationNetwork> nets) {
+    int size = nets.size();
+    for (int i = 0; i < size; i++) {
+      AnnotationNetwork net = nets.get(i);
+      if (!net.allSameCorrGroup()) {
+        nets.addAll(splitByGroup(net));
+        nets.remove(i);
+        i--;
+        size--;
+      }
+    }
+  }
+
+  /**
+   * Split network into correlation groups. need to reset network to ids afterwards
+   * 
+   * @param net
+   * @return
+   */
+  private static Collection<AnnotationNetwork> splitByGroup(AnnotationNetwork net) {
+    Map<Integer, AnnotationNetwork> map = new HashMap<>();
+    for (Entry<PeakListRow, ESIAdductIdentity> e : net.entrySet()) {
+      Integer id = PKLRowGroup.idFrom(e.getKey());
+      if (id != -1) {
+        AnnotationNetwork nnet = map.get(id);
+        if (nnet == null) {
+          // new network for group
+          nnet = new AnnotationNetwork(net.getMZTolerance(), -1);
+          map.put(id, nnet);
+        }
+        nnet.put(e.getKey(), e.getValue());
+      } else {
+        // delete id if no corr group
+        e.getValue().delete(e.getKey());
+      }
+    }
+    return map.values();
+  }
 
   /**
    * fill in neutral losses [M-H2O] is not iserted yet. they might be if [M+H2O+X]+ was also

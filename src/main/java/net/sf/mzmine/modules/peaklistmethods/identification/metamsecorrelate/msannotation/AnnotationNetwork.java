@@ -2,6 +2,7 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.ms
 
 import java.util.HashMap;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
@@ -14,7 +15,7 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
  */
 public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
   private MZTolerance mzTolerance;
-  private final int id;
+  private int id;
   private Double neutralMass = null;
   // maximum deviation from neutral mass average
   private Double maxDev = null;
@@ -235,5 +236,41 @@ public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
   public boolean hasSmallestID(int id) {
     return keySet().stream().anyMatch(r -> r.getID() == id)
         && !keySet().stream().anyMatch(r -> r.getID() < id);
+  }
+
+  /**
+   * Correlation group id (if existing) is always the one of the first entry
+   * 
+   * @return correlation group id or -1
+   */
+  public int getCorrID() {
+    if (isEmpty())
+      return -1;
+    return PKLRowGroup.idFrom(keySet().iterator().next());
+  }
+
+  /**
+   * Checks if all entries are in the same correlation group
+   * 
+   * @return correlation group id or -1
+   */
+  public boolean allSameCorrGroup() {
+    if (isEmpty())
+      return true;
+    int cid = getCorrID();
+    for (PeakListRow r : keySet()) {
+      if (PKLRowGroup.idFrom(r) != cid)
+        return false;
+    }
+    return true;
+  }
+
+  public MZTolerance getMZTolerance() {
+    return mzTolerance;
+  }
+
+  public void setID(int i) {
+    id = i;
+    setNetworkToAllRows();
   }
 }
