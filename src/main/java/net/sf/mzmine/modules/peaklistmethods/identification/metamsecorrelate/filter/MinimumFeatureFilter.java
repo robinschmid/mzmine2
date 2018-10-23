@@ -24,13 +24,19 @@ public class MinimumFeatureFilter {
   private HashMap<String, Integer> sgroupSize;
   private boolean filterGroups = false;
   private MZmineProject project;
+  // percent of intensity of the smaller to overlap the larger feature
+  private double minIPercOverlap;
+  // do not accept that feature in one raw file is out of rtRange or minIPercOverlap
+  private boolean strictRules = true;
 
 
   public MinimumFeatureFilter(AbsoluteNRelativeInt minFInSamples, AbsoluteNRelativeInt minFInGroups,
-      double minFeatureHeight) {
+      double minFeatureHeight, double minIPercOverlap, boolean strictRules) {
     this.minFInSamples = minFInSamples;
     this.minFInGroups = minFInGroups;
     this.minFeatureHeight = minFeatureHeight;
+    this.minIPercOverlap = minIPercOverlap;
+    this.strictRules = strictRules;
   }
 
   /**
@@ -45,8 +51,8 @@ public class MinimumFeatureFilter {
    */
   public MinimumFeatureFilter(MZmineProject project, RawDataFile[] raw, String groupParam,
       AbsoluteNRelativeInt minFInSamples, AbsoluteNRelativeInt minFInGroups,
-      double minFeatureHeight) {
-    this(minFInSamples, minFInGroups, minFeatureHeight);
+      double minFeatureHeight, double minIPercOverlap, boolean strictRules) {
+    this(minFInSamples, minFInGroups, minFeatureHeight, minIPercOverlap, strictRules);
     this.project = project;
     setSampleGroups(project, raw, groupParam);
   }
@@ -146,10 +152,14 @@ public class MinimumFeatureFilter {
       for (RawDataFile file : raw) {
         Feature a = row.getPeak(file);
         Feature b = row2.getPeak(file);
-        if (a != null && a.getHeight() >= minFeatureHeight && b != null
-            && b.getHeight() >= minFeatureHeight
-            && (rtTolerance == null || rtTolerance.checkWithinTolerance(a.getRT(), b.getRT()))) {
-          n++;
+        if (checkHeight(a, b)) {
+          if (checkRTTol(rtTolerance, a, b)
+              && checkIntensityOverlap(a, b, minIPercOverlap, minFeatureHeight)) {
+            n++;
+          } else {
+            if (strictRules)
+              return false;
+          }
         }
       }
       // stop if <n
@@ -167,17 +177,21 @@ public class MinimumFeatureFilter {
     for (RawDataFile file : raw) {
       Feature a = row.getPeak(file);
       Feature b = row2.getPeak(file);
-      if (a != null && a.getHeight() >= minFeatureHeight && b != null
-          && b.getHeight() >= minFeatureHeight
-          && (rtTolerance == null || rtTolerance.checkWithinTolerance(a.getRT(), b.getRT()))) {
-        String sgroup = sgroupOf(file);
+      if (checkHeight(a, b)) {
+        if (checkRTTol(rtTolerance, a, b)
+            && checkIntensityOverlap(a, b, minIPercOverlap, minFeatureHeight)) {
+          String sgroup = sgroupOf(file);
 
-        MutableInt count = counter.get(sgroup);
-        if (count == null) {
-          // new counter with total N for group size
-          counter.put(sgroup, new MutableInt(sgroupSize.get(sgroup)));
+          MutableInt count = counter.get(sgroup);
+          if (count == null) {
+            // new counter with total N for group size
+            counter.put(sgroup, new MutableInt(sgroupSize.get(sgroup)));
+          } else {
+            count.increment();
+          }
         } else {
-          count.increment();
+          if (strictRules)
+            return false;
         }
       }
     }
@@ -192,6 +206,66 @@ public class MinimumFeatureFilter {
     return false;
   }
 
+
+  private boolean checkRTTol(RTTolerance rtTolerance, Feature a, Feature b) {
+    return (rtTolerance == null || rtTolerance.checkWithinTolerance(a.getRT(), b.getRT()));
+  }
+
+  private boolean checkHeight(Feature a, Feature b) {
+    return a != null && a.getHeight() >= minFeatureHeight && b != null
+        && b.getHeight() >= minFeatureHeight;
+  }
+
+  /**
+   * Intensity overlap
+   * 
+   * @param a
+   * @param b
+   * @param minIPercOverlap
+   * @param minHeight
+   * @return
+   */
+  public boolean checkIntensityOverlap(Feature a, Feature b, double minIPercOverlap,
+      double minHeight) {
+    if (minIPercOverlap < 0.00001)
+      return true;
+    // check more
+    Feature small = a;
+    Feature big = b;
+    if (a.getHeight() > b.getHeight()) {
+      small = b;
+      big = a;
+    }
+    if (big.getRawDataPointsRTRange().encloses(small.getRawDataPointsRTRange()))
+      return true;
+
+    double start = 0, end = 0;
+    // at 5% height
+    for (int sn : big.getScanNumbers()) {
+      double intensity = big.getDataPoint(sn).getIntensity();
+      if (intensity >= big.getHeight() * 0.05 || intensity >= minHeight) {
+        if (start == 0)
+          start = big.getDataFile().getScan(sn).getRetentionTime();
+        else
+          end = big.getDataFile().getScan(sn).getRetentionTime();
+      }
+    }
+    // check smaller
+    double overlap = 0, sum = 0;
+    for (int sn : small.getScanNumbers()) {
+      double rt = small.getDataFile().getScan(sn).getRetentionTime();
+      double intensity = small.getDataPoint(sn).getIntensity();
+
+      if (rt >= start && rt <= end) {
+        overlap += intensity;
+      }
+      sum += intensity;
+    }
+
+    if (overlap == 0)
+      return false;
+    return (overlap / sum) >= minIPercOverlap;
+  }
 
   /**
    * Checks for any other algorithm.

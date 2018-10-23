@@ -26,9 +26,11 @@ import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.UserParameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
+import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
+import net.sf.mzmine.parameters.parametertypes.PercentParameter;
 import net.sf.mzmine.parameters.parametertypes.absrel.AbsoluteNRelativeInt;
 import net.sf.mzmine.parameters.parametertypes.absrel.AbsoluteNRelativeInt.Mode;
 import net.sf.mzmine.parameters.parametertypes.absrel.AbsoluteNRelativeIntParameter;
@@ -70,6 +72,18 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
   public static final DoubleParameter MIN_HEIGHT =
       new DoubleParameter("Min height", "Minimum height to recognize a feature");
 
+  public static final PercentParameter MIN_INTENSITY_OVERLAP = new PercentParameter(
+      "Min %-intensity overlap",
+      "The smaller feature has to overlap with at least X% of its intensity with the other feature",
+      0.6);
+
+  /**
+   * do not accept one feature out of RTTolerance or minPercOverlap
+   */
+  public static final BooleanParameter STRICT_RULES = new BooleanParameter("Strict rules",
+      "Do not allow one feature to be out of RTTolerance or minimum intensity overlap, when testing overlap of features.",
+      true);
+
   /**
    * 
    */
@@ -83,9 +97,11 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
    * @param isSub
    */
   public MinimumFeaturesFilterParameters(boolean isSub) {
-    super(isSub ? new Parameter[] {MIN_HEIGHT, MIN_SAMPLES_ALL, MIN_SAMPLES_GROUP}
+    super(isSub
+        ? new Parameter[] {MIN_HEIGHT, MIN_SAMPLES_ALL, MIN_SAMPLES_GROUP, MIN_INTENSITY_OVERLAP,
+            STRICT_RULES}
         : new Parameter[] {GROUPSPARAMETER, RT_TOLERANCE, MIN_HEIGHT, MIN_SAMPLES_ALL,
-            MIN_SAMPLES_GROUP});
+            MIN_SAMPLES_GROUP, MIN_INTENSITY_OVERLAP, STRICT_RULES});
     this.isSub = isSub;
   }
 
@@ -103,8 +119,10 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
     AbsoluteNRelativeInt minFInSamples = this.getParameter(MIN_SAMPLES_ALL).getValue();
     AbsoluteNRelativeInt minFInGroups = this.getParameter(MIN_SAMPLES_GROUP).getValue();
     double minFeatureHeight = this.getParameter(MIN_HEIGHT).getValue();
+    double minIPercOverlap = this.getParameter(MIN_INTENSITY_OVERLAP).getValue();
+    boolean strict = this.getParameter(STRICT_RULES).getValue();
     return new MinimumFeatureFilter(project, rawDataFiles, groupingParameter, minFInSamples,
-        minFInGroups, minFeatureHeight);
+        minFInGroups, minFeatureHeight, minIPercOverlap, strict);
   }
 
   /**
@@ -116,7 +134,10 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
     AbsoluteNRelativeInt minFInSamples = this.getParameter(MIN_SAMPLES_ALL).getValue();
     AbsoluteNRelativeInt minFInGroups = this.getParameter(MIN_SAMPLES_GROUP).getValue();
     double minFeatureHeight = this.getParameter(MIN_HEIGHT).getValue();
-    return new MinimumFeatureFilter(minFInSamples, minFInGroups, minFeatureHeight);
+    double minIPercOverlap = this.getParameter(MIN_INTENSITY_OVERLAP).getValue();
+    boolean strict = this.getParameter(STRICT_RULES).getValue();
+    return new MinimumFeatureFilter(minFInSamples, minFInGroups, minFeatureHeight, minIPercOverlap,
+        strict);
   }
 
 
