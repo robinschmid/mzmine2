@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import org.apache.commons.math3.special.Erf;
@@ -36,7 +37,6 @@ import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
@@ -297,7 +297,7 @@ public class SiriusExportTask extends AbstractTask {
     this.progress = 0d;
     setStatus(TaskStatus.PROCESSING);
     try (final BufferedWriter bw = new BufferedWriter(new FileWriter(fileName, true))) {
-      exportPeakListRow(peakList, row, bw, getFragmentScans(row.getRawDataFiles()));
+      exportPeakListRow(row, bw, getFragmentScans(row.getRawDataFiles()));
     } catch (IOException e) {
       setStatus(TaskStatus.ERROR);
       setErrorMessage("Could not open file " + fileName + " for writing.");
@@ -325,9 +325,10 @@ public class SiriusExportTask extends AbstractTask {
       boolean fitMol = !excludeMultimers || adduct == null || adduct.getA().getMolecules() <= 1;
       boolean fitFragments = !excludeInsourceFrag || adduct == null || !adduct.getA().isFragment();
       if (fitAnnotation && fitCharge && fitMol && fitFragments) {
-        if (exportPeakListRow(peakList, row, writer, fragmentScans))
+        if (exportPeakListRow(row, writer, fragmentScans))
           exported++;
       }
+      progress++;
     }
 
     logger.info(
@@ -353,7 +354,7 @@ public class SiriusExportTask extends AbstractTask {
     return fragmentScans;
   }
 
-  private boolean exportPeakListRow(PeakList peakList, PeakListRow row, BufferedWriter writer,
+  private boolean exportPeakListRow(PeakListRow row, BufferedWriter writer,
       final HashMap<String, int[]> fragmentScans) throws IOException {
     if (isSkipRow(row))
       return false;
@@ -379,7 +380,7 @@ public class SiriusExportTask extends AbstractTask {
     // write correlation spectrum
     writeHeader(writer, row, row.getBestPeak().getDataFile(), polarity, MsType.CORRELATED, -1,
         msAnnotationsFlags);
-    writeCorrelationSpectrum(writer, peakList, row);
+    writeCorrelationSpectrum(writer, row);
 
     List<DataPoint[]> toMerge = new ArrayList<>();
     List<String> sources = new ArrayList<>();
@@ -432,7 +433,6 @@ public class SiriusExportTask extends AbstractTask {
           writeSpectrum(writer, merge(f.getMZ(), toMerge));
         }
       }
-      ++progress;
     }
     if (mergeMsMs == SiriusExportParameters.MERGE_MODE.MERGE_OVER_SAMPLES && toMerge.size() > 0) {
       writeHeader(writer, row, row.getBestPeak().getDataFile(), polarity, MsType.MSMS, null,
@@ -567,77 +567,74 @@ public class SiriusExportTask extends AbstractTask {
    * @param feature
    * @throws IOException
    */
-  private void writeCorrelationSpectrum(BufferedWriter writer, PeakList pkl, PeakListRow row)
+  private void writeCorrelationSpectrum(BufferedWriter writer, PeakListRow mainRow)
       throws IOException {
     /*
      * Grouped by metaMSEcorrelate Annotations by MS annotations in module
      */
-    boolean exported = false;
-    if (pkl != null && pkl instanceof MSEGroupedPeakList) {
-      MSEGroupedPeakList peakList = (MSEGroupedPeakList) pkl;
-      // get all rows in corr group
-      PKLRowGroup g = peakList.getGroup(row);
-      if (g != null && g.size() > 1) {
-        writeCorrelationSpectrum(writer, g);
-        exported = true;
+    // get all rows in corr group
+    PKLRowGroup g = PKLRowGroup.from(mainRow);
+    R2GroupCorrelationData corr = null;
+
+    if (g != null) {
+      // export correlation group
+      for (int i = 0; i < g.size(); ++i) {
+        PeakListRow row = g.get(i);
+        corr = g.getCorr(i);
+        exportCorrelatedRow(writer, row, corr, g, null);
       }
-    }
-    // export isotopes if failed
-    if (!exported) {
-      Feature feature = row.getBestPeak();
-      if (feature.getIsotopePattern() != null) {
-        writeSpectrum(writer, feature.getIsotopePattern().getDataPoints());
+    } else {
+      // export annotation network
+      ESIAdductIdentity id = MSAnnotationNetworkLogic.getMostLikelyAnnotation(mainRow, false);
+      AnnotationNetwork network = id == null ? null : id.getNetwork();
+      if (network != null) {
+        for (Entry<PeakListRow, ESIAdductIdentity> e : network.entrySet()) {
+          g = PKLRowGroup.from(e.getKey());
+          if (g != null)
+            corr = g.getCorr(e.getKey());
+          else
+            corr = null;
+          exportCorrelatedRow(writer, e.getKey(), null, null, e.getValue());
+        }
       } else {
-        // write nothing
-        writer.write(mzForm.format(feature.getMZ()));
-        writer.write(' ');
-        writer.write("100.0");
-        writer.newLine();
-        writer.write("END IONS");
-        writer.newLine();
-        writer.newLine();
+        // just export mainRow
+        exportCorrelatedRow(writer, mainRow, null, null, null);
       }
-    }
-  }
-
-  /**
-   * Export all grouped features and their isotope pattern. Export correlation and annotation
-   * 
-   * @param writer
-   * @param g
-   * @param map
-   * @throws IOException
-   */
-  private void writeCorrelationSpectrum(BufferedWriter writer, PKLRowGroup g) throws IOException {
-    for (int i = 0; i < g.size(); ++i) {
-      PeakListRow row = g.get(i);
-      R2GroupCorrelationData corr = g.getCorr(i);
-      double r = corr.getAvgPeakShapeR();
-      Feature best = row.getBestPeak();
-      ESIAdductIdentity id = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, g);
-
-      // TODO : best feature mz or avg?
-      // intensity?
-      writer.write(mzForm.format(row.getAverageMZ()));
-      writer.write(' ');
-      writer.write(intensityForm.format(best.getHeight()));
-      writer.write(' ');
-      writer.write(corrForm.format(r));
-      if (id != null) {
-        writer.write(' ');
-        writer.write(id.getAdduct());
-        // TODO added by Robin
-        // need to check if this is conform to the standards
-        writer.write(' ');
-        writer.write("by=" + id.getPartnerRowsID().length);
-      }
-      writer.newLine();
-      // export isotope pattern
-      writeCorrelationIsotopes(writer, row);
     }
     writer.write("END IONS");
     writer.newLine();
     writer.newLine();
+  }
+
+  private void exportCorrelatedRow(BufferedWriter writer, PeakListRow row,
+      R2GroupCorrelationData corr, PKLRowGroup g, ESIAdductIdentity adduct) throws IOException {
+    double r = corr == null ? 0 : corr.getAvgPeakShapeR();
+    Feature best = row.getBestPeak();
+    ESIAdductIdentity id = adduct;
+    if (adduct == null)
+      adduct = g != null ? MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, g)
+          : MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, true);
+    AnnotationNetwork network = id == null ? null : id.getNetwork();
+
+    // TODO : best feature mz or avg?
+    // intensity?
+    writer.write(mzForm.format(row.getAverageMZ()));
+    writer.write(" " + intensityForm.format(best.getHeight()));
+    writer.write(" " + corr == null ? "" : corrForm.format(r));
+    if (id != null) {
+      writer.write(" " + id.getAdduct());
+      // TODO added by Robin
+      // need to check if this is conform to the standards
+      writer.write(" by=" + id.getPartnerRowsID().length);
+      if (network != null) {
+        writer.write(" Net" + network.getID());
+      } else
+        writer.write(" ");
+    } else
+      writer.write("   ");
+    writer.newLine();
+    // export isotope pattern
+    writeCorrelationIsotopes(writer, row);
   }
 
   /**

@@ -267,4 +267,13 @@ public class PKLRowGroup extends ArrayList<PeakListRow> {
     return g != null ? g.getGroupID() : -1;
   }
 
+  public R2GroupCorrelationData getCorr(PeakListRow row) {
+    if (row == null)
+      return null;
+    int index = indexOf(row);
+    if (index != -1)
+      return getCorr(index);
+    return null;
+  }
+
 }
