@@ -147,24 +147,27 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
     if (isSub)
       return super.showSetupDialog(parent, valueCheckRequired);
     else {
-      OptionalParameter<ComboParameter<Object>> gParam = getParameter(GROUPSPARAMETER);
-      if (gParam != null) {
-        UserParameter<?, ?> newChoices[] =
-            MZmineCore.getProjectManager().getCurrentProject().getParameters();
-        String[] choices;
-        if (newChoices == null || newChoices.length == 0) {
-          choices = new String[1];
-          choices[0] = "No groups";
-        } else {
-          choices = new String[newChoices.length + 1];
-          choices[0] = "No groups";
-          for (int i = 0; i < newChoices.length; i++) {
-            choices[i + 1] = newChoices[i].getName();
+      try {
+        OptionalParameter<ComboParameter<Object>> gParam = getParameter(GROUPSPARAMETER);
+        if (gParam != null) {
+          UserParameter<?, ?> newChoices[] =
+              MZmineCore.getProjectManager().getCurrentProject().getParameters();
+          String[] choices;
+          if (newChoices == null || newChoices.length == 0) {
+            choices = new String[1];
+            choices[0] = "No groups";
+          } else {
+            choices = new String[newChoices.length + 1];
+            choices[0] = "No groups";
+            for (int i = 0; i < newChoices.length; i++) {
+              choices[i + 1] = newChoices[i].getName();
+            }
           }
+          gParam.getEmbeddedParameter().setChoices(choices);
+          if (choices.length > 1)
+            gParam.getEmbeddedParameter().setValue(choices[1]);
         }
-        gParam.getEmbeddedParameter().setChoices(choices);
-        if (choices.length > 1)
-          gParam.getEmbeddedParameter().setValue(choices[1]);
+      } catch (Exception e) {
       }
 
       ParameterSetupDialog dialog = new ParameterSetupDialog(parent, valueCheckRequired, this);
