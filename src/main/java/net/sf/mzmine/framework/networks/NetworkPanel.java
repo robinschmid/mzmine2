@@ -20,7 +20,7 @@ public class NetworkPanel extends JPanel {
   private static final Logger LOG = Logger.getLogger(NetworkPanel.class.getName());
 
   public static final String STYLE_SHEET =
-      "edge {fill-color: rgb(25,85,25); stroke-color: rgb(50,100,50); stroke-width: 1px;}  node {fill-color: black; size: 10px; stroke-mode: plain; stroke-color: rgb(50,100,50); stroke-width: 1px;} "
+      "edge {fill-color: rgb(25,85,25); stroke-color: rgb(50,100,50); stroke-width: 1px;}  node {text-size: 11; fill-color: black; size: 10px; stroke-mode: plain; stroke-color: rgb(50,100,50); stroke-width: 1px;} "
           + "node.important{fill-color: red;} node.big{size: 15px;} node.MOL{fill-color: cyan; size: 15px;}  node.NEUTRAL{fill-color: violet; }";
 
   protected String styleSheet;

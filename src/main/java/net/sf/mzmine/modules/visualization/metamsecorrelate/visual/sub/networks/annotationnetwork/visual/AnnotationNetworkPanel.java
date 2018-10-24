@@ -93,6 +93,7 @@ public class AnnotationNetworkPanel extends NetworkPanel {
         if (node.getId().equals("NEUTRAL LOSSES"))
           node.addAttribute("ui.class", "NEUTRAL");
 
+
         node.addAttribute("ui.label", node.getId());
       }
       clearSelections();

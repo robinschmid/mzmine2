@@ -103,6 +103,9 @@ public class RTNetworkPanel extends NetworkPanel {
    * @return Always positive delta (-1 if no overlap in any RawDataFile)
    */
   private double calcDRT(PeakListRow a, PeakListRow b) {
+    if (!useMinFFilter || minFFilter == null)
+      return b.getAverageRT() - a.getAverageRT();
+
     double drt = 0;
     int c = 0;
     for (RawDataFile f : raw) {
@@ -113,14 +116,12 @@ public class RTNetworkPanel extends NetworkPanel {
         c++;
       }
     }
-    if (c == 0)
-      LOG.severe("c=0. shouldnt happen. check MinimumFeatureFilter");
     return c > 0 ? drt / c : -1;
   }
 
   private boolean filter(PeakListRow a, PeakListRow b) {
-    return useMinFFilter && minFFilter != null
-        ? minFFilter.filterMinFeaturesOverlap(raw, a, b, rtTolerance)
+    return useMinFFilter && minFFilter != null ? //
+        minFFilter.filterMinFeaturesOverlap(raw, a, b, rtTolerance)
         : rtTolerance.checkWithinTolerance(a.getAverageRT(), b.getAverageRT());
   }
 
@@ -172,7 +173,8 @@ public class RTNetworkPanel extends NetworkPanel {
     setRTTolerance(rtTolerance);
     setUseMinFFilter(useMinFFilter);
     setMinFFilter(minFFilter);
-    setPeakList(peakList);
+    if (peakList != null)
+      setPeakList(peakList);
   }
 
   public void setRTTolerance(RTTolerance rtTolerance) {

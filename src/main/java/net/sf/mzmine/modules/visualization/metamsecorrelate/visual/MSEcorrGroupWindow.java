@@ -198,7 +198,7 @@ public class MSEcorrGroupWindow extends JFrame {
     // crucial need to set up
     R2RCorrMap map = peakList.getCorrelationMap();
     if (map != null)
-      pnRTNetwork.setAll(project, peakList, map.getRtTolerance(), false, map.getMinFeatureFilter());
+      pnRTNetwork.setAll(project, null, map.getRtTolerance(), false, map.getMinFeatureFilter());
 
     // scroll table
     mainScroll = new JScrollPane();
