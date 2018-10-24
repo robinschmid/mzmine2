@@ -611,8 +611,8 @@ public class SiriusExportTask extends AbstractTask {
     double r = corr == null ? 0 : corr.getAvgPeakShapeR();
     Feature best = row.getBestPeak();
     ESIAdductIdentity id = adduct;
-    if (adduct == null)
-      adduct = g != null ? MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, g)
+    if (id == null)
+      id = g != null ? MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, g)
           : MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, true);
     AnnotationNetwork network = id == null ? null : id.getNetwork();
 
@@ -620,14 +620,15 @@ public class SiriusExportTask extends AbstractTask {
     // intensity?
     writer.write(mzForm.format(row.getAverageMZ()));
     writer.write(" " + intensityForm.format(best.getHeight()));
-    writer.write(" " + corr == null ? "" : corrForm.format(r));
+    writer.write(" " + (corr == null ? "" : corrForm.format(r))); // correlation
+    writer.write(" FEATURE_ID=" + row.getID());
     if (id != null) {
       writer.write(" " + id.getAdduct());
       // TODO added by Robin
       // need to check if this is conform to the standards
       writer.write(" by=" + id.getPartnerRowsID().length);
       if (network != null) {
-        writer.write(" Net" + network.getID());
+        writer.write(" " + COMPOUND_ID + network.getID());
       } else
         writer.write(" ");
     } else
@@ -662,6 +663,8 @@ public class SiriusExportTask extends AbstractTask {
           // isotope
           writer.write(' ');
           writer.write(' '); // skip correlation
+          writer.write(' ');
+          writer.write(' '); // skip rowID
           writer.write(' ');
           writer.write("+" + Math.round((float) (dp.getMZ() - mz0)));
           writer.newLine();
