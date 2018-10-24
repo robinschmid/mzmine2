@@ -61,7 +61,7 @@ public class MoleculeIdentity extends SimplePeakIdentity {
     b.append(mzForm.format(neutralMass));
     b.append(" (at ");
     b.append(rtForm.format(avgRT));
-    b.append(" min) indentified by ID=");
+    b.append(" min) identified by ID=");
     b.append(StringUtils.join(",", network.getAllIDs()));
     return b.toString();
   }

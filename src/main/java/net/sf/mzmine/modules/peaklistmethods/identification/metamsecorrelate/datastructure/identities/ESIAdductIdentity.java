@@ -102,7 +102,7 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
       b.append(" ");
     }
     b.append(adduct);
-    b.append(" indentified by ID=");
+    b.append(" identified by ID=");
     b.append(partnerRows);
 
     // MSMS backed id for multimers
