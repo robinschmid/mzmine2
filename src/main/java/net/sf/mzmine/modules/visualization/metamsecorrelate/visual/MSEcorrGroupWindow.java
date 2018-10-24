@@ -69,6 +69,8 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.AnnotationNetwork;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.annotationnetwork.visual.AnnotationNetworkPanel;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.corrnetwork.visual.CorrNetworkPanel;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.rtnetwork.visual.RTNetworkPanel;
@@ -127,6 +129,8 @@ public class MSEcorrGroupWindow extends JFrame {
   private RTNetworkPanel pnRTNetwork;
   private JButton btnSubWindow;
   private JButton btnMsmsWindow;
+  private JLabel lblNet;
+  private JTextField txtSkipSmallNetwork;
 
   /**
    * Create the frame.
@@ -198,7 +202,8 @@ public class MSEcorrGroupWindow extends JFrame {
     // crucial need to set up
     R2RCorrMap map = peakList.getCorrelationMap();
     if (map != null)
-      pnRTNetwork.setAll(project, null, map.getRtTolerance(), false, map.getMinFeatureFilter());
+      pnRTNetwork.setAll(project, peakList, map.getRtTolerance(), false, map.getMinFeatureFilter(),
+          false);
 
     // scroll table
     mainScroll = new JScrollPane();
@@ -284,6 +289,15 @@ public class MSEcorrGroupWindow extends JFrame {
     panel_4.add(txtMinGroupSize);
     txtMinGroupSize.setText("2");
     txtMinGroupSize.setColumns(2);
+
+    lblNet = new JLabel(" net< ");
+    panel_4.add(lblNet);
+
+    txtSkipSmallNetwork = new JTextField();
+    txtSkipSmallNetwork.setToolTipText("Auto skip groups with size smaller than x.");
+    txtSkipSmallNetwork.setText("2");
+    txtSkipSmallNetwork.setColumns(2);
+    panel_4.add(txtSkipSmallNetwork);
 
     panel_5 = new JPanel();
     FlowLayout flowLayout_2 = (FlowLayout) panel_5.getLayout();
@@ -530,9 +544,13 @@ public class MSEcorrGroupWindow extends JFrame {
       try {
         int lastIndex = peakList.getLastViewedIndex();
         int min = Integer.valueOf(getTxtMinGroupSize().getText());
-        while (groups.get(index).size() < min && index + 1 < groups.size() && index - 1 > 0)
+        int minNet = Integer.valueOf(getTxtSkipSmallNetwork().getText());
+        while (!(groups.get(index).size() >= min
+            && checkNetSize(MSAnnotationNetworkLogic.getBestNetwork(groups.get(index)), minNet))
+            && index + 1 < groups.size() && index - 1 >= 0)
           index += index < lastIndex ? -1 : +1;
       } catch (Exception ex) {
+        LOG.log(Level.SEVERE, "While excluding groups", ex);
       }
     }
     // set index to peaklist
@@ -549,6 +567,10 @@ public class MSEcorrGroupWindow extends JFrame {
     model.fireTableDataChanged();
     //
     renewAllPlots(true, true, true, true);
+  }
+
+  private boolean checkNetSize(AnnotationNetwork bestNetwork, int minNet) {
+    return bestNetwork != null && bestNetwork.size() >= minNet;
   }
 
   /**
@@ -1315,5 +1337,9 @@ public class MSEcorrGroupWindow extends JFrame {
 
   public JCheckBox getCbSumPseudoSpectrum() {
     return cbSumPseudoSpectrum;
+  }
+
+  public JTextField getTxtSkipSmallNetwork() {
+    return txtSkipSmallNetwork;
   }
 }

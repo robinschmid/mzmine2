@@ -50,9 +50,9 @@ public class RTNetworkPanel extends NetworkPanel {
    * 
    * @param pkl
    */
-  public void setPeakList(PeakList pkl) {
+  public void setPeakList(PeakList pkl, boolean update) {
     this.pkl = pkl;
-    if (pkl != null) {
+    if (pkl != null && update) {
       createNewGraph(pkl.getRows());
     } else
       clear();
@@ -167,14 +167,13 @@ public class RTNetworkPanel extends NetworkPanel {
   }
 
   public void setAll(MZmineProject project2, PeakList peakList, RTTolerance rtTolerance,
-      boolean useMinFFilter, MinimumFeatureFilter minFFilter) {
+      boolean useMinFFilter, MinimumFeatureFilter minFFilter, boolean update) {
     raw = peakList.getRawDataFiles();
     project = project2;
     setRTTolerance(rtTolerance);
     setUseMinFFilter(useMinFFilter);
     setMinFFilter(minFFilter);
-    if (peakList != null)
-      setPeakList(peakList);
+    setPeakList(peakList, update);
   }
 
   public void setRTTolerance(RTTolerance rtTolerance) {

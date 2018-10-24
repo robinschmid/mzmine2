@@ -616,4 +616,21 @@ public class MSAnnotationNetworkLogic {
     });
   }
 
+  /**
+   * Best network of group (all rows)
+   * 
+   * @param g
+   * @return
+   */
+  public static AnnotationNetwork getBestNetwork(PKLRowGroup g) {
+    AnnotationNetwork best = null;
+    for (PeakListRow r : g) {
+      ESIAdductIdentity id = getMostLikelyAnnotation(r, g);
+      AnnotationNetwork net = id != null ? id.getNetwork() : null;
+      if (net != null && (best == null || best.size() < net.size()))
+        best = net;
+    }
+    return best;
+  }
+
 }

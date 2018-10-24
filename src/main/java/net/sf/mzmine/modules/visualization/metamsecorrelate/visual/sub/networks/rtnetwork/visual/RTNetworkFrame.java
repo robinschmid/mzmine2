@@ -23,7 +23,7 @@ public class RTNetworkFrame extends JFrame {
 
   public void setUp(MZmineProject project, PeakList peakList, RTTolerance rtTolerance,
       boolean useMinFFilter, MinimumFeatureFilter minFFilter) {
-    contentPane.setAll(project, peakList, rtTolerance, useMinFFilter, minFFilter);
+    contentPane.setAll(project, peakList, rtTolerance, useMinFFilter, minFFilter, true);
   }
 
 
