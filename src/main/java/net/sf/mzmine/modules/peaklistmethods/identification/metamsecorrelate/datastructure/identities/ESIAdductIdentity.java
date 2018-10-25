@@ -21,6 +21,8 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.da
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.impl.SimplePeakIdentity;
@@ -33,14 +35,14 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msm
 
 public class ESIAdductIdentity extends SimplePeakIdentity {
 
-  private NumberFormat netIDForm = new DecimalFormat("000");
+  private NumberFormat netIDForm = new DecimalFormat("#000");
 
   private ESIAdductType a;
   // identifier like [M+H]+
   private String adduct;
   private String massDifference;
   // partner rowIDs
-  private String partnerRows;
+  private ConcurrentHashMap<PeakListRow, ESIAdductIdentity> partner = new ConcurrentHashMap<>();
   // network id (number)
   private AnnotationNetwork network;
 
@@ -55,16 +57,66 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
    * @param originalPeakListRow adduct of this peak list row.
    * @param adduct type of adduct.
    */
-  public ESIAdductIdentity(final PeakListRow originalPeakListRow, final ESIAdductType adduct) {
+  public ESIAdductIdentity(ESIAdductType adduct) {
     super("later");
     a = adduct;
     this.adduct = adduct.toString(false);
     this.massDifference = adduct.getMassDiffString();
-    partnerRows = String.valueOf(originalPeakListRow.getID());
     setPropertyValue(PROPERTY_METHOD, "MS annotation");
     setPropertyValue(PROPERTY_NAME, getIDString());
   }
 
+
+  /**
+   * Adds new identities or just adds the rows to identities as links
+   * 
+   * @param row1 row to add the identity to
+   * @param row2 identified by this row
+   */
+  public static void addAdductIdentityToRow(PeakListRow row1, ESIAdductType row1ID,
+      PeakListRow row2, ESIAdductType row2ID) {
+    ESIAdductIdentity a = getAdductEqualIdentity(row1, row1ID);
+    ESIAdductIdentity b = getAdductEqualIdentity(row2, row2ID);
+
+    // create new
+    if (a == null) {
+      a = new ESIAdductIdentity(row1ID);
+      row1.addPeakIdentity(a, false);
+    }
+    if (b == null) {
+      b = new ESIAdductIdentity(row2ID);
+      row2.addPeakIdentity(b, false);
+    }
+    a.addPartnerRow(row2, b);
+    b.addPartnerRow(row1, a);
+  }
+
+  /**
+   * Find equal identity that was already added
+   * 
+   * @param row
+   * @param adduct
+   * @return equal identity or null
+   */
+  public static ESIAdductIdentity getAdductEqualIdentity(PeakListRow row, ESIAdductType adduct) {
+    // is old?
+    for (PeakIdentity id : row.getPeakIdentities()) {
+      if (ESIAdductIdentity.class.isInstance(id)) {
+        ESIAdductIdentity a = (ESIAdductIdentity) id;
+        // equals? add row2 to partners
+        if (a.equalsAdduct(adduct)) {
+          return a;
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Get adduct type
+   * 
+   * @return
+   */
   public ESIAdductType getA() {
     return a;
   }
@@ -73,24 +125,32 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
     return adduct;
   }
 
+  /**
+   * Comma separated
+   * 
+   * @return
+   */
   public String getPartnerRows() {
-    return partnerRows;
+    return getPartnerRows(",");
   }
 
-  public void addPartnerRow(PeakListRow row) {
-    // already a partner?
-    // add new partner
-    if (!hasPartnerID(row.getID())) {
-      if (partnerRows.isEmpty())
-        partnerRows = "" + row.getID();
-      else
-        partnerRows += "," + row.getID();
-      setPropertyValue(PROPERTY_NAME, getIDString());
-    }
+  /**
+   * 
+   * @param delimiter
+   * @return
+   */
+  public String getPartnerRows(String delimiter) {
+    return partner.keySet().stream().map(PeakListRow::getID).map(String::valueOf)
+        .collect(Collectors.joining(delimiter));
+  }
+
+  public void addPartnerRow(PeakListRow row, ESIAdductIdentity pid) {
+    partner.put(row, pid);
+    setPropertyValue(PROPERTY_NAME, getIDString());
   }
 
   public void resetLinks() {
-    partnerRows = "";
+    partner.clear();
     setPropertyValue(PROPERTY_NAME, getIDString());
   }
 
@@ -103,7 +163,7 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
     }
     b.append(adduct);
     b.append(" identified by ID=");
-    b.append(partnerRows);
+    b.append(getPartnerRows());
 
     // MSMS backed id for multimers
     if (getMSMSMultimerCount() > 0) {
@@ -128,15 +188,10 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
   }
 
   public int[] getPartnerRowsID() {
-    if (partnerRows.isEmpty())
+    if (partner.isEmpty())
       return new int[0];
 
-    String[] split = partnerRows.split(",");
-    int[] ids = new int[split.length];
-    for (int i = 0; i < split.length; i++)
-      ids[i] = Integer.valueOf(split[i]);
-
-    return ids;
+    return partner.keySet().stream().mapToInt(PeakListRow::getID).toArray();
   }
 
   /**
@@ -238,6 +293,7 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
       network.remove(row);
     }
     row.removePeakIdentity(this);
+    // remove from partners
   }
 
 }

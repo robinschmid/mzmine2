@@ -387,7 +387,7 @@ public class MSAnnotationNetworkLogic {
                 ESIAdductIdentity realID = neutral;
                 if (pnet.checkForAnnotation(row, pid)) {
                   // create new
-                  realID = new ESIAdductIdentity(row, pid);
+                  realID = new ESIAdductIdentity(pid);
                   row.addPeakIdentity(realID, false);
                   realID.setNetwork(pnet);
                   // set partners

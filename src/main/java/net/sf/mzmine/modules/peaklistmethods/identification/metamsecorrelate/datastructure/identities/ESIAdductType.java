@@ -5,8 +5,6 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import net.sf.mzmine.datamodel.PeakIdentity;
-import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.main.MZmineCore;
 
 public class ESIAdductType implements Comparable<ESIAdductType> {
@@ -322,34 +320,6 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
 
   public int getMolecules() {
     return molecules;
-  }
-
-  /**
-   * either adds a new identity or adds row2 as an identifier to an existing identity
-   * 
-   * @param row1 row to add the identity to
-   * @param row2 identified by this row
-   */
-  public ESIAdductIdentity addAdductIdentityToRow(PeakListRow row1, PeakListRow row2) {
-    boolean added = false;
-    for (PeakIdentity id : row1.getPeakIdentities()) {
-      if (ESIAdductIdentity.class.isInstance(id)) {
-        ESIAdductIdentity a = (ESIAdductIdentity) id;
-        // equals? add row2 to partners
-        if (a.equalsAdduct(this)) {
-          a.addPartnerRow(row2);
-          added = true;
-          return a;
-        }
-      }
-    }
-    if (!added) {
-      ESIAdductIdentity id = new ESIAdductIdentity(row2, this);
-      row1.addPeakIdentity(id, false);
-      return id;
-    }
-    // shouldnt happen
-    return null;
   }
 
   /**

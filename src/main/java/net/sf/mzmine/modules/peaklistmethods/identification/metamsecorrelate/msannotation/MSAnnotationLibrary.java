@@ -8,6 +8,7 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
@@ -146,19 +147,16 @@ public class MSAnnotationLibrary {
               // is a2 a modification of a1? (same adducts - different mods
               if (adduct2.isModificationOf(adduct)) {
                 ESIAdductType mod = adduct2.subtractMods(adduct);
-                mod.addAdductIdentityToRow(row2, row1);
-                // add unmodified
-                ESIAdductType.M_UNMODIFIED.addAdductIdentityToRow(row1, row2);
+                ESIAdductIdentity.addAdductIdentityToRow(row1, ESIAdductType.M_UNMODIFIED, row1,
+                    mod);
               } else if (adduct.isModificationOf(adduct2)) {
                 ESIAdductType mod = adduct.subtractMods(adduct2);
-                mod.addAdductIdentityToRow(row1, row2);
-                // add unmodified
-                ESIAdductType.M_UNMODIFIED.addAdductIdentityToRow(row2, row1);
+                ESIAdductIdentity.addAdductIdentityToRow(row1, mod, row2,
+                    ESIAdductType.M_UNMODIFIED);
               } else {
                 // Add adduct identity and notify GUI.
                 // only if not already present
-                adduct.addAdductIdentityToRow(row1, row2);
-                adduct2.addAdductIdentityToRow(row2, row1);
+                ESIAdductIdentity.addAdductIdentityToRow(row1, adduct, row2, adduct2);
               }
               // update
               MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row1, false);

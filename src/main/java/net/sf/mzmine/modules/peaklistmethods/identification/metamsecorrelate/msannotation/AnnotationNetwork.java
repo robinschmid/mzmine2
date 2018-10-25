@@ -201,8 +201,8 @@ public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
         double pmass = getMass(e);
         if (mzTolerance.checkWithinTolerance(pmass, nmass)) {
           // add to both
-          pid.addPartnerRow(e.getKey());
-          e.getValue().addPartnerRow(row);
+          pid.addPartnerRow(e.getKey(), e.getValue());
+          e.getValue().addPartnerRow(row, pid);
         }
       }
     });

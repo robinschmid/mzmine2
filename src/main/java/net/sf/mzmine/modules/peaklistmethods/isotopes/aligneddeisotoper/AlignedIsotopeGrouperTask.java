@@ -37,6 +37,7 @@ import net.sf.mzmine.datamodel.impl.SimplePeakList;
 import net.sf.mzmine.datamodel.impl.SimplePeakListAppliedMethod;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
@@ -669,10 +670,10 @@ public class AlignedIsotopeGrouperTask extends AbstractTask {
         // Add adduct identity and notify GUI.
         // only if not already present
         if (row2.getAverageMZ() < row1.getAverageMZ()) {
-          iso.addAdductIdentityToRow(row1, row2);
+          ESIAdductIdentity.addAdductIdentityToRow(row1, iso, row2, ESIAdductType.M_UNMODIFIED);
           MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row1, false);
         } else {
-          iso.addAdductIdentityToRow(row2, row1);
+          ESIAdductIdentity.addAdductIdentityToRow(row2, iso, row1, ESIAdductType.M_UNMODIFIED);
           MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row2, false);
         }
         // there can only be one hit for a row-row comparison

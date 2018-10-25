@@ -409,6 +409,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
               // has a minimum number/% of overlapping features in all samples / in at least one
               // groups
               // or check RTRange
+              boolean isCorrelated = false;
               if ((useMinFInSamplesFilter
                   && minFFilter.filterMinFeaturesOverlap(raw, row, row2, rtTolerance))
                   || (!useMinFInSamplesFilter
@@ -423,8 +424,10 @@ public class MetaMSEcorrelateTask extends AbstractTask {
                   if (useMinFInSamplesFilter && corr.hasFeatureShapeCorrelation())
                     checkMinFCorrelation(minFFilter, corr);
                   // still valid?
-                  if (corr.isValid())
+                  if (corr.isValid()) {
                     map.add(row, row2, corr);
+                    isCorrelated = true;
+                  }
                 }
 
                 // search directly? or search later in corr group?
@@ -436,6 +439,10 @@ public class MetaMSEcorrelateTask extends AbstractTask {
                   if (id != null)
                     annotPairs.incrementAndGet();
                 }
+              }
+              if (!isCorrelated) {
+                // these rows cannot be grouped
+
               }
             }
           }
