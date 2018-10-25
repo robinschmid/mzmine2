@@ -406,7 +406,9 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
   }
 
   public String toString(boolean showMass) {
-    String z = Math.abs(charge) + (charge < 0 ? "-" : "+");
+    int absCharge = Math.abs(charge);
+    String z = absCharge > 1 ? absCharge + "" : "";
+    z += (charge < 0 ? "-" : "+");
     if (charge == 0)
       z = "";
     // molecules
