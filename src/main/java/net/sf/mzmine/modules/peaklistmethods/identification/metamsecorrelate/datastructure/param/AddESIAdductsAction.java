@@ -24,20 +24,24 @@
 
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param;
 
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import javax.swing.AbstractAction;
+import net.sf.mzmine.framework.listener.DelayedDocumentListener;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.MultiChoiceComponent;
 import net.sf.mzmine.parameters.parametertypes.StringParameter;
+import net.sf.mzmine.parameters.parametertypes.SumformulaComponent;
 import net.sf.mzmine.parameters.parametertypes.SumformulaParameter;
 import net.sf.mzmine.util.ExitCode;
 
@@ -119,7 +123,8 @@ public class AddESIAdductsAction extends AbstractAction {
 
     // Sum formula
     private static final SumformulaParameter FORMULA = new SumformulaParameter("Sum formula",
-        "Will override mass difference and charge. Is used as name if name is empty.", "", false);
+        "Put - infront of the sum formula if this is a neutral loss. Will override mass difference and charge. Is used as name if name is empty.",
+        "", false);
 
     // Adduct mass difference.
     private static final DoubleParameter MASS_DIFFERENCE = new DoubleParameter("Mass difference",
@@ -131,5 +136,22 @@ public class AddESIAdductsAction extends AbstractAction {
     private AddESIAdductParameters() {
       super(new Parameter[] {NAME, FORMULA, MASS_DIFFERENCE, CHARGE});
     }
+
+    @Override
+    public ExitCode showSetupDialog(Window parent, boolean valueCheckRequired) {
+      ParameterSetupDialog dialog = new ParameterSetupDialog(parent, valueCheckRequired, this);
+
+      // enable
+      SumformulaComponent com = (SumformulaComponent) dialog.getComponentForParameter(FORMULA);
+      com.getTextField().getDocument().addDocumentListener(new DelayedDocumentListener(100, e -> {
+        dialog.getComponentForParameter(MASS_DIFFERENCE)
+            .setEnabled(e.getDocument().getLength() == 0);
+        dialog.getComponentForParameter(CHARGE).setEnabled(e.getDocument().getLength() == 0);
+      }));
+
+      dialog.setVisible(true);
+      return dialog.getExitCode();
+    }
+
   }
 }

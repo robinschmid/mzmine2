@@ -18,7 +18,6 @@
 package net.sf.mzmine.parameters.parametertypes;
 
 import java.awt.Font;
-
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
@@ -45,6 +44,12 @@ public class TextComponent extends JScrollPane {
 
   public String getText() {
     return textArea.getText();
+  }
+
+  @Override
+  public void setEnabled(boolean enabled) {
+    super.setEnabled(enabled);
+    textArea.setEnabled(enabled);
   }
 
   @Override

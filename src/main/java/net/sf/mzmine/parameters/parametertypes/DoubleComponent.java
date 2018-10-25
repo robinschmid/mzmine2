@@ -21,7 +21,6 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.text.NumberFormat;
 import java.text.ParseException;
-
 import javax.swing.InputVerifier;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -53,6 +52,12 @@ public class DoubleComponent extends JPanel {
     }
 
     add(textField);
+  }
+
+  @Override
+  public void setEnabled(boolean enabled) {
+    super.setEnabled(enabled);
+    textField.setEnabled(enabled);
   }
 
   public void setText(String text) {

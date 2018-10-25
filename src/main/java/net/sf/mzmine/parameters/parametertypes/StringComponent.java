@@ -17,7 +17,6 @@
  */
 package net.sf.mzmine.parameters.parametertypes;
 
-import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
@@ -37,6 +36,12 @@ public class StringComponent extends JPanel {
 
   public void setText(String text) {
     textField.setText(text);
+  }
+
+  @Override
+  public void setEnabled(boolean enabled) {
+    super.setEnabled(enabled);
+    textField.setEnabled(enabled);
   }
 
   public String getText() {

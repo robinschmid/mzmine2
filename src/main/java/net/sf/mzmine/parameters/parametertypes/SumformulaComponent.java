@@ -17,7 +17,6 @@
  */
 package net.sf.mzmine.parameters.parametertypes;
 
-import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
@@ -41,6 +40,10 @@ public class SumformulaComponent extends JPanel {
 
   public String getText() {
     return textField.getText();
+  }
+
+  public JTextField getTextField() {
+    return textField;
   }
 
   @Override

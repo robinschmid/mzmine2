@@ -44,6 +44,12 @@ public class PercentComponent extends JPanel {
 
   }
 
+  @Override
+  public void setEnabled(boolean enabled) {
+    super.setEnabled(enabled);
+    percentField.setEnabled(enabled);
+  }
+
   public void setValue(double value) {
     String stringValue = String.valueOf(value * 100);
     percentField.setText(stringValue);

@@ -19,7 +19,6 @@ package net.sf.mzmine.parameters.parametertypes;
 
 import java.awt.Dimension;
 import java.awt.Toolkit;
-
 import javax.swing.InputVerifier;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -56,6 +55,12 @@ public class IntegerComponent extends JPanel {
 
   public String getText() {
     return textField.getText().trim();
+  }
+
+  @Override
+  public void setEnabled(boolean enabled) {
+    super.setEnabled(enabled);
+    textField.setEnabled(enabled);
   }
 
   @Override

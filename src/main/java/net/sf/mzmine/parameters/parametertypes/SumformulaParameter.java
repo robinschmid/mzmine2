@@ -28,7 +28,7 @@ import org.w3c.dom.Element;
 import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.parameters.UserParameter;
 
-public class SumformulaParameter implements UserParameter<String, StringComponent> {
+public class SumformulaParameter implements UserParameter<String, SumformulaComponent> {
 
   public static final double ELECTRON_MASS = 5.4857990943E-4;
   private IChemObjectBuilder builder = SilentChemObjectBuilder.getInstance();
@@ -78,8 +78,8 @@ public class SumformulaParameter implements UserParameter<String, StringComponen
   }
 
   @Override
-  public StringComponent createEditingComponent() {
-    StringComponent stringComponent = new StringComponent(inputsize);
+  public SumformulaComponent createEditingComponent() {
+    SumformulaComponent stringComponent = new SumformulaComponent(inputsize);
     stringComponent.setBorder(BorderFactory.createCompoundBorder(stringComponent.getBorder(),
         BorderFactory.createEmptyBorder(0, 4, 0, 0)));
     return stringComponent;
@@ -115,7 +115,8 @@ public class SumformulaParameter implements UserParameter<String, StringComponen
   public int getCharge() {
     if (value == null || value.isEmpty())
       return 0;
-
+    // cutoff first -
+    String value = this.value.substring(1);
     int l = Math.max(value.lastIndexOf('+'), value.lastIndexOf('-'));
     if (l == -1)
       return 0;
@@ -141,6 +142,8 @@ public class SumformulaParameter implements UserParameter<String, StringComponen
       try {
         double mz = MolecularFormulaManipulator.getMajorIsotopeMass(getFormula());
         mz -= getCharge() * ELECTRON_MASS;
+        if (value.startsWith("-"))
+          mz = -mz;
         return mz;
       } catch (Exception e) {
         throw e;
@@ -153,12 +156,18 @@ public class SumformulaParameter implements UserParameter<String, StringComponen
   public IMolecularFormula getFormula() throws MSDKRuntimeException {
     if (value != null && !value.isEmpty()) {
       try {
-        int l = Math.max(value.lastIndexOf('+'), value.lastIndexOf('-'));
+        String formString = this.value;
+        // cutoff first - (negative mz)
+        if (formString.startsWith("-"))
+          formString = formString.substring(1);
+
+        //
+        int l = Math.max(formString.lastIndexOf('+'), formString.lastIndexOf('-'));
         if (l == -1) {
-          return MolecularFormulaManipulator.getMajorIsotopeMolecularFormula(value, builder);
+          return MolecularFormulaManipulator.getMajorIsotopeMolecularFormula(formString, builder);
         } else {
-          String f = value.substring(0, l);
-          String charge = value.substring(l, value.length());
+          String f = formString.substring(0, l);
+          String charge = formString.substring(l, formString.length());
           return MolecularFormulaManipulator.getMajorIsotopeMolecularFormula("[" + f + "]" + charge,
               builder);
         }
@@ -188,12 +197,12 @@ public class SumformulaParameter implements UserParameter<String, StringComponen
   }
 
   @Override
-  public void setValueFromComponent(StringComponent component) {
+  public void setValueFromComponent(SumformulaComponent component) {
     value = component.getText();
   }
 
   @Override
-  public void setValueToComponent(StringComponent component, String newValue) {
+  public void setValueToComponent(SumformulaComponent component, String newValue) {
     component.setText(newValue);
   }
 
