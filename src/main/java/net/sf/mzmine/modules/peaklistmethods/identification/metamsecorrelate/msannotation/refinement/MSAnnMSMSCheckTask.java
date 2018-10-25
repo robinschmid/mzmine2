@@ -47,7 +47,7 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
 
   // mode
   public enum NeutralLossCheck {
-    PRECURSOR, ANY_SINGAL;
+    PRECURSOR, ANY_SIGNAL;
 
     @Override
     public String toString() {
@@ -259,7 +259,7 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
     }
 
 
-    if (neutralLossCheck.equals(NeutralLossCheck.ANY_SINGAL)) {
+    if (neutralLossCheck.equals(NeutralLossCheck.ANY_SIGNAL)) {
       MSMSIdentityList msmsIdent = MSMSLogic.checkNeutralLoss(dps, mod, mzTolerance, minHeight);
 
       // found?
