@@ -51,6 +51,8 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
    */
   private MSMSIdentityList msmsIdent;
 
+  private boolean isDeleted;
+
   /**
    * Create the identity.
    *
@@ -289,11 +291,24 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
    * deletes from network
    */
   public void delete(PeakListRow row) {
+    if (isDeleted())
+      return;
+    setDeleted(true);
     if (network != null) {
       network.remove(row);
     }
     row.removePeakIdentity(this);
     // remove from partners
+    partner.entrySet().stream().forEach(e -> e.getValue().delete(e.getKey()));
+  }
+
+
+  public void setDeleted(boolean state) {
+    isDeleted = state;
+  }
+
+  public boolean isDeleted() {
+    return isDeleted;
   }
 
 }
