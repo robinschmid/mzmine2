@@ -1,6 +1,7 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
@@ -90,13 +91,29 @@ public class R2RCorrMap extends ConcurrentHashMap<String, R2RCorrelationData> {
 
       RawDataFile[] raw = pkl.getRawDataFiles();
 
-      // this.entrySet().stream().sorted(new Comparator<Entry<String, R2RCorrelationData>>() {
-      // @Override
-      // public int compare(java.util.Map.Entry<String, R2RCorrelationData> a,
-      // java.util.Map.Entry<String, R2RCorrelationData> b) {
-      // return a
-      // }
-      // })
+       this.entrySet().stream().sorted(new Comparator<Entry<String, R2RCorrelationData>>() {
+         @Override
+        public int compare(Entry<String, R2RCorrelationData> ea,
+            Entry<String, R2RCorrelationData> eb) {
+           R2RCorrelationData a = ea.getValue();
+           R2RCorrelationData b = eb.getValue();
+           if(!(a instanceof R2RFullCorrelationData || b instanceof R2RFullCorrelationData))
+             return 0;
+           else if(a instanceof R2RFullCorrelationData && b instanceof R2RFullCorrelationData) {
+             if(!a.hasFeatureShapeCorrelation() && !b.hasFeatureShapeCorrelation())
+               return 0;
+             else if(a.hasFeatureShapeCorrelation() || a.getAvgPeakShapeR()>b.getAvgPeakShapeR())
+               return 1;
+       }
+       else if(a instanceof R2RFullCorrelationData)
+         return 1;
+       else if(b instanceof R2RFullCorrelationData)
+         return -1;
+       throw new Exception("Type not handled for correlation data sorting");
+       }
+       })
+       
+       
       // add all connections
       Iterator<Entry<String, R2RCorrelationData>> entries = this.entrySet().iterator();
 
