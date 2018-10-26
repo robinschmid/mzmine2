@@ -12,7 +12,6 @@ import net.miginfocom.swing.MigLayout;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
 import net.sf.mzmine.modules.visualization.mzhistogram.chart.HistogramData;
 import net.sf.mzmine.modules.visualization.mzhistogram.chart.MultiHistogramPanel;
 
@@ -95,7 +94,7 @@ public class CorrHistoFrame extends JFrame {
       DoubleArrayList total = new DoubleArrayList();
 
       R2RCorrMap map = pkl.getCorrelationMap();
-      for (R2RCorrelationData r2r : map.values()) {
+      map.streamCorrData().forEach(r2r -> {
         if (r2r.hasFeatureShapeCorrelation()) {
           avg.add(r2r.getAvgPeakShapeR());
           total.add(r2r.getTotalCorrelation().getR());
@@ -104,7 +103,7 @@ public class CorrHistoFrame extends JFrame {
             if (f2f != null)
               single.add(f2f.getR());
         }
-      }
+      });
 
       // update data in histograms
       HistogramData[] data = new HistogramData[3];

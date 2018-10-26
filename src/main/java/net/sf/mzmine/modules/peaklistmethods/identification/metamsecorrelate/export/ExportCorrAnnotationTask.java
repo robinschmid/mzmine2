@@ -35,6 +35,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RFullCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationModule;
 import net.sf.mzmine.parameters.ParameterSet;
@@ -389,7 +390,11 @@ public class ExportCorrAnnotationTask extends AbstractTask {
                   Object[] data = new Object[col.length];
                   ESIAdductIdentity id = null;
                   // r2r correlation
-                  R2RCorrelationData r2r = corrMap != null ? corrMap.get(r, link) : null;
+                  R2RCorrelationData r2rabs = corrMap != null ? corrMap.get(r, link) : null;
+                  R2RFullCorrelationData r2r =
+                      r2rabs != null && r2rabs instanceof R2RFullCorrelationData
+                          ? (R2RFullCorrelationData) r2rabs
+                          : null;
 
                   // add all data
                   for (int d = 0; d < col.length; d++) {
@@ -520,7 +525,11 @@ public class ExportCorrAnnotationTask extends AbstractTask {
         }
 
         // for correlation
-        R2RCorrelationData r2r = e.getValue();
+        R2RCorrelationData r2rabs = e.getValue();
+        R2RFullCorrelationData r2r = r2rabs != null && r2rabs instanceof R2RFullCorrelationData
+            ? (R2RFullCorrelationData) r2rabs
+            : null;
+
         if (r2r.hasFeatureShapeCorrelation() && r2r.getAvgPeakShapeR() >= minR) {
           int[] ids = R2RCorrMap.toKeyIDs(e.getKey());
           PeakListRow r = pkl.findRowByID(ids[0]);

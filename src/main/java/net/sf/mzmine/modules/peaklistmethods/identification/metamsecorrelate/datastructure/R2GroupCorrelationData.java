@@ -11,7 +11,7 @@ import net.sf.mzmine.datamodel.PeakListRow;
 public class R2GroupCorrelationData {
   private PeakListRow row;
   // row index is xRow in corr data
-  private List<R2RCorrelationData> corr;
+  private List<R2RFullCorrelationData> corr;
   private double maxHeight;
   // averages are calculated by dividing by the row count
   private double minIProfileR, avgIProfileR, maxIProfileR;
@@ -19,14 +19,15 @@ public class R2GroupCorrelationData {
   // total peak shape r
   private double avgTotalPeakShapeR;
 
-  public R2GroupCorrelationData(PeakListRow row, List<R2RCorrelationData> corr, double maxHeight) {
+  public R2GroupCorrelationData(PeakListRow row, List<R2RFullCorrelationData> corr,
+      double maxHeight) {
     super();
     this.row = row;
     setCorr(corr);
     this.maxHeight = maxHeight;
   }
 
-  public void setCorr(List<R2RCorrelationData> corr) {
+  public void setCorr(List<R2RFullCorrelationData> corr) {
     this.corr = corr;
     recalcCorr();
   }
@@ -47,7 +48,7 @@ public class R2GroupCorrelationData {
     int cImax = 0;
     int cPeakShape = 0;
 
-    for (R2RCorrelationData r2r : corr) {
+    for (R2RFullCorrelationData r2r : corr) {
       if (r2r.hasIMaxCorr()) {
         cImax++;
         double iProfileR = r2r.getCorrIProfile().getR();
@@ -84,7 +85,7 @@ public class R2GroupCorrelationData {
     this.maxHeight = maxHeight;
   }
 
-  public List<R2RCorrelationData> getCorr() {
+  public List<R2RFullCorrelationData> getCorr() {
     return corr;
   }
 
@@ -154,10 +155,10 @@ public class R2GroupCorrelationData {
    * @return the correlation data of this row to row[rowI]
    * @throws Exception (should not happen, only if processing was corrupt)
    */
-  public R2RCorrelationData getCorrelationToRowI(int rowI) throws Exception {
+  public R2RFullCorrelationData getCorrelationToRowI(int rowI) throws Exception {
     if (row.getID() == rowI)
       throw new Exception("No correlation of row to itself");
-    for (R2RCorrelationData c : corr) {
+    for (R2RFullCorrelationData c : corr) {
       if (c.getIDA() == rowI || c.getIDB() == rowI)
         return c;
     }
@@ -170,7 +171,7 @@ public class R2GroupCorrelationData {
    * @return the correlation data of this row to row[rowI]
    * @throws Exception
    */
-  public R2RCorrelationData getCorrelationToRow(PeakListRow row) throws Exception {
+  public R2RFullCorrelationData getCorrelationToRow(PeakListRow row) throws Exception {
     return getCorrelationToRowI(row.getID());
   }
 

@@ -68,7 +68,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RFullCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.AnnotationNetwork;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.annotationnetwork.visual.AnnotationNetworkPanel;
@@ -783,7 +783,7 @@ public class MSEcorrGroupWindow extends JFrame {
           PeakListRow trow = g.get(i);
           if (rowI != i) {
             // get correlation data (row to row)
-            R2RCorrelationData corrRows = corr.getCorrelationToRowI(trow.getID());
+            R2RFullCorrelationData corrRows = corr.getCorrelationToRowI(trow.getID());
             if (corrRows != null) {
               // get correlation of feature-feature in selected raw file
               CorrelationData fCorr = null;
@@ -885,7 +885,7 @@ public class MSEcorrGroupWindow extends JFrame {
           PeakListRow trow = g.get(i);
           if (rowI != i) {
             // get correlation data (row to row)
-            R2RCorrelationData corrRows = corr.getCorrelationToRowI(trow.getID());
+            R2RFullCorrelationData corrRows = corr.getCorrelationToRowI(trow.getID());
             if (corrRows != null) {
               // get correlation of feature-feature in selected raw file
               CorrelationData fCorr = null;
@@ -940,7 +940,7 @@ public class MSEcorrGroupWindow extends JFrame {
           PeakListRow trow = g.get(i);
           if (rowI != i) {
             // get correlation data (row to row)
-            R2RCorrelationData corrRows = corr.getCorrelationToRowI(trow.getID());
+            R2RFullCorrelationData corrRows = corr.getCorrelationToRowI(trow.getID());
             if (corrRows != null) {
               // for all raw data files
               for (int r = 0; r < peakList.getRawDataFiles().length; r++) {

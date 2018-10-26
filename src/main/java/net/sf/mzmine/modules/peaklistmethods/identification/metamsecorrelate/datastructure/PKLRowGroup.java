@@ -52,13 +52,14 @@ public class PKLRowGroup extends ArrayList<PeakListRow> {
 
     // test all rows against all other rows
     for (int i = 0; i < this.size(); i++) {
-      List<R2RCorrelationData> rowCorr = new ArrayList<>();
+      List<R2RFullCorrelationData> rowCorr = new ArrayList<>();
       PeakListRow testRow = this.get(i);
       for (int k = 0; k < this.size(); k++) {
         if (i != k) {
           R2RCorrelationData r2r = corrMap.get(testRow, this.get(k));
-          if (r2r != null)
-            rowCorr.add(r2r);
+          // TODO this should always be a full - otherwise do not group!
+          if (r2r != null && r2r instanceof R2RFullCorrelationData)
+            rowCorr.add((R2RFullCorrelationData) r2r);
         }
       }
       // create group corr object

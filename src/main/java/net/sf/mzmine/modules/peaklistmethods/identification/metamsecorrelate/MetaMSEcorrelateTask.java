@@ -49,6 +49,8 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData.NegativeMarker;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RFullCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeaturesFilterParameters;
@@ -114,7 +116,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   /**
    * Minimum percentage of samples (in group if useGroup) that have to contain a feature
    */
-  private final boolean useMinFInSamplesFilter;
   private final MinimumFeatureFilter minFFilter;
 
   // FEATURE SHAPE CORRELATION
@@ -156,8 +157,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     groupingParameter = (String) parameters.getParameter(MetaMSEcorrelateParameters.GROUPSPARAMETER)
         .getEmbeddedParameter().getValue();
     // by min percentage of samples in a sample set that contain this feature MIN_SAMPLES
-    useMinFInSamplesFilter =
-        parameterSet.getParameter(MetaMSEcorrelateParameters.MIN_SAMPLES_FILTER).getValue();
     MinimumFeaturesFilterParameters minS = (MinimumFeaturesFilterParameters) parameterSet
         .getParameter(MetaMSEcorrelateParameters.MIN_SAMPLES_FILTER).getEmbeddedParameters();
     minFFilter =
@@ -250,7 +249,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       // MAIN STEP
       // create correlation map
       setStage(Stage.CORRELATION_ANNOTATION);
-      R2RCorrMap corrMap = new R2RCorrMap(rtTolerance, useMinFInSamplesFilter, minFFilter);
+      R2RCorrMap corrMap = new R2RCorrMap(rtTolerance, minFFilter);
 
       // do R2R comparison correlation
       // might also do annotation if selected
@@ -400,7 +399,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         try {
           PeakListRow row = rows[i];
           // has a minimum number/% of features in all samples / in at least one groups
-          if (!useMinFInSamplesFilter || minFFilter.filterMinFeatures(raw, row)) {
+          if (minFFilter.filterMinFeatures(raw, row)) {
             for (int x = i + 1; x < totalRows; x++) {
               if (isCanceled())
                 break;
@@ -410,18 +409,15 @@ public class MetaMSEcorrelateTask extends AbstractTask {
               // groups
               // or check RTRange
               boolean isCorrelated = false;
-              if ((useMinFInSamplesFilter
-                  && minFFilter.filterMinFeaturesOverlap(raw, row, row2, rtTolerance))
-                  || (!useMinFInSamplesFilter
-                      && checkRTRange(raw, row, row2, noiseLevelShapeCorr, rtTolerance))) {
+              if (minFFilter.filterMinFeaturesOverlap(raw, row, row2, rtTolerance)) {
                 // correlate if in rt range
-                R2RCorrelationData corr = corrR2R(raw, row, row2, minDPMaxICorr,
+                R2RFullCorrelationData corr = corrR2R(raw, row, row2, minDPMaxICorr,
                     minCorrelatedDataPoints, noiseLevelShapeCorr);
                 if (corr != null) {
                   // deletes correlations if criteria is not met
                   corr.validate(minMaxICorr, minShapeCorrR);
                   // check for correlation in min samples
-                  if (useMinFInSamplesFilter && corr.hasFeatureShapeCorrelation())
+                  if (corr.hasFeatureShapeCorrelation())
                     checkMinFCorrelation(minFFilter, corr);
                   // still valid?
                   if (corr.isValid()) {
@@ -439,6 +435,12 @@ public class MetaMSEcorrelateTask extends AbstractTask {
                   if (id != null)
                     annotPairs.incrementAndGet();
                 }
+              } else {
+                // does not have enough overlapping features
+                // restrict grouping
+                R2RCorrelationData negativCorr = new R2RCorrelationData(row, row2);
+                negativCorr.addNegativMarker(NegativeMarker.FeaturesDoNotOverlap);
+                map.add(row, row2, negativCorr);
               }
               if (!isCorrelated) {
                 // these rows cannot be grouped
@@ -458,9 +460,12 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     int nR2Rcorr = 0;
     int nF2F = 0;
     for (R2RCorrelationData r2r : map.values()) {
-      if (r2r.hasFeatureShapeCorrelation()) {
-        nR2Rcorr++;
-        nF2F += r2r.getCorrPeakShape().size();
+      if (r2r instanceof R2RFullCorrelationData) {
+        R2RFullCorrelationData data = (R2RFullCorrelationData) r2r;
+        if (data.hasFeatureShapeCorrelation()) {
+          nR2Rcorr++;
+          nF2F += data.getCorrPeakShape().size();
+        }
       }
     }
 
@@ -475,7 +480,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    * @param minFFilter
    * @param corr
    */
-  private void checkMinFCorrelation(MinimumFeatureFilter minFFilter, R2RCorrelationData corr) {
+  private void checkMinFCorrelation(MinimumFeatureFilter minFFilter, R2RFullCorrelationData corr) {
     List<RawDataFile> raw = new ArrayList<>();
     for (Entry<RawDataFile, CorrelationData> e : corr.getCorrPeakShape().entrySet())
       if (e.getValue() != null && e.getValue().isValid())
@@ -517,8 +522,9 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    * @param row
    * @return R2R correlation or null if invalid/no correlation
    */
-  public static R2RCorrelationData corrR2R(RawDataFile[] raw, PeakListRow testRow, PeakListRow row,
-      int minDPMaxICorr, int minCorrelatedDataPoints, double noiseLevelShapeCorr) throws Exception {
+  public static R2RFullCorrelationData corrR2R(RawDataFile[] raw, PeakListRow testRow,
+      PeakListRow row, int minDPMaxICorr, int minCorrelatedDataPoints, double noiseLevelShapeCorr)
+      throws Exception {
     CorrelationData iProfileR = corrRowToRowIProfile(raw, testRow, row, minDPMaxICorr);
     Map<RawDataFile, CorrelationData> fCorr =
         corrRowToRowFeatureShape(raw, testRow, row, minCorrelatedDataPoints, noiseLevelShapeCorr);
@@ -526,7 +532,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     if (fCorr.isEmpty())
       fCorr = null;
 
-    R2RCorrelationData rCorr = new R2RCorrelationData(testRow, row, iProfileR, fCorr);
+    R2RFullCorrelationData rCorr = new R2RFullCorrelationData(testRow, row, iProfileR, fCorr);
     if (rCorr.isValid())
       return rCorr;
     else

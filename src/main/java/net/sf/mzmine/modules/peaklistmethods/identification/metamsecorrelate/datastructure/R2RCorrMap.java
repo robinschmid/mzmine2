@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 import com.google.common.util.concurrent.AtomicDouble;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
@@ -29,11 +30,9 @@ public class R2RCorrMap extends TreeMap<String, R2RCorrelationData> {
   private static final long serialVersionUID = 1L;
 
   private RTTolerance rtTolerance;
-  private boolean useMinFFilter;
   private MinimumFeatureFilter minFFilter;
 
-  public R2RCorrMap(RTTolerance rtTolerance, boolean useMinFFilter,
-      MinimumFeatureFilter minFFilter) {
+  public R2RCorrMap(RTTolerance rtTolerance, MinimumFeatureFilter minFFilter) {
     // sorted
     super(new Comparator<String>() {
       @Override
@@ -51,7 +50,6 @@ public class R2RCorrMap extends TreeMap<String, R2RCorrelationData> {
     });
     //
     this.rtTolerance = rtTolerance;
-    this.useMinFFilter = useMinFFilter;
     this.minFFilter = minFFilter;
   }
 
@@ -61,10 +59,6 @@ public class R2RCorrMap extends TreeMap<String, R2RCorrelationData> {
 
   public MinimumFeatureFilter getMinFeatureFilter() {
     return minFFilter;
-  }
-
-  public boolean isUseMinFFilter() {
-    return useMinFFilter;
   }
 
   /**
@@ -82,8 +76,17 @@ public class R2RCorrMap extends TreeMap<String, R2RCorrelationData> {
     return get(toKey(row, row2));
   }
 
+  public Stream<R2RFullCorrelationData> streamCorrData() {
+    return values().stream().filter(r2r -> r2r instanceof R2RFullCorrelationData)
+        .map(r2r -> (R2RFullCorrelationData) r2r);
+  }
+
+  public Stream<java.util.Map.Entry<String, R2RCorrelationData>> streamCorrDataEntries() {
+    return entrySet().stream().filter(e -> e.getValue() instanceof R2RFullCorrelationData);
+  }
+
   /**
-   * Create list of AnnotationNetworks and set net ID
+   * Create list of correlated rows
    * 
    * 
    * @param rows
@@ -108,37 +111,40 @@ public class R2RCorrMap extends TreeMap<String, R2RCorrelationData> {
       while (entries.hasNext()) {
         Entry<String, R2RCorrelationData> e = entries.next();
 
-        R2RCorrelationData data = e.getValue();
-        if (data.hasFeatureShapeCorrelation() && data.getAvgPeakShapeR() >= minShapeR) {
+        R2RCorrelationData r2r = e.getValue();
+        if (r2r instanceof R2RFullCorrelationData) {
+          R2RFullCorrelationData data = (R2RFullCorrelationData) r2r;
+          if (data.hasFeatureShapeCorrelation() && data.getAvgPeakShapeR() >= minShapeR) {
 
-          int[] ids = toKeyIDs(e.getKey());
-          // already added?
-          PKLRowGroup group = used.get(ids[0]);
-          PKLRowGroup group2 = used.get(ids[1]);
-          // merge groups if both present
-          if (group != null && group2 != null && group.getGroupID() != group2.getGroupID()) {
-            // copy all to group1 and remove g2
-            for (int g2 = 0; g2 < group2.size(); g2++) {
-              PeakListRow r = group2.get(g2);
-              group.add(r);
-              used.put(r.getID(), group);
+            int[] ids = toKeyIDs(e.getKey());
+            // already added?
+            PKLRowGroup group = used.get(ids[0]);
+            PKLRowGroup group2 = used.get(ids[1]);
+            // merge groups if both present
+            if (group != null && group2 != null && group.getGroupID() != group2.getGroupID()) {
+              // copy all to group1 and remove g2
+              for (int g2 = 0; g2 < group2.size(); g2++) {
+                PeakListRow r = group2.get(g2);
+                group.add(r);
+                used.put(r.getID(), group);
+              }
+              groups.remove(group2);
+            } else if (group == null && group2 == null) {
+              // create new group with both rows
+              group = new PKLRowGroup(raw, groups.size());
+              group.add(pkl.findRowByID(ids[0]));
+              group.add(pkl.findRowByID(ids[1]));
+              groups.add(group);
+              // mark as used
+              used.put(ids[0], group);
+              used.put(ids[1], group);
+            } else if (group2 == null) {
+              group.add(pkl.findRowByID(ids[1]));
+              used.put(ids[1], group);
+            } else if (group == null) {
+              group2.add(pkl.findRowByID(ids[0]));
+              used.put(ids[0], group2);
             }
-            groups.remove(group2);
-          } else if (group == null && group2 == null) {
-            // create new group with both rows
-            group = new PKLRowGroup(raw, groups.size());
-            group.add(pkl.findRowByID(ids[0]));
-            group.add(pkl.findRowByID(ids[1]));
-            groups.add(group);
-            // mark as used
-            used.put(ids[0], group);
-            used.put(ids[1], group);
-          } else if (group2 == null) {
-            group.add(pkl.findRowByID(ids[1]));
-            used.put(ids[1], group);
-          } else if (group == null) {
-            group2.add(pkl.findRowByID(ids[0]));
-            used.put(ids[0], group2);
           }
         }
         // report back progress
