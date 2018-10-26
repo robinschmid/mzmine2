@@ -1,11 +1,9 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure;
 
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -22,7 +20,7 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
  * @author Robin Schmid
  *
  */
-public class R2RCorrMap extends TreeMap<String, R2RCorrelationData> {
+public class R2RCorrMap extends ConcurrentHashMap<String, R2RCorrelationData> {
   private static final Logger LOG = Logger.getLogger(R2RCorrMap.class.getName());
   /**
    * 
@@ -33,21 +31,6 @@ public class R2RCorrMap extends TreeMap<String, R2RCorrelationData> {
   private MinimumFeatureFilter minFFilter;
 
   public R2RCorrMap(RTTolerance rtTolerance, MinimumFeatureFilter minFFilter) {
-    // sorted
-    super(new Comparator<String>() {
-      @Override
-      public int compare(String s1, String s2) {
-        String[] id1 = s1.split(",");
-        String[] id2 = s2.split(",");
-        int a1 = Integer.valueOf(id1[0]);
-        int a2 = Integer.valueOf(id2[0]);
-        int b1 = Integer.valueOf(id1[1]);
-        int b2 = Integer.valueOf(id2[1]);
-
-        int compareA = Integer.compare(a1, a2);
-        return compareA != 0 ? compareA : Integer.compare(b1, b2);
-      }
-    });
     //
     this.rtTolerance = rtTolerance;
     this.minFFilter = minFFilter;
@@ -85,9 +68,100 @@ public class R2RCorrMap extends TreeMap<String, R2RCorrelationData> {
     return entrySet().stream().filter(e -> e.getValue() instanceof R2RFullCorrelationData);
   }
 
+
   /**
    * Create list of correlated rows
    * 
+   * 
+   * @param rows
+   * @param stageProgress can be null. points to the progress
+   * 
+   * @return
+   */
+  public PKLRowGroupList createCorrGroupsNew(PeakList pkl, double minShapeR,
+      AtomicDouble stageProgress) {
+    LOG.info("Corr: Creating correlation groups");
+
+    try {
+      PKLRowGroupList groups = new PKLRowGroupList();
+      HashMap<Integer, PKLRowGroup> used = new HashMap<>();
+      HashMap<Integer, Integer> usedi = new HashMap<>();
+      int current = 0;
+
+      RawDataFile[] raw = pkl.getRawDataFiles();
+
+      // this.entrySet().stream().sorted(new Comparator<Entry<String, R2RCorrelationData>>() {
+      // @Override
+      // public int compare(java.util.Map.Entry<String, R2RCorrelationData> a,
+      // java.util.Map.Entry<String, R2RCorrelationData> b) {
+      // return a
+      // }
+      // })
+      // add all connections
+      Iterator<Entry<String, R2RCorrelationData>> entries = this.entrySet().iterator();
+
+      int c = 0;
+      while (entries.hasNext()) {
+        Entry<String, R2RCorrelationData> e = entries.next();
+
+        R2RCorrelationData r2r = e.getValue();
+        if (r2r instanceof R2RFullCorrelationData) {
+          R2RFullCorrelationData data = (R2RFullCorrelationData) r2r;
+          if (data.hasFeatureShapeCorrelation() && data.getAvgPeakShapeR() >= minShapeR) {
+
+            int[] ids = toKeyIDs(e.getKey());
+            // already added?
+            PKLRowGroup group = used.get(ids[0]);
+            PKLRowGroup group2 = used.get(ids[1]);
+            // merge groups if both present
+            if (group != null && group2 != null && group.getGroupID() != group2.getGroupID()) {
+              // copy all to group1 and remove g2
+              for (int g2 = 0; g2 < group2.size(); g2++) {
+                PeakListRow r = group2.get(g2);
+                group.add(r);
+                used.put(r.getID(), group);
+              }
+              groups.remove(group2);
+            } else if (group == null && group2 == null) {
+              // create new group with both rows
+              group = new PKLRowGroup(raw, groups.size());
+              group.add(pkl.findRowByID(ids[0]));
+              group.add(pkl.findRowByID(ids[1]));
+              groups.add(group);
+              // mark as used
+              used.put(ids[0], group);
+              used.put(ids[1], group);
+            } else if (group2 == null) {
+              group.add(pkl.findRowByID(ids[1]));
+              used.put(ids[1], group);
+            } else if (group == null) {
+              group2.add(pkl.findRowByID(ids[0]));
+              used.put(ids[0], group2);
+            }
+          }
+        }
+        // report back progress
+        c++;
+        if (stageProgress != null)
+          stageProgress.addAndGet(1d / this.size());
+      }
+      // sort by retention time
+      groups.sortByRT();
+
+      // reset index
+      for (int i = 0; i < groups.size(); i++)
+        groups.get(i).setGroupID(i);
+
+      LOG.info("Corr: DONE: Creating correlation groups");
+      return groups;
+    } catch (Exception e) {
+      LOG.log(Level.SEVERE, "Error while creating groups", e);
+      return null;
+    }
+  }
+
+  /**
+   * Create list of correlated rows TODO delete
    * 
    * @param rows
    * @param stageProgress can be null. points to the progress

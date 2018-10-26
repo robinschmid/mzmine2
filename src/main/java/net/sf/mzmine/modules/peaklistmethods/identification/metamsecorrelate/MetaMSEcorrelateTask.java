@@ -49,7 +49,6 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData.NegativeMarker;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RFullCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter;
@@ -438,13 +437,9 @@ public class MetaMSEcorrelateTask extends AbstractTask {
               } else {
                 // does not have enough overlapping features
                 // restrict grouping
-                R2RCorrelationData negativCorr = new R2RCorrelationData(row, row2);
-                negativCorr.addNegativMarker(NegativeMarker.FeaturesDoNotOverlap);
-                map.add(row, row2, negativCorr);
-              }
-              if (!isCorrelated) {
-                // these rows cannot be grouped
-
+                // R2RCorrelationData negativCorr = new R2RCorrelationData(row, row2);
+                // negativCorr.addNegativMarker(NegativeMarker.FeaturesDoNotOverlap);
+                // map.add(row, row2, negativCorr);
               }
             }
           }
