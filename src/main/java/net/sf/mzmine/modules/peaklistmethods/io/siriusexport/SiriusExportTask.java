@@ -465,6 +465,8 @@ public class SiriusExportTask extends AbstractTask {
     String compoundMass = "";
     if (adduct != null) {
       ion = adduct.getAdduct();
+    }
+    if (net != null) {
       compoundGroupID = net.getID() + "";
       compoundMass = mzForm.format(net.calcNeutralMass());
     }
