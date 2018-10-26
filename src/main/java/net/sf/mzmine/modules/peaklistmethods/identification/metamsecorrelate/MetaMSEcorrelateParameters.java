@@ -53,15 +53,15 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
   public static final OptionalParameter<ComboParameter<Object>> GROUPSPARAMETER =
       new OptionalParameter<ComboParameter<Object>>(new ComboParameter<Object>("Sample set",
           "Paremeter defining the sample set of each sample. (Set them in Project/Set sample parameters)",
-          new Object[0]));
+          new Object[0]), false);
 
 
   /**
    * Filter out by minimum number of features in all samples and/or in at least one sample group
    * features with height>=minHeight
    */
-  public static final OptionalModuleParameter MIN_SAMPLES_FILTER =
-      new OptionalModuleParameter("Min samples filter",
+  public static final SubModuleParameter MIN_SAMPLES_FILTER =
+      new SubModuleParameter("Min samples filter",
           "Filter out by min number of features in all samples and in sample groups",
           new MinimumFeaturesFilterParameters(true));
 
@@ -74,7 +74,7 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
   public static final OptionalModuleParameter IMAX_CORRELATION =
       new OptionalModuleParameter("Feature height correlation",
           "Feature to feature correlation of the maximum intensities across all samples.",
-          new InterSampleIntCorrParameters());
+          new InterSampleIntCorrParameters(), false);
 
 
 
@@ -87,14 +87,15 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
   public static final OptionalModuleParameter ADDUCT_LIBRARY =
       new OptionalModuleParameter("MS annotations",
           "Build adduct, in-source fragment, cluster,.. library and match all features",
-          new MSAnnotationParameters(true));
+          new MSAnnotationParameters(true), true);
 
-  public static final BooleanParameter ANNOTATE_ONLY_GROUPED = new BooleanParameter(
-      "Annotate only corr grouped", "Only rows in a correlation group are checked for annotations");
+  public static final BooleanParameter ANNOTATE_ONLY_GROUPED =
+      new BooleanParameter("Annotate only corr grouped",
+          "Only rows in a correlation group are checked for annotations", true);
 
   public static final OptionalModuleParameter<AnnotationRefinementParameters> ANNOTATION_REFINEMENTS =
       new OptionalModuleParameter<AnnotationRefinementParameters>("Annotation refinement", "",
-          new AnnotationRefinementParameters(true));
+          new AnnotationRefinementParameters(true), true);
 
 
   // Constructor

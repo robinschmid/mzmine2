@@ -69,8 +69,9 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
   /**
    * Filter by minimum height
    */
-  public static final DoubleParameter MIN_HEIGHT =
-      new DoubleParameter("Min height", "Minimum height to recognize a feature");
+  public static final DoubleParameter MIN_HEIGHT = new DoubleParameter("Min height",
+      "Minimum height to recognize a feature (important to destinguis between real peaks and minor gap-filled)",
+      MZmineCore.getConfiguration().getIntensityFormat(), 1E4);
 
   public static final PercentParameter MIN_INTENSITY_OVERLAP = new PercentParameter(
       "Min %-intensity overlap",

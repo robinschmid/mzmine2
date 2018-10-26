@@ -50,20 +50,22 @@ public class MSAnnMSMSCheckParameters extends SimpleParameterSet {
   // INCLUDED in sub
   // MZ-tolerance: deisotoping, adducts
   public static final MZToleranceParameter MZ_TOLERANCE = new MZToleranceParameter(
-      "m/z tolerance (MS/MS)", "Tolerance value of the m/z difference between peaks");
+      "m/z tolerance (MS/MS)",
+      "Tolerance value of the m/z difference between MS2 signals (and the precursor, if selected)");
 
-  public static final DoubleParameter MIN_HEIGHT = new DoubleParameter("Min height",
-      "Minimum height of signal", MZmineCore.getConfiguration().getIntensityFormat());
+  public static final DoubleParameter MIN_HEIGHT = new DoubleParameter("Min height (in MS2)",
+      "Minimum height of signal", MZmineCore.getConfiguration().getIntensityFormat(), 1E3);
 
 
   public static final BooleanParameter CHECK_MULTIMERS = new BooleanParameter("Check for multimers",
-      "Checks the truth of the multimer identification by searching the MS/MS spectra for the connection yM -> xM (x<y)");
+      "Checks the truth of the multimer identification by searching the MS/MS spectra for the connection yM -> xM (x<y)",
+      true);
 
   public static final OptionalParameter<ComboParameter<NeutralLossCheck>> CHECK_NEUTRALLOSSES =
       new OptionalParameter<ComboParameter<NeutralLossCheck>>(new ComboParameter<NeutralLossCheck>(
           "Check neutral losses (MS1->MS2)",
           "If M-H2O was detected in MS1 this modification is searched for the precursor m/z or any signal (+precursor)",
-          NeutralLossCheck.values(), NeutralLossCheck.PRECURSOR));
+          NeutralLossCheck.values(), NeutralLossCheck.PRECURSOR), true);
 
   // Constructor
   public MSAnnMSMSCheckParameters() {

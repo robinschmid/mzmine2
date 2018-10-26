@@ -70,10 +70,10 @@ public class MSAnnotationParameters extends SimpleParameterSet {
   public static final IntegerParameter MAX_MOLECULES = new IntegerParameter(
       "Maximum molecules/cluster", "Maximum molecules per cluster (f.e. [2M+Na]+).", 3, 1, 10);
   public static final IntegerParameter MAX_COMBINATION = new IntegerParameter("Maximum combination",
-      "Maximum combination of adducts (set in the list) (f.e. [M+H+Na]2+ = combination of two).", 3,
+      "Maximum combination of adducts (set in the list) (f.e. [M+H+Na]2+ = combination of two).", 1,
       1, 10);
   public static final IntegerParameter MAX_MODS = new IntegerParameter("Maximum modification",
-      "Maximum modification of adducts (set in the list)", 2, 0, 10);
+      "Maximum modification of adducts (set in the list)", 1, 0, 10);
 
   public static final ESIAdductsParameter ADDUCTS = new ESIAdductsParameter("Adducts",
       "List of adducts, each one refers a specific distance in m/z axis between related peaks");

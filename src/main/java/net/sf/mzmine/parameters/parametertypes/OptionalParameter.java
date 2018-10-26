@@ -19,11 +19,8 @@
 package net.sf.mzmine.parameters.parametertypes;
 
 import java.util.Collection;
-
 import javax.swing.JComponent;
-
 import net.sf.mzmine.parameters.UserParameter;
-
 import org.w3c.dom.Element;
 
 /**
@@ -39,6 +36,11 @@ public class OptionalParameter<EmbeddedParameterType extends UserParameter<?, ?>
   // It is important to set default value here, otherwise the embedded value
   // is not shown in the parameter setup dialog
   private Boolean value = false;
+
+  public OptionalParameter(EmbeddedParameterType embeddedParameter, boolean defaultVal) {
+    this(embeddedParameter);
+    this.value = defaultVal;
+  }
 
   public OptionalParameter(EmbeddedParameterType embeddedParameter) {
     this.embeddedParameter = embeddedParameter;
@@ -87,6 +89,7 @@ public class OptionalParameter<EmbeddedParameterType extends UserParameter<?, ?>
     return copy;
   }
 
+  @Override
   public void setValueFromComponent(OptionalParameterComponent component) {
     this.value = component.isSelected();
     if (value) {

@@ -62,7 +62,7 @@ public class FeatureShapeCorrelationParameters extends SimpleParameterSet {
   // min data points to be used for correlation
   public static final IntegerParameter MIN_DP_CORR_PEAK_SHAPE =
       new IntegerParameter("Min data points",
-          "Minimum of data points to be used for correlation of peak shapes.", 3, 3, 100000);
+          "Minimum of data points to be used for correlation of peak shapes.", 5, 3, 100000);
 
   // minimum Pearson correlation (r) for feature grouping in the same scan event of one raw file
   public static final PercentParameter MIN_R_SHAPE_INTRA = new PercentParameter(

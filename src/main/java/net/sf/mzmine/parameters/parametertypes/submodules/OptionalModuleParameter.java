@@ -35,6 +35,12 @@ public class OptionalModuleParameter<T extends ParameterSet>
   private T embeddedParameters;
   private Boolean value;
 
+  public OptionalModuleParameter(String name, String description, T embeddedParameters,
+      boolean defaultVal) {
+    this(name, description, embeddedParameters);
+    value = defaultVal;
+  }
+
   public OptionalModuleParameter(String name, String description, T embeddedParameters) {
     this.name = name;
     this.description = description;
