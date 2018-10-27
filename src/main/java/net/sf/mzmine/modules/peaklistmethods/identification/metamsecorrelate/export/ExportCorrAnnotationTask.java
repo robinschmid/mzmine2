@@ -19,17 +19,23 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.export;
 
 import java.io.File;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.lang3.StringUtils;
+import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.MetaMSEcorrelateModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupPeakIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
@@ -38,6 +44,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RFullCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
@@ -50,6 +57,10 @@ import net.sf.mzmine.util.io.TxtWriter;
 public class ExportCorrAnnotationTask extends AbstractTask {
   // Logger.
   private static final Logger LOG = Logger.getLogger(ExportCorrAnnotationTask.class.getName());
+
+  public enum EDGES {
+    ID1, ID2, EdgeType, Score, Annotation;
+  }
 
   public enum ANNOTATION {
     ID1, ID2, ANNOTATION1, ANNOTATION2, ANNO_NETID, MZ1, MZ2, DELTA_MZ, DELTA_AVG_RT, RT1, RT2, INTENSITY1, INTENSITY2, AREA1, AREA2, CORR_GROUP, AVG_CORR, AVG_DP, CORRELATED_F2F, TOTAL_CORR, IMAX_CORR;
@@ -155,6 +166,11 @@ public class ExportCorrAnnotationTask extends AbstractTask {
       MSEGroupedPeakList pkl = (MSEGroupedPeakList) peakList;
       R2RCorrMap corrMap = pkl.getCorrelationMap();
 
+      // export edges of corr
+      exportAnnotationEdges(pkl, filename, progress, this);
+      // export edges of ann
+      exportCorrelationEdges(pkl, filename, progress, this, minR);
+
       // export annotation networks to file
       if (exAnnotationsFile) {
         // edges file
@@ -177,6 +193,140 @@ public class ExportCorrAnnotationTask extends AbstractTask {
     }
 
     setStatus(TaskStatus.FINISHED);
+  }
+
+
+  public static boolean exportAnnotationEdges(PeakList pkl, File filename, Double progress,
+      AbstractTask task) {
+    NumberFormat mzForm = MZmineCore.getConfiguration().getMZFormat();
+    NumberFormat corrForm = new DecimalFormat("0.000");
+    try {
+      PeakListRow[] rows = pkl.getRows();
+      Arrays.sort(rows, new PeakListRowSorter(SortingProperty.ID, SortingDirection.Ascending));
+      StringBuilder ann = new StringBuilder();
+
+      // add header
+      ann.append(StringUtils.join(EDGES.values(), ','));
+      ann.append("\n");
+
+      AtomicInteger added = new AtomicInteger(0);
+      // for all rows
+      for (PeakListRow r : rows) {
+        if (task != null && task.isCanceled()) {
+          return false;
+        }
+        // row1
+        int rowID = r.getID();
+
+        //
+        MSAnnotationNetworkLogic.getAllAnnotations(r).stream().forEach(adduct -> {
+          ConcurrentHashMap<PeakListRow, ESIAdductIdentity> links = adduct.getPartner();
+
+          // add all connection for ids>rowID
+          links.entrySet().stream().filter(e -> e != null).filter(e -> e.getKey().getID() > rowID)
+              .forEach(e -> {
+                PeakListRow link = e.getKey();
+                ESIAdductIdentity id = e.getValue();
+                double dmz = Math.abs(r.getAverageMZ() - link.getAverageMZ());
+                // the data
+                exportEdge(ann, "MS1 annotation", rowID, e.getKey().getID(),
+                    corrForm.format((id.getScore() + adduct.getScore()) / 2d), //
+                    id.getAdduct() + " " + adduct.getAdduct() + " dm/z=" + mzForm.format(dmz));
+                added.incrementAndGet();
+              });
+        });
+      }
+
+      LOG.info("Annotation edges exported " + added.get() + "");
+
+      // export ann edges
+      // Filename
+      writeToFile(ann.toString(), filename, "_edges_msannotation", ".csv");
+      return true;
+    } catch (Exception e) {
+      throw new MSDKRuntimeException(e);
+    }
+  }
+
+  public static boolean exportCorrelationEdges(PeakList pkl, File filename, Double progress,
+      AbstractTask task, double minCorr) {
+    if (!(pkl instanceof MSEGroupedPeakList))
+      return false;
+
+    R2RCorrMap map = ((MSEGroupedPeakList) pkl).getCorrelationMap();
+
+    NumberFormat corrForm = new DecimalFormat("0.000");
+    try {
+      StringBuilder ann = new StringBuilder();
+      // add header
+      ann.append(StringUtils.join(EDGES.values(), ','));
+      ann.append("\n");
+
+      AtomicInteger added = new AtomicInteger(0);
+      // for all rows
+      map.streamCorrDataEntries().filter(e -> e.getValue().getAvgPeakShapeR() >= minCorr)
+          .forEach(e -> {
+            int[] ids = R2RCorrMap.toKeyIDs(e.getKey());
+            exportEdge(ann, "MS1 shape correlation", ids[0], ids[1],
+                corrForm.format(e.getValue().getAvgPeakShapeR()),
+                "r=" + corrForm.format(e.getValue().getAvgPeakShapeR()));
+          });
+
+      LOG.info("Correlation edges exported " + added.get() + "");
+
+      // export ann edges
+      // Filename
+      writeToFile(ann.toString(), filename, "_edges_ms1correlation", ".csv");
+      return true;
+    } catch (Exception e) {
+      throw new MSDKRuntimeException(e);
+    }
+  }
+
+  private static void writeToFile(String data, File filename, String suffix, String format) {
+    TxtWriter writer = new TxtWriter();
+    File realFile = FileAndPathUtil.eraseFormat(filename);
+    realFile = FileAndPathUtil.getRealFilePath(filename.getParentFile(),
+        realFile.getName() + suffix, format);
+    writer.openNewFileOutput(realFile);
+    writer.write(data);
+    writer.closeDatOutput();
+    LOG.info("File created: " + realFile);
+  }
+
+  private static void exportEdge(StringBuilder ann, String type, int id1, int id2, String score,
+      String annotation) {
+    // the data
+    Object[] data = new Object[EDGES.values().length];
+
+    // add all data
+    for (int d = 0; d < EDGES.values().length; d++) {
+      switch (EDGES.values()[d]) {
+        case ID1:
+          data[d] = id1 + "";
+          break;
+        case ID2:
+          data[d] = id2 + "";
+          break;
+        case EdgeType:
+          data[d] = type;
+          break;
+        case Annotation:
+          data[d] = annotation;
+          break;
+        case Score:
+          data[d] = score;
+          break;
+      }
+    }
+    // replace null
+    for (int j = 0; j < data.length; j++) {
+      if (data[j] == null)
+        data[j] = "";
+    }
+    // add data
+    ann.append(StringUtils.join(data, ','));
+    ann.append("\n");
   }
 
   /**

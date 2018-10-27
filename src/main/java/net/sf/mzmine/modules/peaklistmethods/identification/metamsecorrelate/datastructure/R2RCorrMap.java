@@ -104,6 +104,9 @@ public class R2RCorrMap extends ConcurrentHashMap<String, R2RCorrelationData> {
         // already added?
         Integer group = usedi.get(ids[0]);
         Integer group2 = usedi.get(ids[1]);
+        // TODO add negative check
+        // R2R can be negativemarker
+        //
 
         if (r2r.hasFeatureShapeCorrelation() && r2r.getAvgPeakShapeR() >= minShapeR) {
           // merge groups if both present

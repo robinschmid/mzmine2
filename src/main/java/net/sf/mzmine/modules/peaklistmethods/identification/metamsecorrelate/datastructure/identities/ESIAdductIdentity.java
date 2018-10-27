@@ -196,6 +196,10 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
     return partner.keySet().stream().mapToInt(PeakListRow::getID).toArray();
   }
 
+  public ConcurrentHashMap<PeakListRow, ESIAdductIdentity> getPartner() {
+    return partner;
+  }
+
   /**
    * Network number
    * 
@@ -309,6 +313,17 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
 
   public boolean isDeleted() {
     return isDeleted;
+  }
+
+  /**
+   * Score is the network size plus MSMS verifiers
+   * 
+   * @return
+   */
+  public int getScore() {
+    if (network == null)
+      return partner.size();
+    return network.size() + (getMSMSMultimerCount() > 0 ? 1 : 0) + (getMSMSModVerify() > 0 ? 1 : 0);
   }
 
 }
