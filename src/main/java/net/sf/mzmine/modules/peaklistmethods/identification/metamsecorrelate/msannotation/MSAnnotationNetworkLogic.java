@@ -76,17 +76,31 @@ public class MSAnnotationNetworkLogic {
    */
   public static ESIAdductIdentity getMostLikelyAnnotation(PeakListRow row, PKLRowGroup g) {
     ESIAdductIdentity best = null;
-    int maxLinks = 0;
     for (PeakIdentity id : row.getPeakIdentities()) {
       if (id instanceof ESIAdductIdentity) {
         ESIAdductIdentity esi = (ESIAdductIdentity) id;
-        int links = getLinksTo(esi, g);
         int compare = compareRows(best, esi, g);
         if (compare < 0)
           best = esi;
       }
     }
     return best;
+  }
+
+
+  /**
+   * 
+   * @param row
+   * @param g can be null. can be used to limit the number of links
+   * @return
+   */
+  public static boolean hasIonAnnotation(PeakListRow row) {
+    for (PeakIdentity id : row.getPeakIdentities()) {
+      if (id instanceof ESIAdductIdentity) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**

@@ -203,10 +203,8 @@ public class ExportCorrAnnotationTask extends AbstractTask {
             boolean export = true;
             if (onlyAnnotated) {
               // find annotations
-              export = MSAnnotationNetworkLogic.getMostLikelyAnnotation(pkl.findRowByID(ids[0]),
-                  true) != null
-                  && MSAnnotationNetworkLogic.getMostLikelyAnnotation(pkl.findRowByID(ids[1]),
-                      true) != null;
+              export = MSAnnotationNetworkLogic.hasIonAnnotation(pkl.findRowByID(ids[0]))
+                  && MSAnnotationNetworkLogic.hasIonAnnotation(pkl.findRowByID(ids[1]));
             }
 
             //
