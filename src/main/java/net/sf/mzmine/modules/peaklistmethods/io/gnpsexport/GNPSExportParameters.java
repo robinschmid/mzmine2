@@ -35,6 +35,8 @@ public class GNPSExportParameters extends SimpleParameterSet {
       "mgf");
 
   public static final MassListParameter MASS_LIST = new MassListParameter();
+  public static final BooleanParameter LIMIT_TO_MSMS = new BooleanParameter(
+      "Only export features with MS/MS", "Limit the exported rows to those with MS/MS data", true);
 
   public static final BooleanParameter OPEN_GNPS = new BooleanParameter("Open GNPS website",
       "Opens the super qick start of GNPS feature based networking in the standard browser.",
@@ -44,7 +46,7 @@ public class GNPSExportParameters extends SimpleParameterSet {
       new BooleanParameter("Open folder", "Opens the export folder", false);
 
   public GNPSExportParameters() {
-    super(new Parameter[] {PEAK_LISTS, FILENAME, MASS_LIST, OPEN_GNPS, OPEN_FOLDER});
+    super(new Parameter[] {PEAK_LISTS, FILENAME, MASS_LIST, LIMIT_TO_MSMS, OPEN_GNPS, OPEN_FOLDER});
   }
 
   @Override

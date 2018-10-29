@@ -73,9 +73,11 @@ public class GNPSExportModule implements MZmineProcessingModule {
     ExportRowDataFileElement[] rawdata =
         new ExportRowDataFileElement[] {ExportRowDataFileElement.PEAK_AREA};
 
+    boolean limitToMSMS = parameters.getParameter(GNPSExportParameters.LIMIT_TO_MSMS).getValue();
+
     CSVExportTask quanExport = new CSVExportTask(
         parameters.getParameter(GNPSExportParameters.PEAK_LISTS).getValue().getMatchingPeakLists(), //
-        full, ",", common, rawdata, false, ";");
+        full, ",", common, rawdata, false, ";", limitToMSMS);
     tasks.add(quanExport);
   }
 
@@ -87,11 +89,12 @@ public class GNPSExportModule implements MZmineProcessingModule {
    */
   private void addExtraEdgesTask(ParameterSet parameters, Collection<Task> tasks) {
     File full = parameters.getParameter(GNPSExportParameters.FILENAME).getValue();
+    boolean limitToMSMS = parameters.getParameter(GNPSExportParameters.LIMIT_TO_MSMS).getValue();
 
     Task extraEdgeExport = new ExportCorrAnnotationTask(
         parameters.getParameter(GNPSExportParameters.PEAK_LISTS).getValue()
             .getMatchingPeakLists()[0], //
-        full, 0, true);
+        full, 0, true, limitToMSMS);
     tasks.add(extraEdgeExport);
   }
 

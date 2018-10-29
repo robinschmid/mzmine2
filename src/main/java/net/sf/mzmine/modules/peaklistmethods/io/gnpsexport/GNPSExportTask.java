@@ -62,6 +62,7 @@ public class GNPSExportTask extends AbstractTask {
   private NumberFormat corrForm = new DecimalFormat("0.0000");
   private boolean openBrowser;
   private boolean openFolder;
+  private boolean limitToMSMS;
 
   GNPSExportTask(ParameterSet parameters) {
     this.peakLists =
@@ -71,6 +72,7 @@ public class GNPSExportTask extends AbstractTask {
     this.massListName = parameters.getParameter(GNPSExportParameters.MASS_LIST).getValue();
     this.openBrowser = parameters.getParameter(GNPSExportParameters.OPEN_GNPS).getValue();
     this.openFolder = parameters.getParameter(GNPSExportParameters.OPEN_FOLDER).getValue();
+    this.limitToMSMS = parameters.getParameter(GNPSExportParameters.LIMIT_TO_MSMS).getValue();
   }
 
   @Override
@@ -160,6 +162,10 @@ public class GNPSExportTask extends AbstractTask {
     final String newLine = System.lineSeparator();
 
     for (PeakListRow row : peakList.getRows()) {
+      // do not export if no MSMS
+      if (limitToMSMS && row.getBestFragmentation() == null)
+        continue;
+
       String rowID = Integer.toString(row.getID());
       double retTimeInSeconds = ((row.getAverageRT() * 60 * 100.0) / 100.);
 

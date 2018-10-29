@@ -59,6 +59,7 @@ public class CSVExportTask extends AbstractTask {
   private ExportRowDataFileElement[] dataFileElements;
   private Boolean exportAllPeakInfo;
   private String idSeparator;
+  private boolean limitToMSMS;
 
   public CSVExportTask(ParameterSet parameters) {
     this.peakLists =
@@ -69,6 +70,7 @@ public class CSVExportTask extends AbstractTask {
     dataFileElements = parameters.getParameter(CSVExportParameters.exportDataFileItems).getValue();
     exportAllPeakInfo = parameters.getParameter(CSVExportParameters.exportAllPeakInfo).getValue();
     idSeparator = parameters.getParameter(CSVExportParameters.idSeparator).getValue();
+    this.limitToMSMS = parameters.getParameter(CSVExportParameters.limitToMSMS).getValue();
 
     // if best annotation and best annotation plus support was selected - deselect
     refineCommonElements();
@@ -86,7 +88,7 @@ public class CSVExportTask extends AbstractTask {
 
   public CSVExportTask(PeakList[] peakLists, File fileName, String fieldSeparator,
       ExportRowCommonElement[] commonElements, ExportRowDataFileElement[] dataFileElements,
-      Boolean exportAllPeakInfo, String idSeparator) {
+      Boolean exportAllPeakInfo, String idSeparator, boolean limitToMSMS) {
     super();
     this.peakLists = peakLists;
     this.fileName = fileName;
@@ -95,6 +97,7 @@ public class CSVExportTask extends AbstractTask {
     this.dataFileElements = dataFileElements;
     this.exportAllPeakInfo = exportAllPeakInfo;
     this.idSeparator = idSeparator;
+    this.limitToMSMS = limitToMSMS;
 
     // if best annotation and best annotation plus support was selected - deselect
     refineCommonElements();
@@ -211,6 +214,8 @@ public class CSVExportTask extends AbstractTask {
     Set<String> peakInformationFields = new HashSet<>();
 
     for (PeakListRow row : peakList.getRows()) {
+      if (limitToMSMS && row.getBestFragmentation() == null)
+        continue;
       if (row.getPeakInformation() != null) {
         for (String key : row.getPeakInformation().getAllProperties().keySet()) {
           peakInformationFields.add(key);
@@ -245,6 +250,9 @@ public class CSVExportTask extends AbstractTask {
 
     // Write data rows
     for (PeakListRow peakListRow : peakList.getRows()) {
+
+      if (limitToMSMS && peakListRow.getBestFragmentation() == null)
+        continue;
 
       // Cancel?
       if (isCanceled()) {

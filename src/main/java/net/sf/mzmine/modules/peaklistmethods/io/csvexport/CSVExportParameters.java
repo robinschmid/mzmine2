@@ -55,9 +55,12 @@ public class CSVExportParameters extends SimpleParameterSet {
   public static final StringParameter idSeparator = new StringParameter("Identification separator",
       "Character(s) used to separate identification results in the exported file", ";");
 
+  public static final BooleanParameter limitToMSMS = new BooleanParameter(
+      "Limit to rows with MS/MS", "Only export rows that have MS/MS data", false);
+
   public CSVExportParameters() {
     super(new Parameter[] {peakLists, filename, fieldSeparator, exportCommonItems,
-        exportDataFileItems, exportAllPeakInfo, idSeparator});
+        exportDataFileItems, exportAllPeakInfo, idSeparator, limitToMSMS});
   }
 
 }

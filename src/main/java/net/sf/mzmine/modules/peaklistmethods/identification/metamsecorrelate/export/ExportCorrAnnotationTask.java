@@ -64,6 +64,9 @@ public class ExportCorrAnnotationTask extends AbstractTask {
   private File filename;
   private boolean exportOnlyAnnotated;
 
+
+  private boolean limitToMSMS;
+
   /**
    * Create the task.
    *
@@ -87,11 +90,12 @@ public class ExportCorrAnnotationTask extends AbstractTask {
    * @param list peak list.
    */
   public ExportCorrAnnotationTask(PeakList peakList, File filename, double minR,
-      boolean exportOnlyAnnotated) {
+      boolean exportOnlyAnnotated, boolean limitToMSMS) {
     this.peakList = peakList;
     this.filename = filename;
     this.minR = minR;
     this.exportOnlyAnnotated = exportOnlyAnnotated;
+    this.limitToMSMS = limitToMSMS;
   }
 
   @Override
@@ -111,9 +115,10 @@ public class ExportCorrAnnotationTask extends AbstractTask {
       LOG.info("Starting export of adduct and correlation networks" + peakList.getName());
 
       // export edges of corr
-      exportAnnotationEdges(peakList, filename, progress, this);
+      exportAnnotationEdges(peakList, filename, limitToMSMS, progress, this);
       // export edges of ann
-      exportCorrelationEdges(peakList, filename, progress, this, minR, exportOnlyAnnotated);
+      exportCorrelationEdges(peakList, filename, progress, this, minR, exportOnlyAnnotated,
+          limitToMSMS);
 
     } catch (Exception t) {
       LOG.log(Level.SEVERE, "Export of correlation and MS annotation results error", t);
@@ -125,8 +130,8 @@ public class ExportCorrAnnotationTask extends AbstractTask {
   }
 
 
-  public static boolean exportAnnotationEdges(PeakList pkl, File filename, Double progress,
-      AbstractTask task) {
+  public static boolean exportAnnotationEdges(PeakList pkl, File filename, boolean limitToMSMS,
+      Double progress, AbstractTask task) {
     NumberFormat mzForm = MZmineCore.getConfiguration().getMZFormat();
     NumberFormat corrForm = new DecimalFormat("0.000");
     try {
@@ -141,6 +146,10 @@ public class ExportCorrAnnotationTask extends AbstractTask {
       AtomicInteger added = new AtomicInteger(0);
       // for all rows
       for (PeakListRow r : rows) {
+
+        if (limitToMSMS && r.getBestFragmentation() == null)
+          continue;
+
         if (task != null && task.isCanceled()) {
           return false;
         }
@@ -181,7 +190,7 @@ public class ExportCorrAnnotationTask extends AbstractTask {
   }
 
   public static boolean exportCorrelationEdges(PeakList pkl, File filename, Double progress,
-      AbstractTask task, double minCorr, boolean onlyAnnotated) {
+      AbstractTask task, double minCorr, boolean onlyAnnotated, boolean limitToMSMS) {
     if (!(pkl instanceof MSEGroupedPeakList))
       return false;
 
@@ -201,10 +210,17 @@ public class ExportCorrAnnotationTask extends AbstractTask {
             int[] ids = R2RCorrMap.toKeyIDs(e.getKey());
             //
             boolean export = true;
-            if (onlyAnnotated) {
-              // find annotations
-              export = MSAnnotationNetworkLogic.hasIonAnnotation(pkl.findRowByID(ids[0]))
-                  && MSAnnotationNetworkLogic.hasIonAnnotation(pkl.findRowByID(ids[1]));
+            if (limitToMSMS || onlyAnnotated) {
+              PeakListRow a = pkl.findRowByID(ids[0]);
+              PeakListRow b = pkl.findRowByID(ids[1]);
+              // only export rows with MSMS
+              if (limitToMSMS)
+                export = a.getBestFragmentation() != null && b.getBestFragmentation() != null;
+              if (export && onlyAnnotated) {
+                // find annotations
+                export = MSAnnotationNetworkLogic.hasIonAnnotation(a)
+                    && MSAnnotationNetworkLogic.hasIonAnnotation(b);
+              }
             }
 
             //
