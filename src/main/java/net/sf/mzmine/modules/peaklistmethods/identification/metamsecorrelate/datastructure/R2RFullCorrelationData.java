@@ -21,9 +21,6 @@ public class R2RFullCorrelationData extends R2RCorrelationData {
     MinFeaturesRequirementNotMet; //
   }
 
-  // correlation of a to b
-  private PeakListRow a, b;
-
   // correlation of all data points in one total correlation
   private CorrelationData corrTotal;
   // correlation to all peaks
@@ -115,6 +112,7 @@ public class R2RFullCorrelationData extends R2RCorrelationData {
     this.maxPeakShapeR = maxPeakShapeR;
   }
 
+  @Override
   public double getAvgPeakShapeR() {
     return avgPeakShapeR;
   }
@@ -131,30 +129,12 @@ public class R2RFullCorrelationData extends R2RCorrelationData {
     this.corrIProfile = corrIProfile;
   }
 
-
-  @Override
-  public PeakListRow getRowA() {
-    return a;
-  }
-
-  @Override
-  public PeakListRow getRowB() {
-    return b;
-  }
-
-  public int getIDA() {
-    return a == null ? 0 : a.getID();
-  }
-
-  public int getIDB() {
-    return b == null ? 0 : b.getID();
-  }
-
   public boolean hasIMaxCorr() {
     return corrIProfile != null && corrIProfile.getReg() != null
         && corrIProfile.getReg().getN() > 0;
   }
 
+  @Override
   public boolean hasFeatureShapeCorrelation() {
     return (corrPeakShape != null && !corrPeakShape.isEmpty());
   }

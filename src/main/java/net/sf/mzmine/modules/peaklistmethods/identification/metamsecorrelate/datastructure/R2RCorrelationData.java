@@ -78,6 +78,14 @@ public class R2RCorrelationData {
     return b;
   }
 
+  public int getIDA() {
+    return a == null ? 0 : a.getID();
+  }
+
+  public int getIDB() {
+    return b == null ? 0 : b.getID();
+  }
+
   public boolean hasFeatureShapeCorrelation() {
     return false;
   }
