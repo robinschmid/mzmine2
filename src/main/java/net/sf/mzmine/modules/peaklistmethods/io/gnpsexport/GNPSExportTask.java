@@ -12,9 +12,11 @@
 
 package net.sf.mzmine.modules.peaklistmethods.io.gnpsexport;
 
+import java.awt.Desktop;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URI;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
@@ -38,6 +40,13 @@ import net.sf.mzmine.taskcontrol.TaskStatus;
 import net.sf.mzmine.util.PeakUtils;
 
 public class GNPSExportTask extends AbstractTask {
+  /**
+   * The website
+   */
+  public static final String GNPS_WEBSITE =
+      "http://mingwangbeta.ucsd.edu:5050/featurebasednetworking";
+
+  //
   private final PeakList[] peakLists;
   private final File fileName;
   private final String plNamePattern = "{}";
@@ -51,14 +60,17 @@ public class GNPSExportTask extends AbstractTask {
   private NumberFormat rtsForm = new DecimalFormat("0.###");
   // correlation
   private NumberFormat corrForm = new DecimalFormat("0.0000");
+  private boolean openBrowser;
+  private boolean openFolder;
 
   GNPSExportTask(ParameterSet parameters) {
     this.peakLists =
         parameters.getParameter(GNPSExportParameters.PEAK_LISTS).getValue().getMatchingPeakLists();
 
     this.fileName = parameters.getParameter(GNPSExportParameters.FILENAME).getValue();
-
     this.massListName = parameters.getParameter(GNPSExportParameters.MASS_LIST).getValue();
+    this.openBrowser = parameters.getParameter(GNPSExportParameters.OPEN_GNPS).getValue();
+    this.openFolder = parameters.getParameter(GNPSExportParameters.OPEN_FOLDER).getValue();
   }
 
   @Override
@@ -127,6 +139,17 @@ public class GNPSExportTask extends AbstractTask {
       // treat one peak list only
       if (!substitute)
         break;
+    }
+
+    // open?
+    try {
+      if (Desktop.isDesktopSupported()) {
+        if (openBrowser)
+          Desktop.getDesktop().browse(new URI(GNPS_WEBSITE));
+        if (openFolder)
+          Desktop.getDesktop().open(fileName.getParentFile());
+      }
+    } catch (Exception ex) {
     }
 
     if (getStatus() == TaskStatus.PROCESSING)

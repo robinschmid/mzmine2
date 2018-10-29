@@ -13,10 +13,10 @@
 package net.sf.mzmine.modules.peaklistmethods.io.gnpsexport;
 
 import java.awt.Window;
-
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
+import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.MassListParameter;
 import net.sf.mzmine.parameters.parametertypes.filenames.FileNameParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
@@ -36,10 +36,18 @@ public class GNPSExportParameters extends SimpleParameterSet {
 
   public static final MassListParameter MASS_LIST = new MassListParameter();
 
+  public static final BooleanParameter OPEN_GNPS = new BooleanParameter("Open GNPS website",
+      "Opens the super qick start of GNPS feature based networking in the standard browser.",
+      false);
+
+  public static final BooleanParameter OPEN_FOLDER =
+      new BooleanParameter("Open folder", "Opens the export folder", false);
+
   public GNPSExportParameters() {
-    super(new Parameter[] {PEAK_LISTS, FILENAME, MASS_LIST});
+    super(new Parameter[] {PEAK_LISTS, FILENAME, MASS_LIST, OPEN_GNPS, OPEN_FOLDER});
   }
 
+  @Override
   public ExitCode showSetupDialog(Window parent, boolean valueCheckRequired) {
     String message = "<html>GNPS Module Disclaimer:"
         + "<br>    - If you use the GNPS export module for <a href=\"http://gnps.ucsd.edu/\">GNPS web-platform</a>, cite <a href=\"https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-11-395\">MZmine2 paper</a> and the following article:"
