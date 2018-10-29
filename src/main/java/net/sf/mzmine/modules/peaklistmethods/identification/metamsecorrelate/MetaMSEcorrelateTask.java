@@ -52,6 +52,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RFullCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter.OverlapResult;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.AnnotationNetwork;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary;
@@ -260,6 +261,9 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       setStage(Stage.GROUPING);
       PKLRowGroupList groups = corrMap.createCorrGroups(groupedPKL, minShapeCorrR, stageProgress);
 
+      // refine groups
+      refineGroups(groups);
+
       if (isCanceled())
         return;
       // refinement:
@@ -350,6 +354,52 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   }
 
   /**
+   * Recalc
+   * 
+   * @param groups
+   */
+  private void refineGroups(PKLRowGroupList groups) {
+    // refineGroup(groups, 0);
+  }
+
+
+  private void refineGroup(PKLRowGroupList groups, int i) {
+    if (i < groups.size()) {
+      PKLRowGroup g = groups.get(i);
+      // find row with highest number of negative markers and lowest number of partners
+      List<OverlapResult>[] negative = findNegativeMarkers(g);
+
+      int maxRow = -1;
+      for (int r = 0; r < g.size(); r++) {
+        if (!negative[r].isEmpty() && negative[r].size() > maxRow)
+          maxRow = r;
+      }
+
+      if (maxRow != -1) {
+        // remove
+      }
+    }
+  }
+
+  private List<OverlapResult>[] findNegativeMarkers(PKLRowGroup g) {
+    RawDataFile[] raw = groupedPKL.getRawDataFiles();
+    List<OverlapResult>[] negative = new ArrayList[g.size()];
+    for (int r = 0; r < g.size(); r++) {
+      negative[r] = new ArrayList<OverlapResult>();
+      for (int p = 0; p < g.size(); p++) {
+        if (r != p) {
+          // add only negative
+          OverlapResult overlap =
+              minFFilter.filterMinFeaturesOverlap(raw, g.get(r), g.get(p), rtTolerance);
+          if (!overlap.equals(OverlapResult.TRUE))
+            negative[r].add(overlap);
+        }
+      }
+    }
+    return negative;
+  }
+
+  /**
    * Annotates all rows in a group
    * 
    * @param g
@@ -407,8 +457,9 @@ public class MetaMSEcorrelateTask extends AbstractTask {
               // has a minimum number/% of overlapping features in all samples / in at least one
               // groups
               // or check RTRange
-              boolean isCorrelated = false;
-              if (minFFilter.filterMinFeaturesOverlap(raw, row, row2, rtTolerance)) {
+              OverlapResult overlap =
+                  minFFilter.filterMinFeaturesOverlap(raw, row, row2, rtTolerance);
+              if (overlap.equals(OverlapResult.TRUE)) {
                 // correlate if in rt range
                 R2RFullCorrelationData corr = corrR2R(raw, row, row2, minDPMaxICorr,
                     minCorrelatedDataPoints, noiseLevelShapeCorr);
@@ -421,7 +472,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
                   // still valid?
                   if (corr.isValid()) {
                     map.add(row, row2, corr);
-                    isCorrelated = true;
                   }
                 }
 
@@ -434,12 +484,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
                   if (id != null)
                     annotPairs.incrementAndGet();
                 }
-              } else {
-                // does not have enough overlapping features
-                // restrict grouping
-                // R2RCorrelationData negativCorr = new R2RCorrelationData(row, row2);
-                // negativCorr.addNegativMarker(NegativeMarker.FeaturesDoNotOverlap);
-                // map.add(row, row2, negativCorr);
               }
             }
           }

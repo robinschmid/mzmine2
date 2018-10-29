@@ -12,6 +12,13 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 
 public class MinimumFeatureFilter {
 
+  public enum OverlapResult {
+    TRUE, // all requirements met
+    AntiOverlap, // Features in at least one sample were not overlapping with X% of intensity
+    OutOfRTRange, // Features in at least one sample were out of RT range
+    BelowMinSamples; // not enough overlapping samples
+  }
+
   /**
    * Minimum percentage of samples (in group if useGroup) that have to contain a feature
    */
@@ -128,7 +135,7 @@ public class MinimumFeatureFilter {
    * @param row2
    * @return
    */
-  public boolean filterMinFeaturesOverlap(final RawDataFile raw[], PeakListRow row,
+  public OverlapResult filterMinFeaturesOverlap(final RawDataFile raw[], PeakListRow row,
       PeakListRow row2) {
     return filterMinFeaturesOverlap(raw, row, row2, null);
   }
@@ -144,8 +151,9 @@ public class MinimumFeatureFilter {
    * @param rtTolerance
    * @return
    */
-  public boolean filterMinFeaturesOverlap(final RawDataFile raw[], PeakListRow row,
+  public OverlapResult filterMinFeaturesOverlap(final RawDataFile raw[], PeakListRow row,
       PeakListRow row2, RTTolerance rtTolerance) {
+    OverlapResult result = OverlapResult.TRUE;
     // filter min samples in all
     if (minFInSamples.isGreaterZero()) {
       int n = 0;
@@ -153,23 +161,27 @@ public class MinimumFeatureFilter {
         Feature a = row.getPeak(file);
         Feature b = row2.getPeak(file);
         if (checkHeight(a, b)) {
-          if (checkRTTol(rtTolerance, a, b)
-              && checkIntensityOverlap(a, b, minIPercOverlap, minFeatureHeight)) {
-            n++;
+          if (checkRTTol(rtTolerance, a, b)) {
+            if (checkIntensityOverlap(a, b, minIPercOverlap, minFeatureHeight))
+              n++;
+            else
+              result = OverlapResult.AntiOverlap;
           } else {
-            if (strictRules)
-              return false;
+            result = OverlapResult.OutOfRTRange;
           }
+          // directly return on stric rules
+          if (!result.equals(OverlapResult.TRUE) && strictRules)
+            return result;
         }
       }
       // stop if <n
       if (!minFInSamples.checkGreaterEqualMax(raw.length, n))
-        return false;
+        return result;
     }
 
     // short cut
     if (!filterGroups || sgroupSize == null || !minFInGroups.isGreaterZero())
-      return true;
+      return OverlapResult.TRUE;
 
     // is present in X % samples of a sample set?
     // count sample in groups (no feature in a sample group->no occurrence in map)
@@ -178,21 +190,26 @@ public class MinimumFeatureFilter {
       Feature a = row.getPeak(file);
       Feature b = row2.getPeak(file);
       if (checkHeight(a, b)) {
-        if (checkRTTol(rtTolerance, a, b)
-            && checkIntensityOverlap(a, b, minIPercOverlap, minFeatureHeight)) {
-          String sgroup = sgroupOf(file);
+        if (checkRTTol(rtTolerance, a, b)) {
+          if (checkIntensityOverlap(a, b, minIPercOverlap, minFeatureHeight)) {
+            String sgroup = sgroupOf(file);
 
-          MutableInt count = counter.get(sgroup);
-          if (count == null) {
-            // new counter with total N for group size
-            counter.put(sgroup, new MutableInt(sgroupSize.get(sgroup)));
+            MutableInt count = counter.get(sgroup);
+            if (count == null) {
+              // new counter with total N for group size
+              counter.put(sgroup, new MutableInt(sgroupSize.get(sgroup)));
+            } else {
+              count.increment();
+            }
           } else {
-            count.increment();
+            result = OverlapResult.AntiOverlap;
           }
         } else {
-          if (strictRules)
-            return false;
+          result = OverlapResult.OutOfRTRange;
         }
+
+        if (!result.equals(OverlapResult.TRUE) && strictRules)
+          return result;
       }
     }
     // only needs a minimum number of features in at least one sample group
@@ -200,10 +217,10 @@ public class MinimumFeatureFilter {
     for (MutableInt v : counter.values()) {
       // at least one
       if (minFInGroups.checkGreaterEqualMax(v.total, v.value))
-        return true;
+        return OverlapResult.TRUE;
     }
     // no fit
-    return false;
+    return OverlapResult.BelowMinSamples;
   }
 
 

@@ -14,6 +14,7 @@ import net.sf.mzmine.framework.networks.NetworkPanel;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter.OverlapResult;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 
 public class RTNetworkPanel extends NetworkPanel {
@@ -121,7 +122,7 @@ public class RTNetworkPanel extends NetworkPanel {
 
   private boolean filter(PeakListRow a, PeakListRow b) {
     return useMinFFilter && minFFilter != null ? //
-        minFFilter.filterMinFeaturesOverlap(raw, a, b, rtTolerance)
+        minFFilter.filterMinFeaturesOverlap(raw, a, b, rtTolerance).equals(OverlapResult.TRUE)
         : rtTolerance.checkWithinTolerance(a.getAverageRT(), b.getAverageRT());
   }
 

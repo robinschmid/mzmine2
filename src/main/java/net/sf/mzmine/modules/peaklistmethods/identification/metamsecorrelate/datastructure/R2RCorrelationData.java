@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nonnull;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter.OverlapResult;
 
 /**
  * row to row correlation (2 rows) Intensity profile and peak shape correlation
@@ -17,8 +18,21 @@ public class R2RCorrelationData {
     // intensity range is not shared between these two rows
     // at least in one raw data file: the features are out of RT range
     // the features do not overlap with X % of their intensity
-    FeaturesDoNotOverlap, //
-    MinFeaturesRequirementNotMet; //
+    AntiOverlap, //
+    MinFeaturesRequirementNotMet, //
+    OutOfRTRange; // Features are out of RT range
+
+    public static NegativeMarker fromOverlapResult(OverlapResult overlap) {
+      switch (overlap) {
+        case AntiOverlap:
+          return NegativeMarker.AntiOverlap;
+        case BelowMinSamples:
+          return NegativeMarker.MinFeaturesRequirementNotMet;
+        case OutOfRTRange:
+          return NegativeMarker.OutOfRTRange;
+      }
+      return null;
+    }
   }
 
   // correlation of a to b
