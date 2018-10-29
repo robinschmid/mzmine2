@@ -86,6 +86,13 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
       true);
 
   /**
+   * do not accept estimated features
+   */
+  public static final BooleanParameter EXCLUDE_ESTIMATED = new BooleanParameter(
+      "Exclude estimated features (gap-filled)",
+      "Gap-filled features might have a limited and different shape than detected features", true);
+
+  /**
    * 
    */
   public MinimumFeaturesFilterParameters() {
@@ -100,9 +107,9 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
   public MinimumFeaturesFilterParameters(boolean isSub) {
     super(isSub
         ? new Parameter[] {MIN_HEIGHT, MIN_SAMPLES_ALL, MIN_SAMPLES_GROUP, MIN_INTENSITY_OVERLAP,
-            STRICT_RULES}
+            STRICT_RULES, EXCLUDE_ESTIMATED}
         : new Parameter[] {GROUPSPARAMETER, RT_TOLERANCE, MIN_HEIGHT, MIN_SAMPLES_ALL,
-            MIN_SAMPLES_GROUP, MIN_INTENSITY_OVERLAP, STRICT_RULES});
+            MIN_SAMPLES_GROUP, MIN_INTENSITY_OVERLAP, STRICT_RULES, EXCLUDE_ESTIMATED});
     this.isSub = isSub;
   }
 
@@ -122,8 +129,9 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
     double minFeatureHeight = this.getParameter(MIN_HEIGHT).getValue();
     double minIPercOverlap = this.getParameter(MIN_INTENSITY_OVERLAP).getValue();
     boolean strict = this.getParameter(STRICT_RULES).getValue();
+    boolean excludeEstimated = this.getParameter(EXCLUDE_ESTIMATED).getValue();
     return new MinimumFeatureFilter(project, rawDataFiles, groupingParameter, minFInSamples,
-        minFInGroups, minFeatureHeight, minIPercOverlap, strict);
+        minFInGroups, minFeatureHeight, minIPercOverlap, strict, excludeEstimated);
   }
 
   /**
@@ -137,8 +145,9 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
     double minFeatureHeight = this.getParameter(MIN_HEIGHT).getValue();
     double minIPercOverlap = this.getParameter(MIN_INTENSITY_OVERLAP).getValue();
     boolean strict = this.getParameter(STRICT_RULES).getValue();
+    boolean excludeEstimated = this.getParameter(EXCLUDE_ESTIMATED).getValue();
     return new MinimumFeatureFilter(minFInSamples, minFInGroups, minFeatureHeight, minIPercOverlap,
-        strict);
+        strict, excludeEstimated);
   }
 
 

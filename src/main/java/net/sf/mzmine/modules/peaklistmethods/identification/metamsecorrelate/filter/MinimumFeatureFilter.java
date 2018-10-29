@@ -3,6 +3,7 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.fi
 import java.util.HashMap;
 import java.util.List;
 import net.sf.mzmine.datamodel.Feature;
+import net.sf.mzmine.datamodel.Feature.FeatureStatus;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
@@ -36,14 +37,18 @@ public class MinimumFeatureFilter {
   // do not accept that feature in one raw file is out of rtRange or minIPercOverlap
   private boolean strictRules = true;
 
+  private boolean excludeEstimatedFeatures = false;
+
 
   public MinimumFeatureFilter(AbsoluteNRelativeInt minFInSamples, AbsoluteNRelativeInt minFInGroups,
-      double minFeatureHeight, double minIPercOverlap, boolean strictRules) {
+      double minFeatureHeight, double minIPercOverlap, boolean strictRules,
+      boolean excludeEstimatedFeatures) {
     this.minFInSamples = minFInSamples;
     this.minFInGroups = minFInGroups;
     this.minFeatureHeight = minFeatureHeight;
     this.minIPercOverlap = minIPercOverlap;
     this.strictRules = strictRules;
+    this.excludeEstimatedFeatures = excludeEstimatedFeatures;
   }
 
   /**
@@ -58,8 +63,10 @@ public class MinimumFeatureFilter {
    */
   public MinimumFeatureFilter(MZmineProject project, RawDataFile[] raw, String groupParam,
       AbsoluteNRelativeInt minFInSamples, AbsoluteNRelativeInt minFInGroups,
-      double minFeatureHeight, double minIPercOverlap, boolean strictRules) {
-    this(minFInSamples, minFInGroups, minFeatureHeight, minIPercOverlap, strictRules);
+      double minFeatureHeight, double minIPercOverlap, boolean strictRules,
+      boolean excludeEstimatedFeatures) {
+    this(minFInSamples, minFInGroups, minFeatureHeight, minIPercOverlap, strictRules,
+        excludeEstimatedFeatures);
     this.project = project;
     setSampleGroups(project, raw, groupParam);
   }
@@ -84,7 +91,7 @@ public class MinimumFeatureFilter {
       int n = 0;
       for (RawDataFile file : raw) {
         Feature f = row.getPeak(file);
-        if (f != null && f.getHeight() >= minFeatureHeight) {
+        if (checkFeatureQuality(f)) {
           n++;
         }
       }
@@ -102,7 +109,7 @@ public class MinimumFeatureFilter {
     HashMap<String, MutableInt> counter = new HashMap<String, MutableInt>();
     for (RawDataFile file : raw) {
       Feature f = row.getPeak(file);
-      if (f != null && f.getHeight() >= minFeatureHeight) {
+      if (checkFeatureQuality(f)) {
         String sgroup = sgroupOf(file);
 
         MutableInt count = counter.get(sgroup);
@@ -123,6 +130,15 @@ public class MinimumFeatureFilter {
     }
     // no fit
     return false;
+  }
+
+  private boolean checkFeatureQuality(Feature f) {
+    return f != null && f.getHeight() >= minFeatureHeight && filterEstimated(f);
+  }
+
+  private boolean filterEstimated(Feature f) {
+    return f != null
+        && (!excludeEstimatedFeatures || !f.getFeatureStatus().equals(FeatureStatus.ESTIMATED));
   }
 
   /**
@@ -160,7 +176,7 @@ public class MinimumFeatureFilter {
       for (RawDataFile file : raw) {
         Feature a = row.getPeak(file);
         Feature b = row2.getPeak(file);
-        if (checkHeight(a, b)) {
+        if (checkFeatureQuality(a) && checkFeatureQuality(b)) {
           if (checkRTTol(rtTolerance, a, b)) {
             if (checkIntensityOverlap(a, b, minIPercOverlap, minFeatureHeight))
               n++;
@@ -176,7 +192,7 @@ public class MinimumFeatureFilter {
       }
       // stop if <n
       if (!minFInSamples.checkGreaterEqualMax(raw.length, n))
-        return result;
+        return OverlapResult.BelowMinSamples;
     }
 
     // short cut
@@ -189,7 +205,7 @@ public class MinimumFeatureFilter {
     for (RawDataFile file : raw) {
       Feature a = row.getPeak(file);
       Feature b = row2.getPeak(file);
-      if (checkHeight(a, b)) {
+      if (checkFeatureQuality(a) && checkFeatureQuality(b)) {
         if (checkRTTol(rtTolerance, a, b)) {
           if (checkIntensityOverlap(a, b, minIPercOverlap, minFeatureHeight)) {
             String sgroup = sgroupOf(file);
