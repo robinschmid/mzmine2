@@ -382,7 +382,8 @@ public class MultiMSMSWindow extends JFrame {
         continue;
 
       Scan scan = SpectrumChartFactory.getMSMSScan(row, raw, alwaysShowBest, useBestForMissingRaw);
-      double precursorMZ = row.getPeak(scan.getDataFile()).getMZ();
+      Feature f = row.getPeak(scan.getDataFile());
+      double precursorMZ = f != null ? f.getMZ() : row.getAverageMZ();
       // add ms1 adduct annotation
       addMSMSAnnotation(
           new MSMSIonIdentity(mzTolerance, new SimpleDataPoint(precursorMZ, 1f), best.getA()));
