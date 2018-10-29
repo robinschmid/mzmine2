@@ -1,13 +1,10 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -72,104 +69,6 @@ public class R2RCorrMap extends ConcurrentHashMap<String, R2RCorrelationData> {
     return entrySet().stream().filter(e -> e.getValue() instanceof R2RFullCorrelationData);
   }
 
-
-  /**
-   * Create list of correlated rows
-   * 
-   * 
-   * @param rows
-   * @param stageProgress can be null. points to the progress
-   * 
-   * @return
-   */
-  public PKLRowGroupList createCorrGroupsNew(PeakList pkl, double minShapeR,
-      AtomicDouble stageProgress) {
-    LOG.info("Corr: Creating correlation groups");
-
-    try {
-      // <Row.ID, Group.ID>
-      HashMap<Integer, Integer> usedi = new HashMap<>();
-      // <Group.ID, List of rows>
-      HashMap<Integer, List<Integer>> groupHash = new HashMap<>();
-      // current group
-      AtomicInteger current = new AtomicInteger(0);
-
-      RawDataFile[] raw = pkl.getRawDataFiles();
-      this.streamAllSortedByR().forEach(e -> {
-        R2RCorrelationData r2r = e.getValue();
-        R2RFullCorrelationData data =
-            r2r instanceof R2RFullCorrelationData ? (R2RFullCorrelationData) r2r : null;
-
-        int[] ids = toKeyIDs(e.getKey());
-        // already added?
-        Integer group = usedi.get(ids[0]);
-        Integer group2 = usedi.get(ids[1]);
-        // TODO add negative check
-        // R2R can be negativemarker
-        //
-
-        if (r2r.hasFeatureShapeCorrelation() && r2r.getAvgPeakShapeR() >= minShapeR) {
-          // merge groups if both present
-          if (group != null && group2 != null && group != group2) {
-            List<Integer> g1Rows = groupHash.get(group);
-            List<Integer> g2Rows = groupHash.get(group2);
-            // copy all to group1 and remove g2
-            for (Integer row : g2Rows) {
-              g1Rows.add(row);
-              usedi.put(row, group);
-            }
-            groupHash.remove(group2);
-          } else if (group == null && group2 == null) {
-            // create new group with both rows
-            List<Integer> newGroup = new ArrayList<>();
-            newGroup.add(ids[0]);
-            newGroup.add(ids[1]);
-            groupHash.put(current.get(), newGroup);
-            // mark as used
-            usedi.put(ids[0], current.get());
-            usedi.put(ids[1], current.get());
-            current.incrementAndGet();
-          } else if (group2 == null) {
-            List<Integer> g1Rows = groupHash.get(group);
-            g1Rows.add(ids[1]);
-            usedi.put(ids[1], group);
-          } else if (group == null) {
-            List<Integer> g2Rows = groupHash.get(group2);
-            g2Rows.add(ids[0]);
-            usedi.put(ids[0], group2);
-          }
-        }
-        // report back progress
-        if (stageProgress != null)
-          stageProgress.addAndGet(1d / this.size());
-      });
-
-      // create groups
-      PKLRowGroupList groups = new PKLRowGroupList();
-      int c = 0;
-      groupHash.values().stream().forEach(rows -> {
-        PKLRowGroup g = new PKLRowGroup(raw, groups.size());
-        groups.add(g);
-        // add rows from pkl to group
-        rows.stream().map(id -> pkl.findRowByID(id)).filter(r -> r != null).forEach(r -> g.add(r));
-      });
-
-      // sort by retention time
-      groups.sortByRT();
-
-      // reset index
-      for (int i = 0; i < groups.size(); i++)
-        groups.get(i).setGroupID(i);
-
-      LOG.info("Corr: DONE: Creating correlation groups");
-      return groups;
-    } catch (
-
-    Exception e) {
-      LOG.log(Level.SEVERE, "Error while creating groups", e);
-      return null;
-    }
-  }
 
   /**
    * Stream of all elements sorted by their correlation score
