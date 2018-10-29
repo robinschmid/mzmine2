@@ -332,7 +332,7 @@ public class CSVExportTask extends AbstractTask {
             ESIAdductIdentity ad =
                 MSAnnotationNetworkLogic.getMostLikelyAnnotation(peakListRow, true);
             if (ad == null)
-              line.append(fieldSeparator + fieldSeparator + fieldSeparator);
+              line.append(fieldSeparator + fieldSeparator + fieldSeparator + fieldSeparator);
             else {
               String msms = "";
               if (ad.getMSMSModVerify() > 0)
@@ -350,14 +350,18 @@ public class CSVExportTask extends AbstractTask {
           case ROW_MOL_NETWORK_ID:
             ESIAdductIdentity ad2 =
                 MSAnnotationNetworkLogic.getMostLikelyAnnotation(peakListRow, true);
-            line.append((ad2 == null || ad2.getNetwork() == null ? "" : ad2.getNetwork().getID())
-                + fieldSeparator);
+            if (ad2 == null || ad2.getNetwork() == null)
+              line.append(fieldSeparator);
+            else
+              line.append(ad2.getNetwork().getID() + fieldSeparator);
             break;
           case ROW_NEUTRAL_MASS:
             ESIAdductIdentity ad3 =
                 MSAnnotationNetworkLogic.getMostLikelyAnnotation(peakListRow, true);
-            line.append((ad3 == null || ad3.getNetwork() == null ? ""
-                : mzForm.format(ad3.getNetwork().calcNeutralMass())) + fieldSeparator);
+            if (ad3 == null || ad3.getNetwork() == null)
+              line.append(fieldSeparator);
+            else
+              line.append(mzForm.format(ad3.getNetwork().calcNeutralMass()) + fieldSeparator);
             break;
         }
       }
@@ -429,9 +433,7 @@ public class CSVExportTask extends AbstractTask {
                 break;
               case PEAK_MZMAX:
                 line.append(peak.getRawDataPointsMZRange().upperEndpoint() + fieldSeparator);
-
                 break;
-
             }
           } else {
             switch (dataFileElements[i]) {
