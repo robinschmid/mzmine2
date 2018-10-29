@@ -65,7 +65,7 @@ public class ExportCorrAnnotationModule implements MZmineProcessingModule {
     PeakList[] pkl = parameters.getParameter(ExportCorrAnnotationParameters.PEAK_LISTS).getValue()
         .getMatchingPeakLists();
     for (PeakList p : pkl)
-      tasks.add(new ExportCorrAnnotationTask(project, parameters, p));
+      tasks.add(new ExportCorrAnnotationTask(parameters, p));
 
     return ExitCode.OK;
   }

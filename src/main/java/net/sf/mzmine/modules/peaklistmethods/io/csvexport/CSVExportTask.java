@@ -45,7 +45,7 @@ import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
 import net.sf.mzmine.util.RangeUtils;
 
-class CSVExportTask extends AbstractTask {
+public class CSVExportTask extends AbstractTask {
 
 
   private PeakList[] peakLists;
@@ -60,7 +60,7 @@ class CSVExportTask extends AbstractTask {
   private Boolean exportAllPeakInfo;
   private String idSeparator;
 
-  CSVExportTask(ParameterSet parameters) {
+  public CSVExportTask(ParameterSet parameters) {
     this.peakLists =
         parameters.getParameter(CSVExportParameters.peakLists).getValue().getMatchingPeakLists();
     fileName = parameters.getParameter(CSVExportParameters.filename).getValue();
@@ -71,6 +71,10 @@ class CSVExportTask extends AbstractTask {
     idSeparator = parameters.getParameter(CSVExportParameters.idSeparator).getValue();
 
     // if best annotation and best annotation plus support was selected - deselect
+    refineCommonElements();
+  }
+
+  private void refineCommonElements() {
     List<ExportRowCommonElement> list = Lists.newArrayList(commonElements);
 
     if (list.contains(ExportRowCommonElement.ROW_BEST_ANNOTATION)
@@ -79,6 +83,24 @@ class CSVExportTask extends AbstractTask {
       commonElements = list.toArray(new ExportRowCommonElement[list.size()]);
     }
   }
+
+  public CSVExportTask(PeakList[] peakLists, File fileName, String fieldSeparator,
+      ExportRowCommonElement[] commonElements, ExportRowDataFileElement[] dataFileElements,
+      Boolean exportAllPeakInfo, String idSeparator) {
+    super();
+    this.peakLists = peakLists;
+    this.fileName = fileName;
+    this.fieldSeparator = fieldSeparator;
+    this.commonElements = commonElements;
+    this.dataFileElements = dataFileElements;
+    this.exportAllPeakInfo = exportAllPeakInfo;
+    this.idSeparator = idSeparator;
+
+    // if best annotation and best annotation plus support was selected - deselect
+    refineCommonElements();
+  }
+
+
 
   @Override
   public double getFinishedPercentage() {

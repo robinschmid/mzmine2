@@ -20,14 +20,21 @@ package net.sf.mzmine.modules.peaklistmethods.io.csvexport;
 
 public enum ExportRowDataFileElement {
 
-  PEAK_STATUS("Peak status", false), PEAK_MZ("Peak m/z", false), PEAK_RT("Peak RT",
-      false), PEAK_RT_START("Peak RT start", false), PEAK_RT_END("Peak RT end",
-          false), PEAK_DURATION("Peak duration time", false), PEAK_HEIGHT("Peak height",
-              false), PEAK_AREA("Peak area", false), PEAK_CHARGE("Peak charge",
-                  false), PEAK_DATAPOINTS("Peak # data points", false), PEAK_FWHM("Peak FWHM",
-                      false), PEAK_TAILINGFACTOR("Peak tailing factor",
-                          false), PEAK_ASYMMETRYFACTOR("Peak asymmetry factor", false), PEAK_MZMIN(
-                              "Peak m/z min", false), PEAK_MZMAX("Peak m/z max", false);
+  PEAK_STATUS("Peak status", false), //
+  PEAK_MZ("Peak m/z", false), //
+  PEAK_RT("Peak RT", false), //
+  PEAK_RT_START("Peak RT start", false), //
+  PEAK_RT_END("Peak RT end", false), //
+  PEAK_DURATION("Peak duration time", false), //
+  PEAK_HEIGHT("Peak height", false), //
+  PEAK_AREA("Peak area", false), //
+  PEAK_CHARGE("Peak charge", false), //
+  PEAK_DATAPOINTS("Peak # data points", false), //
+  PEAK_FWHM("Peak FWHM", false), //
+  PEAK_TAILINGFACTOR("Peak tailing factor", false), //
+  PEAK_ASYMMETRYFACTOR("Peak asymmetry factor", false), //
+  PEAK_MZMIN("Peak m/z min", false), //
+  PEAK_MZMAX("Peak m/z max", false);
 
   private final String name;
   private final boolean common;
@@ -41,6 +48,7 @@ public enum ExportRowDataFileElement {
     return this.common;
   }
 
+  @Override
   public String toString() {
     return this.name;
   }
