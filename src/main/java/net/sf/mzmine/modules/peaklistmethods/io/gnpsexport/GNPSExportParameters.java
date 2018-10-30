@@ -20,6 +20,7 @@ import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.MassListParameter;
 import net.sf.mzmine.parameters.parametertypes.filenames.FileNameParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
+import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
 import net.sf.mzmine.util.ExitCode;
 
 
@@ -35,6 +36,11 @@ public class GNPSExportParameters extends SimpleParameterSet {
       "mgf");
 
   public static final MassListParameter MASS_LIST = new MassListParameter();
+
+  public static final OptionalModuleParameter<GNPSSubmitParameters> SUBMIT =
+      new OptionalModuleParameter<GNPSSubmitParameters>("Submit to GNPS",
+          "Directly submits a GNPS job", new GNPSSubmitParameters());
+
   public static final BooleanParameter LIMIT_TO_MSMS = new BooleanParameter(
       "Only export features with MS/MS", "Limit the exported rows to those with MS/MS data", true);
 
@@ -46,7 +52,8 @@ public class GNPSExportParameters extends SimpleParameterSet {
       new BooleanParameter("Open folder", "Opens the export folder", false);
 
   public GNPSExportParameters() {
-    super(new Parameter[] {PEAK_LISTS, FILENAME, MASS_LIST, LIMIT_TO_MSMS, OPEN_GNPS, OPEN_FOLDER});
+    super(new Parameter[] {PEAK_LISTS, FILENAME, MASS_LIST, LIMIT_TO_MSMS, SUBMIT, OPEN_GNPS,
+        OPEN_FOLDER});
   }
 
   @Override

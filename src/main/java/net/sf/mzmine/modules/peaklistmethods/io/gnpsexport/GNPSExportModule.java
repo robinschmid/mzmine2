@@ -12,8 +12,12 @@
 
 package net.sf.mzmine.modules.peaklistmethods.io.gnpsexport;
 
+import java.awt.Desktop;
 import java.io.File;
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import javax.annotation.Nonnull;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.modules.MZmineModuleCategory;
@@ -23,11 +27,20 @@ import net.sf.mzmine.modules.peaklistmethods.io.csvexport.CSVExportTask;
 import net.sf.mzmine.modules.peaklistmethods.io.csvexport.ExportRowCommonElement;
 import net.sf.mzmine.modules.peaklistmethods.io.csvexport.ExportRowDataFileElement;
 import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.taskcontrol.AbstractTask;
+import net.sf.mzmine.taskcontrol.AllTasksFinishedListener;
 import net.sf.mzmine.taskcontrol.Task;
+import net.sf.mzmine.util.DialogLoggerUtil;
 import net.sf.mzmine.util.ExitCode;
 import net.sf.mzmine.util.files.FileAndPathUtil;
 
 public class GNPSExportModule implements MZmineProcessingModule {
+  /**
+   * The website
+   */
+  public static final String GNPS_WEBSITE =
+      "http://mingwangbeta.ucsd.edu:5050/featurebasednetworking";
+
   private static final String MODULE_NAME = "Export for GNPS";
   private static final String MODULE_DESCRIPTION = "Export MGF file for GNPS (only for MS/MS)";
 
@@ -41,14 +54,54 @@ public class GNPSExportModule implements MZmineProcessingModule {
   public ExitCode runModule(MZmineProject project, ParameterSet parameters,
       Collection<Task> tasks) {
     // add gnps export task
+
+    boolean openBrowser = parameters.getParameter(GNPSExportParameters.OPEN_GNPS).getValue();
+    boolean openFolder = parameters.getParameter(GNPSExportParameters.OPEN_FOLDER).getValue();
+    boolean submit = parameters.getParameter(GNPSExportParameters.SUBMIT).getValue();
+    File file = parameters.getParameter(GNPSExportParameters.FILENAME).getValue();
+    file = FileAndPathUtil.eraseFormat(file);
+    parameters.getParameter(GNPSExportParameters.FILENAME).setValue(file);
+
+
+    List<AbstractTask> list = new ArrayList<>(3);
     GNPSExportTask task = new GNPSExportTask(parameters);
     tasks.add(task);
+    list.add(task);
 
     // add csv quant table
-    addQuantTableTask(parameters, tasks);
+    list.add(addQuantTableTask(parameters, tasks));
 
     // add csv extra edges
-    addExtraEdgesTask(parameters, tasks);
+    list.add(addExtraEdgesTask(parameters, tasks));
+
+    // finish listener to submit
+    if (submit || openBrowser || openFolder) {
+      final File fileName = file;
+      final File folder = file.getParentFile();
+      AllTasksFinishedListener finished = new AllTasksFinishedListener(list, true, l -> {
+        // succeed
+        if (submit) {
+          GNPSSubmitParameters param =
+              parameters.getParameter(GNPSExportParameters.SUBMIT).getEmbeddedParameters();
+          String url = GNPSUtils.submitJob(fileName, param);
+        }
+
+        // open?
+        try {
+          if (Desktop.isDesktopSupported()) {
+            if (openBrowser)
+              Desktop.getDesktop().browse(new URI(GNPS_WEBSITE));
+            if (openFolder)
+              Desktop.getDesktop().open(folder);
+          }
+        } catch (Exception ex) {
+        }
+      }, lerror -> {
+        // TODO show error
+        DialogLoggerUtil.showErrorDialog(null, "GNPS submit failed",
+            "File export was not complete");
+      });
+    }
 
     return ExitCode.OK;
   }
@@ -59,7 +112,7 @@ public class GNPSExportModule implements MZmineProcessingModule {
    * @param parameters
    * @param tasks
    */
-  private void addQuantTableTask(ParameterSet parameters, Collection<Task> tasks) {
+  private AbstractTask addQuantTableTask(ParameterSet parameters, Collection<Task> tasks) {
     File full = parameters.getParameter(GNPSExportParameters.FILENAME).getValue();
     String name = FileAndPathUtil.eraseFormat(full.getName());
     full = FileAndPathUtil.getRealFilePath(full.getParentFile(), name + "_quant", "csv");
@@ -79,6 +132,7 @@ public class GNPSExportModule implements MZmineProcessingModule {
         parameters.getParameter(GNPSExportParameters.PEAK_LISTS).getValue().getMatchingPeakLists(), //
         full, ",", common, rawdata, false, ";", limitToMSMS);
     tasks.add(quanExport);
+    return quanExport;
   }
 
   /**
@@ -87,15 +141,16 @@ public class GNPSExportModule implements MZmineProcessingModule {
    * @param parameters
    * @param tasks
    */
-  private void addExtraEdgesTask(ParameterSet parameters, Collection<Task> tasks) {
+  private AbstractTask addExtraEdgesTask(ParameterSet parameters, Collection<Task> tasks) {
     File full = parameters.getParameter(GNPSExportParameters.FILENAME).getValue();
     boolean limitToMSMS = parameters.getParameter(GNPSExportParameters.LIMIT_TO_MSMS).getValue();
 
-    Task extraEdgeExport = new ExportCorrAnnotationTask(
+    AbstractTask extraEdgeExport = new ExportCorrAnnotationTask(
         parameters.getParameter(GNPSExportParameters.PEAK_LISTS).getValue()
             .getMatchingPeakLists()[0], //
         full, 0, true, limitToMSMS);
     tasks.add(extraEdgeExport);
+    return extraEdgeExport;
   }
 
   @Override
