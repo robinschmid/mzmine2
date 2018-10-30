@@ -20,6 +20,8 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.modules.MZmineModuleCategory;
@@ -37,6 +39,7 @@ import net.sf.mzmine.util.ExitCode;
 import net.sf.mzmine.util.files.FileAndPathUtil;
 
 public class GNPSExportModule implements MZmineProcessingModule {
+  private final Logger LOG = Logger.getLogger(getClass().getName());
   /**
    * The website
    */
@@ -86,7 +89,7 @@ public class GNPSExportModule implements MZmineProcessingModule {
         if (submit) {
           GNPSSubmitParameters param =
               parameters.getParameter(GNPSExportParameters.SUBMIT).getEmbeddedParameters();
-          String url = GNPSUtils.submitJob(fileName, param);
+          submit(fileName, param);
         }
 
         // open?
@@ -101,12 +104,23 @@ public class GNPSExportModule implements MZmineProcessingModule {
         }
       }, lerror -> {
         // TODO show error
-        DialogLoggerUtil.showErrorDialog(null, "GNPS submit failed",
+        DialogLoggerUtil.showErrorDialog(null, "GNPS submit was not started",
             "File export was not complete");
+        LOG.log(Level.WARNING, "GNPS submit was not started due too errors while file export");
       });
     }
 
     return ExitCode.OK;
+  }
+
+  private void submit(File fileName, GNPSSubmitParameters param) {
+    try {
+      String url = GNPSUtils.submitJob(fileName, param);
+      if (url == null || url.isEmpty())
+        LOG.log(Level.WARNING, "GNPS submit failed");
+    } catch (Exception e) {
+      LOG.log(Level.WARNING, "GNPS submit failed", e);
+    }
   }
 
   /**

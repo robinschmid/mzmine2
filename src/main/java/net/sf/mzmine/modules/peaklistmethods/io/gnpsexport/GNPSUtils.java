@@ -33,33 +33,50 @@ public class GNPSUtils {
    * @param param
    * @return
    */
-  public static String submitJob(File file, GNPSSubmitParameters param) {
+  public static String submitJob(File file, GNPSSubmitParameters param)
+      throws MSDKRuntimeException {
+    // optional
+    boolean useMeta = param.getParameter(GNPSSubmitParameters.META_FILE).getValue();
+    boolean ann = param.getParameter(GNPSSubmitParameters.ANN_EDGES).getValue();
+    boolean corr = param.getParameter(GNPSSubmitParameters.CORR_EDGES).getValue();
+    boolean openWebsite = param.getParameter(GNPSSubmitParameters.OPEN_WEBSITE).getValue();
+    String presets = param.getParameter(GNPSSubmitParameters.PRESETS).getValue().toString();
+    String email = param.getParameter(GNPSSubmitParameters.EMAIL).getValue();
+    //
+    File folder = file.getParentFile();
+    String name = file.getName();
+    // all file paths
+    File mgf = FileAndPathUtil.getRealFilePath(folder, name, "mgf");
+    File quan = FileAndPathUtil.getRealFilePath(folder, name + "_quant", "csv");
+
+    // NEEDED files
+    if (mgf.exists() && quan.exists()) {
+      File edgeAnn = !ann ? null
+          : FileAndPathUtil.getRealFilePath(folder, name + "_edges_msannotation", "csv");
+      File edgeCorr = !corr ? null
+          : FileAndPathUtil.getRealFilePath(folder, name + "_edges_ms1correlation", "csv");
+
+      File meta = !useMeta ? null
+          : param.getParameter(GNPSSubmitParameters.META_FILE).getEmbeddedParameter().getValue();
+
+      return submitJob(mgf, quan, meta, edgeAnn, edgeCorr, email, presets, openWebsite);
+    } else
+      return "";
+  }
+
+
+  /**
+   * Submit job to GNPS
+   * 
+   * @param file
+   * @param param
+   * @return
+   */
+  public static String submitJob(File mgf, File quan, File meta, File edgeAnn, File edgeCorr,
+      String email, String presets, boolean openWebsite) throws MSDKRuntimeException {
     try {
-      // optional
-      boolean useMeta = param.getParameter(GNPSSubmitParameters.META_FILE).getValue();
-      boolean ann = param.getParameter(GNPSSubmitParameters.ANN_EDGES).getValue();
-      boolean corr = param.getParameter(GNPSSubmitParameters.CORR_EDGES).getValue();
-      boolean openWebsite = param.getParameter(GNPSSubmitParameters.OPEN_WEBSITE).getValue();
-      String presets = param.getParameter(GNPSSubmitParameters.PRESETS).getValue().toString();
-      String email = param.getParameter(GNPSSubmitParameters.EMAIL).getValue();
-      //
-      File folder = file.getParentFile();
-      String name = file.getName();
-      // all file paths
-      File mgf = FileAndPathUtil.getRealFilePath(folder, name, "mgf");
-      File quan = FileAndPathUtil.getRealFilePath(folder, name + "_quant", "csv");
-
       // NEEDED files
-      if (mgf.exists() && quan.exists()) {
-        File edgeAnn = FileAndPathUtil.getRealFilePath(folder, name + "_edges_msannotation", "csv");
-        File edgeCorr =
-            FileAndPathUtil.getRealFilePath(folder, name + "_edges_ms1correlation", "csv");
-
-        File meta = null;
-        if (useMeta)
-          meta =
-              param.getParameter(GNPSSubmitParameters.META_FILE).getEmbeddedParameter().getValue();
-
+      if (mgf.exists() && quan.exists() && !presets.isEmpty()) {
         CloseableHttpClient httpclient = HttpClients.createDefault();
         try {
           MultipartEntity entity = new MultipartEntity();
@@ -76,11 +93,11 @@ public class GNPSUtils {
           // OPTIONAL
           // email, meta data, additional edges
           entity.addPart("email", new StringBody(email));
-          if (useMeta && meta != null && meta.exists())
+          if (meta != null && meta.exists())
             entity.addPart("samplemetadata", new FileBody(meta));
-          if (corr && edgeCorr.exists())
+          if (edgeCorr != null && edgeCorr.exists())
             entity.addPart("additionalpairs", new FileBody(edgeCorr));
-          if (ann && edgeAnn.exists())
+          if (edgeAnn != null && edgeAnn.exists())
             entity.addPart("additionalpairs", new FileBody(edgeAnn));
 
           HttpPost httppost =
@@ -100,9 +117,6 @@ public class GNPSUtils {
                 openWebsite(resEntity);
               EntityUtils.consume(resEntity);
             }
-          } catch (IOException e) {
-            LOG.log(Level.SEVERE, "Error while submitting GNPS job", e);
-            throw new MSDKRuntimeException(e);
           } finally {
             response.close();
           }
