@@ -2,6 +2,8 @@
  * This module was prepared by Abi Sarvepalli, Christopher Jensen, and Zheng Zhang at the Dorrestein
  * Lab (University of California, San Diego).
  * 
+ * 2018-Nov: Changes by Robin Schmid - Direct submit
+ * 
  * It is freely available under the GNU GPL licence of MZmine2.
  * 
  * For any questions or concerns, please refer to:
@@ -41,8 +43,9 @@ public class GNPSExportModule implements MZmineProcessingModule {
   public static final String GNPS_WEBSITE =
       "http://mingwangbeta.ucsd.edu:5050/featurebasednetworking";
 
-  private static final String MODULE_NAME = "Export for GNPS";
-  private static final String MODULE_DESCRIPTION = "Export MGF file for GNPS (only for MS/MS)";
+  private static final String MODULE_NAME = "Export for/Submit to GNPS";
+  private static final String MODULE_DESCRIPTION =
+      "Exports the MGF file for GNPS (only for MS/MS), the quant table (CSV export) and additional edges (annotation and correlation)";
 
   @Override
   public String getDescription() {
@@ -136,7 +139,7 @@ public class GNPSExportModule implements MZmineProcessingModule {
   }
 
   /**
-   * Export quant table
+   * Export extra edges (wont create files if empty)
    * 
    * @param parameters
    * @param tasks
