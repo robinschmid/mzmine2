@@ -359,6 +359,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    * @param groups
    */
   private void refineGroups(PKLRowGroupList groups) {
+    // TODO refinemet
     // refineGroup(groups, 0);
   }
 
@@ -408,6 +409,9 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    */
   private void annotateGroup(PKLRowGroup g, AtomicInteger compared, AtomicInteger annotPairs) {
     for (int i = 0; i < g.size() - 1; i++) {
+      // check against existing networks
+
+
       for (int k = i + 1; k < g.size(); k++) {
         compared.incrementAndGet();
         // check for adducts in library
