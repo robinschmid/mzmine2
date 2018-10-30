@@ -163,7 +163,13 @@
 			<artifactId>commons-math</artifactId>
 			<version>2.2</version>
 		</dependency>
-		
+		<!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
+<dependency>
+    <groupId>org.apache.httpcomponents</groupId>
+    <artifactId>httpclient</artifactId>
+    <version>4.5.6</version>
+</dependency>
+
 		<!-- charset detection -->
 		<dependency>
 			<groupId>com.github.albfernandez</groupId>
@@ -180,6 +186,12 @@
 			<groupId>edu.ucar</groupId>
 			<artifactId>netcdf4</artifactId>
 			<version>4.5.5</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.apache.httpcomponents</groupId>
+					<artifactId>httpclient</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.ostermiller</groupId>
@@ -502,6 +514,12 @@
 			<groupId>io.github.msdk</groupId>
 			<artifactId>msdk-id-sirius</artifactId>
 			<version>${msdk.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.apache.httpcomponents</groupId>
+					<artifactId>httpclient</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
