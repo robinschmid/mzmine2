@@ -408,9 +408,13 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    * @param annotPairs
    */
   private void annotateGroup(PKLRowGroup g, AtomicInteger compared, AtomicInteger annotPairs) {
+    List<AnnotationNetwork> nets = new ArrayList<>();
     for (int i = 0; i < g.size() - 1; i++) {
       // check against existing networks
+      for (AnnotationNetwork n : nets) {
+        double neutralMass = n.getNeutralMass()
 
+      }
 
       for (int k = i + 1; k < g.size(); k++) {
         compared.incrementAndGet();
