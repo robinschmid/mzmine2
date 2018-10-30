@@ -33,14 +33,18 @@ public class ExportCorrAnnotationParameters extends SimpleParameterSet {
 
   public static final FileNameParameter FILENAME =
       new FileNameParameter("Filename", "File name", "csv");
+  public static final BooleanParameter EX_ANNOT =
+      new BooleanParameter("Export MS1 annotation edges", "", true);
+  public static final BooleanParameter EX_CORR =
+      new BooleanParameter("Export correlation edges", "", true);
   public static final BooleanParameter EX_ONLY_ANNOTATED =
-      new BooleanParameter("Export only annotated", "", true);
+      new BooleanParameter("Export only annotated rows in correlation edge file", "", true);
   public static final PercentParameter MIN_R =
       new PercentParameter("Min correlation (r)", "Minimum Pearson correlation", 0.9);
 
   // Constructor
   public ExportCorrAnnotationParameters() {
-    super(new Parameter[] {PEAK_LISTS, FILENAME, EX_ONLY_ANNOTATED, MIN_R});
+    super(new Parameter[] {PEAK_LISTS, FILENAME, EX_ANNOT, EX_CORR, EX_ONLY_ANNOTATED, MIN_R});
   }
 
 }

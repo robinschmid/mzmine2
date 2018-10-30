@@ -251,8 +251,10 @@ public class CSVExportTask extends AbstractTask {
     // Write data rows
     for (PeakListRow peakListRow : peakList.getRows()) {
 
-      if (limitToMSMS && peakListRow.getBestFragmentation() == null)
+      if (limitToMSMS && peakListRow.getBestFragmentation() == null) {
+        processedRows++;
         continue;
+      }
 
       // Cancel?
       if (isCanceled()) {

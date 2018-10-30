@@ -59,6 +59,7 @@ public class ExportCorrAnnotationTask extends AbstractTask {
   /**
    * by {@link MetaMSEcorrelateModule}
    */
+  private boolean exportAnnotationEdges = true, exportCorrelationEdges = false;
   private double minR;
   private final PeakList peakList;
   private File filename;
@@ -81,6 +82,10 @@ public class ExportCorrAnnotationTask extends AbstractTask {
     minR = parameterSet.getParameter(ExportCorrAnnotationParameters.MIN_R).getValue();
     exportOnlyAnnotated =
         parameterSet.getParameter(ExportCorrAnnotationParameters.EX_ONLY_ANNOTATED).getValue();
+    exportAnnotationEdges =
+        parameterSet.getParameter(ExportCorrAnnotationParameters.EX_ANNOT).getValue();
+    exportCorrelationEdges =
+        parameterSet.getParameter(ExportCorrAnnotationParameters.EX_CORR).getValue();
   }
 
   /**
@@ -90,12 +95,15 @@ public class ExportCorrAnnotationTask extends AbstractTask {
    * @param list peak list.
    */
   public ExportCorrAnnotationTask(PeakList peakList, File filename, double minR,
-      boolean exportOnlyAnnotated, boolean limitToMSMS) {
+      boolean exportOnlyAnnotated, boolean limitToMSMS, boolean exportAnnotationEdges,
+      boolean exportCorrelationEdges) {
     this.peakList = peakList;
     this.filename = filename;
     this.minR = minR;
     this.exportOnlyAnnotated = exportOnlyAnnotated;
     this.limitToMSMS = limitToMSMS;
+    this.exportAnnotationEdges = exportAnnotationEdges;
+    this.exportCorrelationEdges = exportCorrelationEdges;
   }
 
   @Override
@@ -115,10 +123,12 @@ public class ExportCorrAnnotationTask extends AbstractTask {
       LOG.info("Starting export of adduct and correlation networks" + peakList.getName());
 
       // export edges of corr
-      exportAnnotationEdges(peakList, filename, limitToMSMS, progress, this);
+      if (exportAnnotationEdges)
+        exportAnnotationEdges(peakList, filename, limitToMSMS, progress, this);
       // export edges of ann
-      exportCorrelationEdges(peakList, filename, progress, this, minR, exportOnlyAnnotated,
-          limitToMSMS);
+      if (exportCorrelationEdges)
+        exportCorrelationEdges(peakList, filename, progress, this, minR, exportOnlyAnnotated,
+            limitToMSMS);
 
     } catch (Exception t) {
       LOG.log(Level.SEVERE, "Export of correlation and MS annotation results error", t);

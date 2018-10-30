@@ -162,10 +162,19 @@ public class GNPSExportModule implements MZmineProcessingModule {
     File full = parameters.getParameter(GNPSExportParameters.FILENAME).getValue();
     boolean limitToMSMS = parameters.getParameter(GNPSExportParameters.LIMIT_TO_MSMS).getValue();
 
+    boolean exAnn = true;
+    boolean exCorr = true;
+    if (parameters.getParameter(GNPSExportParameters.SUBMIT).getValue()) {
+      exAnn = parameters.getParameter(GNPSExportParameters.SUBMIT).getEmbeddedParameters()
+          .getParameter(GNPSSubmitParameters.ANN_EDGES).getValue();
+      exCorr = parameters.getParameter(GNPSExportParameters.SUBMIT).getEmbeddedParameters()
+          .getParameter(GNPSSubmitParameters.CORR_EDGES).getValue();
+    }
+
     AbstractTask extraEdgeExport = new ExportCorrAnnotationTask(
         parameters.getParameter(GNPSExportParameters.PEAK_LISTS).getValue()
             .getMatchingPeakLists()[0], //
-        full, 0, true, limitToMSMS);
+        full, 0, true, limitToMSMS, exAnn, exCorr);
     tasks.add(extraEdgeExport);
     return extraEdgeExport;
   }
