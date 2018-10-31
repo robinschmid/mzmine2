@@ -90,7 +90,11 @@ public class R2RCorrelationData {
     return false;
   }
 
-  public double getAvgPeakShapeR() {
+  public double getAvgShapeR() {
+    return 0;
+  }
+
+  public double getAvgShapeCosineSim() {
     return 0;
   }
 

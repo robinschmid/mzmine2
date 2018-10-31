@@ -33,6 +33,7 @@ import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
+import net.sf.mzmine.parameters.parametertypes.StringParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleComponent;
 import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
@@ -97,6 +98,9 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
       new OptionalModuleParameter<AnnotationRefinementParameters>("Annotation refinement", "",
           new AnnotationRefinementParameters(true), true);
 
+  public static final OptionalParameter<StringParameter> SUFFIX = new OptionalParameter<>(
+      new StringParameter("Suffix (or auto)", "Select suffix or deselect for auto suffix"), false);
+
 
   // Constructor
   public MetaMSEcorrelateParameters() {
@@ -108,7 +112,9 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
         // intensity max correlation
         IMAX_CORRELATION,
         // adducts
-        ADDUCT_LIBRARY, ANNOTATE_ONLY_GROUPED, ANNOTATION_REFINEMENTS});
+        ADDUCT_LIBRARY, ANNOTATE_ONLY_GROUPED, ANNOTATION_REFINEMENTS,
+        // suffix or auto suffix
+        SUFFIX});
   }
 
   @Override

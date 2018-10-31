@@ -88,7 +88,7 @@ public class R2RCorrMap extends ConcurrentHashMap<String, R2RCorrelationData> {
           if (!a.hasFeatureShapeCorrelation() && !b.hasFeatureShapeCorrelation())
             return 0;
           else if (a.hasFeatureShapeCorrelation() && b.hasFeatureShapeCorrelation())
-            return Double.compare(a.getAvgPeakShapeR(), b.getAvgPeakShapeR());
+            return Double.compare(a.getAvgShapeR(), b.getAvgShapeR());
           else if (a.hasFeatureShapeCorrelation())
             return -1;
           else if (b.hasFeatureShapeCorrelation())
@@ -130,7 +130,7 @@ public class R2RCorrMap extends ConcurrentHashMap<String, R2RCorrelationData> {
         R2RCorrelationData r2r = e.getValue();
         if (r2r instanceof R2RFullCorrelationData) {
           R2RFullCorrelationData data = (R2RFullCorrelationData) r2r;
-          if (data.hasFeatureShapeCorrelation() && data.getAvgPeakShapeR() >= minShapeR) {
+          if (data.hasFeatureShapeCorrelation() && data.getAvgShapeR() >= minShapeR) {
 
             int[] ids = toKeyIDs(e.getKey());
             // already added?

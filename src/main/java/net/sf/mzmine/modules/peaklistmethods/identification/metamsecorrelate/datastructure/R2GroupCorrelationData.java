@@ -15,7 +15,11 @@ public class R2GroupCorrelationData {
   private double maxHeight;
   // averages are calculated by dividing by the row count
   private double minIProfileR, avgIProfileR, maxIProfileR;
-  private double minPeakShapeR, avgPeakShapeR, maxPeakShapeR, avgDPCount;
+  private double minShapeR, avgShapeR, maxShapeR, avgDPCount;
+
+  // average cosine
+  private double avgShapeCosineSim;
+
   // total peak shape r
   private double avgTotalPeakShapeR;
 
@@ -40,9 +44,10 @@ public class R2GroupCorrelationData {
     minIProfileR = 1;
     maxIProfileR = -1;
     avgIProfileR = 0;
-    minPeakShapeR = 1;
-    maxPeakShapeR = -1;
-    avgPeakShapeR = 0;
+    minShapeR = 1;
+    maxShapeR = -1;
+    avgShapeR = 0;
+    avgShapeCosineSim = 0;
     avgDPCount = 0;
     avgTotalPeakShapeR = 0;
     int cImax = 0;
@@ -63,26 +68,28 @@ public class R2GroupCorrelationData {
       if (r2r.hasFeatureShapeCorrelation()) {
         cPeakShape++;
         avgTotalPeakShapeR += r2r.getTotalCorrelation().getR();
-        avgPeakShapeR += r2r.getAvgPeakShapeR();
+        avgShapeR += r2r.getAvgShapeR();
+        avgShapeCosineSim += r2r.getAvgShapeCosineSim();
         avgDPCount += r2r.getAvgDPcount();
-        if (r2r.getMinPeakShapeR() < minPeakShapeR)
-          minPeakShapeR = r2r.getMinPeakShapeR();
-        if (r2r.getMaxPeakShapeR() > maxPeakShapeR)
-          maxPeakShapeR = r2r.getMaxPeakShapeR();
+        if (r2r.getMinShapeR() < minShapeR)
+          minShapeR = r2r.getMinShapeR();
+        if (r2r.getMaxShapeR() > maxShapeR)
+          maxShapeR = r2r.getMaxShapeR();
       }
     }
     avgTotalPeakShapeR = avgTotalPeakShapeR / cPeakShape;
     avgIProfileR = avgIProfileR / cImax;
     avgDPCount = avgDPCount / cPeakShape;
-    avgPeakShapeR = avgPeakShapeR / cPeakShape;
+    avgShapeR = avgShapeR / cPeakShape;
+    avgShapeCosineSim = avgShapeCosineSim / cPeakShape;
+  }
+
+  public double getAvgShapeCosineSim() {
+    return avgShapeCosineSim;
   }
 
   public double getMaxHeight() {
     return maxHeight;
-  }
-
-  public void setMaxHeight(double maxHeight) {
-    this.maxHeight = maxHeight;
   }
 
   public List<R2RFullCorrelationData> getCorr() {
@@ -93,56 +100,28 @@ public class R2GroupCorrelationData {
     return minIProfileR;
   }
 
-  public void setMinIProfileR(double minIProfileR) {
-    this.minIProfileR = minIProfileR;
-  }
-
   public double getAvgIProfileR() {
     return avgIProfileR;
-  }
-
-  public void setAvgIProfileR(double avgIProfileR) {
-    this.avgIProfileR = avgIProfileR;
   }
 
   public double getMaxIProfileR() {
     return maxIProfileR;
   }
 
-  public void setMaxIProfileR(double maxIProfileR) {
-    this.maxIProfileR = maxIProfileR;
-  }
-
   public double getMinPeakShapeR() {
-    return minPeakShapeR;
-  }
-
-  public void setMinPeakShapeR(double minPeakShapeR) {
-    this.minPeakShapeR = minPeakShapeR;
+    return minShapeR;
   }
 
   public double getAvgPeakShapeR() {
-    return avgPeakShapeR;
-  }
-
-  public void setAvgPeakShapeR(double avgPeakShapeR) {
-    this.avgPeakShapeR = avgPeakShapeR;
+    return avgShapeR;
   }
 
   public double getMaxPeakShapeR() {
-    return maxPeakShapeR;
-  }
-
-  public void setMaxPeakShapeR(double maxPeakShapeR) {
-    this.maxPeakShapeR = maxPeakShapeR;
+    return maxShapeR;
   }
 
   public double getAvgDPCount() {
     return avgDPCount;
-  }
-
-  public void setAvgDPCount(double avgDPCount) {
-    this.avgDPCount = avgDPCount;
   }
 
   public double getAvgTotalPeakShapeR() {

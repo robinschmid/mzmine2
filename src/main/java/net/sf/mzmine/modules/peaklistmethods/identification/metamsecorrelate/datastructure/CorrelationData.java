@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import org.apache.commons.math.stat.regression.SimpleRegression;
+import net.sf.mzmine.util.maths.similarity.Similarity;
 
 /**
  * correlation of two peak shapes
@@ -13,11 +14,23 @@ import org.apache.commons.math.stat.regression.SimpleRegression;
  */
 public class CorrelationData {
 
+  public enum SimilarityMeasure {
+    PEARSON, COSINE_SIM;
+
+    @Override
+    public String toString() {
+      return super.toString().replaceAll("_", " ");
+    }
+
+  }
+
   // data points
   // [I1 ; I2][data point]
   private double[][] data;
   private SimpleRegression reg;
   private double minX, maxX;
+  // cosineSimilarity
+  private double cosineSim = 0;
 
   /**
    * Extracts all data from all correlations
@@ -46,16 +59,8 @@ public class CorrelationData {
       c.maxX = Math.max(c.maxX, c.data[i][0]);
     }
     c.reg.addData(c.data);
-    return c;
-  }
-
-  public static CorrelationData create(SimpleRegression reg, double[][] data, double minX,
-      double maxX) {
-    CorrelationData c = new CorrelationData();
-    c.reg = reg;
-    c.minX = minX;
-    c.maxX = maxX;
-    c.data = data;
+    // calc cosineSim
+    c.cosineSim = Similarity.COSINE.calc(c.data);
     return c;
   }
 
@@ -71,8 +76,32 @@ public class CorrelationData {
     return reg == null ? 0 : (int) reg.getN();
   }
 
+  /**
+   * Pearson correlation
+   * 
+   * @return
+   */
   public double getR() {
     return reg == null ? 0 : reg.getR();
+  }
+
+  /**
+   * Cosine similarity
+   * 
+   * @return
+   */
+  public double getCosineSimilarity() {
+    return cosineSim;
+  }
+
+  public double getSimilarity(SimilarityMeasure type) {
+    switch (type) {
+      case COSINE_SIM:
+        return getCosineSimilarity();
+      case PEARSON:
+        return getR();
+    }
+    return 0;
   }
 
   public double getMinX() {

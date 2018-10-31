@@ -96,7 +96,7 @@ public class CorrHistoFrame extends JFrame {
       R2RCorrMap map = pkl.getCorrelationMap();
       map.streamCorrData().forEach(r2r -> {
         if (r2r.hasFeatureShapeCorrelation()) {
-          avg.add(r2r.getAvgPeakShapeR());
+          avg.add(r2r.getAvgShapeR());
           total.add(r2r.getTotalCorrelation().getR());
           // all single features
           for (CorrelationData f2f : r2r.getCorrPeakShape().values())

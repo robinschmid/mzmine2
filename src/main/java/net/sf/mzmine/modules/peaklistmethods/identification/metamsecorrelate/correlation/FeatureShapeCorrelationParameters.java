@@ -19,9 +19,11 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation;
 
 import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData.SimilarityMeasure;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
+import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.MassListParameter;
@@ -64,10 +66,13 @@ public class FeatureShapeCorrelationParameters extends SimpleParameterSet {
       new IntegerParameter("Min data points",
           "Minimum of data points to be used for correlation of peak shapes.", 5, 3, 100000);
 
+  public static final ComboParameter<SimilarityMeasure> MEASURE = new ComboParameter<>("Measure",
+      "Similarity measure", SimilarityMeasure.values(), SimilarityMeasure.PEARSON);
+
   // minimum Pearson correlation (r) for feature grouping in the same scan event of one raw file
   public static final PercentParameter MIN_R_SHAPE_INTRA = new PercentParameter(
       "Min peak shape correlation",
-      "Minimum percentage for Pearson peak shape correlation for feature grouping in the same scan event of one raw file.",
+      "Minimum percentage for peak shape correlation for feature grouping in the same scan event of one raw file.",
       0.85, 0, 1);
 
   // Constructor
@@ -82,10 +87,10 @@ public class FeatureShapeCorrelationParameters extends SimpleParameterSet {
    */
   public FeatureShapeCorrelationParameters(boolean isSub) {
     super(isSub ? // no peak list and rt tolerance
-        new Parameter[] {NOISE_LEVEL_PEAK_SHAPE, MIN_DP_CORR_PEAK_SHAPE, MIN_R_SHAPE_INTRA}
+        new Parameter[] {NOISE_LEVEL_PEAK_SHAPE, MIN_DP_CORR_PEAK_SHAPE, MEASURE, MIN_R_SHAPE_INTRA}
         : new Parameter[] {PEAK_LISTS, RT_TOLERANCE,
             // MASS_LIST, USE_MASS_LIST_DATA, MAIN_PEAK_HEIGHT,
-            NOISE_LEVEL_PEAK_SHAPE, MIN_DP_CORR_PEAK_SHAPE, MIN_R_SHAPE_INTRA});
+            NOISE_LEVEL_PEAK_SHAPE, MIN_DP_CORR_PEAK_SHAPE, MEASURE, MIN_R_SHAPE_INTRA});
   }
 
 }

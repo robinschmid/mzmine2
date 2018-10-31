@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData.SimilarityMeasure;
 
 /**
  * row to row correlation (2 rows) Intensity profile and peak shape correlation
@@ -31,7 +32,9 @@ public class R2RFullCorrelationData extends R2RCorrelationData {
    */
   private Map<RawDataFile, CorrelationData> corrPeakShape;
   // min max avg
-  private double minPeakShapeR, maxPeakShapeR, avgPeakShapeR, avgDPCount;
+  private double minShapeR, maxShapeR, avgShapeR, avgDPCount;
+  // cosine
+  private double avgShapeCosineSim;
 
   public R2RFullCorrelationData(PeakListRow a, PeakListRow b, CorrelationData corrIProfile,
       Map<RawDataFile, CorrelationData> corrPeakShape) {
@@ -56,32 +59,36 @@ public class R2RFullCorrelationData extends R2RCorrelationData {
     // set
     this.corrPeakShape = corrPeakShape;
     if (!hasFeatureShapeCorrelation()) {
-      minPeakShapeR = 0;
-      maxPeakShapeR = 0;
-      avgPeakShapeR = 0;
+      minShapeR = 0;
+      maxShapeR = 0;
+      avgShapeR = 0;
+      avgShapeCosineSim = 0;
       avgDPCount = 0;
       corrTotal = null;
       return;
     }
     // min max
-    minPeakShapeR = 1;
-    maxPeakShapeR = -1;
-    avgPeakShapeR = 0;
+    minShapeR = 1;
+    maxShapeR = -1;
+    avgShapeR = 0;
+    avgShapeCosineSim = 0;
     avgDPCount = 0;
     int c = corrPeakShape.size();
 
     for (Entry<RawDataFile, CorrelationData> e : corrPeakShape.entrySet()) {
       CorrelationData corr = e.getValue();
-      avgPeakShapeR += corr.getR();
+      avgShapeR += corr.getR();
+      avgShapeCosineSim += corr.getCosineSimilarity();
       avgDPCount += corr.getDPCount();
-      if (corr.getR() < minPeakShapeR)
-        minPeakShapeR = corr.getR();
-      if (corr.getR() > maxPeakShapeR)
-        maxPeakShapeR = corr.getR();
+      if (corr.getR() < minShapeR)
+        minShapeR = corr.getR();
+      if (corr.getR() > maxShapeR)
+        maxShapeR = corr.getR();
     }
 
     avgDPCount = avgDPCount / c;
-    avgPeakShapeR = avgPeakShapeR / c;
+    avgShapeR = avgShapeR / c;
+    avgShapeCosineSim = avgShapeCosineSim / c;
 
     // create new total corr
     corrTotal = CorrelationData.create(corrPeakShape.values());
@@ -96,25 +103,38 @@ public class R2RFullCorrelationData extends R2RCorrelationData {
     return corrTotal;
   }
 
-  public double getMinPeakShapeR() {
-    return minPeakShapeR;
+  public double getMinShapeR() {
+    return minShapeR;
   }
 
-  public void setMinPeakShapeR(double minPeakShapeR) {
-    this.minPeakShapeR = minPeakShapeR;
+  public double getMaxShapeR() {
+    return maxShapeR;
   }
 
-  public double getMaxPeakShapeR() {
-    return maxPeakShapeR;
-  }
-
-  public void setMaxPeakShapeR(double maxPeakShapeR) {
-    this.maxPeakShapeR = maxPeakShapeR;
+  /**
+   * Get average similarity score
+   * 
+   * @param measure
+   * @return
+   */
+  public double getSimilarity(SimilarityMeasure measure) {
+    switch (measure) {
+      case COSINE_SIM:
+        return getAvgShapeCosineSim();
+      case PEARSON:
+        return getAvgShapeR();
+    }
+    return 0;
   }
 
   @Override
-  public double getAvgPeakShapeR() {
-    return avgPeakShapeR;
+  public double getAvgShapeR() {
+    return avgShapeR;
+  }
+
+  @Override
+  public double getAvgShapeCosineSim() {
+    return avgShapeCosineSim;
   }
 
   public double getAvgDPcount() {
@@ -155,12 +175,13 @@ public class R2RFullCorrelationData extends R2RCorrelationData {
    * @param minMaxICorr
    * @param minShapeCorrR
    */
-  public void validate(double minMaxICorr, double minShapeCorrR) {
+  public void validate(double minMaxICorr, double minShapePearsonR, double minShapeCosineSim) {
     if (hasIMaxCorr() && (corrIProfile.getR() < minMaxICorr)) {
       // delete maxIcorr
       corrIProfile = null;
     }
-    if (hasFeatureShapeCorrelation() && (avgPeakShapeR < minShapeCorrR)) {
+    if (hasFeatureShapeCorrelation()
+        && (avgShapeR < minShapePearsonR || avgShapeCosineSim < minShapeCosineSim)) {
       // delete peak shape corr
       setCorrPeakShape(null);
     }

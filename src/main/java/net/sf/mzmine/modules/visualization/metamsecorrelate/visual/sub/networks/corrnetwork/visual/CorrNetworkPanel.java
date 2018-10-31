@@ -78,7 +78,7 @@ public class CorrNetworkPanel extends NetworkPanel {
     int added = 0;
     for (Entry<String, R2RCorrelationData> e : map.entrySet()) {
       R2RCorrelationData r2r = e.getValue();
-      if (r2r != null && r2r.hasFeatureShapeCorrelation() && r2r.getAvgPeakShapeR() >= minR) {
+      if (r2r != null && r2r.hasFeatureShapeCorrelation() && r2r.getAvgShapeR() >= minR) {
         int[] ids = R2RCorrMap.toKeyIDs(e.getKey());
         PeakListRow a = pkl.findRowByID(ids[0]);
         PeakListRow b = pkl.findRowByID(ids[1]);
@@ -86,7 +86,7 @@ public class CorrNetworkPanel extends NetworkPanel {
         if (a != null && b != null) {
           String node1 = toNodeName(a);
           String node2 = toNodeName(b);
-          addNewEdge(node1, node2, r2r.getAvgPeakShapeR());
+          addNewEdge(node1, node2, r2r.getAvgShapeR());
           added++;
         }
       }
@@ -125,10 +125,10 @@ public class CorrNetworkPanel extends NetworkPanel {
       for (int k = i + 1; k < rows.length; k++) {
         PeakListRow b = rows[k];
         R2RCorrelationData r2r = map.get(a, b);
-        if (r2r != null && r2r.hasFeatureShapeCorrelation() && r2r.getAvgPeakShapeR() >= minR) {
+        if (r2r != null && r2r.hasFeatureShapeCorrelation() && r2r.getAvgShapeR() >= minR) {
           String node1 = toNodeName(a);
           String node2 = toNodeName(b);
-          addNewEdge(node1, node2, r2r.getAvgPeakShapeR());
+          addNewEdge(node1, node2, r2r.getAvgShapeR());
           added++;
         }
       }

@@ -44,6 +44,7 @@ import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.FeatureShapeCorrelationParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.InterSampleIntCorrParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData.SimilarityMeasure;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
@@ -98,6 +99,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   // GENERAL
   private final PeakList peakList;
   private final RTTolerance rtTolerance;
+  private boolean autoSuffix;
+  private String suffix;
 
   // ADDUCTS
   private MSAnnotationLibrary library;
@@ -119,7 +122,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   private final MinimumFeatureFilter minFFilter;
 
   // FEATURE SHAPE CORRELATION
-  // pearson correlation r to identify negative correlation
+  // correlation r to identify negative correlation
+  private SimilarityMeasure shapeSimMeasure;
   private final double minShapeCorrR;
   private final double noiseLevelShapeCorr;
   private final int minCorrelatedDataPoints;
@@ -174,6 +178,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     // fill in smaller features after
     minShapeCorrR =
         corrp.getParameter(FeatureShapeCorrelationParameters.MIN_R_SHAPE_INTRA).getValue();
+    shapeSimMeasure = corrp.getParameter(FeatureShapeCorrelationParameters.MEASURE).getValue();
     noiseLevelShapeCorr =
         corrp.getParameter(FeatureShapeCorrelationParameters.NOISE_LEVEL_PEAK_SHAPE).getValue();
     minCorrelatedDataPoints =
@@ -212,6 +217,16 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         .getValue();
     minDPMaxICorr = parameterSet.getParameter(MetaMSEcorrelateParameters.IMAX_CORRELATION)
         .getEmbeddedParameters().getParameter(InterSampleIntCorrParameters.MIN_DP).getValue();
+
+    // suffix
+    autoSuffix = parameters.getParameter(MetaMSEcorrelateParameters.SUFFIX).getValue();
+
+    if (autoSuffix)
+      suffix = MessageFormat.format("corr {2} r>={0} dp>={1}, {3}", minShapeCorrR,
+          minCorrelatedDataPoints, shapeSimMeasure, searchAdducts ? "MS annot" : "");
+    else
+      suffix = parameters.getParameter(MetaMSEcorrelateParameters.SUFFIX).getEmbeddedParameter()
+          .getValue();
   }
 
   @Override
@@ -458,6 +473,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
                 break;
 
               PeakListRow row2 = rows[x];
+
               // has a minimum number/% of overlapping features in all samples / in at least one
               // groups
               // or check RTRange
@@ -469,7 +485,9 @@ public class MetaMSEcorrelateTask extends AbstractTask {
                     minCorrelatedDataPoints, noiseLevelShapeCorr);
                 if (corr != null) {
                   // deletes correlations if criteria is not met
-                  corr.validate(minMaxICorr, minShapeCorrR);
+                  corr.validate(minMaxICorr,
+                      shapeSimMeasure.equals(SimilarityMeasure.PEARSON) ? minShapeCorrR : 0,
+                      shapeSimMeasure.equals(SimilarityMeasure.COSINE_SIM) ? minShapeCorrR : 0);
                   // check for correlation in min samples
                   if (corr.hasFeatureShapeCorrelation())
                     checkMinFCorrelation(minFFilter, corr);
@@ -658,70 +676,96 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       // scan numbers (not necessary 1,2,3...)
       int[] sn1 = f1.getScanNumbers();
       int[] sn2 = f2.getScanNumbers();
-      int offsetI1 = 0;
-      int offsetI2 = 0;
-      // find corresponding value
-      if (sn2[0] > sn1[0]) {
-        for (int i = 1; i < sn1.length; i++) {
-          if (sn1[i] == sn2[0]) {
-            offsetI1 = i;
-            break;
-          }
+
+      if (sn1.length < minCorrelatedDataPoints || sn2.length < minCorrelatedDataPoints)
+        return null;
+
+      // find max of sn1
+      int maxI = 0;
+      double max = 0;
+      for (int i = 0; i < sn1.length; i++) {
+        double val = f1.getDataPoint(sn1[i]).getIntensity();
+        if (val > max) {
+          maxI = i;
+          max = val;
         }
-        // peaks are not overlapping
-        if (offsetI1 == 0)
-          return null;
       }
-      if (sn2[0] < sn1[0]) {
-        for (int i = 1; i < sn2.length; i++) {
-          if (sn1[0] == sn2[i]) {
-            offsetI2 = i;
-            break;
-          }
+
+      int offset2 = 0;
+      // find corresponding scan in sn2
+      for (int i = 0; i < sn2.length; i++) {
+        if (sn1[maxI] == sn2[i]) {
+          offset2 = i;
+          break;
         }
-        // peaks are not overlapping
-        if (offsetI2 == 0)
-          return null;
       }
-      // only correlate intercepting areas 0-max
-      int max = 0;
-      if (sn1.length - offsetI1 <= sn2.length - offsetI2)
-        max = sn1.length - offsetI1;
-      if (sn1.length - offsetI1 > sn2.length - offsetI2)
-        max = sn2.length - offsetI2;
-      if (max - offsetI1 > minCorrelatedDataPoints && max - offsetI2 > minCorrelatedDataPoints) {
-        RawDataFile raw = f1.getDataFile();
 
-        // save max and min of intensity of val1(x)
-        List<double[]> data = new ArrayList<double[]>();
-        // add all data points over a given threshold
-        // raw data (not smoothed)
-        for (int i = 0; i < max; i++) {
-          if (sn1[i + offsetI1] != sn2[i + offsetI2])
-            throw new Exception("Scans are not the same for peak shape corr");
+      // save max and min of intensity of val1(x)
+      List<double[]> data = new ArrayList<double[]>();
 
-          DataPoint dp = f1.getDataPoint(sn1[i + offsetI1]);
-          DataPoint dp2 = f2.getDataPoint(sn2[i + offsetI2]);
-          if (dp != null && dp2 != null) {
-            // raw data
-            double val1 = dp.getIntensity();
-            double val2 = dp2.getIntensity();
-
-            if (val1 >= noiseLevelShapeCorr && val2 >= noiseLevelShapeCorr) {
-              data.add(new double[] {val1, val2});
-            }
-          }
+      // add all data points <=max
+      int i1 = maxI;
+      int i2 = offset2;
+      while (i1 >= 0 && i2 >= 0) {
+        int s1 = sn1[i1];
+        int s2 = sn2[i2];
+        // add point, if not break
+        if (s1 == s2) {
+          if (!addDataPointToCorr(data, f1.getDataPoint(s1), f2.getDataPoint(s2),
+              noiseLevelShapeCorr))
+            break;
         }
-        // return pearson r
-        if (data.size() >= minCorrelatedDataPoints) {
-          return CorrelationData.create(data);
+        // end of peak found
+        else
+          break;
+        i1--;
+        i2--;
+      }
+
+      // add all dp>max
+      i1 = maxI + 1;
+      i2 = offset2 + 1;
+      while (i1 < sn1.length && i2 < sn2.length) {
+        int s1 = sn1[i1];
+        int s2 = sn2[i2];
+        if (s1 == s2) {
+          if (!addDataPointToCorr(data, f1.getDataPoint(s1), f2.getDataPoint(s2),
+              noiseLevelShapeCorr))
+            break;
         }
+        // end of peak found
+        else
+          break;
+        i1++;
+        i2++;
+      }
+      // return pearson r
+      if (data.size() >= minCorrelatedDataPoints) {
+        return CorrelationData.create(data);
       }
     } else {
       // TODO if different raw file search for same rt
       // impute rt/I values if between 2 data points
     }
     return null;
+  }
+
+  private static boolean addDataPointToCorr(List<double[]> data, DataPoint a, DataPoint b,
+      double noiseLevel) {
+    // add all data points over a given threshold
+    // TODO raw data (not smoothed)
+    if (a != null && b != null) {
+      // raw data
+      double val1 = a.getIntensity();
+      double val2 = b.getIntensity();
+
+      if (val1 >= noiseLevel && val2 >= noiseLevel) {
+        data.add(new double[] {val1, val2});
+        return true;
+      } else
+        return false;
+    } else
+      return false;
   }
 
   /**

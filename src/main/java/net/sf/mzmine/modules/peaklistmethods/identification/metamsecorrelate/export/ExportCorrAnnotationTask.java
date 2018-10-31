@@ -217,7 +217,7 @@ public class ExportCorrAnnotationTask extends AbstractTask {
 
       AtomicInteger added = new AtomicInteger(0);
       // for all rows
-      map.streamCorrDataEntries().filter(e -> e.getValue().getAvgPeakShapeR() >= minCorr)
+      map.streamCorrDataEntries().filter(e -> e.getValue().getAvgShapeR() >= minCorr)
           .forEach(e -> {
             int[] ids = R2RCorrMap.toKeyIDs(e.getKey());
             //
@@ -232,8 +232,8 @@ public class ExportCorrAnnotationTask extends AbstractTask {
             //
             if (export) {
               exportEdge(ann, "MS1 shape correlation", ids[0], ids[1],
-                  corrForm.format(e.getValue().getAvgPeakShapeR()),
-                  "r=" + corrForm.format(e.getValue().getAvgPeakShapeR()));
+                  corrForm.format(e.getValue().getAvgShapeR()),
+                  "r=" + corrForm.format(e.getValue().getAvgShapeR()));
               added.incrementAndGet();
             }
           });
