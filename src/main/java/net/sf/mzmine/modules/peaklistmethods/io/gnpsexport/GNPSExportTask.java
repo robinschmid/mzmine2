@@ -148,7 +148,7 @@ public class GNPSExportTask extends AbstractTask {
 
     for (PeakListRow row : peakList.getRows()) {
       // do not export if no MSMS
-      if (filter.filter(row))
+      if (!filter.filter(row))
         continue;
 
       String rowID = Integer.toString(row.getID());

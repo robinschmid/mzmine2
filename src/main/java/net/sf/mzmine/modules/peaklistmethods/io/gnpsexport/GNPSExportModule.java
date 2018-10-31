@@ -83,7 +83,7 @@ public class GNPSExportModule implements MZmineProcessingModule {
     if (submit || openFolder) {
       final File fileName = file;
       final File folder = file.getParentFile();
-      AllTasksFinishedListener finished = new AllTasksFinishedListener(list, true, l -> {
+      new AllTasksFinishedListener(list, true, l -> {
         // succeed
         if (submit) {
           GNPSSubmitParameters param =
@@ -114,7 +114,7 @@ public class GNPSExportModule implements MZmineProcessingModule {
     try {
       String url = GNPSUtils.submitJob(fileName, param);
       if (url == null || url.isEmpty())
-        LOG.log(Level.WARNING, "GNPS submit failed");
+        LOG.log(Level.WARNING, "GNPS submit failed (url empty)");
     } catch (Exception e) {
       LOG.log(Level.WARNING, "GNPS submit failed", e);
     }
@@ -160,18 +160,15 @@ public class GNPSExportModule implements MZmineProcessingModule {
     RowFilter filter = parameters.getParameter(GNPSExportParameters.FILTER).getValue();
 
     boolean exAnn = true;
-    boolean exCorr = true;
     if (parameters.getParameter(GNPSExportParameters.SUBMIT).getValue()) {
       exAnn = parameters.getParameter(GNPSExportParameters.SUBMIT).getEmbeddedParameters()
           .getParameter(GNPSSubmitParameters.ANN_EDGES).getValue();
-      exCorr = parameters.getParameter(GNPSExportParameters.SUBMIT).getEmbeddedParameters()
-          .getParameter(GNPSSubmitParameters.CORR_EDGES).getValue();
     }
 
     AbstractTask extraEdgeExport = new ExportCorrAnnotationTask(
         parameters.getParameter(GNPSExportParameters.PEAK_LISTS).getValue()
             .getMatchingPeakLists()[0], //
-        full, 0, filter, exAnn, exCorr);
+        full, 0, filter, exAnn, false);
     tasks.add(extraEdgeExport);
     return extraEdgeExport;
   }

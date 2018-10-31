@@ -141,6 +141,7 @@ public class ExportCorrAnnotationTask extends AbstractTask {
 
   public static boolean exportAnnotationEdges(PeakList pkl, File filename, boolean limitToMSMS,
       Double progress, AbstractTask task) {
+    LOG.info("Export annotation edge file");
     NumberFormat mzForm = MZmineCore.getConfiguration().getMZFormat();
     NumberFormat corrForm = new DecimalFormat("0.000");
     try {
@@ -173,7 +174,7 @@ public class ExportCorrAnnotationTask extends AbstractTask {
           links.entrySet().stream().filter(e -> e != null).filter(e -> e.getKey().getID() > rowID)
               .forEach(e -> {
                 PeakListRow link = e.getKey();
-                if (limitToMSMS && link.getBestFragmentation() != null) {
+                if (!limitToMSMS || link.getBestFragmentation() != null) {
                   ESIAdductIdentity id = e.getValue();
                   double dmz = Math.abs(r.getAverageMZ() - link.getAverageMZ());
                   // the data

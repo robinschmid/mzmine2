@@ -226,7 +226,7 @@ public class CSVExportTask extends AbstractTask {
     Set<String> peakInformationFields = new HashSet<>();
 
     for (PeakListRow row : peakList.getRows()) {
-      if (filter.filter(row))
+      if (!filter.filter(row))
         continue;
       if (row.getPeakInformation() != null) {
         for (String key : row.getPeakInformation().getAllProperties().keySet()) {
@@ -263,7 +263,7 @@ public class CSVExportTask extends AbstractTask {
     // Write data rows
     for (PeakListRow peakListRow : peakList.getRows()) {
 
-      if (filter.filter(peakListRow)) {
+      if (!filter.filter(peakListRow)) {
         processedRows++;
         continue;
       }

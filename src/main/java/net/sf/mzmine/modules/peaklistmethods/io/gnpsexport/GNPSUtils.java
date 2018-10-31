@@ -38,7 +38,9 @@ public class GNPSUtils {
     // optional
     boolean useMeta = param.getParameter(GNPSSubmitParameters.META_FILE).getValue();
     boolean ann = param.getParameter(GNPSSubmitParameters.ANN_EDGES).getValue();
-    boolean corr = param.getParameter(GNPSSubmitParameters.CORR_EDGES).getValue();
+    // TODO
+    // boolean corr = param.getParameter(GNPSSubmitParameters.CORR_EDGES).getValue();
+    boolean corr = false;
     boolean openWebsite = param.getParameter(GNPSSubmitParameters.OPEN_WEBSITE).getValue();
     String presets = param.getParameter(GNPSSubmitParameters.PRESETS).getValue().toString();
     String email = param.getParameter(GNPSSubmitParameters.EMAIL).getValue();

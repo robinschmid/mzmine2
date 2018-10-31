@@ -39,13 +39,13 @@ public class GNPSSubmitParameters extends SimpleParameterSet {
       new StringParameter("Email", "Email adresse for notifications about the job");
   public static final BooleanParameter ANN_EDGES =
       new BooleanParameter("Annotation edges", "Add annotation edges to GNPS job", true);
-  public static final BooleanParameter CORR_EDGES =
-      new BooleanParameter("Correlation edges", "Add correlation edges to GNPS job", false);
+  // public static final BooleanParameter CORR_EDGES =
+  // new BooleanParameter("Correlation edges", "Add correlation edges to GNPS job", false);
 
   public static final BooleanParameter OPEN_WEBSITE =
       new BooleanParameter("Open website", "Website of GNPS job", true);
 
   public GNPSSubmitParameters() {
-    super(new Parameter[] {META_FILE, PRESETS, EMAIL, ANN_EDGES, CORR_EDGES, OPEN_WEBSITE});
+    super(new Parameter[] {META_FILE, PRESETS, EMAIL, ANN_EDGES, OPEN_WEBSITE});
   }
 }
