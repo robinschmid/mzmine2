@@ -40,6 +40,7 @@ import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
+import net.sf.mzmine.modules.peaklistmethods.io.gnpsexport.GNPSExportParameters.RowFilter;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
@@ -59,7 +60,7 @@ public class CSVExportTask extends AbstractTask {
   private ExportRowDataFileElement[] dataFileElements;
   private Boolean exportAllPeakInfo;
   private String idSeparator;
-  private boolean limitToMSMS;
+  private RowFilter filter;
 
   public CSVExportTask(ParameterSet parameters) {
     this.peakLists =
@@ -70,11 +71,40 @@ public class CSVExportTask extends AbstractTask {
     dataFileElements = parameters.getParameter(CSVExportParameters.exportDataFileItems).getValue();
     exportAllPeakInfo = parameters.getParameter(CSVExportParameters.exportAllPeakInfo).getValue();
     idSeparator = parameters.getParameter(CSVExportParameters.idSeparator).getValue();
-    this.limitToMSMS = parameters.getParameter(CSVExportParameters.limitToMSMS).getValue();
+    this.filter = parameters.getParameter(CSVExportParameters.filter).getValue();
 
     // if best annotation and best annotation plus support was selected - deselect
     refineCommonElements();
   }
+
+  /**
+   * 
+   * @param peakLists
+   * @param fileName
+   * @param fieldSeparator
+   * @param commonElements
+   * @param dataFileElements
+   * @param exportAllPeakInfo
+   * @param idSeparator
+   * @param filter Row filter
+   */
+  public CSVExportTask(PeakList[] peakLists, File fileName, String fieldSeparator,
+      ExportRowCommonElement[] commonElements, ExportRowDataFileElement[] dataFileElements,
+      Boolean exportAllPeakInfo, String idSeparator, RowFilter filter) {
+    super();
+    this.peakLists = peakLists;
+    this.fileName = fileName;
+    this.fieldSeparator = fieldSeparator;
+    this.commonElements = commonElements;
+    this.dataFileElements = dataFileElements;
+    this.exportAllPeakInfo = exportAllPeakInfo;
+    this.idSeparator = idSeparator;
+    this.filter = filter;
+
+    // if best annotation and best annotation plus support was selected - deselect
+    refineCommonElements();
+  }
+
 
   private void refineCommonElements() {
     List<ExportRowCommonElement> list = Lists.newArrayList(commonElements);
@@ -85,24 +115,6 @@ public class CSVExportTask extends AbstractTask {
       commonElements = list.toArray(new ExportRowCommonElement[list.size()]);
     }
   }
-
-  public CSVExportTask(PeakList[] peakLists, File fileName, String fieldSeparator,
-      ExportRowCommonElement[] commonElements, ExportRowDataFileElement[] dataFileElements,
-      Boolean exportAllPeakInfo, String idSeparator, boolean limitToMSMS) {
-    super();
-    this.peakLists = peakLists;
-    this.fileName = fileName;
-    this.fieldSeparator = fieldSeparator;
-    this.commonElements = commonElements;
-    this.dataFileElements = dataFileElements;
-    this.exportAllPeakInfo = exportAllPeakInfo;
-    this.idSeparator = idSeparator;
-    this.limitToMSMS = limitToMSMS;
-
-    // if best annotation and best annotation plus support was selected - deselect
-    refineCommonElements();
-  }
-
 
 
   @Override
@@ -214,7 +226,7 @@ public class CSVExportTask extends AbstractTask {
     Set<String> peakInformationFields = new HashSet<>();
 
     for (PeakListRow row : peakList.getRows()) {
-      if (limitToMSMS && row.getBestFragmentation() == null)
+      if (filter.filter(row))
         continue;
       if (row.getPeakInformation() != null) {
         for (String key : row.getPeakInformation().getAllProperties().keySet()) {
@@ -251,7 +263,7 @@ public class CSVExportTask extends AbstractTask {
     // Write data rows
     for (PeakListRow peakListRow : peakList.getRows()) {
 
-      if (limitToMSMS && peakListRow.getBestFragmentation() == null) {
+      if (filter.filter(peakListRow)) {
         processedRows++;
         continue;
       }

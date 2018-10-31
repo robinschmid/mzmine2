@@ -13,10 +13,13 @@
 package net.sf.mzmine.modules.peaklistmethods.io.gnpsexport;
 
 import java.awt.Window;
+import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
+import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.MassListParameter;
 import net.sf.mzmine.parameters.parametertypes.filenames.FileNameParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
@@ -25,6 +28,37 @@ import net.sf.mzmine.util.ExitCode;
 
 
 public class GNPSExportParameters extends SimpleParameterSet {
+
+  public enum RowFilter {
+    ALL, ONLY_WITH_MS2, ONLY_WITH_MS2_OR_ANNOTATION, ONLY_WITH_MS2_AND_ANNOTATION;
+
+    @Override
+    public String toString() {
+      return super.toString().replaceAll("_", " ");
+    }
+
+    /**
+     * Filter a row
+     * 
+     * @param row
+     * @return
+     */
+    public boolean filter(PeakListRow row) {
+      switch (this) {
+        case ALL:
+          return true;
+        case ONLY_WITH_MS2:
+          return row.getBestFragmentation() != null;
+        case ONLY_WITH_MS2_OR_ANNOTATION:
+          return row.getBestFragmentation() != null
+              || MSAnnotationNetworkLogic.hasIonAnnotation(row);
+        case ONLY_WITH_MS2_AND_ANNOTATION:
+          return row.getBestFragmentation() != null
+              && MSAnnotationNetworkLogic.hasIonAnnotation(row);
+      }
+      return false;
+    }
+  }
 
   public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter();
 
@@ -41,19 +75,19 @@ public class GNPSExportParameters extends SimpleParameterSet {
       new OptionalModuleParameter<GNPSSubmitParameters>("Submit to GNPS",
           "Directly submits a GNPS job", new GNPSSubmitParameters());
 
-  public static final BooleanParameter LIMIT_TO_MSMS = new BooleanParameter(
-      "Only export features with MS/MS", "Limit the exported rows to those with MS/MS data", true);
+  public static final ComboParameter<RowFilter> FILTER = new ComboParameter<RowFilter>(
+      "Filter rows", "Limit the exported rows to those with MS/MS data or annotated rows",
+      RowFilter.values(), RowFilter.ONLY_WITH_MS2_OR_ANNOTATION);
 
-  public static final BooleanParameter OPEN_GNPS = new BooleanParameter("Open GNPS website",
-      "Opens the super qick start of GNPS feature based networking in the standard browser.",
-      false);
+  // public static final BooleanParameter OPEN_GNPS = new BooleanParameter("Open GNPS website",
+  // "Opens the super quick start of GNPS feature based networking in the standard browser.",
+  // false);
 
   public static final BooleanParameter OPEN_FOLDER =
       new BooleanParameter("Open folder", "Opens the export folder", false);
 
   public GNPSExportParameters() {
-    super(new Parameter[] {PEAK_LISTS, FILENAME, MASS_LIST, LIMIT_TO_MSMS, SUBMIT, OPEN_GNPS,
-        OPEN_FOLDER});
+    super(new Parameter[] {PEAK_LISTS, FILENAME, MASS_LIST, FILTER, SUBMIT, OPEN_FOLDER});
   }
 
   @Override

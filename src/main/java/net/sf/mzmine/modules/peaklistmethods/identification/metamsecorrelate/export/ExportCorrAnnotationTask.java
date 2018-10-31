@@ -36,6 +36,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
+import net.sf.mzmine.modules.peaklistmethods.io.gnpsexport.GNPSExportParameters.RowFilter;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
@@ -63,10 +64,11 @@ public class ExportCorrAnnotationTask extends AbstractTask {
   private double minR;
   private final PeakList peakList;
   private File filename;
-  private boolean exportOnlyAnnotated;
 
 
-  private boolean limitToMSMS;
+  private RowFilter filter;
+
+
 
   /**
    * Create the task.
@@ -80,12 +82,11 @@ public class ExportCorrAnnotationTask extends AbstractTask {
     // tolerances
     filename = parameterSet.getParameter(ExportCorrAnnotationParameters.FILENAME).getValue();
     minR = parameterSet.getParameter(ExportCorrAnnotationParameters.MIN_R).getValue();
-    exportOnlyAnnotated =
-        parameterSet.getParameter(ExportCorrAnnotationParameters.EX_ONLY_ANNOTATED).getValue();
     exportAnnotationEdges =
         parameterSet.getParameter(ExportCorrAnnotationParameters.EX_ANNOT).getValue();
     exportCorrelationEdges =
         parameterSet.getParameter(ExportCorrAnnotationParameters.EX_CORR).getValue();
+    filter = parameterSet.getParameter(ExportCorrAnnotationParameters.FILTER).getValue();
   }
 
   /**
@@ -94,14 +95,12 @@ public class ExportCorrAnnotationTask extends AbstractTask {
    * @param parameterSet the parameters.
    * @param list peak list.
    */
-  public ExportCorrAnnotationTask(PeakList peakList, File filename, double minR,
-      boolean exportOnlyAnnotated, boolean limitToMSMS, boolean exportAnnotationEdges,
-      boolean exportCorrelationEdges) {
+  public ExportCorrAnnotationTask(PeakList peakList, File filename, double minR, RowFilter filter,
+      boolean exportAnnotationEdges, boolean exportCorrelationEdges) {
     this.peakList = peakList;
     this.filename = filename;
     this.minR = minR;
-    this.exportOnlyAnnotated = exportOnlyAnnotated;
-    this.limitToMSMS = limitToMSMS;
+    this.filter = filter;
     this.exportAnnotationEdges = exportAnnotationEdges;
     this.exportCorrelationEdges = exportCorrelationEdges;
   }
@@ -124,11 +123,11 @@ public class ExportCorrAnnotationTask extends AbstractTask {
 
       // export edges of corr
       if (exportAnnotationEdges)
-        exportAnnotationEdges(peakList, filename, limitToMSMS, progress, this);
+        exportAnnotationEdges(peakList, filename, filter.equals(RowFilter.ONLY_WITH_MS2), progress,
+            this);
       // export edges of ann
       if (exportCorrelationEdges)
-        exportCorrelationEdges(peakList, filename, progress, this, minR, exportOnlyAnnotated,
-            limitToMSMS);
+        exportCorrelationEdges(peakList, filename, progress, this, minR, filter);
 
     } catch (Exception t) {
       LOG.log(Level.SEVERE, "Export of correlation and MS annotation results error", t);
@@ -174,13 +173,15 @@ public class ExportCorrAnnotationTask extends AbstractTask {
           links.entrySet().stream().filter(e -> e != null).filter(e -> e.getKey().getID() > rowID)
               .forEach(e -> {
                 PeakListRow link = e.getKey();
-                ESIAdductIdentity id = e.getValue();
-                double dmz = Math.abs(r.getAverageMZ() - link.getAverageMZ());
-                // the data
-                exportEdge(ann, "MS1 annotation", rowID, e.getKey().getID(),
-                    corrForm.format((id.getScore() + adduct.getScore()) / 2d), //
-                    id.getAdduct() + " " + adduct.getAdduct() + " dm/z=" + mzForm.format(dmz));
-                added.incrementAndGet();
+                if (limitToMSMS && link.getBestFragmentation() != null) {
+                  ESIAdductIdentity id = e.getValue();
+                  double dmz = Math.abs(r.getAverageMZ() - link.getAverageMZ());
+                  // the data
+                  exportEdge(ann, "MS1 annotation", rowID, e.getKey().getID(),
+                      corrForm.format((id.getScore() + adduct.getScore()) / 2d), //
+                      id.getAdduct() + " " + adduct.getAdduct() + " dm/z=" + mzForm.format(dmz));
+                  added.incrementAndGet();
+                }
               });
         });
       }
@@ -200,7 +201,7 @@ public class ExportCorrAnnotationTask extends AbstractTask {
   }
 
   public static boolean exportCorrelationEdges(PeakList pkl, File filename, Double progress,
-      AbstractTask task, double minCorr, boolean onlyAnnotated, boolean limitToMSMS) {
+      AbstractTask task, double minCorr, RowFilter filter) {
     if (!(pkl instanceof MSEGroupedPeakList))
       return false;
 
@@ -220,17 +221,11 @@ public class ExportCorrAnnotationTask extends AbstractTask {
             int[] ids = R2RCorrMap.toKeyIDs(e.getKey());
             //
             boolean export = true;
-            if (limitToMSMS || onlyAnnotated) {
+            if (!filter.equals(RowFilter.ALL)) {
               PeakListRow a = pkl.findRowByID(ids[0]);
               PeakListRow b = pkl.findRowByID(ids[1]);
               // only export rows with MSMS
-              if (limitToMSMS)
-                export = a.getBestFragmentation() != null && b.getBestFragmentation() != null;
-              if (export && onlyAnnotated) {
-                // find annotations
-                export = MSAnnotationNetworkLogic.hasIonAnnotation(a)
-                    && MSAnnotationNetworkLogic.hasIonAnnotation(b);
-              }
+              export = filter.filter(a) && filter.filter(b);
             }
 
             //

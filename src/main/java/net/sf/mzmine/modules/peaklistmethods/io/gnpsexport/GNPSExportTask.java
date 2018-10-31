@@ -33,6 +33,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
+import net.sf.mzmine.modules.peaklistmethods.io.gnpsexport.GNPSExportParameters.RowFilter;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
@@ -57,7 +58,8 @@ public class GNPSExportTask extends AbstractTask {
   private NumberFormat rtsForm = new DecimalFormat("0.###");
   // correlation
   private NumberFormat corrForm = new DecimalFormat("0.0000");
-  private boolean limitToMSMS;
+
+  private RowFilter filter;
 
   GNPSExportTask(ParameterSet parameters) {
     this.peakLists =
@@ -65,7 +67,7 @@ public class GNPSExportTask extends AbstractTask {
 
     this.fileName = parameters.getParameter(GNPSExportParameters.FILENAME).getValue();
     this.massListName = parameters.getParameter(GNPSExportParameters.MASS_LIST).getValue();
-    this.limitToMSMS = parameters.getParameter(GNPSExportParameters.LIMIT_TO_MSMS).getValue();
+    this.filter = parameters.getParameter(GNPSExportParameters.FILTER).getValue();
   }
 
   @Override
@@ -146,7 +148,7 @@ public class GNPSExportTask extends AbstractTask {
 
     for (PeakListRow row : peakList.getRows()) {
       // do not export if no MSMS
-      if (limitToMSMS && row.getBestFragmentation() == null)
+      if (filter.filter(row))
         continue;
 
       String rowID = Integer.toString(row.getID());

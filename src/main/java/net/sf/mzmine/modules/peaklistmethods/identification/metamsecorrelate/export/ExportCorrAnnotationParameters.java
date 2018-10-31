@@ -18,9 +18,11 @@
 
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.export;
 
+import net.sf.mzmine.modules.peaklistmethods.io.gnpsexport.GNPSExportParameters.RowFilter;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
+import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.PercentParameter;
 import net.sf.mzmine.parameters.parametertypes.filenames.FileNameParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
@@ -37,14 +39,16 @@ public class ExportCorrAnnotationParameters extends SimpleParameterSet {
       new BooleanParameter("Export MS1 annotation edges", "", true);
   public static final BooleanParameter EX_CORR =
       new BooleanParameter("Export correlation edges", "", true);
-  public static final BooleanParameter EX_ONLY_ANNOTATED =
-      new BooleanParameter("Export only annotated rows in correlation edge file", "", true);
   public static final PercentParameter MIN_R =
       new PercentParameter("Min correlation (r)", "Minimum Pearson correlation", 0.9);
 
+  public static final ComboParameter<RowFilter> FILTER = new ComboParameter<RowFilter>(
+      "Filter rows", "Limit the exported rows to those with MS/MS data or annotated rows",
+      RowFilter.values(), RowFilter.ONLY_WITH_MS2_OR_ANNOTATION);
+
   // Constructor
   public ExportCorrAnnotationParameters() {
-    super(new Parameter[] {PEAK_LISTS, FILENAME, EX_ANNOT, EX_CORR, EX_ONLY_ANNOTATED, MIN_R});
+    super(new Parameter[] {PEAK_LISTS, FILENAME, EX_ANNOT, EX_CORR, FILTER, MIN_R});
   }
 
 }
