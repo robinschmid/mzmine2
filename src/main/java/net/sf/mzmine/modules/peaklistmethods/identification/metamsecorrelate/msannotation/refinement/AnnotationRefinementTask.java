@@ -88,12 +88,14 @@ public class AnnotationRefinementTask extends AbstractTask {
 
   public static void refine(PeakList pkl, int trueThreshold, boolean deleteXmersOnMSMS) {
     for (PeakListRow row : pkl.getRows()) {
+      if (row.getID() == 304)
+        System.out.println("xmer");
       ESIAdductIdentity best = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, true);
       if (best == null)
         continue;
 
       List<ESIAdductIdentity> all = MSAnnotationNetworkLogic.getAllAnnotationsSorted(row);
-      if (deleteXmersOnMSMS) {
+      if (deleteXmersOnMSMS && all.size() > 1) {
         // xmers
         if (deleteXmersOnMSMS(row, best, all, trueThreshold)) {
           best = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, true);
@@ -134,7 +136,7 @@ public class AnnotationRefinementTask extends AbstractTask {
   private static boolean deleteXmersOnMSMS(PeakListRow row, ESIAdductIdentity best,
       List<ESIAdductIdentity> all, int trueThreshold) {
     // check best first
-    if (best.getMSMSModVerify() > 0) {
+    if (best.getMSMSMultimerCount() > 0) {
       // delete rest of annotations
       for (ESIAdductIdentity other : all)
         if (!other.equals(best))
@@ -145,7 +147,7 @@ public class AnnotationRefinementTask extends AbstractTask {
     } else {
       // check rest
       for (ESIAdductIdentity other : all) {
-        if (other.getMSMSModVerify() > 0) {
+        if (other.getMSMSMultimerCount() > 0) {
           row.setPreferredPeakIdentity(other);
 
           // delete rest of annotations
