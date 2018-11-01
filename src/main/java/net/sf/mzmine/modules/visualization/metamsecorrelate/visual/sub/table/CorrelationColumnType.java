@@ -21,6 +21,7 @@ package net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.table;
 public enum CorrelationColumnType {
 
   MAXHEIGHT("Max height", Double.class), //
+  AVG_COSINE_SIM("cosine", Double.class), //
   MIN_R_PEAKSHAPE("r min ∩", Double.class), //
   AVERAGE_R_PEAKSHAPE("r avg ∩", Double.class), //
   MAX_R_PEAKSHAPE("r max ∩", Double.class), //

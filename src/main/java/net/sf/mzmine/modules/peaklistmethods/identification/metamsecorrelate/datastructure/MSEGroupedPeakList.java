@@ -46,8 +46,8 @@ public class MSEGroupedPeakList extends SimplePeakList {
    * @param raw
    * @param pkl
    */
-  public MSEGroupedPeakList(RawDataFile[] raw, PeakList pkl) {
-    this(pkl.getName() + " MSEgr", raw);
+  public MSEGroupedPeakList(RawDataFile[] raw, PeakList pkl, String suffix) {
+    this(pkl.getName() + " " + suffix, raw);
     // copy all rows and fill in groups
     for (PeakListRow r : pkl.getRows()) {
       PeakListRow nr = copyPeakRow(r);

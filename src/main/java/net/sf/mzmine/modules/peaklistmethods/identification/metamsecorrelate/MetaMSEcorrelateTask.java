@@ -219,7 +219,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         .getEmbeddedParameters().getParameter(InterSampleIntCorrParameters.MIN_DP).getValue();
 
     // suffix
-    autoSuffix = parameters.getParameter(MetaMSEcorrelateParameters.SUFFIX).getValue();
+    autoSuffix = !parameters.getParameter(MetaMSEcorrelateParameters.SUFFIX).getValue();
 
     if (autoSuffix)
       suffix = MessageFormat.format("corr {2} r>={0} dp>={1}, {3}", minShapeCorrR,
@@ -254,7 +254,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         return;
 
       // create new PKL for grouping
-      groupedPKL = new MSEGroupedPeakList(peakList.getRawDataFiles(), peakList);
+      groupedPKL = new MSEGroupedPeakList(peakList.getRawDataFiles(), peakList, suffix);
       // find groups and size
       if (useGroups) {
         groupedPKL.setSampleGroupsParameter(minFFilter.getGroupParam());

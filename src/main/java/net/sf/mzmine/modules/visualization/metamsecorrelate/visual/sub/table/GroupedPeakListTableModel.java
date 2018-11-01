@@ -114,6 +114,8 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
         R2GroupCorrelationData corr = group.getCorr(row);
 
         switch (corrCol) {
+          case AVG_COSINE_SIM:
+            return corr.getAvgShapeCosineSim();
           case MAXHEIGHT:
             return corr.getMaxHeight();
           case AVERAGE_DP_COUNT:

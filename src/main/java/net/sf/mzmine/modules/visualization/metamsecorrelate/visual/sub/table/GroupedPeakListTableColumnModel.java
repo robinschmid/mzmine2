@@ -180,6 +180,9 @@ public class GroupedPeakListTableColumnModel extends DefaultTableColumnModel
       newColumn.setIdentifier(corrCol);
 
       switch (corrCol) {
+        case AVG_COSINE_SIM:
+          newColumn.setCellRenderer(corrRenderer);
+          break;
         case AVERAGE_DP_COUNT:
           newColumn.setCellRenderer(dataPointsRenderer);
           break;
