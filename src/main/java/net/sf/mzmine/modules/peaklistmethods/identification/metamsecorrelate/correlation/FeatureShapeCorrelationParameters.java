@@ -64,7 +64,12 @@ public class FeatureShapeCorrelationParameters extends SimpleParameterSet {
   // min data points to be used for correlation
   public static final IntegerParameter MIN_DP_CORR_PEAK_SHAPE =
       new IntegerParameter("Min data points",
-          "Minimum of data points to be used for correlation of peak shapes.", 5, 3, 100000);
+          "Minimum of data points to be used for correlation of peak shapes.", 5, 5, 100000);
+
+  // min data points to be used for correlation
+  public static final IntegerParameter MIN_DP_FEATURE_EDGE =
+      new IntegerParameter("Min data points on edge",
+          "Minimum of data points on rising and falling edge.", 2, 2, 100000)
 
   public static final ComboParameter<SimilarityMeasure> MEASURE = new ComboParameter<>("Measure",
       "Similarity measure", SimilarityMeasure.values(), SimilarityMeasure.PEARSON);
