@@ -127,6 +127,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   private final double minShapeCorrR;
   private final double noiseLevelShapeCorr;
   private final int minCorrelatedDataPoints;
+  private final int minCorrDPOnFeatureEdge;
 
   // MAX INTENSITY PROFILE CORRELATION ACROSS SAMPLES
   private final boolean useMaxICorrFilter;
@@ -183,6 +184,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         corrp.getParameter(FeatureShapeCorrelationParameters.NOISE_LEVEL_PEAK_SHAPE).getValue();
     minCorrelatedDataPoints =
         corrp.getParameter(FeatureShapeCorrelationParameters.MIN_DP_CORR_PEAK_SHAPE).getValue();
+    minCorrDPOnFeatureEdge =
+        corrp.getParameter(FeatureShapeCorrelationParameters.MIN_DP_FEATURE_EDGE).getValue();
 
     // ADDUCTS
     searchAdducts = parameterSet.getParameter(MetaMSEcorrelateParameters.ADDUCT_LIBRARY).getValue();
@@ -482,7 +485,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
               if (overlap.equals(OverlapResult.TRUE)) {
                 // correlate if in rt range
                 R2RFullCorrelationData corr = corrR2R(raw, row, row2, minDPMaxICorr,
-                    minCorrelatedDataPoints, noiseLevelShapeCorr);
+                    minCorrelatedDataPoints, minCorrDPOnFeatureEdge, noiseLevelShapeCorr);
                 if (corr != null) {
                   // deletes correlations if criteria is not met
                   corr.validate(minMaxICorr,
@@ -584,11 +587,11 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    * @return R2R correlation or null if invalid/no correlation
    */
   public static R2RFullCorrelationData corrR2R(RawDataFile[] raw, PeakListRow testRow,
-      PeakListRow row, int minDPMaxICorr, int minCorrelatedDataPoints, double noiseLevelShapeCorr)
-      throws Exception {
+      PeakListRow row, int minDPMaxICorr, int minCorrelatedDataPoints, int minCorrDPOnFeatureEdge,
+      double noiseLevelShapeCorr) throws Exception {
     CorrelationData iProfileR = corrRowToRowIProfile(raw, testRow, row, minDPMaxICorr);
-    Map<RawDataFile, CorrelationData> fCorr =
-        corrRowToRowFeatureShape(raw, testRow, row, minCorrelatedDataPoints, noiseLevelShapeCorr);
+    Map<RawDataFile, CorrelationData> fCorr = corrR2RFeatureShapes(raw, testRow, row,
+        minCorrelatedDataPoints, minCorrDPOnFeatureEdge, noiseLevelShapeCorr);
 
     if (fCorr.isEmpty())
       fCorr = null;
@@ -639,9 +642,9 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    * @return Map of feature shape correlation data (can be empty NON null)
    * @throws Exception
    */
-  public static Map<RawDataFile, CorrelationData> corrRowToRowFeatureShape(final RawDataFile raw[],
-      PeakListRow row, PeakListRow g, int minCorrelatedDataPoints, double noiseLevelShapeCorr)
-      throws Exception {
+  public static Map<RawDataFile, CorrelationData> corrR2RFeatureShapes(final RawDataFile raw[],
+      PeakListRow row, PeakListRow g, int minCorrelatedDataPoints, int minCorrDPOnFeatureEdge,
+      double noiseLevelShapeCorr) throws Exception {
     HashMap<RawDataFile, CorrelationData> corrData = new HashMap<>();
     // go through all raw files
     for (int r = 0; r < raw.length; r++) {
@@ -649,8 +652,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       Feature f2 = g.getPeak(raw[r]);
       if (f1 != null && f2 != null) {
         // peak shape correlation
-        CorrelationData data =
-            corrFeatureShape(f1, f2, true, minCorrelatedDataPoints, noiseLevelShapeCorr);
+        CorrelationData data = corrFeatureShape(f1, f2, true, minCorrelatedDataPoints,
+            minCorrDPOnFeatureEdge, noiseLevelShapeCorr);
         // enough data points
         if (data != null && data.getDPCount() >= minCorrelatedDataPoints)
           corrData.put(raw[r], data);
@@ -669,7 +672,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    * @throws Exception
    */
   public static CorrelationData corrFeatureShape(Feature f1, Feature f2, boolean sameRawFile,
-      int minCorrelatedDataPoints, double noiseLevelShapeCorr) throws Exception {
+      int minCorrelatedDataPoints, int minCorrDPOnFeatureEdge, double noiseLevelShapeCorr)
+      throws Exception {
     // Range<Double> rt1 = f1.getRawDataPointsRTRange();
     // Range<Double> rt2 = f2.getRawDataPointsRTRange();
     if (sameRawFile) {
@@ -722,6 +726,11 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         i2--;
       }
 
+      // check min data points left from apex
+      int left = data.size() - 1;
+      if (left < minCorrDPOnFeatureEdge)
+        return null;
+
       // add all dp>max
       i1 = maxI + 1;
       i2 = offset2 + 1;
@@ -739,8 +748,10 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         i1++;
         i2++;
       }
+      // check right and total dp
+      int right = data.size() - 1 - left;
       // return pearson r
-      if (data.size() >= minCorrelatedDataPoints) {
+      if (data.size() >= minCorrelatedDataPoints && right >= minCorrDPOnFeatureEdge) {
         return CorrelationData.create(data);
       }
     } else {
