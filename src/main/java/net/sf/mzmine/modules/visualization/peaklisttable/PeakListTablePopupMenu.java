@@ -76,7 +76,7 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
   private static final long serialVersionUID = 1L;
 
   private final JTable table;
-  private final PeakList peakList;
+  protected final PeakList peakList;
   private final DefaultTableColumnModel columnModel;
 
   private final JMenu showMenu;
@@ -244,7 +244,7 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
             / DataFileColumnType.values().length);
 
         final Feature clickedPeak =
-            peakList.getRow(table.convertRowIndexToModel(clickedRow)).getPeak(clickedDataFile);
+            getPeakListRow(table.convertRowIndexToModel(clickedRow)).getPeak(clickedDataFile);
 
         // If we have the peak, enable Show... items
         if (clickedPeak != null && oneRowSelected) {
@@ -313,7 +313,7 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
       final PeakListRow[] selectedRows = new PeakListRow[selectedTableRows.length];
       for (int i = 0; i < selectedTableRows.length; i++) {
 
-        selectedRows[i] = peakList.getRow(table.convertRowIndexToModel(selectedTableRows[i]));
+        selectedRows[i] = getPeakListRow(table.convertRowIndexToModel(selectedTableRows[i]));
       }
 
       SwingUtilities.invokeLater(new Runnable() {

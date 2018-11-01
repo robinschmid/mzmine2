@@ -41,7 +41,6 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableParameters;
-import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTablePopupMenu;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.util.components.ComponentToolTipManager;
 import net.sf.mzmine.util.components.ComponentToolTipProvider;
@@ -96,7 +95,8 @@ public class GroupedPeakListTable extends JTable implements ComponentToolTipProv
     sorter = new TableRowSorter<GroupedPeakListTableModel>(pkTableModel);
     setRowSorter(sorter);
 
-    PeakListTablePopupMenu popupMenu = new PeakListTablePopupMenu(window, this, cm, peakList);
+    GroupedPeakListTablePopupMenu popupMenu =
+        new GroupedPeakListTablePopupMenu(window, this, cm, peakList);
     addMouseListener(new PopupListener(popupMenu));
     header.addMouseListener(new PopupListener(popupMenu));
 

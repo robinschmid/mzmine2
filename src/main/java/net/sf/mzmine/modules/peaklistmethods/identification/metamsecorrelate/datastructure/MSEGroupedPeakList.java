@@ -148,7 +148,8 @@ public class MSEGroupedPeakList extends SimplePeakList {
    * @return The last viewed group of this peak list.
    */
   public PKLRowGroup getLastViewedGroup() {
-    return groups == null || lastViewedIndex >= groups.size() ? null : groups.get(lastViewedIndex);
+    return groups == null || lastViewedIndex < 0 || lastViewedIndex >= groups.size() ? null
+        : groups.get(lastViewedIndex);
   }
 
   /**
