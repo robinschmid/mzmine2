@@ -216,11 +216,11 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
     if (clickedRow >= 0 && clickedColumn >= 0) {
 
       final int rowIndex = table.convertRowIndexToModel(clickedRow);
-      clickedPeakListRow = peakList.getRow(rowIndex);
+      clickedPeakListRow = getPeakListRow(rowIndex);
       allClickedPeakListRows = new PeakListRow[selectedRows.length];
       for (int i = 0; i < selectedRows.length; i++) {
 
-        allClickedPeakListRows[i] = peakList.getRow(table.convertRowIndexToModel(selectedRows[i]));
+        allClickedPeakListRows[i] = getPeakListRow(table.convertRowIndexToModel(selectedRows[i]));
       }
 
       // Enable items.
@@ -268,6 +268,15 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
         .setEnabled(oneRowSelected && allClickedPeakListRows[0].getPreferredPeakIdentity() != null);
 
     super.show(invoker, x, y);
+  }
+
+  /**
+   * 
+   * @param modelIndex the row index in the table model
+   * @return
+   */
+  protected PeakListRow getPeakListRow(int modelIndex) {
+    return peakList.getRow(modelIndex);
   }
 
   @Override
