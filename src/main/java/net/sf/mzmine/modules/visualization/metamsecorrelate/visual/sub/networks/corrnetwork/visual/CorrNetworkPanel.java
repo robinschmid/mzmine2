@@ -86,7 +86,7 @@ public class CorrNetworkPanel extends NetworkPanel {
         if (a != null && b != null) {
           String node1 = toNodeName(a);
           String node2 = toNodeName(b);
-          addNewEdge(node1, node2, r2r.getAvgShapeR());
+          addNewEdge(node1, node2, r2r.getAvgShapeR(), r2r.getAvgShapeCosineSim());
           added++;
         }
       }
@@ -128,7 +128,7 @@ public class CorrNetworkPanel extends NetworkPanel {
         if (r2r != null && r2r.hasFeatureShapeCorrelation() && r2r.getAvgShapeR() >= minR) {
           String node1 = toNodeName(a);
           String node2 = toNodeName(b);
-          addNewEdge(node1, node2, r2r.getAvgShapeR());
+          addNewEdge(node1, node2, r2r.getAvgShapeR(), r2r.getAvgShapeCosineSim());
           added++;
         }
       }
@@ -141,8 +141,11 @@ public class CorrNetworkPanel extends NetworkPanel {
     LOG.info("Added " + added + " connections");
   }
 
-  private void addNewEdge(String node1, String node2, double corr) {
-    addNewEdge(node1, node2, "r=" + percForm.format(corr));
+  private void addNewEdge(String node1, String node2, double corr, double cosine) {
+    String label = "r=" + percForm.format(corr);
+    if (cosine != 0)
+      label += "\n cos=" + percForm.format(cosine);
+    addNewEdge(node1, node2, label);
   }
 
   private PeakListRow findRowByID(int id, PeakListRow[] rows) {
