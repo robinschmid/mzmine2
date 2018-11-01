@@ -301,9 +301,14 @@ public class MetaMSEcorrelateTask extends AbstractTask {
           AtomicInteger annotPairs = new AtomicInteger(0);
           // for all groups
           groups.parallelStream().forEach(g -> {
-            annotateGroup(g, compared, annotPairs);
-            stageProgress.addAndGet(1d / groups.size());
+            if (!this.isCanceled()) {
+              annotateGroup(g, compared, annotPairs);
+              stageProgress.addAndGet(1d / groups.size());
+            }
           });
+
+          if (isCanceled())
+            return;
 
           LOG.info("Corr: A total of " + compared.get() + " row2row adduct comparisons with "
               + annotPairs.get() + " annotation pairs");
@@ -324,6 +329,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
             MSAnnMSMSCheckTask task = new MSAnnMSMSCheckTask(project, msmsChecks, groupedPKL);
             task.doCheck();
           }
+          if (isCanceled())
+            return;
 
           // refinement
           if (performAnnotationRefinement) {
@@ -332,6 +339,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
                 new AnnotationRefinementTask(project, refineParam, groupedPKL);
             ref.refine();
           }
+          if (isCanceled())
+            return;
 
           // recalc annotation networks
           MSAnnotationNetworkLogic.recalcAllAnnotationNetworks(nets, true);
@@ -341,6 +350,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
           MSAnnotationNetworkLogic.showMostlikelyAnnotations(groupedPKL, true);
         }
 
+        if (isCanceled())
+          return;
         // add to project
         project.addPeakList(groupedPKL);
 

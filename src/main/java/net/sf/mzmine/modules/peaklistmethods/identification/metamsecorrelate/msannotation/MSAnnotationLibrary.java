@@ -128,48 +128,70 @@ public class MSAnnotationLibrary {
         if (adduct.equals(adduct2))
           continue;
 
-        // for one adduct use a maximum of 1 modification
-        // second can have <=maxMods
-        if (checkMaxMod(adduct, adduct2)) {
-          // check charge state if absCharge is not -1 or 0 (no charge detected)
-          if (checkChargeStates(adduct, adduct2, z1, z2)) {
-            // checks each raw file - only true if all m/z are in range
-            if (checkAdduct(peakList, row1, row2, adduct, adduct2, mode, minHeight)) {
-              // reduce mol if mol1==mol2
-              // [2M+H] and [2M+Na] --> [M+H] [M+Na]
-              if (adduct.getMolecules() == adduct2.getMolecules()) {
-                adduct = new ESIAdductType(adduct);
-                adduct.setMolecules(1);
-                adduct2 = new ESIAdductType(adduct2);
-                adduct2.setMolecules(1);
-              }
-
-              // is a2 a modification of a1? (same adducts - different mods
-              if (adduct2.isModificationOf(adduct)) {
-                ESIAdductType mod = adduct2.subtractMods(adduct);
-                ESIAdductIdentity.addAdductIdentityToRow(row1, ESIAdductType.M_UNMODIFIED, row1,
-                    mod);
-              } else if (adduct.isModificationOf(adduct2)) {
-                ESIAdductType mod = adduct.subtractMods(adduct2);
-                ESIAdductIdentity.addAdductIdentityToRow(row1, mod, row2,
-                    ESIAdductType.M_UNMODIFIED);
-              } else {
-                // Add adduct identity and notify GUI.
-                // only if not already present
-                ESIAdductIdentity.addAdductIdentityToRow(row1, adduct, row2, adduct2);
-              }
-              // update
-              MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row1, false);
-              MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row2, false);
-              // there can only be one hit for a row-row comparison
-              return new ESIAdductType[] {adduct, adduct2};
+        // do not check if MOL = MOL and MOL>1
+        // only one can be modified
+        // check charge state if absCharge is not -1 or 0 (no charge detected)
+        if (checkMolCount(adduct, adduct) //
+            && checkMaxMod(adduct, adduct2) //
+            && checkChargeStates(adduct, adduct2, z1, z2) //
+            && checkMultiChargeDifference(adduct, adduct2)) {
+          // checks each raw file - only true if all m/z are in range
+          if (checkAdduct(peakList, row1, row2, adduct, adduct2, mode, minHeight)) {
+            // reduce mol if mol1==mol2
+            // [2M+H] and [2M+Na] --> [M+H] [M+Na]
+            if (adduct.getMolecules() == adduct2.getMolecules()) {
+              adduct = new ESIAdductType(adduct);
+              adduct.setMolecules(1);
+              adduct2 = new ESIAdductType(adduct2);
+              adduct2.setMolecules(1);
             }
+
+            // is a2 a modification of a1? (same adducts - different mods
+            if (adduct2.isModificationOf(adduct)) {
+              ESIAdductType mod = adduct2.subtractMods(adduct);
+              ESIAdductIdentity.addAdductIdentityToRow(row1, ESIAdductType.M_UNMODIFIED, row1, mod);
+            } else if (adduct.isModificationOf(adduct2)) {
+              ESIAdductType mod = adduct.subtractMods(adduct2);
+              ESIAdductIdentity.addAdductIdentityToRow(row1, mod, row2, ESIAdductType.M_UNMODIFIED);
+            } else {
+              // Add adduct identity and notify GUI.
+              // only if not already present
+              ESIAdductIdentity.addAdductIdentityToRow(row1, adduct, row2, adduct2);
+            }
+            // update
+            MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row1, false);
+            MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row2, false);
+            // there can only be one hit for a row-row comparison
+            return new ESIAdductType[] {adduct, adduct2};
           }
         }
       }
     }
     // no adduct to be found
     return null;
+  }
+
+  /**
+   * [yM+X]2+ and [yM+X-H]+ are only different by -H. if any adduct part or modification equals,
+   * return false. Charge is different
+   * 
+   * @param a
+   * @param b
+   * @return only true if charge is equal or no modification or adduct sub part equals
+   */
+  private boolean checkMultiChargeDifference(ESIAdductType a, ESIAdductType b) {
+    return a.getCharge() == b.getCharge() || (a.uniqueModificationsTo(b) && a.uniqueAdductsTo(b));
+  }
+
+  /**
+   * MOL != MOL or MOL==1
+   * 
+   * @param a
+   * @param b
+   * @return
+   */
+  private boolean checkMolCount(ESIAdductType a, ESIAdductType b) {
+    return a.getMolecules() != b.getMolecules() || (a.getMolecules() == 1 && b.getMolecules() == 1);
   }
 
   /**
@@ -186,14 +208,14 @@ public class MSAnnotationLibrary {
   }
 
   /**
-   * Only one adduct can have more than 1 modification
+   * Only one adduct can have modifications
    * 
    * @param adduct
    * @param adduct2
    * @return
    */
   private boolean checkMaxMod(ESIAdductType adduct, ESIAdductType adduct2) {
-    return !(adduct.getModCount() > 1 && adduct2.getModCount() > 1);
+    return !(adduct.getModCount() > 0 && adduct2.getModCount() > 0);
   }
 
   /**

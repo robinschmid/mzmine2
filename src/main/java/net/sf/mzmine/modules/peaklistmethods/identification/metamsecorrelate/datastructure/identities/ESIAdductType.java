@@ -580,4 +580,27 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
   public ESIAdductType createModified(ESIAdductType mod) {
     return ESIAdductType.createModified(this, mod);
   }
+
+  /**
+   * 
+   * @param b
+   * @return true if no modification is a duplicate
+   */
+  public boolean uniqueModificationsTo(ESIAdductType b) {
+    return (this.getModCount() == 0 && b.getModCount() == 0) || (this.getModCount() == 0)
+        || b.getModCount() == 0 || Arrays.stream(getModification()).noneMatch(
+            moda -> Arrays.stream(b.getModification()).anyMatch(modb -> moda.equals(modb)));
+  }
+
+  /**
+   * 
+   * @param b
+   * @return true if no adduct is a duplicate
+   */
+  public boolean uniqueAdductsTo(ESIAdductType b) {
+    return (this.getAdducts().length == 0 && b.getAdducts().length == 0)
+        || (this.getAdducts().length == 0) || b.getAdducts().length == 0
+        || Arrays.stream(getAdducts())
+            .noneMatch(adda -> Arrays.stream(b.getAdducts()).anyMatch(addb -> adda.equals(addb)));
+  }
 }

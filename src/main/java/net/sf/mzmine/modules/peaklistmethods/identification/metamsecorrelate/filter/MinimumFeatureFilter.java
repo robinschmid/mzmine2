@@ -76,6 +76,9 @@ public class MinimumFeatureFilter {
     filterGroups = state;
   }
 
+  public boolean isExcludeEstimatedFeatures() {
+    return excludeEstimatedFeatures;
+  }
 
   /**
    * only keep rows which contain features in at least X % samples in a set called before starting
