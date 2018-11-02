@@ -138,13 +138,7 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
     // has MS/MS
     try {
       if (checkMultimers) {
-        for (Feature f : row.getPeaks()) {
-          int sn = f.getMostIntenseFragmentScanNumber();
-          if (sn != -1) {
-            Scan msmsScan = f.getDataFile().getScan(sn);
-            checkMultimers(row, massList, msmsScan, ident, mzTolerance, minHeight);
-          }
-        }
+        checkMultimers(row, massList, ident, mzTolerance, minHeight);
       }
 
       if (checkNeutralLosses) {
@@ -154,7 +148,6 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
       throw new MSDKRuntimeException(e);
     }
   }
-
 
   /**
    * Check for neutral loss in MSMS of all other rows in annotation or correlation group
@@ -276,25 +269,48 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
     return result;
   }
 
-  public static void checkMultimers(PeakListRow row, String massList, Scan msmsScan,
-      List<ESIAdductIdentity> ident, MZTolerance mzTolerance, double minHeight) {
-    Feature f = row.getPeak(msmsScan.getDataFile());
-    double precursorMZ = f.getMZ();
-
-
+  /**
+   * Check all best fragment scans of all features for precursor - M
+   * 
+   * @param row
+   * @param massList
+   * @param ident
+   * @param mzTolerance
+   * @param minHeight
+   */
+  public static void checkMultimers(PeakListRow row, String massList, List<ESIAdductIdentity> ident,
+      MZTolerance mzTolerance, double minHeight) {
     for (int i = 0; i < ident.size(); i++) {
       ESIAdductIdentity adduct = ident.get(i);
-      // only for M>1
-      if (adduct.getA().getMolecules() > 1) {
-        MSMSIdentityList msmsIdent = MSMSLogic.checkMultiMolCluster(msmsScan, massList, precursorMZ,
-            adduct.getA(), mzTolerance, minHeight);
-
-        // found?
-        if (msmsIdent != null && msmsIdent.size() > 0) {
-          // add all
-          msmsIdent.stream().forEach(msms -> adduct.addMSMSIdentity(msms));
+      for (Feature f : row.getPeaks()) {
+        int sn = f.getMostIntenseFragmentScanNumber();
+        if (sn != -1) {
+          Scan msmsScan = f.getDataFile().getScan(sn);
+          boolean isMultimer = checkMultimers(row, massList, adduct, msmsScan, ident, mzTolerance,
+              minHeight, f.getMZ());
+          if (isMultimer)
+            break;
         }
       }
     }
+  }
+
+  public static boolean checkMultimers(PeakListRow row, String massList, ESIAdductIdentity adduct,
+      Scan msmsScan, List<ESIAdductIdentity> ident, MZTolerance mzTolerance, double minHeight,
+      double precursorMZ) {
+    Feature f = row.getPeak(msmsScan.getDataFile());
+    // only for M>1
+    if (adduct.getA().getMolecules() > 1) {
+      MSMSIdentityList msmsIdent = MSMSLogic.checkMultiMolCluster(msmsScan, massList, precursorMZ,
+          adduct.getA(), mzTolerance, minHeight);
+
+      // found?
+      if (msmsIdent != null && msmsIdent.size() > 0) {
+        // add all
+        msmsIdent.stream().forEach(msms -> adduct.addMSMSIdentity(msms));
+        return true;
+      }
+    }
+    return false;
   }
 }
