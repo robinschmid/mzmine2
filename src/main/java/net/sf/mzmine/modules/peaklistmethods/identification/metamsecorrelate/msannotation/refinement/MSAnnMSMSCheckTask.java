@@ -137,9 +137,14 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
 
     // has MS/MS
     try {
-      Scan msmsScan = row.getBestFragmentation();
-      if (checkMultimers && msmsScan != null) {
-        checkMultimers(row, massList, msmsScan, ident, mzTolerance, minHeight);
+      if (checkMultimers) {
+        for (Feature f : row.getPeaks()) {
+          int sn = f.getMostIntenseFragmentScanNumber();
+          if (sn != -1) {
+            Scan msmsScan = f.getDataFile().getScan(sn);
+            checkMultimers(row, massList, msmsScan, ident, mzTolerance, minHeight);
+          }
+        }
       }
 
       if (checkNeutralLosses) {
