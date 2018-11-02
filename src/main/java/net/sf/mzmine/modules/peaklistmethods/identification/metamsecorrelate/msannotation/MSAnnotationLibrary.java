@@ -30,7 +30,7 @@ public class MSAnnotationLibrary {
   private List<ESIAdductType> allAdducts = new ArrayList<ESIAdductType>();
   private List<ESIAdductType> allModification = new ArrayList<ESIAdductType>();
   private final boolean isPositive;
-  private final int maxMolecules, maxCombinations, maxCharge, maxMods;
+  private final int maxMolecules, maxCharge;
 
   public MSAnnotationLibrary(MSAnnotationParameters parameterSet) {
     mzTolerance = parameterSet.getParameter(MSAnnotationParameters.MZ_TOLERANCE).getValue();
@@ -38,30 +38,22 @@ public class MSAnnotationLibrary {
     isPositive = parameterSet.getParameter(MSAnnotationParameters.POSITIVE_MODE).getValue()
         .equals("POSITIVE");
     maxMolecules = parameterSet.getParameter(MSAnnotationParameters.MAX_MOLECULES).getValue();
-    maxCombinations = parameterSet.getParameter(MSAnnotationParameters.MAX_COMBINATION).getValue();
     maxCharge = parameterSet.getParameter(MSAnnotationParameters.MAX_CHARGE).getValue();
-    maxMods = parameterSet.getParameter(MSAnnotationParameters.MAX_MODS).getValue();
 
     selectedAdducts = parameterSet.getParameter(MSAnnotationParameters.ADDUCTS).getValue()[0];
     selectedMods = parameterSet.getParameter(MSAnnotationParameters.ADDUCTS).getValue()[1];
 
-    createAllAdducts(isPositive, maxMolecules, maxCombinations, maxCharge, maxMods);
+    createAllAdducts(isPositive, maxMolecules, maxCharge);
   }
 
   /**
    * create all possible adducts
    */
-  private void createAllAdducts(boolean positive, int maxMolecules, int maxCombination,
-      int maxCharge, int maxMods) {
+  private void createAllAdducts(boolean positive, int maxMolecules, int maxCharge) {
     // normal primary adducts
     for (ESIAdductType a : selectedAdducts)
       if ((a.getCharge() > 0 && positive) || (a.getCharge() < 0 && !positive))
         allAdducts.add(a);
-    // combined adducts
-    if (maxCombination > 1) {
-      combineAdducts(allAdducts, selectedAdducts, new ArrayList<ESIAdductType>(allAdducts),
-          maxCombination, 1, false);
-    }
 
     // only keep the ones with <=maxCharge
     for (int i = 0; i < allAdducts.size(); i++) {
@@ -71,9 +63,7 @@ public class MSAnnotationLibrary {
       }
     }
 
-    // add modification
-    if (maxMods > 0)
-      addModification();
+    addModification();
     // multiple molecules
     addMultipleMolecules(maxMolecules);
     // print them out
@@ -265,10 +255,7 @@ public class MSAnnotationLibrary {
     // normal mods
     for (ESIAdductType a : selectedMods)
       allModification.add(a);
-    // combined modification
-    if (maxMods > 1)
-      combineAdducts(allModification, selectedMods, new ArrayList<ESIAdductType>(allModification),
-          maxMods, 1, true);
+
     // add new modified adducts
     int size = allAdducts.size();
     for (int i = 0; i < size; i++) {
@@ -405,17 +392,8 @@ public class MSAnnotationLibrary {
     return maxMolecules;
   }
 
-  public int getMaxCombinations() {
-    return maxCombinations;
-  }
-
   public int getMaxCharge() {
     return maxCharge;
   }
-
-  public int getMaxMods() {
-    return maxMods;
-  }
-
 
 }

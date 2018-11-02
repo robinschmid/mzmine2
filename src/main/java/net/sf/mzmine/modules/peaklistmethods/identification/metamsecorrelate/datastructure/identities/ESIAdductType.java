@@ -27,6 +27,7 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
   private static final ESIAdductType CA = new ESIAdductType("Ca", 39.961493820, 2, 1);
   private static final ESIAdductType MG = new ESIAdductType("Mg", 47.96953482, 2, 1);
   // combined
+  private static final ESIAdductType H2plus = new ESIAdductType(new ESIAdductType[] {H, H});
   private static final ESIAdductType NA_H = new ESIAdductType(new ESIAdductType[] {NA, H});
   private static final ESIAdductType K_H = new ESIAdductType(new ESIAdductType[] {K, H});
   private static final ESIAdductType NH4_H = new ESIAdductType(new ESIAdductType[] {NH4, H});
@@ -64,8 +65,8 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
   public static final ESIAdductType C13 = new ESIAdductType("(13C)", 1.003354838, 0, 1);
 
   // default values
-  private static final ESIAdductType[] DEFAULT_VALUES_POSITIVE = {H_NEG, M_PLUS, H, NA, K, NH4, CA,
-      FE, MG, NA_H, NH4_H, K_H, Hneg_NA2, Hneg_CA, Hneg_FE, Hneg_MG};
+  private static final ESIAdductType[] DEFAULT_VALUES_POSITIVE = {H_NEG, M_PLUS, H, NA, K, NH4,
+      H2plus, CA, FE, MG, NA_H, NH4_H, K_H, Hneg_NA2, Hneg_CA, Hneg_FE, Hneg_MG};
   private static final ESIAdductType[] DEFAULT_VALUES_NEGATIVE =
       {M_MINUS, H_NEG, NA_2H, NA, CL, BR, FA};
   // default modifications

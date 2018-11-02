@@ -206,8 +206,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
 
     performAnnotationRefinement =
-        parameterSet.getParameter(MetaMSEcorrelateParameters.ANNOTATION_REFINEMENTS).getValue();
-    refineParam = parameterSet.getParameter(MetaMSEcorrelateParameters.ANNOTATION_REFINEMENTS)
+        annParam.getParameter(MSAnnotationParameters.ANNOTATION_REFINEMENTS).getValue();
+    refineParam = annParam.getParameter(MSAnnotationParameters.ANNOTATION_REFINEMENTS)
         .getEmbeddedParameters();
 
     // END OF ADDUCTS AND REFINEMENT

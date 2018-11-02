@@ -21,6 +21,7 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.ms
 import java.awt.Window;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary.CheckMode;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.AnnotationRefinementParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.MSAnnMSMSCheckParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
@@ -69,11 +70,6 @@ public class MSAnnotationParameters extends SimpleParameterSet {
       "Maximum charge to be used for adduct search.", 2, 1, 100);
   public static final IntegerParameter MAX_MOLECULES = new IntegerParameter(
       "Maximum molecules/cluster", "Maximum molecules per cluster (f.e. [2M+Na]+).", 3, 1, 10);
-  public static final IntegerParameter MAX_COMBINATION = new IntegerParameter("Maximum combination",
-      "Maximum combination of adducts (set in the list) (f.e. [M+H+Na]2+ = combination of two).", 1,
-      1, 10);
-  public static final IntegerParameter MAX_MODS = new IntegerParameter("Maximum modification",
-      "Maximum modification of adducts (set in the list)", 1, 0, 10);
 
   public static final ESIAdductsParameter ADDUCTS = new ESIAdductsParameter("Adducts",
       "List of adducts, each one refers a specific distance in m/z axis between related peaks");
@@ -84,6 +80,10 @@ public class MSAnnotationParameters extends SimpleParameterSet {
       new OptionalModuleParameter<MSAnnMSMSCheckParameters>("Check MS/MS",
           "Check MS/MS for truth of multimers", new MSAnnMSMSCheckParameters(true));
 
+  public static final OptionalModuleParameter<AnnotationRefinementParameters> ANNOTATION_REFINEMENTS =
+      new OptionalModuleParameter<AnnotationRefinementParameters>("Annotation refinement", "",
+          new AnnotationRefinementParameters(true), true);
+
   // Constructor
   public MSAnnotationParameters() {
     this(false);
@@ -92,10 +92,9 @@ public class MSAnnotationParameters extends SimpleParameterSet {
   public MSAnnotationParameters(boolean isSub) {
     super(isSub ? // no peak list and rt tolerance
         new Parameter[] {MZ_TOLERANCE, CHECK_MODE, MIN_HEIGHT, POSITIVE_MODE, MAX_CHARGE,
-            MAX_MOLECULES, MAX_COMBINATION, MAX_MODS, ADDUCTS, MSMS_CHECK}
+            MAX_MOLECULES, MSMS_CHECK, ANNOTATION_REFINEMENTS, ADDUCTS}
         : new Parameter[] {PEAK_LISTS, RT_TOLERANCE, MZ_TOLERANCE, CHECK_MODE, MIN_HEIGHT,
-            POSITIVE_MODE, MAX_CHARGE, MAX_MOLECULES, MAX_COMBINATION, MAX_MODS, ADDUCTS,
-            MSMS_CHECK});
+            POSITIVE_MODE, MAX_CHARGE, MAX_MOLECULES, MSMS_CHECK, ANNOTATION_REFINEMENTS, ADDUCTS});
   }
 
   @Override
