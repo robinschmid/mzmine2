@@ -126,6 +126,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   // FEATURE SHAPE CORRELATION
   // correlation r to identify negative correlation
   private SimilarityMeasure shapeSimMeasure;
+  private final boolean useTotalShapeCorrFilter;
+  private final double minTotalShapeCorrR;
   private final double minShapeCorrR;
   private final double noiseLevelCorr;
   private final int minCorrelatedDataPoints;
@@ -193,6 +195,11 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     minCorrDPOnFeatureEdge =
         corrp.getParameter(FeatureShapeCorrelationParameters.MIN_DP_FEATURE_EDGE).getValue();
 
+    // total corr
+    useTotalShapeCorrFilter =
+        corrp.getParameter(FeatureShapeCorrelationParameters.MIN_TOTAL_CORR).getValue();
+    minTotalShapeCorrR = corrp.getParameter(FeatureShapeCorrelationParameters.MIN_TOTAL_CORR)
+        .getEmbeddedParameter().getValue();
     // ADDUCTS
     searchAdducts = parameterSet.getParameter(MetaMSEcorrelateParameters.ADDUCT_LIBRARY).getValue();
     MSAnnotationParameters annParam = parameterSet
@@ -509,7 +516,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
                     heightSimMeasure, minHeightCorr);
                 if (corr != null) {
                   // deletes correlations if criteria is not met
-                  corr.validate(minHeightCorr,
+                  corr.validate(minTotalShapeCorrR, useTotalShapeCorrFilter,
                       shapeSimMeasure.equals(SimilarityMeasure.PEARSON) ? minShapeCorrR : 0,
                       shapeSimMeasure.equals(SimilarityMeasure.COSINE_SIM) ? minShapeCorrR : 0);
                   // check for correlation in min samples

@@ -27,6 +27,7 @@ import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.MassListParameter;
+import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
 import net.sf.mzmine.parameters.parametertypes.PercentParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTToleranceParameter;
@@ -72,6 +73,12 @@ public class FeatureShapeCorrelationParameters extends SimpleParameterSet {
       "Minimum percentage for feature shape correlation for feature grouping in the same scan event of one raw file.",
       0.85, 0, 1);
 
+  // minimum Pearson correlation (r) for feature grouping in the same scan event of one raw file
+  public static final OptionalParameter<PercentParameter> MIN_TOTAL_CORR =
+      new OptionalParameter<>(new PercentParameter("Min total correlation",
+          "Minimum total correlation (all correlated data points of all features across samples)",
+          0.5, 0, 1));
+
   // Constructor
   public FeatureShapeCorrelationParameters() {
     this(false);
@@ -84,11 +91,12 @@ public class FeatureShapeCorrelationParameters extends SimpleParameterSet {
    */
   public FeatureShapeCorrelationParameters(boolean isSub) {
     super(isSub ? // no peak list and rt tolerance
-        new Parameter[] {MIN_DP_CORR_PEAK_SHAPE, MIN_DP_FEATURE_EDGE, MEASURE, MIN_R_SHAPE_INTRA}
+        new Parameter[] {MIN_DP_CORR_PEAK_SHAPE, MIN_DP_FEATURE_EDGE, MEASURE, MIN_R_SHAPE_INTRA,
+            MIN_TOTAL_CORR}
         : new Parameter[] {PEAK_LISTS, RT_TOLERANCE,
             // MASS_LIST, USE_MASS_LIST_DATA, MAIN_PEAK_HEIGHT,
             NOISE_LEVEL_PEAK_SHAPE, MIN_DP_CORR_PEAK_SHAPE, MIN_DP_FEATURE_EDGE, MEASURE,
-            MIN_R_SHAPE_INTRA});
+            MIN_R_SHAPE_INTRA, MIN_TOTAL_CORR});
   }
 
 }
