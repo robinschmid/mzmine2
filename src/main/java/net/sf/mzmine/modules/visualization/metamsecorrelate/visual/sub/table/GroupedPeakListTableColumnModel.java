@@ -180,31 +180,18 @@ public class GroupedPeakListTableColumnModel extends DefaultTableColumnModel
       newColumn.setIdentifier(corrCol);
 
       switch (corrCol) {
-        case AVG_COSINE_SIM:
-          newColumn.setCellRenderer(corrRenderer);
-          break;
         case AVERAGE_DP_COUNT:
           newColumn.setCellRenderer(dataPointsRenderer);
           break;
+        case AVG_COSINE_SIM:
         case AVERAGE_R_IPROFILE:
-          newColumn.setCellRenderer(corrRenderer);
-          break;
         case AVERAGE_R_PEAKSHAPE:
-          newColumn.setCellRenderer(corrRenderer);
-          break;
         case MAX_R_IPROFILE:
-          newColumn.setCellRenderer(corrRenderer);
-          break;
         case MAX_R_PEAKSHAPE:
-          newColumn.setCellRenderer(corrRenderer);
-          break;
         case MIN_R_IPROFILE:
-          newColumn.setCellRenderer(corrRenderer);
-          break;
         case MIN_R_PEAKSHAPE:
-          newColumn.setCellRenderer(corrRenderer);
-          break;
         case AVG_TOTAL_R_PEAKSHAPE:
+        case AVERAGE_COSINE_HEIGHT:
           newColumn.setCellRenderer(corrRenderer);
           break;
         case MAXHEIGHT:

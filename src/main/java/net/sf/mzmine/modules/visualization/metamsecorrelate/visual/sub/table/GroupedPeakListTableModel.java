@@ -134,6 +134,8 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
             return corr.getMinIProfileR();
           case MIN_R_PEAKSHAPE:
             return corr.getMinPeakShapeR();
+          case AVERAGE_COSINE_HEIGHT:
+            return corr.getAvgCosineHeightCorr();
         }
       }
     } else {

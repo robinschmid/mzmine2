@@ -14,11 +14,12 @@ public class R2GroupCorrelationData {
   private List<R2RFullCorrelationData> corr;
   private double maxHeight;
   // averages are calculated by dividing by the row count
-  private double minIProfileR, avgIProfileR, maxIProfileR;
+  private double minHeightR, avgHeightR, maxHeightR;
   private double minShapeR, avgShapeR, maxShapeR, avgDPCount;
 
   // average cosine
   private double avgShapeCosineSim;
+  private double avgCosineHeightCorr;
 
   // total peak shape r
   private double avgTotalPeakShapeR;
@@ -41,27 +42,29 @@ public class R2GroupCorrelationData {
    */
   public void recalcCorr() {
     // min max
-    minIProfileR = 1;
-    maxIProfileR = -1;
-    avgIProfileR = 0;
+    minHeightR = 1;
+    maxHeightR = -1;
+    avgHeightR = 0;
     minShapeR = 1;
     maxShapeR = -1;
     avgShapeR = 0;
     avgShapeCosineSim = 0;
     avgDPCount = 0;
     avgTotalPeakShapeR = 0;
+    avgCosineHeightCorr = 0;
     int cImax = 0;
     int cPeakShape = 0;
 
     for (R2RFullCorrelationData r2r : corr) {
-      if (r2r.hasIMaxCorr()) {
+      if (r2r.hasHeightCorr()) {
         cImax++;
-        double iProfileR = r2r.getCorrIProfile().getR();
-        avgIProfileR += iProfileR;
-        if (iProfileR < minIProfileR)
-          minIProfileR = iProfileR;
-        if (iProfileR > maxIProfileR)
-          maxIProfileR = iProfileR;
+        avgCosineHeightCorr += r2r.getCosineHeightCorr();
+        double iProfileR = r2r.getHeightCorr().getR();
+        avgHeightR += iProfileR;
+        if (iProfileR < minHeightR)
+          minHeightR = iProfileR;
+        if (iProfileR > maxHeightR)
+          maxHeightR = iProfileR;
       }
 
       // peak shape correlation
@@ -78,7 +81,8 @@ public class R2GroupCorrelationData {
       }
     }
     avgTotalPeakShapeR = avgTotalPeakShapeR / cPeakShape;
-    avgIProfileR = avgIProfileR / cImax;
+    avgHeightR = avgHeightR / cImax;
+    avgCosineHeightCorr = avgCosineHeightCorr / cImax;
     avgDPCount = avgDPCount / cPeakShape;
     avgShapeR = avgShapeR / cPeakShape;
     avgShapeCosineSim = avgShapeCosineSim / cPeakShape;
@@ -97,15 +101,15 @@ public class R2GroupCorrelationData {
   }
 
   public double getMinIProfileR() {
-    return minIProfileR;
+    return minHeightR;
   }
 
   public double getAvgIProfileR() {
-    return avgIProfileR;
+    return avgHeightR;
   }
 
   public double getMaxIProfileR() {
-    return maxIProfileR;
+    return maxHeightR;
   }
 
   public double getMinPeakShapeR() {
@@ -127,6 +131,16 @@ public class R2GroupCorrelationData {
   public double getAvgTotalPeakShapeR() {
     return avgTotalPeakShapeR;
   }
+
+  /**
+   * Height correlation across samples
+   * 
+   * @return
+   */
+  public double getAvgCosineHeightCorr() {
+    return avgCosineHeightCorr;
+  }
+
 
   /**
    * 

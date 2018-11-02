@@ -27,6 +27,7 @@ public enum CorrelationColumnType {
   MAX_R_PEAKSHAPE("r max ∩", Double.class), //
   AVG_TOTAL_R_PEAKSHAPE("r avg/total ∩", Double.class), //
   AVERAGE_DP_COUNT("∩ DPs", Integer.class), //
+  AVERAGE_COSINE_HEIGHT("cosine", Double.class), //
   MIN_R_IPROFILE("r min", Double.class), //
   AVERAGE_R_IPROFILE("r avg", Double.class), //
   MAX_R_IPROFILE("r max", Double.class);//

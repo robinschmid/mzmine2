@@ -25,7 +25,7 @@ public class R2RFullCorrelationData extends R2RCorrelationData {
   // correlation of all data points in one total correlation
   private CorrelationData corrTotal;
   // correlation to all peaks
-  private CorrelationData corrIProfile;
+  private CorrelationData heightCorr;
 
   /**
    * Feature shape correlation in RawDataFiles
@@ -39,7 +39,7 @@ public class R2RFullCorrelationData extends R2RCorrelationData {
   public R2RFullCorrelationData(PeakListRow a, PeakListRow b, CorrelationData corrIProfile,
       Map<RawDataFile, CorrelationData> corrPeakShape) {
     super(a, b);
-    this.corrIProfile = corrIProfile;
+    this.heightCorr = corrIProfile;
     setCorrPeakShape(corrPeakShape);
   }
 
@@ -141,17 +141,16 @@ public class R2RFullCorrelationData extends R2RCorrelationData {
     return avgDPCount;
   }
 
-  public CorrelationData getCorrIProfile() {
-    return corrIProfile;
+  public CorrelationData getHeightCorr() {
+    return heightCorr;
   }
 
   public void setCorrIProfileR(CorrelationData corrIProfile) {
-    this.corrIProfile = corrIProfile;
+    this.heightCorr = corrIProfile;
   }
 
-  public boolean hasIMaxCorr() {
-    return corrIProfile != null && corrIProfile.getReg() != null
-        && corrIProfile.getReg().getN() > 0;
+  public boolean hasHeightCorr() {
+    return heightCorr != null && heightCorr.getReg() != null && heightCorr.getReg().getN() > 0;
   }
 
   @Override
@@ -165,7 +164,7 @@ public class R2RFullCorrelationData extends R2RCorrelationData {
    * @return
    */
   public boolean isValid() {
-    return hasFeatureShapeCorrelation() || hasIMaxCorr();
+    return hasFeatureShapeCorrelation() || hasHeightCorr();
   }
 
   /**
@@ -181,5 +180,9 @@ public class R2RFullCorrelationData extends R2RCorrelationData {
       // delete peak shape corr
       setCorrPeakShape(null);
     }
+  }
+
+  public double getCosineHeightCorr() {
+    return hasHeightCorr() ? heightCorr.getCosineSimilarity() : 0;
   }
 }
