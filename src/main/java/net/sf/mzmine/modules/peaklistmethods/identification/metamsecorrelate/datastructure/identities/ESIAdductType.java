@@ -15,20 +15,35 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
   public static final ESIAdductType M_UNMODIFIED = new ESIAdductType("(unmodified)", 0, 0, 1);
 
   // use combinations of X adducts (2H++; -H+Na2+) and modifications
+  public static final ESIAdductType M_MINUS = new ESIAdductType("e", +0.00054858, -1, 1);
+  public static final ESIAdductType H_NEG = new ESIAdductType("H", -1.007276, -1, 1);
   public static final ESIAdductType M_PLUS = new ESIAdductType("e", -0.00054858, 1, 1);
   public static final ESIAdductType H = new ESIAdductType("H", 1.007276, 1, 1);
+  //
   private static final ESIAdductType NA = new ESIAdductType("Na", 22.989218, 1, 1);
   private static final ESIAdductType NH4 = new ESIAdductType("NH4", 18.033823, 1, 1);
   private static final ESIAdductType K = new ESIAdductType("K", 38.963158, 1, 1);
   private static final ESIAdductType FE = new ESIAdductType("Fe", 55.933840, 2, 1);
   private static final ESIAdductType CA = new ESIAdductType("Ca", 39.961493820, 2, 1);
+  private static final ESIAdductType MG = new ESIAdductType("Mg", 47.96953482, 2, 1);
+  // combined
+  private static final ESIAdductType NA_H = new ESIAdductType(new ESIAdductType[] {NA, H});
+  private static final ESIAdductType K_H = new ESIAdductType(new ESIAdductType[] {K, H});
+  private static final ESIAdductType NH4_H = new ESIAdductType(new ESIAdductType[] {NH4, H});
+  private static final ESIAdductType Hneg_NA2 =
+      new ESIAdductType(new ESIAdductType[] {NA, NA, H_NEG});
+  private static final ESIAdductType Hneg_CA = new ESIAdductType(new ESIAdductType[] {CA, H_NEG});
+  private static final ESIAdductType Hneg_FE = new ESIAdductType(new ESIAdductType[] {FE, H_NEG});
+  private static final ESIAdductType Hneg_MG = new ESIAdductType(new ESIAdductType[] {MG, H_NEG});
 
   // NEGATIVE
-  public static final ESIAdductType M_MINUS = new ESIAdductType("e", +0.00054858, -1, 1);
-  public static final ESIAdductType H_NEG = new ESIAdductType("H", -1.007276, -1, 1);
   private static final ESIAdductType CL = new ESIAdductType("Cl", 34.969401, -1, 1);
   private static final ESIAdductType BR = new ESIAdductType("Br", 78.918886, -1, 1);
   private static final ESIAdductType FA = new ESIAdductType("FA", 44.99820285, -1, 1);
+  // combined
+  // +Na -2H+]-
+  private static final ESIAdductType NA_2H =
+      new ESIAdductType(new ESIAdductType[] {NA, H_NEG, H_NEG});
 
   // modifications
   private static final ESIAdductType H2 = new ESIAdductType("C2H4", -2.015650, 0, 1);
@@ -37,7 +52,9 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
   private static final ESIAdductType HFA = new ESIAdductType("HFA", 46.005479, 0, 1);
   private static final ESIAdductType HAc = new ESIAdductType("HAc", 60.021129, 0, 1);
   private static final ESIAdductType ACN = new ESIAdductType("ACN", 41.026549, 0, 1);
+  private static final ESIAdductType O = new ESIAdductType("O", 15.99491462, 0, 1);
   private static final ESIAdductType H2O = new ESIAdductType("H2O", -18.010565, 0, 1);
+  private static final ESIAdductType H2O_2 = new ESIAdductType(new ESIAdductType[] {H2O, H2O});
 
   private static final ESIAdductType NH3 = new ESIAdductType("NH3", -17.026549, 0, 1);
   private static final ESIAdductType CO = new ESIAdductType("CO", -27.994915, 0, 1);
@@ -47,11 +64,13 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
   public static final ESIAdductType C13 = new ESIAdductType("(13C)", 1.003354838, 0, 1);
 
   // default values
-  private static final ESIAdductType[] DEFAULT_VALUES_POSITIVE = {M_PLUS, H, NA, K, NH4, CA, FE};
-  private static final ESIAdductType[] DEFAULT_VALUES_NEGATIVE = {M_MINUS, H_NEG, NA, CL, BR, FA};
+  private static final ESIAdductType[] DEFAULT_VALUES_POSITIVE = {H_NEG, M_PLUS, H, NA, K, NH4, CA,
+      FE, MG, NA_H, NH4_H, K_H, Hneg_NA2, Hneg_CA, Hneg_FE, Hneg_MG};
+  private static final ESIAdductType[] DEFAULT_VALUES_NEGATIVE =
+      {M_MINUS, H_NEG, NA_2H, NA, CL, BR, FA};
   // default modifications
   private static final ESIAdductType[] DEFAULT_VALUES_MODIFICATIONS =
-      {H2O, NH3, CO, CO2, C2H4, HFA, HAc, MEOH, ACN, ISOPROP};
+      {H2O, H2O_2, NH3, O, CO, CO2, C2H4, HFA, HAc, MEOH, ACN, ISOPROP};
   // isotopes
   private static final ESIAdductType[] DEFAULT_VALUES_ISOTOPES = {C13};
 

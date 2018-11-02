@@ -63,28 +63,19 @@ public class MSAnnotationLibrary {
           maxCombination, 1, false);
     }
 
-    // only keep the ones with maxCharge+1 (to abstract/add one H only)
-    for (int i = 0; i < allAdducts.size(); i++) {
-      if (allAdducts.get(i).getAbsCharge() > maxCharge + 1) {
-        allAdducts.remove(i);
-        i--;
-      }
-    }
-    // add or remove H from multi charged (Fe2+)
-    addRemoveHydrogen(positive);
-
-    // add modification
-    if (maxMods > 0)
-      addModification();
-    // multiple molecules
-    addMultipleMolecules(maxMolecules);
-    // remove all >max charge
+    // only keep the ones with <=maxCharge
     for (int i = 0; i < allAdducts.size(); i++) {
       if (allAdducts.get(i).getAbsCharge() > maxCharge) {
         allAdducts.remove(i);
         i--;
       }
     }
+
+    // add modification
+    if (maxMods > 0)
+      addModification();
+    // multiple molecules
+    addMultipleMolecules(maxMolecules);
     // print them out
     for (ESIAdductType a : allAdducts)
       LOG.info(a.toString());
@@ -102,12 +93,6 @@ public class MSAnnotationLibrary {
         minHeight);
   }
 
-  /**
-   * Does only find one
-   * 
-   * @param mainRow main peak.
-   * @param possibleAdduct candidate adduct peak.
-   */
   /**
    * Does only find one adduct
    * 
