@@ -1,4 +1,4 @@
-package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param;
+package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.actions;
 
 import java.awt.BorderLayout;
 import java.awt.Component;

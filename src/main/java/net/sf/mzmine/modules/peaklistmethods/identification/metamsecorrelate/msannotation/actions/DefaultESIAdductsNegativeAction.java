@@ -21,7 +21,7 @@
  * pre-existing code or project. Syngenta does not assert ownership or copyright any over pre-existing work.
  */
 
-package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.param;
+package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.actions;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
