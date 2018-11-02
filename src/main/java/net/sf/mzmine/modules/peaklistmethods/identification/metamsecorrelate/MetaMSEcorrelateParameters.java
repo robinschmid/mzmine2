@@ -31,6 +31,7 @@ import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
+import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
 import net.sf.mzmine.parameters.parametertypes.StringParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
@@ -55,6 +56,19 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
           "Paremeter defining the sample set of each sample. (Set them in Project/Set sample parameters)",
           new Object[0]), false);
 
+  /**
+   * Filter by minimum height
+   */
+  public static final DoubleParameter MIN_HEIGHT = new DoubleParameter("Min height",
+      "Used by min samples filter and MS annotations. Minimum height to recognize a feature (important to destinguis between real peaks and minor gap-filled).",
+      MZmineCore.getConfiguration().getIntensityFormat(), 1E5);
+
+  /**
+   * Filter by minimum height
+   */
+  public static final DoubleParameter NOISE_LEVEL =
+      new DoubleParameter("Noise level", "Noise level of MS1, used by feature shape correlation",
+          MZmineCore.getConfiguration().getIntensityFormat(), 1E4);
 
   /**
    * Filter out by minimum number of features in all samples and/or in at least one sample group
@@ -71,10 +85,10 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
       "Correlation grouping", "Grouping based on Pearson correlation of the feature shapes.",
       new FeatureShapeCorrelationParameters(true));
 
-  public static final OptionalModuleParameter IMAX_CORRELATION =
-      new OptionalModuleParameter("Feature height correlation",
+  public static final OptionalModuleParameter<InterSampleIntCorrParameters> IMAX_CORRELATION =
+      new OptionalModuleParameter<>("Feature height correlation",
           "Feature to feature correlation of the maximum intensities across all samples.",
-          new InterSampleIntCorrParameters(), false);
+          new InterSampleIntCorrParameters(true), true);
 
 
 
@@ -84,8 +98,8 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
 
   // adduct finder parameter - taken from the adduct finder
   // search for adducts? Bonus for correlation?
-  public static final OptionalModuleParameter ADDUCT_LIBRARY =
-      new OptionalModuleParameter("MS annotations",
+  public static final OptionalModuleParameter<MSAnnotationParameters> ADDUCT_LIBRARY =
+      new OptionalModuleParameter<>("MS annotations",
           "Build adduct, in-source fragment, cluster,.. library and match all features",
           new MSAnnotationParameters(true), true);
 
@@ -101,7 +115,9 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
   public MetaMSEcorrelateParameters() {
     super(new Parameter[] {PEAK_LISTS, RT_TOLERANCE,
         // Group and minimum samples filter
-        GROUPSPARAMETER, MIN_SAMPLES_FILTER,
+        GROUPSPARAMETER,
+        // feature filter
+        MIN_HEIGHT, NOISE_LEVEL, MIN_SAMPLES_FILTER,
         // feature shape correlation
         FSHAPE_CORRELATION,
         // intensity max correlation

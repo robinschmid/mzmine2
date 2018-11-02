@@ -18,14 +18,35 @@
 
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation;
 
+import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData.SimilarityMeasure;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
+import net.sf.mzmine.parameters.parametertypes.ComboParameter;
+import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.PercentParameter;
 
 public class InterSampleIntCorrParameters extends SimpleParameterSet {
 
+  // ###############################################
+  // MAIN
+  /**
+   * Filter by minimum height
+   */
+  public static final DoubleParameter MIN_HEIGHT = new DoubleParameter("Min height",
+      "Used by min samples filter and MS annotations. Minimum height to recognize a feature (important to destinguis between real peaks and minor gap-filled).",
+      MZmineCore.getConfiguration().getIntensityFormat(), 1E5);
 
+  /**
+   * Filter by minimum height
+   */
+  public static final DoubleParameter NOISE_LEVEL =
+      new DoubleParameter("Noise level", "Noise level of MS1, used by feature shape correlation",
+          MZmineCore.getConfiguration().getIntensityFormat(), 1E4);
+
+  // #######################################################
+  // SUB
   // intensity correlation across sample max intensities
   public static final PercentParameter MIN_CORRELATION = new PercentParameter("Min correlation",
       "Minimum percentage for Pearson intensity profile correlation in the same scan event across raw files.",
@@ -34,14 +55,22 @@ public class InterSampleIntCorrParameters extends SimpleParameterSet {
 
   // min data points to be used for correlation
   public static final IntegerParameter MIN_DP = new IntegerParameter("Min data points",
-      "Minimum of data points to be used for correlation", 3, 3, 100000);
+      "Minimum of data points to be used for correlation", 2, 2, 100000);
 
+  public static final ComboParameter<SimilarityMeasure> MEASURE = new ComboParameter<>("Measure",
+      "Similarity measure", SimilarityMeasure.values(), SimilarityMeasure.PEARSON);
+
+
+  public InterSampleIntCorrParameters() {
+    this(false);
+  }
 
   /**
    * 
    */
-  public InterSampleIntCorrParameters() {
-    super(new Parameter[] {MIN_CORRELATION, MIN_DP});
+  public InterSampleIntCorrParameters(boolean isSub) {
+    super(isSub ? new Parameter[] {MIN_DP, MEASURE, MIN_CORRELATION}
+        : new Parameter[] {MIN_HEIGHT, NOISE_LEVEL, MIN_DP, MEASURE, MIN_CORRELATION});
   }
 
 }

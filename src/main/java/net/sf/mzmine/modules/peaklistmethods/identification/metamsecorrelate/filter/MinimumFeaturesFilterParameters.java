@@ -47,10 +47,16 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
           "Paremeter defining the sample set of each sample. (Set them in Project/Set sample parameters)",
           new Object[0]));
 
+  /**
+   * Filter by minimum height
+   */
+  public static final DoubleParameter MIN_HEIGHT = new DoubleParameter("Min height",
+      "Minimum height to recognize a feature (important to destinguis between real peaks and minor gap-filled).",
+      MZmineCore.getConfiguration().getIntensityFormat(), 1E5);
+
   //
   public static final RTToleranceParameter RT_TOLERANCE = new RTToleranceParameter("RT tolerance",
       "Maximum allowed difference of retention time to set a relationship between peaks");
-
 
   // minimum of samples per group (with the feature detected or filled in (min height?)
   // ... showing RT<=tolerance and height>=minHeight
@@ -66,12 +72,6 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
           "Minimum of samples per group (with the feature detected or filled in) matching the conditions (in RT-range).",
           1, 0, Mode.ROUND_DOWN, 1);
 
-  /**
-   * Filter by minimum height
-   */
-  public static final DoubleParameter MIN_HEIGHT = new DoubleParameter("Min height",
-      "Minimum height to recognize a feature (important to destinguis between real peaks and minor gap-filled)",
-      MZmineCore.getConfiguration().getIntensityFormat(), 1E4);
 
   public static final PercentParameter MIN_INTENSITY_OVERLAP = new PercentParameter(
       "Min %-intensity overlap",
@@ -106,8 +106,8 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
    */
   public MinimumFeaturesFilterParameters(boolean isSub) {
     super(isSub
-        ? new Parameter[] {MIN_HEIGHT, MIN_SAMPLES_ALL, MIN_SAMPLES_GROUP, MIN_INTENSITY_OVERLAP,
-            STRICT_RULES, EXCLUDE_ESTIMATED}
+        ? new Parameter[] {MIN_SAMPLES_ALL, MIN_SAMPLES_GROUP, MIN_INTENSITY_OVERLAP, STRICT_RULES,
+            EXCLUDE_ESTIMATED}
         : new Parameter[] {GROUPSPARAMETER, RT_TOLERANCE, MIN_HEIGHT, MIN_SAMPLES_ALL,
             MIN_SAMPLES_GROUP, MIN_INTENSITY_OVERLAP, STRICT_RULES, EXCLUDE_ESTIMATED});
     this.isSub = isSub;
@@ -123,15 +123,14 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
    * @return
    */
   public MinimumFeatureFilter createFilterWithGroups(MZmineProject project,
-      RawDataFile[] rawDataFiles, String groupingParameter) {
+      RawDataFile[] rawDataFiles, String groupingParameter, double minHeight) {
     AbsoluteNRelativeInt minFInSamples = this.getParameter(MIN_SAMPLES_ALL).getValue();
     AbsoluteNRelativeInt minFInGroups = this.getParameter(MIN_SAMPLES_GROUP).getValue();
-    double minFeatureHeight = this.getParameter(MIN_HEIGHT).getValue();
     double minIPercOverlap = this.getParameter(MIN_INTENSITY_OVERLAP).getValue();
     boolean strict = this.getParameter(STRICT_RULES).getValue();
     boolean excludeEstimated = this.getParameter(EXCLUDE_ESTIMATED).getValue();
     return new MinimumFeatureFilter(project, rawDataFiles, groupingParameter, minFInSamples,
-        minFInGroups, minFeatureHeight, minIPercOverlap, strict, excludeEstimated);
+        minFInGroups, minHeight, minIPercOverlap, strict, excludeEstimated);
   }
 
   /**

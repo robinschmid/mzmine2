@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
+import org.apache.commons.math.stat.regression.SimpleRegression;
 import com.google.common.util.concurrent.AtomicDouble;
 import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.DataPoint;
@@ -108,7 +109,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   // annotate only the ones in corr groups
   private boolean annotateOnlyCorrelated;
   private CheckMode adductCheckMode;
-  private double minAdductHeight;
   // MSMS refinement
   private boolean doMSMSchecks;
   private MSAnnMSMSCheckParameters msmsChecks;
@@ -120,21 +120,24 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    * Minimum percentage of samples (in group if useGroup) that have to contain a feature
    */
   private final MinimumFeatureFilter minFFilter;
+  // min adduct height and feature height for minFFilter
+  private double minHeight;
 
   // FEATURE SHAPE CORRELATION
   // correlation r to identify negative correlation
   private SimilarityMeasure shapeSimMeasure;
   private final double minShapeCorrR;
-  private final double noiseLevelShapeCorr;
+  private final double noiseLevelCorr;
   private final int minCorrelatedDataPoints;
   private final int minCorrDPOnFeatureEdge;
 
   // MAX INTENSITY PROFILE CORRELATION ACROSS SAMPLES
+  private SimilarityMeasure heightSimMeasure;
   private final boolean useMaxICorrFilter;
-  private final double minMaxICorr;
-  private final int minDPMaxICorr;
+  private final double minHeightCorr;
+  private final int minDPHeightCorr;
 
-
+  // stage of processing
   private Stage stage;
 
   // output
@@ -161,11 +164,16 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     useGroups = parameters.getParameter(MetaMSEcorrelateParameters.GROUPSPARAMETER).getValue();
     groupingParameter = (String) parameters.getParameter(MetaMSEcorrelateParameters.GROUPSPARAMETER)
         .getEmbeddedParameter().getValue();
+
+    // height and noise
+    noiseLevelCorr = parameters.getParameter(MetaMSEcorrelateParameters.NOISE_LEVEL).getValue();
+    minHeight = parameters.getParameter(MetaMSEcorrelateParameters.MIN_HEIGHT).getValue();
+
     // by min percentage of samples in a sample set that contain this feature MIN_SAMPLES
     MinimumFeaturesFilterParameters minS = (MinimumFeaturesFilterParameters) parameterSet
         .getParameter(MetaMSEcorrelateParameters.MIN_SAMPLES_FILTER).getEmbeddedParameters();
-    minFFilter =
-        minS.createFilterWithGroups(project, peakList.getRawDataFiles(), groupingParameter);
+    minFFilter = minS.createFilterWithGroups(project, peakList.getRawDataFiles(), groupingParameter,
+        minHeight);
 
     // tolerances
     rtTolerance = parameterSet.getParameter(MetaMSEcorrelateParameters.RT_TOLERANCE).getValue();
@@ -180,8 +188,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     minShapeCorrR =
         corrp.getParameter(FeatureShapeCorrelationParameters.MIN_R_SHAPE_INTRA).getValue();
     shapeSimMeasure = corrp.getParameter(FeatureShapeCorrelationParameters.MEASURE).getValue();
-    noiseLevelShapeCorr =
-        corrp.getParameter(FeatureShapeCorrelationParameters.NOISE_LEVEL_PEAK_SHAPE).getValue();
     minCorrelatedDataPoints =
         corrp.getParameter(FeatureShapeCorrelationParameters.MIN_DP_CORR_PEAK_SHAPE).getValue();
     minCorrDPOnFeatureEdge =
@@ -189,11 +195,10 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
     // ADDUCTS
     searchAdducts = parameterSet.getParameter(MetaMSEcorrelateParameters.ADDUCT_LIBRARY).getValue();
-    MSAnnotationParameters annParam = (MSAnnotationParameters) parameterSet
+    MSAnnotationParameters annParam = parameterSet
         .getParameter(MetaMSEcorrelateParameters.ADDUCT_LIBRARY).getEmbeddedParameters();
     library = new MSAnnotationLibrary(annParam);
 
-    minAdductHeight = annParam.getParameter(MSAnnotationParameters.MIN_HEIGHT).getValue();
     adductCheckMode = annParam.getParameter(MSAnnotationParameters.CHECK_MODE).getValue();
 
     annotateOnlyCorrelated =
@@ -215,11 +220,15 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     // intensity correlation across samples
     useMaxICorrFilter =
         parameterSet.getParameter(MetaMSEcorrelateParameters.IMAX_CORRELATION).getValue();
-    minMaxICorr = parameterSet.getParameter(MetaMSEcorrelateParameters.IMAX_CORRELATION)
+    minHeightCorr = parameterSet.getParameter(MetaMSEcorrelateParameters.IMAX_CORRELATION)
         .getEmbeddedParameters().getParameter(InterSampleIntCorrParameters.MIN_CORRELATION)
         .getValue();
-    minDPMaxICorr = parameterSet.getParameter(MetaMSEcorrelateParameters.IMAX_CORRELATION)
+    minDPHeightCorr = parameterSet.getParameter(MetaMSEcorrelateParameters.IMAX_CORRELATION)
         .getEmbeddedParameters().getParameter(InterSampleIntCorrParameters.MIN_DP).getValue();
+
+    heightSimMeasure = parameterSet.getParameter(MetaMSEcorrelateParameters.IMAX_CORRELATION)
+        .getEmbeddedParameters().getParameter(InterSampleIntCorrParameters.MEASURE).getValue();
+
 
     // suffix
     autoSuffix = !parameters.getParameter(MetaMSEcorrelateParameters.SUFFIX).getValue();
@@ -445,7 +454,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         compared.incrementAndGet();
         // check for adducts in library
         ESIAdductType[] id =
-            library.findAdducts(peakList, g.get(i), g.get(k), adductCheckMode, minAdductHeight);
+            library.findAdducts(peakList, g.get(i), g.get(k), adductCheckMode, minHeight);
         if (id != null)
           annotPairs.incrementAndGet();
       }
@@ -495,11 +504,12 @@ public class MetaMSEcorrelateTask extends AbstractTask {
                   minFFilter.filterMinFeaturesOverlap(raw, row, row2, rtTolerance);
               if (overlap.equals(OverlapResult.TRUE)) {
                 // correlate if in rt range
-                R2RFullCorrelationData corr = corrR2R(raw, row, row2, minDPMaxICorr,
-                    minCorrelatedDataPoints, minCorrDPOnFeatureEdge, noiseLevelShapeCorr);
+                R2RFullCorrelationData corr = corrR2R(raw, row, row2, minCorrelatedDataPoints,
+                    minCorrDPOnFeatureEdge, minDPHeightCorr, minHeight, noiseLevelCorr,
+                    heightSimMeasure, minHeightCorr);
                 if (corr != null) {
                   // deletes correlations if criteria is not met
-                  corr.validate(minMaxICorr,
+                  corr.validate(minHeightCorr,
                       shapeSimMeasure.equals(SimilarityMeasure.PEARSON) ? minShapeCorrR : 0,
                       shapeSimMeasure.equals(SimilarityMeasure.COSINE_SIM) ? minShapeCorrR : 0);
                   // check for correlation in min samples
@@ -516,7 +526,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
                   compared.incrementAndGet();
                   // check for adducts in library
                   ESIAdductType[] id =
-                      library.findAdducts(peakList, row, row2, adductCheckMode, minAdductHeight);
+                      library.findAdducts(peakList, row, row2, adductCheckMode, minHeight);
                   if (id != null)
                     annotPairs.incrementAndGet();
                 }
@@ -598,20 +608,27 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    * @return R2R correlation or null if invalid/no correlation
    */
   public static R2RFullCorrelationData corrR2R(RawDataFile[] raw, PeakListRow testRow,
-      PeakListRow row, int minDPMaxICorr, int minCorrelatedDataPoints, int minCorrDPOnFeatureEdge,
-      double noiseLevelShapeCorr) throws Exception {
-    CorrelationData iProfileR = corrRowToRowIProfile(raw, testRow, row, minDPMaxICorr);
-    Map<RawDataFile, CorrelationData> fCorr = corrR2RFeatureShapes(raw, testRow, row,
-        minCorrelatedDataPoints, minCorrDPOnFeatureEdge, noiseLevelShapeCorr);
+      PeakListRow row, int minCorrelatedDataPoints, int minCorrDPOnFeatureEdge,
+      int minDPFHeightCorr, double minHeight, double noiseLevelShapeCorr,
+      SimilarityMeasure heightSimilarity, double minHeightCorr) throws Exception {
+    CorrelationData heightCorr =
+        corrR2RFeatureHeight(raw, testRow, row, minHeight, noiseLevelShapeCorr, minDPFHeightCorr);
 
-    if (fCorr.isEmpty())
-      fCorr = null;
-
-    R2RFullCorrelationData rCorr = new R2RFullCorrelationData(testRow, row, iProfileR, fCorr);
-    if (rCorr.isValid())
-      return rCorr;
-    else
+    if (heightCorr != null && heightCorr.getSimilarity(heightSimilarity) < minHeightCorr)
       return null;
+    else {
+      Map<RawDataFile, CorrelationData> fCorr = corrR2RFeatureShapes(raw, testRow, row,
+          minCorrelatedDataPoints, minCorrDPOnFeatureEdge, noiseLevelShapeCorr);
+
+      if (fCorr.isEmpty())
+        fCorr = null;
+
+      R2RFullCorrelationData rCorr = new R2RFullCorrelationData(testRow, row, heightCorr, fCorr);
+      if (rCorr.isValid())
+        return rCorr;
+      else
+        return null;
+    }
   }
 
   /**
@@ -622,23 +639,64 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    * @param g
    * @return Correlation data of i profile of max i (or null if no correlation)
    */
-  public static CorrelationData corrRowToRowIProfile(final RawDataFile raw[], PeakListRow row,
-      PeakListRow g, int minDPMaxICorr) {
+  public static CorrelationData corrR2RFeatureHeight(final RawDataFile raw[], PeakListRow row,
+      PeakListRow g, double minHeight, double noiseLevel, int minDPFHeightCorr) {
+    // minimum of two
+    minDPFHeightCorr = Math.min(minDPFHeightCorr, 2);
+
+    if (row.getID() == 7120 && g.getID() == 7335)
+      System.out.println("");
+    if (g.getID() == 7120 && row.getID() == 7335)
+      System.out.println("");
+
     List<double[]> data = new ArrayList<>();
+    // calc ratio
+    double ratio = 0;
+    SimpleRegression reg = new SimpleRegression();
     // go through all raw files
     for (int r = 0; r < raw.length; r++) {
       Feature f1 = row.getPeak(raw[r]);
       Feature f2 = g.getPeak(raw[r]);
       if (f1 != null && f2 != null) {
         // I profile correlation
-        // TODO: low value imputation?
-        double I1 = f1.getHeight();
-        double I2 = f2.getHeight();
-        data.add(new double[] {I1, I2});
+        double a = f1.getHeight();
+        double b = f2.getHeight();
+        if (a >= minHeight && b >= minHeight) {
+          data.add(new double[] {a, b});
+          ratio += a / b;
+          reg.addData(a, b);
+        }
       }
     }
+    // TODO use regression instead of ratio
+    ratio = ratio / data.size();
+    if (ratio != 0) {
+      // estimate missing values as noise level if > minHeight
+      for (int r = 0; r < raw.length; r++) {
+        Feature f1 = row.getPeak(raw[r]);
+        Feature f2 = g.getPeak(raw[r]);
+
+        boolean amissing = (f1 == null || f1.getHeight() < minHeight);
+        boolean bmissing = (f2 == null || f2.getHeight() < minHeight);
+        // xor
+        if (amissing ^ bmissing) {
+          double a = amissing ? f2.getHeight() * ratio : f1.getHeight();
+          double b = bmissing ? f1.getHeight() / ratio : f2.getHeight();
+
+          // only if both are >= min height
+          if (a >= minHeight && b >= minHeight) {
+            if (amissing)
+              a = noiseLevel;
+            if (bmissing)
+              b = noiseLevel;
+            data.add(new double[] {a, b});
+          }
+        }
+      }
+    }
+
     // TODO weighting of intensity corr
-    if (data.size() < minDPMaxICorr)
+    if (data.size() < minDPFHeightCorr)
       return null;
     else
       return CorrelationData.create(data);
@@ -800,7 +858,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     int c = 0;
     for (int i = 0; i < f.getScanNumbers().length; i++) {
       double val = f.getDataPoint(f.getScanNumbers()[i]).getIntensity();
-      if (val >= noiseLevelShapeCorr)
+      if (val >= noiseLevelCorr)
         c++;
     }
     return c;

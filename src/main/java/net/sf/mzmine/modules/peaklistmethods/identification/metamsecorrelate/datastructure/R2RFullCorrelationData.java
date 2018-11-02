@@ -176,10 +176,6 @@ public class R2RFullCorrelationData extends R2RCorrelationData {
    * @param minShapeCorrR
    */
   public void validate(double minMaxICorr, double minShapePearsonR, double minShapeCosineSim) {
-    if (hasIMaxCorr() && (corrIProfile.getR() < minMaxICorr)) {
-      // delete maxIcorr
-      corrIProfile = null;
-    }
     if (hasFeatureShapeCorrelation()
         && (avgShapeR < minShapePearsonR || avgShapeCosineSim < minShapeCosineSim)) {
       // delete peak shape corr

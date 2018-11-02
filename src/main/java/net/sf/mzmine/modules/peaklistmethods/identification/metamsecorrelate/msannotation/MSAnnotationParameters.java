@@ -90,9 +90,9 @@ public class MSAnnotationParameters extends SimpleParameterSet {
   }
 
   public MSAnnotationParameters(boolean isSub) {
-    super(isSub ? // no peak list and rt tolerance
-        new Parameter[] {MZ_TOLERANCE, CHECK_MODE, MIN_HEIGHT, POSITIVE_MODE, MAX_CHARGE,
-            MAX_MOLECULES, MSMS_CHECK, ANNOTATION_REFINEMENTS, ADDUCTS}
+    super(isSub ? // no peak list and rt tolerance, min height
+        new Parameter[] {MZ_TOLERANCE, CHECK_MODE, POSITIVE_MODE, MAX_CHARGE, MAX_MOLECULES,
+            MSMS_CHECK, ANNOTATION_REFINEMENTS, ADDUCTS}
         : new Parameter[] {PEAK_LISTS, RT_TOLERANCE, MZ_TOLERANCE, CHECK_MODE, MIN_HEIGHT,
             POSITIVE_MODE, MAX_CHARGE, MAX_MOLECULES, MSMS_CHECK, ANNOTATION_REFINEMENTS, ADDUCTS});
   }

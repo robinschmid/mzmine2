@@ -40,6 +40,10 @@ public class FeatureShapeCorrelationParameters extends SimpleParameterSet {
   public static final RTToleranceParameter RT_TOLERANCE = new RTToleranceParameter("RT tolerance",
       "Maximum allowed difference of retention time to set a relationship between peaks");
 
+  // min intensity of data points to be peak shape correlated
+  public static final DoubleParameter NOISE_LEVEL_PEAK_SHAPE = new DoubleParameter(
+      "Noise level (peak shape correlation)", "Only correlate data points >= noiseLevel.",
+      MZmineCore.getConfiguration().getIntensityFormat(), 1E4);
 
   // General parameters
   public static final MassListParameter MASS_LIST = new MassListParameter();
@@ -48,19 +52,8 @@ public class FeatureShapeCorrelationParameters extends SimpleParameterSet {
       "Use mass list data", "Uses the raw data stored in the given mass list", true);
 
 
-
-  // for SUB settings
-  // peak shape
-  // min intensity of main peaks
-  public static final DoubleParameter MAIN_PEAK_HEIGHT =
-      new DoubleParameter("Main peak height", "Starts with grouping all features >= mainPeakHeight",
-          MZmineCore.getConfiguration().getIntensityFormat(), 5E5);
-
-  // min intensity of data points to be peak shape correlated
-  public static final DoubleParameter NOISE_LEVEL_PEAK_SHAPE = new DoubleParameter(
-      "Noise level (peak shape correlation)", "Only correlate data points >= noiseLevel.",
-      MZmineCore.getConfiguration().getIntensityFormat(), 1E4);
-
+  // ############################################################
+  // SUB
   // min data points to be used for correlation
   public static final IntegerParameter MIN_DP_CORR_PEAK_SHAPE =
       new IntegerParameter("Min data points",
@@ -75,8 +68,8 @@ public class FeatureShapeCorrelationParameters extends SimpleParameterSet {
 
   // minimum Pearson correlation (r) for feature grouping in the same scan event of one raw file
   public static final PercentParameter MIN_R_SHAPE_INTRA = new PercentParameter(
-      "Min peak shape correlation",
-      "Minimum percentage for peak shape correlation for feature grouping in the same scan event of one raw file.",
+      "Min feature shape correlation",
+      "Minimum percentage for feature shape correlation for feature grouping in the same scan event of one raw file.",
       0.85, 0, 1);
 
   // Constructor
@@ -91,8 +84,7 @@ public class FeatureShapeCorrelationParameters extends SimpleParameterSet {
    */
   public FeatureShapeCorrelationParameters(boolean isSub) {
     super(isSub ? // no peak list and rt tolerance
-        new Parameter[] {NOISE_LEVEL_PEAK_SHAPE, MIN_DP_CORR_PEAK_SHAPE, MIN_DP_FEATURE_EDGE,
-            MEASURE, MIN_R_SHAPE_INTRA}
+        new Parameter[] {MIN_DP_CORR_PEAK_SHAPE, MIN_DP_FEATURE_EDGE, MEASURE, MIN_R_SHAPE_INTRA}
         : new Parameter[] {PEAK_LISTS, RT_TOLERANCE,
             // MASS_LIST, USE_MASS_LIST_DATA, MAIN_PEAK_HEIGHT,
             NOISE_LEVEL_PEAK_SHAPE, MIN_DP_CORR_PEAK_SHAPE, MIN_DP_FEATURE_EDGE, MEASURE,
