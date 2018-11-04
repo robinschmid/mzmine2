@@ -97,7 +97,7 @@ public class CorrHistoFrame extends JFrame {
       map.streamCorrData().forEach(r2r -> {
         if (r2r.hasFeatureShapeCorrelation()) {
           avg.add(r2r.getAvgShapeR());
-          total.add(r2r.getTotalCorrelation().getR());
+          total.add(r2r.getTotalCorr().getR());
           // all single features
           for (CorrelationData f2f : r2r.getCorrPeakShape().values())
             if (f2f != null)

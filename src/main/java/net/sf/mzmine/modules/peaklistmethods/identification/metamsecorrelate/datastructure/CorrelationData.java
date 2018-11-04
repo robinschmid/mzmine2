@@ -15,7 +15,28 @@ import net.sf.mzmine.util.maths.similarity.Similarity;
 public class CorrelationData {
 
   public enum SimilarityMeasure {
-    PEARSON, COSINE_SIM;
+    PEARSON, COSINE_SIM, SPEARMAN, LOG_RATIO_VARIANCE_1, LOG_RATIO_VARIANCE_2;
+
+    /**
+     * 
+     * @param data [dp][x,y]
+     */
+    public double calc(double[][] data) {
+      switch (this) {
+        case PEARSON:
+          return Similarity.PEARSONS_CORR.calc(data);
+        case COSINE_SIM:
+          return Similarity.COSINE.calc(data);
+        case LOG_RATIO_VARIANCE_1:
+          return Similarity.LOG_VAR_PROPORTIONALITY.calc(data);
+        case LOG_RATIO_VARIANCE_2:
+          return Similarity.LOG_VAR_CONCORDANCE.calc(data);
+        case SPEARMAN:
+          return Similarity.SPEARMANS_CORR.calc(data);
+        default:
+          return Double.NaN;
+      }
+    }
 
     @Override
     public String toString() {
@@ -94,14 +115,17 @@ public class CorrelationData {
     return cosineSim;
   }
 
+  /**
+   * The similarity or NaN if data is null or empty
+   * 
+   * @param type
+   * @return
+   */
   public double getSimilarity(SimilarityMeasure type) {
-    switch (type) {
-      case COSINE_SIM:
-        return getCosineSimilarity();
-      case PEARSON:
-        return getR();
-    }
-    return 0;
+    if (data == null || data.length == 0)
+      return Double.NaN;
+    else
+      return type.calc(data);
   }
 
   public double getMinX() {

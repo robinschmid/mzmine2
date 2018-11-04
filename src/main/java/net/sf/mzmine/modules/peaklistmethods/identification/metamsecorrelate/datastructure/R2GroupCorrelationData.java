@@ -2,6 +2,7 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.da
 
 import java.util.List;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData.SimilarityMeasure;
 
 /**
  * correlation of one row to a group
@@ -70,7 +71,7 @@ public class R2GroupCorrelationData {
       // peak shape correlation
       if (r2r.hasFeatureShapeCorrelation()) {
         cPeakShape++;
-        avgTotalPeakShapeR += r2r.getTotalCorrelation().getR();
+        avgTotalPeakShapeR += r2r.getTotalCorr().getR();
         avgShapeR += r2r.getAvgShapeR();
         avgShapeCosineSim += r2r.getAvgShapeCosineSim();
         avgDPCount += r2r.getAvgDPcount();
@@ -86,6 +87,64 @@ public class R2GroupCorrelationData {
     avgDPCount = avgDPCount / cPeakShape;
     avgShapeR = avgShapeR / cPeakShape;
     avgShapeCosineSim = avgShapeCosineSim / cPeakShape;
+  }
+
+
+  /**
+   * The similarity or NaN if data is null or empty
+   * 
+   * @param type
+   * @return
+   */
+  public double getMeanHeightSimilarity(SimilarityMeasure type) {
+    double mean = 0;
+    int n = 0;
+    for (R2RFullCorrelationData r2r : corr) {
+      double v = r2r.getHeightSimilarity(type);
+      if (!Double.isNaN(v)) {
+        mean += v;
+        n++;
+      }
+    }
+    return n > 0 ? mean / n : Double.NaN;
+  }
+
+  /**
+   * The similarity or NaN if data is null or empty
+   * 
+   * @param type
+   * @return
+   */
+  public double getAvgTotalSimilarity(SimilarityMeasure type) {
+    double mean = 0;
+    int n = 0;
+    for (R2RFullCorrelationData r2r : corr) {
+      double v = r2r.getTotalSimilarity(type);
+      if (!Double.isNaN(v)) {
+        mean += v;
+        n++;
+      }
+    }
+    return n > 0 ? mean / n : Double.NaN;
+  }
+
+  /**
+   * The similarity or NaN if data is null or empty
+   * 
+   * @param type
+   * @return
+   */
+  public double getAvgPeakShapeSimilarity(SimilarityMeasure type) {
+    double mean = 0;
+    int n = 0;
+    for (R2RFullCorrelationData r2r : corr) {
+      double v = r2r.getAvgPeakShapeSimilarity(type);
+      if (!Double.isNaN(v)) {
+        mean += v;
+        n++;
+      }
+    }
+    return n > 0 ? mean / n : Double.NaN;
   }
 
   public double getAvgShapeCosineSim() {

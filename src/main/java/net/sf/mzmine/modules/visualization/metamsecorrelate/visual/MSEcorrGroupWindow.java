@@ -788,7 +788,7 @@ public class MSEcorrGroupWindow extends JFrame {
               // get correlation of feature-feature in selected raw file
               CorrelationData fCorr = null;
               if (totalCorrelation)
-                fCorr = corrRows.getTotalCorrelation();
+                fCorr = corrRows.getTotalCorr();
               else
                 fCorr = corrRows.getCorrPeakShape(raw);
               // add series

@@ -51,6 +51,54 @@ public class R2RFullCorrelationData extends R2RCorrelationData {
     return corrPeakShape == null ? null : corrPeakShape.get(raw);
   }
 
+
+  /**
+   * The similarity or NaN if data is null or empty
+   * 
+   * @param type
+   * @return
+   */
+  public double getHeightSimilarity(SimilarityMeasure type) {
+    if (getHeightCorr() == null)
+      return Double.NaN;
+    else
+      return getHeightCorr().getSimilarity(type);
+  }
+
+  /**
+   * The similarity or NaN if data is null or empty
+   * 
+   * @param type
+   * @return
+   */
+  public double getTotalSimilarity(SimilarityMeasure type) {
+    if (getTotalCorr() == null)
+      return Double.NaN;
+    else
+      return getTotalCorr().getSimilarity(type);
+  }
+
+  /**
+   * The similarity or NaN if data is null or empty
+   * 
+   * @param type
+   * @return
+   */
+  public double getAvgPeakShapeSimilarity(SimilarityMeasure type) {
+    if (corrPeakShape == null)
+      return Double.NaN;
+    else {
+      double mean = 0;
+      int n = 0;
+      for (Entry<RawDataFile, CorrelationData> e : corrPeakShape.entrySet()) {
+        mean += e.getValue().getSimilarity(type);
+        n++;
+      }
+
+      return mean / n;
+    }
+  }
+
   /**
    * 
    * @param corrPeakShape
@@ -99,7 +147,7 @@ public class R2RFullCorrelationData extends R2RCorrelationData {
    * 
    * @return
    */
-  public CorrelationData getTotalCorrelation() {
+  public CorrelationData getTotalCorr() {
     return corrTotal;
   }
 
@@ -178,7 +226,7 @@ public class R2RFullCorrelationData extends R2RCorrelationData {
       double minShapeCosineSim) {
     if (hasFeatureShapeCorrelation()
         && ((avgShapeR < minShapePearsonR || avgShapeCosineSim < minShapeCosineSim)
-            || (useTotalCorr && getTotalCorrelation().getR() < minTotalCorr))) {
+            || (useTotalCorr && getTotalCorr().getR() < minTotalCorr))) {
       // delete peak shape corr
       setCorrPeakShape(null);
     }
