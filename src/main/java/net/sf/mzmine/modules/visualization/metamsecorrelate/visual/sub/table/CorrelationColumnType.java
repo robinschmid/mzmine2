@@ -21,13 +21,14 @@ package net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.table;
 public enum CorrelationColumnType {
 
   MAXHEIGHT("Max height", Double.class), //
-  AVG_COSINE_SIM("cosine", Double.class), //
+  AVG_COSINE_SIM("sim", Double.class), //
   MIN_R_PEAKSHAPE("r min ∩", Double.class), //
   AVERAGE_R_PEAKSHAPE("r avg ∩", Double.class), //
   MAX_R_PEAKSHAPE("r max ∩", Double.class), //
   AVG_TOTAL_R_PEAKSHAPE("r avg/total ∩", Double.class), //
+  AVERAGE_TOTAL_SIM("total sim", Double.class), //
   AVERAGE_DP_COUNT("∩ DPs", Integer.class), //
-  AVERAGE_COSINE_HEIGHT("cosine", Double.class), //
+  AVERAGE_COSINE_HEIGHT("sim", Double.class), //
   MIN_R_IPROFILE("r min", Double.class), //
   AVERAGE_R_IPROFILE("r avg", Double.class), //
   MAX_R_IPROFILE("r max", Double.class);//

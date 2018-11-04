@@ -191,6 +191,7 @@ public class GroupedPeakListTableColumnModel extends DefaultTableColumnModel
         case MIN_R_IPROFILE:
         case MIN_R_PEAKSHAPE:
         case AVG_TOTAL_R_PEAKSHAPE:
+        case AVERAGE_TOTAL_SIM:
         case AVERAGE_COSINE_HEIGHT:
           newColumn.setCellRenderer(corrRenderer);
           break;
@@ -204,7 +205,7 @@ public class GroupedPeakListTableColumnModel extends DefaultTableColumnModel
 
       this.addColumn(newColumn);
 
-      if (i >= 0 && i < CommonColumnType2.values().length)
+      if (i >= 0 && i < CorrelationColumnType.AVERAGE_COSINE_HEIGHT.ordinal())
         peakShapeGroup.add(newColumn);
       else if (i >= 0)
         iProfileGroup.add(newColumn);

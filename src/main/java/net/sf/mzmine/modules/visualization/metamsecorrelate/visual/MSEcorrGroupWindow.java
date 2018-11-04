@@ -22,6 +22,7 @@ import javax.swing.BoxLayout;
 import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -63,6 +64,7 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData.SimilarityMeasure;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
@@ -131,6 +133,8 @@ public class MSEcorrGroupWindow extends JFrame {
   private JButton btnMsmsWindow;
   private JLabel lblNet;
   private JTextField txtSkipSmallNetwork;
+  private JPanel panel_8;
+  private JComboBox<SimilarityMeasure> comboSimilarity;
 
   /**
    * Create the frame.
@@ -379,6 +383,19 @@ public class MSEcorrGroupWindow extends JFrame {
     btnMsmsWindow = new JButton("MSMS window");
     btnMsmsWindow.addActionListener(e -> msmsWindow.setVisible(true));
     panel_7.add(btnMsmsWindow);
+
+    panel_8 = new JPanel();
+    pnMenu.add(panel_8);
+    panel_8.setLayout(new MigLayout("", "[grow]", "[]"));
+
+    comboSimilarity = new JComboBox<SimilarityMeasure>(SimilarityMeasure.values());
+    comboSimilarity.setSelectedItem(SimilarityMeasure.COSINE_SIM);
+    panel_8.add(comboSimilarity, "cell 0 0,growx");
+    comboSimilarity.addItemListener(e -> {
+      GroupedPeakListTableModel model = (GroupedPeakListTableModel) tableGroupMembers.getModel();
+      model.setSimilarityMeasure((SimilarityMeasure) comboSimilarity.getSelectedItem());
+      model.fireTableDataChanged();
+    });
 
     btnPreviousGroup.addActionListener(e -> prevGroup());
 
@@ -1341,5 +1358,9 @@ public class MSEcorrGroupWindow extends JFrame {
 
   public JTextField getTxtSkipSmallNetwork() {
     return txtSkipSmallNetwork;
+  }
+
+  public JComboBox getComboSimilarity() {
+    return comboSimilarity;
   }
 }

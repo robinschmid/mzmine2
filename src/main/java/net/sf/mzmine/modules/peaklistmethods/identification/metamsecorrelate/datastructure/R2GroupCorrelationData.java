@@ -96,7 +96,7 @@ public class R2GroupCorrelationData {
    * @param type
    * @return
    */
-  public double getMeanHeightSimilarity(SimilarityMeasure type) {
+  public double getAvgHeightSimilarity(SimilarityMeasure type) {
     double mean = 0;
     int n = 0;
     for (R2RFullCorrelationData r2r : corr) {

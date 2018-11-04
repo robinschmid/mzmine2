@@ -24,6 +24,7 @@ import javax.swing.table.AbstractTableModel;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.MetaMSEcorrelateTask;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData.SimilarityMeasure;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
@@ -34,6 +35,7 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
    */
   private static final long serialVersionUID = 1L;
   private MSEGroupedPeakList peakList;
+  private SimilarityMeasure type = SimilarityMeasure.COSINE_SIM;
 
   // Logger.
   private static final Logger LOG = Logger.getLogger(MetaMSEcorrelateTask.class.getName());
@@ -115,7 +117,9 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
 
         switch (corrCol) {
           case AVG_COSINE_SIM:
-            return corr.getAvgShapeCosineSim();
+            return corr.getAvgPeakShapeSimilarity(type);
+          case AVERAGE_TOTAL_SIM:
+            return corr.getAvgTotalSimilarity(type);
           case MAXHEIGHT:
             return corr.getMaxHeight();
           case AVERAGE_DP_COUNT:
@@ -135,7 +139,7 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
           case MIN_R_PEAKSHAPE:
             return corr.getMinPeakShapeR();
           case AVERAGE_COSINE_HEIGHT:
-            return corr.getAvgCosineHeightCorr();
+            return corr.getAvgHeightSimilarity(type);
         }
       }
     } else {
@@ -144,6 +148,10 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
       return null;
     }
     return null;
+  }
+
+  public void setSimilarityMeasure(SimilarityMeasure type) {
+    this.type = type;
   }
 
   @Override
