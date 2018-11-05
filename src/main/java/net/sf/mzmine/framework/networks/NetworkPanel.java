@@ -4,17 +4,30 @@ import java.awt.BorderLayout;
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.MultiGraph;
+import org.graphstream.stream.file.FileSink;
+import org.graphstream.stream.file.FileSinkGraphML;
+import org.graphstream.stream.file.FileSinkImages;
+import org.graphstream.stream.file.FileSinkImages.LayoutPolicy;
+import org.graphstream.stream.file.FileSinkImages.OutputType;
+import org.graphstream.stream.file.FileSinkImages.Quality;
+import org.graphstream.stream.file.FileSinkImages.Resolutions;
+import org.graphstream.stream.file.FileSinkSVG;
 import org.graphstream.ui.geom.Point3;
 import org.graphstream.ui.swingViewer.ViewPanel;
 import org.graphstream.ui.view.Viewer;
+import net.sf.mzmine.util.files.FileAndPathUtil;
+import net.sf.mzmine.util.files.FileTypeFilter;
 
 public class NetworkPanel extends JPanel {
   private static final Logger LOG = Logger.getLogger(NetworkPanel.class.getName());
@@ -23,7 +36,17 @@ public class NetworkPanel extends JPanel {
       "edge {fill-color: rgb(25,85,25); stroke-color: rgb(50,100,50); stroke-width: 1px;}  node {text-size: 11; fill-color: black; size: 10px; stroke-mode: plain; stroke-color: rgb(50,100,50); stroke-width: 1px;} "
           + "node.important{fill-color: red;} node.big{size: 15px;} node.MOL{fill-color: cyan; size: 15px;}  node.NEUTRAL{fill-color: violet; }";
 
+  public static final String EXPORT_STYLE_SHEET =
+      "edge {fill-color: rgb(25,85,25); stroke-color: rgb(50,100,50); stroke-width: 2px;}  node {text-size: 16; fill-color: black; size: 16px; stroke-mode: plain; stroke-color: rgb(50,100,50); stroke-width: 2px;} "
+          + "node.important{fill-color: red;} node.big{size: 20px;} node.MOL{fill-color: cyan; size: 20px;}  node.NEUTRAL{fill-color: violet; }";
+
   protected String styleSheet;
+
+  // save screenshot
+  protected FileSinkGraphML saveGraphML = new FileSinkGraphML();
+  protected FileSinkSVG saveSVG = new FileSinkSVG();
+  protected FileSinkImages savePNG = new FileSinkImages(OutputType.PNG, Resolutions.HD1080);
+  protected JFileChooser saveDialog = new JFileChooser();
 
   // visual
   protected Graph graph;
@@ -35,6 +58,10 @@ public class NetworkPanel extends JPanel {
 
   private JLabel lbTitle;
 
+  private FileTypeFilter pngFilter;
+  private FileTypeFilter svgFilter;
+  private FileTypeFilter graphMLFilter;
+
   /**
    * Create the panel.
    */
@@ -43,6 +70,16 @@ public class NetworkPanel extends JPanel {
   }
 
   public NetworkPanel(String title, String styleSheet, boolean showTitle) {
+    savePNG.setLayoutPolicy(LayoutPolicy.COMPUTED_FULLY_AT_NEW_IMAGE);
+    savePNG.setStyleSheet(EXPORT_STYLE_SHEET);
+    savePNG.setQuality(Quality.HIGH);
+
+    saveDialog.addChoosableFileFilter(pngFilter = new FileTypeFilter("png", "PNG image file"));
+    saveDialog.addChoosableFileFilter(svgFilter = new FileTypeFilter("svg", "SVG image file"));
+    saveDialog.addChoosableFileFilter(
+        graphMLFilter = new FileTypeFilter("graphml", "Export graph to graphml"));
+    saveDialog.setFileFilter(pngFilter);
+
     this.styleSheet = styleSheet;
     this.setLayout(new BorderLayout());
     // add title
@@ -70,12 +107,16 @@ public class NetworkPanel extends JPanel {
 
       @Override
       public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() == 2) {
-          resetZoom();
+        if (e.getButton() == MouseEvent.BUTTON1) {
+          if (e.getClickCount() == 2) {
+            resetZoom();
+            e.consume();
+          } else if (e.getClickCount() == 1)
+            setCenter(e.getX(), e.getY());
+        } else if (e.getButton() == MouseEvent.BUTTON3) {
+          openSaveDialog();
           e.consume();
-        } else if (e.getClickCount() == 1)
-          setCenter(e.getX(), e.getY());
-
+        }
       }
 
       @Override
@@ -99,6 +140,34 @@ public class NetworkPanel extends JPanel {
       }
     });
     view.addMouseWheelListener(event -> zoom(event.getWheelRotation() < 0));
+  }
+
+  public void openSaveDialog() {
+    if (graph != null && graph.getNodeCount() > 0
+        && saveDialog.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+      File f = saveDialog.getSelectedFile();
+      if (saveDialog.getFileFilter() == pngFilter || FileAndPathUtil.getFormat(f).equals("png")) {
+        f = FileAndPathUtil.getRealFilePath(saveDialog.getSelectedFile(), "png");
+        saveToFile(savePNG, f);
+      } else if (saveDialog.getFileFilter() == svgFilter
+          || FileAndPathUtil.getFormat(f).equals("svg")) {
+        f = FileAndPathUtil.getRealFilePath(saveDialog.getSelectedFile(), "svg");
+        saveToFile(saveSVG, f);
+      } else if (saveDialog.getFileFilter() == graphMLFilter
+          || FileAndPathUtil.getFormat(f).equals("graphml")) {
+        f = FileAndPathUtil.getRealFilePath(saveDialog.getSelectedFile(), "graphml");
+        saveToFile(saveGraphML, f);
+      }
+    }
+  }
+
+  public void saveToFile(FileSink sink, File f) {
+    try {
+      if (graph != null && graph.getNodeCount() > 0)
+        sink.writeAll(graph, f.getAbsolutePath());
+    } catch (Exception e) {
+      LOG.log(Level.SEVERE, "Screenshot of network not saved", e);
+    }
   }
 
   public void setShowTitle(boolean showTitle) {
