@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
+import org.apache.commons.math.MathException;
 import org.apache.commons.math.stat.regression.SimpleRegression;
 import com.google.common.util.concurrent.AtomicDouble;
 import io.github.msdk.MSDKRuntimeException;
@@ -43,7 +44,7 @@ import net.sf.mzmine.desktop.Desktop;
 import net.sf.mzmine.desktop.impl.HeadLessDesktop;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.FeatureShapeCorrelationParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.InterSampleIntCorrParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.InterSampleHeightCorrParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData.SimilarityMeasure;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
@@ -228,13 +229,13 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     useMaxICorrFilter =
         parameterSet.getParameter(MetaMSEcorrelateParameters.IMAX_CORRELATION).getValue();
     minHeightCorr = parameterSet.getParameter(MetaMSEcorrelateParameters.IMAX_CORRELATION)
-        .getEmbeddedParameters().getParameter(InterSampleIntCorrParameters.MIN_CORRELATION)
+        .getEmbeddedParameters().getParameter(InterSampleHeightCorrParameters.MIN_CORRELATION)
         .getValue();
     minDPHeightCorr = parameterSet.getParameter(MetaMSEcorrelateParameters.IMAX_CORRELATION)
-        .getEmbeddedParameters().getParameter(InterSampleIntCorrParameters.MIN_DP).getValue();
+        .getEmbeddedParameters().getParameter(InterSampleHeightCorrParameters.MIN_DP).getValue();
 
     heightSimMeasure = parameterSet.getParameter(MetaMSEcorrelateParameters.IMAX_CORRELATION)
-        .getEmbeddedParameters().getParameter(InterSampleIntCorrParameters.MEASURE).getValue();
+        .getEmbeddedParameters().getParameter(InterSampleHeightCorrParameters.MEASURE).getValue();
 
 
     // suffix
@@ -675,7 +676,20 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         }
       }
     }
-    // TODO use regression instead of ratio
+
+    // significance is alpha. 0 is perfect
+    double maxSlopeSignificance = 0.15;
+    double significantSlope = 0;
+    try {
+      significantSlope = data.size() > 2 ? reg.getSignificance() : 0;
+    } catch (MathException e) {
+      LOG.log(Level.SEVERE, "slope significance cannot be calculated", e);
+    }
+    // stop if slope is negative or 0
+    // if (data.size() > 1 && (reg.getSlope() <= 0
+    // || (!Double.isNaN(significantSlope) && significantSlope < maxSlopeSignificance)))
+    // return null;
+
     ratio = ratio / data.size();
     if (ratio != 0) {
       // estimate missing values as noise level if > minHeight
@@ -697,10 +711,22 @@ public class MetaMSEcorrelateTask extends AbstractTask {
             if (bmissing)
               b = noiseLevel;
             data.add(new double[] {a, b});
+            reg.addData(a, b);
           }
         }
       }
     }
+
+    significantSlope = 0;
+    try {
+      significantSlope = data.size() > 2 ? reg.getSignificance() : 0;
+    } catch (MathException e) {
+      LOG.log(Level.SEVERE, "slope significance cannot be calculated", e);
+    }
+    // stop if slope is negative or 0
+    // if (data.size() > 1 && (reg.getSlope() <= 0
+    // || (!Double.isNaN(significantSlope) && significantSlope < maxSlopeSignificance)))
+    // return null;
 
     // TODO weighting of intensity corr
     if (data.size() < minDPFHeightCorr)

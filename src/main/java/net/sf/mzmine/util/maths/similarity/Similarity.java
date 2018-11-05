@@ -2,6 +2,7 @@ package net.sf.mzmine.util.maths.similarity;
 
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 import net.sf.mzmine.util.maths.Transform;
 
 public abstract class Similarity {
@@ -54,7 +55,7 @@ public abstract class Similarity {
     }
   };
   /**
-   * Spearmans correlation:
+   * Pearson correlation:
    */
   public static final Similarity PEARSONS_CORR = new Similarity() {
     @Override
@@ -62,6 +63,45 @@ public abstract class Similarity {
       PearsonsCorrelation corr = new PearsonsCorrelation();
       return corr.correlation(col(data, 0), col(data, 1));
     }
+  };
+
+  /**
+   * slope
+   */
+  public static final Similarity REGRESSION_SLOPE = new Similarity() {
+
+    public SimpleRegression getRegression(double[][] data) {
+      SimpleRegression reg = new SimpleRegression();
+      reg.addData(data);
+      return reg;
+    }
+
+    @Override
+    public double calc(double[][] data) {
+      return getRegression(data).getSlope();
+    }
+
+    public double getSignificance(double[][] data) {
+      return getRegression(data).getSignificance();
+    }
+  };
+
+  /**
+   * slope
+   */
+  public static final Similarity REGRESSION_SLOPE_SIGNIFICANCE = new Similarity() {
+
+    public SimpleRegression getRegression(double[][] data) {
+      SimpleRegression reg = new SimpleRegression();
+      reg.addData(data);
+      return reg;
+    }
+
+    @Override
+    public double calc(double[][] data) {
+      return getRegression(data).getSignificance();
+    }
+
   };
 
 

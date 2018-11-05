@@ -27,7 +27,7 @@ import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.PercentParameter;
 
-public class InterSampleIntCorrParameters extends SimpleParameterSet {
+public class InterSampleHeightCorrParameters extends SimpleParameterSet {
 
   // ###############################################
   // MAIN
@@ -61,14 +61,14 @@ public class InterSampleIntCorrParameters extends SimpleParameterSet {
       "Similarity measure", SimilarityMeasure.values(), SimilarityMeasure.PEARSON);
 
 
-  public InterSampleIntCorrParameters() {
+  public InterSampleHeightCorrParameters() {
     this(false);
   }
 
   /**
    * 
    */
-  public InterSampleIntCorrParameters(boolean isSub) {
+  public InterSampleHeightCorrParameters(boolean isSub) {
     super(isSub ? new Parameter[] {MIN_DP, MEASURE, MIN_CORRELATION}
         : new Parameter[] {MIN_HEIGHT, NOISE_LEVEL, MIN_DP, MEASURE, MIN_CORRELATION});
   }

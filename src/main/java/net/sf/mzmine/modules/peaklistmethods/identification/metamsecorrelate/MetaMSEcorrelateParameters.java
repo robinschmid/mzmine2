@@ -22,7 +22,7 @@ import java.awt.Window;
 import javax.swing.JComponent;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.FeatureShapeCorrelationParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.InterSampleIntCorrParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.InterSampleHeightCorrParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationParameters;
 import net.sf.mzmine.parameters.Parameter;
@@ -85,10 +85,10 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
       "Correlation grouping", "Grouping based on Pearson correlation of the feature shapes.",
       new FeatureShapeCorrelationParameters(true));
 
-  public static final OptionalModuleParameter<InterSampleIntCorrParameters> IMAX_CORRELATION =
+  public static final OptionalModuleParameter<InterSampleHeightCorrParameters> IMAX_CORRELATION =
       new OptionalModuleParameter<>("Feature height correlation",
           "Feature to feature correlation of the maximum intensities across all samples.",
-          new InterSampleIntCorrParameters(true), true);
+          new InterSampleHeightCorrParameters(true), true);
 
 
 

@@ -15,7 +15,9 @@ import net.sf.mzmine.util.maths.similarity.Similarity;
 public class CorrelationData {
 
   public enum SimilarityMeasure {
-    PEARSON, COSINE_SIM, SPEARMAN, LOG_RATIO_VARIANCE_1, LOG_RATIO_VARIANCE_2;
+    PEARSON, COSINE_SIM, SPEARMAN, //
+    LOG_RATIO_VARIANCE_1, LOG_RATIO_VARIANCE_2, //
+    SLOPE, SLOPE_ALPHA_TO_ZERO;
 
     /**
      * 
@@ -33,6 +35,10 @@ public class CorrelationData {
           return Similarity.LOG_VAR_CONCORDANCE.calc(data);
         case SPEARMAN:
           return Similarity.SPEARMANS_CORR.calc(data);
+        case SLOPE:
+          return Similarity.REGRESSION_SLOPE.calc(data);
+        case SLOPE_ALPHA_TO_ZERO:
+          return Similarity.REGRESSION_SLOPE_SIGNIFICANCE.calc(data);
         default:
           return Double.NaN;
       }
