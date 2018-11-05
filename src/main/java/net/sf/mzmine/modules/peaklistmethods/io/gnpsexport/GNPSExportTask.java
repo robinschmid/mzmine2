@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.logging.Logger;
@@ -143,9 +144,12 @@ public class GNPSExportTask extends AbstractTask {
       setStatus(TaskStatus.FINISHED);
   }
 
-  private void export(PeakList peakList, FileWriter writer, File curFile) throws IOException {
+  private int export(PeakList peakList, FileWriter writer, File curFile) throws IOException {
     final String newLine = System.lineSeparator();
 
+    // count exported
+    int count = 0;
+    int countMissingMassList = 0;
     for (PeakListRow row : peakList.getRows()) {
       // do not export if no MSMS
       if (!filter.filter(row))
@@ -167,9 +171,15 @@ public class GNPSExportTask extends AbstractTask {
         // Best peak always exists, because peak list row has at least one peak
         bestPeak = copyRow.getBestPeak();
 
-        // Get the MS/MS scan number
+        // Get the heighest peak with a MS/MS scan number (with mass list)
+        boolean missingMassList = false;
         msmsScanNumber = bestPeak.getMostIntenseFragmentScanNumber();
-        while (msmsScanNumber < 1) {
+        while (msmsScanNumber < 1
+            || getScan(bestPeak, msmsScanNumber).getMassList(massListName) == null) {
+          // missing masslist
+          if (msmsScanNumber > 0)
+            missingMassList = true;
+
           copyRow.removePeak(bestPeak.getDataFile());
           if (copyRow.getPeaks().length == 0)
             break;
@@ -177,6 +187,8 @@ public class GNPSExportTask extends AbstractTask {
           bestPeak = copyRow.getBestPeak();
           msmsScanNumber = bestPeak.getMostIntenseFragmentScanNumber();
         }
+        if (missingMassList)
+          countMissingMassList++;
       }
       if (msmsScanNumber >= 1) {
         // MS/MS scan must exist, because msmsScanNumber was > 0
@@ -184,11 +196,9 @@ public class GNPSExportTask extends AbstractTask {
 
         MassList massList = msmsScan.getMassList(massListName);
 
+
         if (massList == null) {
-          MZmineCore.getDesktop().displayErrorMessage(MZmineCore.getDesktop().getMainWindow(),
-              "There is no mass list called " + massListName + " for MS/MS scan #" + msmsScanNumber
-                  + " (" + bestPeak.getDataFile() + ")");
-          return;
+          continue;
         }
 
         writer.write("BEGIN IONS" + newLine);
@@ -229,9 +239,20 @@ public class GNPSExportTask extends AbstractTask {
 
         writer.write("END IONS" + newLine);
         writer.write(newLine);
+        count++;
       }
     }
+    LOG.warning(
+        MessageFormat.format("{1}: Total of {0} feature rows (MS/MS mass lists) were exported",
+            count, peakList.getName()));
+    LOG.warning(MessageFormat.format(
+        "{1}: WARNING: Total of {0} feature rows have an MS/MS scan but NO mass list (this shouldn't be a problem if a scan filter was applied in the mass detection step)",
+        countMissingMassList, peakList.getName()));
+    return count;
+  }
 
+  public Scan getScan(Feature f, int msmsscan) {
+    return f.getDataFile().getScan(msmsscan);
   }
 
   @Override
