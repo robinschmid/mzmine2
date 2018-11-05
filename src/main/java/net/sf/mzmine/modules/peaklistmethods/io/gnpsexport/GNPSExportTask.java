@@ -21,6 +21,7 @@ import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.MassList;
@@ -218,7 +219,7 @@ public class GNPSExportTask extends AbstractTask {
         }
 
         if (rowID != null) {
-          writer.write("SCANS=" + msmsScanNumber + newLine);
+          writer.write("SCANS=" + rowID + newLine);
           writer.write("RTINSECONDS=" + rtsForm.format(retTimeInSeconds) + newLine);
         }
 
@@ -245,12 +246,21 @@ public class GNPSExportTask extends AbstractTask {
         count++;
       }
     }
-    LOG.warning(
-        MessageFormat.format("{1}: Total of {0} feature rows (MS/MS mass lists) were exported",
+    if (count == 0)
+      if (countMissingMassList > 0)
+        throw new MSDKRuntimeException("No MS/MS scans exported: " + countMissingMassList
+            + " scans have no mass list " + massListName);
+      else
+        throw new MSDKRuntimeException("No MS/MS scans exported.");
+
+    LOG.info(
+        MessageFormat.format("Total of {0} feature rows (MS/MS mass lists) were exported ({1})",
             count, peakList.getName()));
-    LOG.warning(MessageFormat.format(
-        "{1}: WARNING: Total of {0} feature rows have an MS/MS scan but NO mass list (this shouldn't be a problem if a scan filter was applied in the mass detection step)",
-        countMissingMassList, peakList.getName()));
+    if (countMissingMassList > 0)
+      LOG.warning(MessageFormat.format(
+          "WARNING: Total of {0} feature rows have an MS/MS scan but NO mass list (this shouldn't be a problem if a scan filter was applied in the mass detection step) ({1})",
+          countMissingMassList, peakList.getName()));
+
     return count;
   }
 
