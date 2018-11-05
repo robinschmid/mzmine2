@@ -375,7 +375,7 @@ public class SiriusExportTask extends AbstractTask {
     // MS annotation and feature correlation group
     // can be null (both)
     // run MS annotations module or better metaMSEcorrelate
-    String msAnnotationsFlags = createMSAnnotationFlags(row);
+    String msAnnotationsFlags = createMSAnnotationFlags(row, mzForm);
 
     // write correlation spectrum
     writeHeader(writer, row, row.getBestPeak().getDataFile(), polarity, MsType.CORRELATED, -1,
@@ -449,7 +449,7 @@ public class SiriusExportTask extends AbstractTask {
    * @param row
    * @return
    */
-  private String createMSAnnotationFlags(PeakListRow row) {
+  public static String createMSAnnotationFlags(PeakListRow row, NumberFormat mzForm) {
     // MS annotation and feature correlation group
     // can be null (both)
     // run MS annotations module or better metaMSEcorrelate
