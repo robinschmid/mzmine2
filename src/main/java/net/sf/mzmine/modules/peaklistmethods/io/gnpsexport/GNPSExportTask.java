@@ -215,7 +215,7 @@ public class GNPSExportTask extends AbstractTask {
           writer.write("ION=" + ion + newLine);
 
         if (rowID != null) {
-          writer.write("SCANS=" + rowID + newLine);
+          writer.write("SCANS=" + msmsScanNumber + newLine);
           writer.write("RTINSECONDS=" + rtsForm.format(retTimeInSeconds) + newLine);
         }
 
