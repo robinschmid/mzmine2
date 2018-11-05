@@ -35,6 +35,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.io.gnpsexport.GNPSExportParameters.RowFilter;
+import net.sf.mzmine.modules.peaklistmethods.io.siriusexport.SiriusExportTask;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
@@ -210,9 +211,11 @@ public class GNPSExportTask extends AbstractTask {
         if (mass != null)
           writer.write("PEPMASS=" + mass + newLine);
 
-        // ion annotation
-        if (ion != null && !ion.isEmpty())
-          writer.write("ION=" + ion + newLine);
+        // ion annotation, neutral mass, corr group, annotation group
+        String annotationFlags = SiriusExportTask.createMSAnnotationFlags(row, mzForm);
+        if (annotationFlags != null && !annotationFlags.isEmpty()) {
+          writer.write(annotationFlags);
+        }
 
         if (rowID != null) {
           writer.write("SCANS=" + msmsScanNumber + newLine);
