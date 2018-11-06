@@ -205,11 +205,10 @@ public class R2GroupCorrelationData {
    * 
    * @param rowI
    * @return the correlation data of this row to row[rowI]
-   * @throws Exception (should not happen, only if processing was corrupt)
    */
-  public R2RFullCorrelationData getCorrelationToRowI(int rowI) throws Exception {
+  public R2RFullCorrelationData getCorrelationToRowI(int rowI) {
     if (row.getID() == rowI)
-      throw new Exception("No correlation of row to itself");
+      return null;
     for (R2RFullCorrelationData c : corr) {
       if (c.getIDA() == rowI || c.getIDB() == rowI)
         return c;
@@ -223,7 +222,7 @@ public class R2GroupCorrelationData {
    * @return the correlation data of this row to row[rowI]
    * @throws Exception
    */
-  public R2RFullCorrelationData getCorrelationToRow(PeakListRow row) throws Exception {
+  public R2RFullCorrelationData getCorrelationToRow(PeakListRow row) {
     return getCorrelationToRowI(row.getID());
   }
 

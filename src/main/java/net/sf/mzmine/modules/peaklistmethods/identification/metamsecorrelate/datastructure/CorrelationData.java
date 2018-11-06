@@ -77,8 +77,8 @@ public class CorrelationData {
     CorrelationData c = new CorrelationData();
     c.reg = new SimpleRegression();
     c.data = new double[dat.size()][2];
-    c.minX = Double.NEGATIVE_INFINITY;
-    c.maxX = Double.POSITIVE_INFINITY;
+    c.minX = Double.POSITIVE_INFINITY;
+    c.maxX = Double.NEGATIVE_INFINITY;
     for (int i = 0; i < dat.size(); i++) {
       c.data[i][0] = dat.get(i)[0];
       c.data[i][1] = dat.get(i)[1];

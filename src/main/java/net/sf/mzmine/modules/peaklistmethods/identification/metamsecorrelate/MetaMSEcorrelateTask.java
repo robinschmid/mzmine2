@@ -73,6 +73,7 @@ import net.sf.mzmine.taskcontrol.TaskStatus;
 import net.sf.mzmine.util.PeakListRowSorter;
 import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
+import net.sf.mzmine.util.maths.similarity.Similarity;
 
 public class MetaMSEcorrelateTask extends AbstractTask {
 
@@ -622,7 +623,12 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     CorrelationData heightCorr =
         corrR2RFeatureHeight(raw, testRow, row, minHeight, noiseLevelShapeCorr, minDPFHeightCorr);
 
-    if (heightCorr != null && heightCorr.getSimilarity(heightSimilarity) < minHeightCorr)
+    // significance is alpha. 0 is perfect
+    double maxSlopeSignificance = 0.3;
+    double minFoldChange = 10;
+    // stop if slope is negative or 0
+    if (heightCorr != null && filterNegativeRegression(heightCorr, minFoldChange,
+        maxSlopeSignificance, minDPFHeightCorr, minHeightCorr, heightSimilarity))
       return null;
     else {
       Map<RawDataFile, CorrelationData> fCorr = corrR2RFeatureShapes(raw, testRow, row,
@@ -652,11 +658,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     // minimum of two
     minDPFHeightCorr = Math.min(minDPFHeightCorr, 2);
 
-    if (row.getID() == 7120 && g.getID() == 7335)
-      System.out.println("");
-    if (g.getID() == 7120 && row.getID() == 7335)
-      System.out.println("");
-
     List<double[]> data = new ArrayList<>();
     // calc ratio
     double ratio = 0;
@@ -677,19 +678,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       }
     }
 
-    // significance is alpha. 0 is perfect
-    double maxSlopeSignificance = 0.15;
-    double significantSlope = 0;
-    try {
-      significantSlope = data.size() > 2 ? reg.getSignificance() : 0;
-    } catch (MathException e) {
-      LOG.log(Level.SEVERE, "slope significance cannot be calculated", e);
-    }
-    // stop if slope is negative or 0
-    // if (data.size() > 1 && (reg.getSlope() <= 0
-    // || (!Double.isNaN(significantSlope) && significantSlope < maxSlopeSignificance)))
-    // return null;
-
     ratio = ratio / data.size();
     if (ratio != 0) {
       // estimate missing values as noise level if > minHeight
@@ -707,9 +695,9 @@ public class MetaMSEcorrelateTask extends AbstractTask {
           // only if both are >= min height
           if (a >= minHeight && b >= minHeight) {
             if (amissing)
-              a = noiseLevel;
+              a = Math.max(noiseLevel, f1 == null ? 0 : f1.getHeight());
             if (bmissing)
-              b = noiseLevel;
+              b = Math.max(noiseLevel, f2 == null ? 0 : f2.getHeight());
             data.add(new double[] {a, b});
             reg.addData(a, b);
           }
@@ -717,22 +705,46 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       }
     }
 
-    significantSlope = 0;
-    try {
-      significantSlope = data.size() > 2 ? reg.getSignificance() : 0;
-    } catch (MathException e) {
-      LOG.log(Level.SEVERE, "slope significance cannot be calculated", e);
-    }
-    // stop if slope is negative or 0
-    // if (data.size() > 1 && (reg.getSlope() <= 0
-    // || (!Double.isNaN(significantSlope) && significantSlope < maxSlopeSignificance)))
-    // return null;
-
     // TODO weighting of intensity corr
-    if (data.size() < minDPFHeightCorr)
+    if (data.size() < 2)
       return null;
     else
       return CorrelationData.create(data);
+  }
+
+  /**
+   * Only true if this should be filtered out. Need to have a minimum fold change to be significant.
+   * 
+   * @param data
+   * @param reg
+   * @param minFoldChange
+   * @param maxSlopeSignificance
+   * @return
+   */
+  private static boolean filterNegativeRegression(CorrelationData corr, double minFoldChange,
+      double maxSlopeSignificance, int minDP, double minSimilarity,
+      SimilarityMeasure heightSimilarity) {
+    if (corr.getDPCount() < 3 && corr.getDPCount() < minDP)
+      return false;
+
+    double maxFC = Math.max(Similarity.maxFoldChange(corr.getData(), 0),
+        Similarity.maxFoldChange(corr.getData(), 1));
+    // do not use as filter if
+    if (maxFC < minFoldChange)
+      return false;
+
+    double significantSlope = 0;
+    try {
+      significantSlope = corr.getReg().getSignificance();
+    } catch (MathException e) {
+      LOG.log(Level.SEVERE, "slope significance cannot be calculated", e);
+    }
+    // if slope is negative
+    // slope significance is low (alpha is high)
+    // similarity is low
+    return (corr.getReg().getSlope() <= 0
+        || (!Double.isNaN(significantSlope) && significantSlope > maxSlopeSignificance)
+        || corr.getSimilarity(heightSimilarity) < minSimilarity);
   }
 
   /**

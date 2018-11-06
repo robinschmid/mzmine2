@@ -28,6 +28,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RFullCorrelationData;
 
 public class GroupedPeakListTableModel extends AbstractTableModel {
   /**
@@ -86,6 +87,7 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
   public Object getValueAt(int row, int col) {
     // get groups
     PKLRowGroup group = peakList.getLastViewedGroup();
+    PeakListRow selectedRow = group.getLastViewedRow();
     // row of group
     if (group != null && row < group.size()) {
       PeakListRow pklRow = group.get(row);
@@ -111,15 +113,21 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
             return pklRow.getPreferredPeakIdentity();
         }
       } else {
-
         CorrelationColumnType corrCol = getCorrelationColumn(col);
         R2GroupCorrelationData corr = group.getCorr(row);
+        R2RFullCorrelationData r2r = corr.getCorrelationToRow(selectedRow);
 
         switch (corrCol) {
           case AVG_COSINE_SIM:
-            return corr.getAvgPeakShapeSimilarity(type);
+            if (selectedRow.getID() == pklRow.getID())
+              return 1;
+            else
+              return r2r == null ? Double.NaN : r2r.getAvgPeakShapeSimilarity(type);
           case AVERAGE_TOTAL_SIM:
-            return corr.getAvgTotalSimilarity(type);
+            if (selectedRow.getID() == pklRow.getID())
+              return 1;
+            else
+              return r2r == null ? Double.NaN : r2r.getTotalSimilarity(type);
           case MAXHEIGHT:
             return corr.getMaxHeight();
           case AVERAGE_DP_COUNT:
@@ -139,7 +147,10 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
           case MIN_R_PEAKSHAPE:
             return corr.getMinPeakShapeR();
           case AVERAGE_COSINE_HEIGHT:
-            return corr.getAvgHeightSimilarity(type);
+            if (selectedRow.getID() == pklRow.getID())
+              return 1;
+            else
+              return r2r == null ? Double.NaN : r2r.getHeightSimilarity(type);
         }
       }
     } else {

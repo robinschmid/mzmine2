@@ -1,5 +1,6 @@
 package net.sf.mzmine.util.maths.similarity;
 
+import java.util.Arrays;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
@@ -105,6 +106,18 @@ public abstract class Similarity {
   };
 
 
+
+  /**
+   * Maximum fold-change
+   * 
+   * @param data
+   * @return
+   */
+  public static double maxFoldChange(double[][] data, final int i) {
+    double min = Arrays.stream(data).mapToDouble(d -> d[i]).min().getAsDouble();
+    double max = Arrays.stream(data).mapToDouble(d -> d[i]).max().getAsDouble();
+    return max / min;
+  }
 
   // #############################################
   // abstract methods

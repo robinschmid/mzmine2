@@ -392,7 +392,7 @@ public class MSEcorrGroupWindow extends JFrame {
     comboSimilarity.setSelectedItem(SimilarityMeasure.COSINE_SIM);
     panel_8.add(comboSimilarity, "cell 0 0,growx");
     comboSimilarity.addItemListener(e -> {
-      GroupedPeakListTableModel model = (GroupedPeakListTableModel) tableGroupMembers.getModel();
+      GroupedPeakListTableModel model = getTableModel();
       model.setSimilarityMeasure((SimilarityMeasure) comboSimilarity.getSelectedItem());
       model.fireTableDataChanged();
     });
@@ -420,6 +420,10 @@ public class MSEcorrGroupWindow extends JFrame {
     subWindow.setVisible(true);
     addKeyBindings();
     setCurrentGroupView(index);
+  }
+
+  private GroupedPeakListTableModel getTableModel() {
+    return (GroupedPeakListTableModel) tableGroupMembers.getModel();
   }
 
   /**
@@ -638,6 +642,9 @@ public class MSEcorrGroupWindow extends JFrame {
 
     PKLRowGroup g = peakList.getLastViewedGroup();
     g.setLastViewedRowI(i);
+    // update table
+    getTableModel().fireTableDataChanged();
+
     // set selected in networks
     PeakListRow row = g.get(i);
     pnAnnNetwork.setSelectedRow(row);

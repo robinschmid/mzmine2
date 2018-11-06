@@ -88,8 +88,6 @@ public class AnnotationRefinementTask extends AbstractTask {
 
   public static void refine(PeakList pkl, int trueThreshold, boolean deleteXmersOnMSMS) {
     for (PeakListRow row : pkl.getRows()) {
-      if (row.getID() == 304)
-        System.out.println("xmer");
       ESIAdductIdentity best = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, true);
       if (best == null)
         continue;
