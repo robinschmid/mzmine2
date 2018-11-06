@@ -137,7 +137,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
   // MAX INTENSITY PROFILE CORRELATION ACROSS SAMPLES
   private SimilarityMeasure heightSimMeasure;
-  private final boolean useMaxICorrFilter;
+  private final boolean useHeightCorrFilter;
   private final double minHeightCorr;
   private final int minDPHeightCorr;
 
@@ -227,7 +227,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     // END OF ADDUCTS AND REFINEMENT
 
     // intensity correlation across samples
-    useMaxICorrFilter =
+    useHeightCorrFilter =
         parameterSet.getParameter(MetaMSEcorrelateParameters.IMAX_CORRELATION).getValue();
     minHeightCorr = parameterSet.getParameter(MetaMSEcorrelateParameters.IMAX_CORRELATION)
         .getEmbeddedParameters().getParameter(InterSampleHeightCorrParameters.MIN_CORRELATION)
@@ -515,7 +515,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
                 // correlate if in rt range
                 R2RFullCorrelationData corr = corrR2R(raw, row, row2, minCorrelatedDataPoints,
                     minCorrDPOnFeatureEdge, minDPHeightCorr, minHeight, noiseLevelCorr,
-                    heightSimMeasure, minHeightCorr);
+                    useHeightCorrFilter, heightSimMeasure, minHeightCorr);
                 if (corr != null) {
                   // deletes correlations if criteria is not met
                   corr.validate(minTotalShapeCorrR, useTotalShapeCorrFilter,
@@ -614,12 +614,14 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    * @param raw
    * @param testRow
    * @param row
+   * @param useHeightCorrFilter
    * @return R2R correlation or null if invalid/no correlation
    */
   public static R2RFullCorrelationData corrR2R(RawDataFile[] raw, PeakListRow testRow,
       PeakListRow row, int minCorrelatedDataPoints, int minCorrDPOnFeatureEdge,
       int minDPFHeightCorr, double minHeight, double noiseLevelShapeCorr,
-      SimilarityMeasure heightSimilarity, double minHeightCorr) throws Exception {
+      boolean useHeightCorrFilter, SimilarityMeasure heightSimilarity, double minHeightCorr)
+      throws Exception {
     CorrelationData heightCorr =
         corrR2RFeatureHeight(raw, testRow, row, minHeight, noiseLevelShapeCorr, minDPFHeightCorr);
 
@@ -627,14 +629,14 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     double maxSlopeSignificance = 0.3;
     double minFoldChange = 10;
     // stop if slope is negative or 0
-    if (heightCorr != null && filterNegativeRegression(heightCorr, minFoldChange,
-        maxSlopeSignificance, minDPFHeightCorr, minHeightCorr, heightSimilarity))
+    if (useHeightCorrFilter && heightCorr != null && filterNegativeRegression(heightCorr,
+        minFoldChange, maxSlopeSignificance, minDPFHeightCorr, minHeightCorr, heightSimilarity))
       return null;
     else {
       Map<RawDataFile, CorrelationData> fCorr = corrR2RFeatureShapes(raw, testRow, row,
           minCorrelatedDataPoints, minCorrDPOnFeatureEdge, noiseLevelShapeCorr);
 
-      if (fCorr.isEmpty())
+      if (fCorr != null && fCorr.isEmpty())
         fCorr = null;
 
       R2RFullCorrelationData rCorr = new R2RFullCorrelationData(testRow, row, heightCorr, fCorr);
@@ -724,7 +726,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   private static boolean filterNegativeRegression(CorrelationData corr, double minFoldChange,
       double maxSlopeSignificance, int minDP, double minSimilarity,
       SimilarityMeasure heightSimilarity) {
-    if (corr.getDPCount() < 3 && corr.getDPCount() < minDP)
+    if (corr == null || (corr.getDPCount() < 3 || corr.getDPCount() < minDP))
       return false;
 
     double maxFC = Math.max(Similarity.maxFoldChange(corr.getData(), 0),
@@ -768,6 +770,11 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         // peak shape correlation
         CorrelationData data = corrFeatureShape(f1, f2, true, minCorrelatedDataPoints,
             minCorrDPOnFeatureEdge, noiseLevelShapeCorr);
+
+        System.out.println();
+        // if correlation is really bad return null
+        if (filterNegativeRegression(data, 5, 0.2, 7, 0.5, SimilarityMeasure.PEARSON))
+          return null;
         // enough data points
         if (data != null && data.getDPCount() >= minCorrelatedDataPoints)
           corrData.put(raw[r], data);
