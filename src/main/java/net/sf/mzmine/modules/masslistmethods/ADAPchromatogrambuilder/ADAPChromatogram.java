@@ -40,8 +40,7 @@ import net.sf.mzmine.datamodel.IsotopePattern;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.util.ScanUtils;
-
+import net.sf.mzmine.util.scans.ScanUtils;
 import java.io.PrintWriter;
 import java.io.FileNotFoundException;
 import java.io.*;

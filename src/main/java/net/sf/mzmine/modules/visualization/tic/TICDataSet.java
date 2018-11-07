@@ -33,8 +33,7 @@ import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.taskcontrol.Task;
 import net.sf.mzmine.taskcontrol.TaskPriority;
 import net.sf.mzmine.taskcontrol.TaskStatus;
-import net.sf.mzmine.util.ScanUtils;
-
+import net.sf.mzmine.util.scans.ScanUtils;
 import org.jfree.data.xy.AbstractXYZDataset;
 
 import com.google.common.collect.Range;

@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.util;
+package net.sf.mzmine.util.scans;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

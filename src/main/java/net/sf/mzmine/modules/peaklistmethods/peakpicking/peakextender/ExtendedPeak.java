@@ -14,8 +14,7 @@ import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.util.MathUtils;
 import net.sf.mzmine.util.PeakUtils;
-import net.sf.mzmine.util.ScanUtils;
-
+import net.sf.mzmine.util.scans.ScanUtils;
 import com.google.common.collect.Range;
 import com.google.common.primitives.Ints;
 import net.sf.mzmine.datamodel.impl.SimplePeakInformation;

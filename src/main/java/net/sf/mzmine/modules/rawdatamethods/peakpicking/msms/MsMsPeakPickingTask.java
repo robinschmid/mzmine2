@@ -34,8 +34,7 @@ import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelection;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
-import net.sf.mzmine.util.ScanUtils;
-
+import net.sf.mzmine.util.scans.ScanUtils;
 import com.google.common.collect.Range;
 
 public class MsMsPeakPickingTask extends AbstractTask {
