@@ -106,7 +106,7 @@ public class SimpleMetaMSEcorrelateParameters extends SimpleParameterSet {
       0.85);
 
   public static final BooleanParameter FILTER_FEATURE_HEIGHT_CORR = new BooleanParameter(
-      "Filter by feature height across samples",
+      "Feature height corr filter",
       "Filters based on Pearson correlation of the intensity distribution of two rows across all samples. "
           + "Missing values are inserted acoording to the noise level. Performs significance test for the slope beeing positive and "
           + "different from zero ",
