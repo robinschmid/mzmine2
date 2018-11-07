@@ -33,12 +33,23 @@ public class MSAnnotationLibrary {
   private final int maxMolecules, maxCharge;
 
   public MSAnnotationLibrary(MSAnnotationParameters parameterSet) {
-    mzTolerance = parameterSet.getParameter(MSAnnotationParameters.MZ_TOLERANCE).getValue();
+    this(parameterSet, parameterSet.getParameter(MSAnnotationParameters.MZ_TOLERANCE).getValue(),
+        parameterSet.getParameter(MSAnnotationParameters.MAX_CHARGE).getValue());
+  }
+
+  /**
+   * For simple setup
+   * 
+   * @param parameterSet
+   */
+  public MSAnnotationLibrary(MSAnnotationParameters parameterSet, MZTolerance mzTolerance,
+      int maxCharge) {
+    this.mzTolerance = mzTolerance;
+    this.maxCharge = maxCharge;
     // adducts stuff
     isPositive = parameterSet.getParameter(MSAnnotationParameters.POSITIVE_MODE).getValue()
         .equals("POSITIVE");
     maxMolecules = parameterSet.getParameter(MSAnnotationParameters.MAX_MOLECULES).getValue();
-    maxCharge = parameterSet.getParameter(MSAnnotationParameters.MAX_CHARGE).getValue();
 
     selectedAdducts = parameterSet.getParameter(MSAnnotationParameters.ADDUCTS).getValue()[0];
     selectedMods = parameterSet.getParameter(MSAnnotationParameters.ADDUCTS).getValue()[1];

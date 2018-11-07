@@ -97,57 +97,57 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   private AtomicDouble stageProgress = new AtomicDouble(0);
   private int totalRows;
 
-  private final ParameterSet parameters;
-  private final MZmineProject project;
+  protected ParameterSet parameters;
+  protected MZmineProject project;
   // GENERAL
-  private final PeakList peakList;
-  private final RTTolerance rtTolerance;
-  private boolean autoSuffix;
-  private String suffix;
+  protected PeakList peakList;
+  protected RTTolerance rtTolerance;
+  protected boolean autoSuffix;
+  protected String suffix;
 
   // ADDUCTS
-  private MSAnnotationLibrary library;
-  private final boolean searchAdducts;
+  protected MSAnnotationLibrary library;
+  protected boolean searchAdducts;
   // annotate only the ones in corr groups
-  private boolean annotateOnlyCorrelated;
-  private CheckMode adductCheckMode;
+  protected boolean annotateOnlyCorrelated;
+  protected CheckMode adductCheckMode;
   // MSMS refinement
-  private boolean doMSMSchecks;
-  private MSAnnMSMSCheckParameters msmsChecks;
+  protected boolean doMSMSchecks;
+  protected MSAnnMSMSCheckParameters msmsChecks;
 
   // GROUP and MIN SAMPLES FILTER
-  private final boolean useGroups;
-  private final String groupingParameter;
+  protected boolean useGroups;
+  protected String groupingParameter;
   /**
    * Minimum percentage of samples (in group if useGroup) that have to contain a feature
    */
-  private final MinimumFeatureFilter minFFilter;
+  protected MinimumFeatureFilter minFFilter;
   // min adduct height and feature height for minFFilter
-  private double minHeight;
+  protected double minHeight;
 
   // FEATURE SHAPE CORRELATION
   // correlation r to identify negative correlation
-  private SimilarityMeasure shapeSimMeasure;
-  private final boolean useTotalShapeCorrFilter;
-  private final double minTotalShapeCorrR;
-  private final double minShapeCorrR;
-  private final double noiseLevelCorr;
-  private final int minCorrelatedDataPoints;
-  private final int minCorrDPOnFeatureEdge;
+  protected SimilarityMeasure shapeSimMeasure;
+  protected boolean useTotalShapeCorrFilter;
+  protected double minTotalShapeCorrR;
+  protected double minShapeCorrR;
+  protected double noiseLevelCorr;
+  protected int minCorrelatedDataPoints;
+  protected int minCorrDPOnFeatureEdge;
 
   // MAX INTENSITY PROFILE CORRELATION ACROSS SAMPLES
-  private SimilarityMeasure heightSimMeasure;
-  private final boolean useHeightCorrFilter;
-  private final double minHeightCorr;
-  private final int minDPHeightCorr;
+  protected SimilarityMeasure heightSimMeasure;
+  protected boolean useHeightCorrFilter;
+  protected double minHeightCorr;
+  protected int minDPHeightCorr;
 
   // stage of processing
   private Stage stage;
 
   // output
-  private MSEGroupedPeakList groupedPKL;
-  private boolean performAnnotationRefinement;
-  private AnnotationRefinementParameters refineParam;
+  protected MSEGroupedPeakList groupedPKL;
+  protected boolean performAnnotationRefinement;
+  protected AnnotationRefinementParameters refineParam;
 
 
   /**
@@ -249,6 +249,12 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       suffix = parameters.getParameter(MetaMSEcorrelateParameters.SUFFIX).getEmbeddedParameter()
           .getValue();
   }
+
+
+
+  public MetaMSEcorrelateTask() {}
+
+
 
   @Override
   public double getFinishedPercentage() {

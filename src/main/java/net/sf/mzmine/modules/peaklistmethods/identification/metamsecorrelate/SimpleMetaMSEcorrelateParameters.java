@@ -19,10 +19,7 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate;
 
 import java.awt.Window;
-import javax.swing.JComponent;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.FeatureShapeCorrelationParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.InterSampleHeightCorrParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationParameters.Setup;
@@ -33,19 +30,34 @@ import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
+import net.sf.mzmine.parameters.parametertypes.MassListParameter;
 import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
+import net.sf.mzmine.parameters.parametertypes.PercentParameter;
 import net.sf.mzmine.parameters.parametertypes.StringParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
-import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleComponent;
 import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
 import net.sf.mzmine.parameters.parametertypes.submodules.SubModuleParameter;
+import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTToleranceParameter;
 import net.sf.mzmine.util.ExitCode;
 
-public class MetaMSEcorrelateParameters extends SimpleParameterSet {
+public class SimpleMetaMSEcorrelateParameters extends SimpleParameterSet {
 
   // General parameters
   public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter();
+
+  public static final MassListParameter MS2_MASSLISTS =
+      new MassListParameter("Mass lists (MS2)", "MS2 mass lists for MS/MS annotation verification");
+
+  // MZ-tolerance: deisotoping, adducts
+  public static final MZToleranceParameter MZ_TOLERANCE = new MZToleranceParameter("m/z tolerance",
+      "Tolerance value of the m/z difference between peaks");
+
+  // MZ-tolerance: MS2
+  public static final MZToleranceParameter MZ_TOLERANCE_MS2 = new MZToleranceParameter(
+      "m/z tolerance MS2", "Tolerance of MS1 to MS2 and within MS2 signals");
+
+
   // RT-tolerance: Grouping
   public static final RTToleranceParameter RT_TOLERANCE = new RTToleranceParameter("RT tolerance",
       "Maximum allowed difference of retention time to set a relationship between peaks");
@@ -72,6 +84,13 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
           MZmineCore.getConfiguration().getIntensityFormat(), 1E4);
 
   /**
+   * Filter by minimum height
+   */
+  public static final DoubleParameter NOISE_LEVEL_MS2 = new DoubleParameter("Noise level MS2",
+      "Noise level of MS2, used for MS2 verification of multimers and in-source fragments (zero should be fine, as mass lists are already noise filtered)",
+      MZmineCore.getConfiguration().getIntensityFormat(), 0d);
+
+  /**
    * Filter out by minimum number of features in all samples and/or in at least one sample group
    * features with height>=minHeight
    */
@@ -81,17 +100,17 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
           new MinimumFeaturesFilterParameters(true));
 
 
-  // Sub parameters of correlation grouping
-  public static final SubModuleParameter FSHAPE_CORRELATION = new SubModuleParameter(
-      "Correlation grouping", "Grouping based on Pearson correlation of the feature shapes.",
-      new FeatureShapeCorrelationParameters(true));
+  public static final PercentParameter MIN_FSHAPE_CORR = new PercentParameter(
+      "Min feature shape correlation",
+      "Minimum average feature shape correlation (Pearson) (min 5 data points and 2 on each peak edge) ",
+      0.85);
 
-  public static final OptionalModuleParameter<InterSampleHeightCorrParameters> IMAX_CORRELATION =
-      new OptionalModuleParameter<>("Feature height correlation",
-          "Feature to feature correlation of the maximum intensities across all samples.",
-          new InterSampleHeightCorrParameters(true), true);
-
-
+  public static final BooleanParameter FILTER_FEATURE_HEIGHT_CORR = new BooleanParameter(
+      "Filter by feature height across samples",
+      "Filters based on Pearson correlation of the intensity distribution of two rows across all samples. "
+          + "Missing values are inserted acoording to the noise level. Performs significance test for the slope beeing positive and "
+          + "different from zero ",
+      true);
 
   // #####################################################################################
   // Intensity profile correlation
@@ -102,29 +121,26 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
   public static final OptionalModuleParameter<MSAnnotationParameters> ADDUCT_LIBRARY =
       new OptionalModuleParameter<>("MS annotations",
           "Build adduct, in-source fragment, cluster,.. library and match all features",
-          new MSAnnotationParameters(Setup.SUB), true);
-
-  public static final BooleanParameter ANNOTATE_ONLY_GROUPED =
-      new BooleanParameter("Annotate only corr grouped",
-          "Only rows in a correlation group are checked for annotations", true);
+          new MSAnnotationParameters(Setup.SIMPLE), true);
 
   public static final OptionalParameter<StringParameter> SUFFIX = new OptionalParameter<>(
       new StringParameter("Suffix (or auto)", "Select suffix or deselect for auto suffix"), false);
 
 
   // Constructor
-  public MetaMSEcorrelateParameters() {
-    super(new Parameter[] {PEAK_LISTS, RT_TOLERANCE,
+  public SimpleMetaMSEcorrelateParameters() {
+    super(new Parameter[] {PEAK_LISTS, MS2_MASSLISTS, MZ_TOLERANCE, MZ_TOLERANCE_MS2, RT_TOLERANCE,
         // Group and minimum samples filter
         GROUPSPARAMETER,
         // feature filter
-        MIN_HEIGHT, NOISE_LEVEL, MIN_SAMPLES_FILTER,
+        MIN_HEIGHT, NOISE_LEVEL, NOISE_LEVEL_MS2, //
+        MIN_SAMPLES_FILTER,
         // feature shape correlation
-        FSHAPE_CORRELATION,
-        // intensity max correlation
-        IMAX_CORRELATION,
+        MIN_FSHAPE_CORR,
+        // height correlation
+        FILTER_FEATURE_HEIGHT_CORR,
         // adducts
-        ADDUCT_LIBRARY, ANNOTATE_ONLY_GROUPED,
+        ADDUCT_LIBRARY,
         // suffix or auto suffix
         SUFFIX});
   }
@@ -146,20 +162,13 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
         choices[i + 1] = newChoices[i].getName();
       }
     }
-    getParameter(MetaMSEcorrelateParameters.GROUPSPARAMETER).getEmbeddedParameter()
+    getParameter(SimpleMetaMSEcorrelateParameters.GROUPSPARAMETER).getEmbeddedParameter()
         .setChoices(choices);
     if (choices.length > 1)
-      getParameter(MetaMSEcorrelateParameters.GROUPSPARAMETER).getEmbeddedParameter()
+      getParameter(SimpleMetaMSEcorrelateParameters.GROUPSPARAMETER).getEmbeddedParameter()
           .setValue(choices[1]);
 
     ParameterSetupDialog dialog = new ParameterSetupDialog(parent, valueCheckRequired, this);
-
-    // enable
-    JComponent com = dialog.getComponentForParameter(ANNOTATE_ONLY_GROUPED);
-    OptionalModuleComponent adducts =
-        (OptionalModuleComponent) dialog.getComponentForParameter(ADDUCT_LIBRARY);
-    adducts.addItemListener(e -> com.setEnabled(adducts.isSelected()));
-
     dialog.setVisible(true);
     return dialog.getExitCode();
   }

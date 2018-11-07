@@ -78,12 +78,6 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
       "The smaller feature has to overlap with at least X% of its intensity with the other feature",
       0.6);
 
-  /**
-   * do not accept one feature out of RTTolerance or minPercOverlap
-   */
-  public static final BooleanParameter STRICT_RULES = new BooleanParameter("Strict rules",
-      "Do not allow one feature to be out of RTTolerance or minimum intensity overlap, when testing overlap of features.",
-      true);
 
   /**
    * do not accept estimated features
@@ -106,10 +100,10 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
    */
   public MinimumFeaturesFilterParameters(boolean isSub) {
     super(isSub
-        ? new Parameter[] {MIN_SAMPLES_ALL, MIN_SAMPLES_GROUP, MIN_INTENSITY_OVERLAP, STRICT_RULES,
+        ? new Parameter[] {MIN_SAMPLES_ALL, MIN_SAMPLES_GROUP, MIN_INTENSITY_OVERLAP,
             EXCLUDE_ESTIMATED}
         : new Parameter[] {GROUPSPARAMETER, RT_TOLERANCE, MIN_HEIGHT, MIN_SAMPLES_ALL,
-            MIN_SAMPLES_GROUP, MIN_INTENSITY_OVERLAP, STRICT_RULES, EXCLUDE_ESTIMATED});
+            MIN_SAMPLES_GROUP, MIN_INTENSITY_OVERLAP, EXCLUDE_ESTIMATED});
     this.isSub = isSub;
   }
 
@@ -127,10 +121,9 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
     AbsoluteNRelativeInt minFInSamples = this.getParameter(MIN_SAMPLES_ALL).getValue();
     AbsoluteNRelativeInt minFInGroups = this.getParameter(MIN_SAMPLES_GROUP).getValue();
     double minIPercOverlap = this.getParameter(MIN_INTENSITY_OVERLAP).getValue();
-    boolean strict = this.getParameter(STRICT_RULES).getValue();
     boolean excludeEstimated = this.getParameter(EXCLUDE_ESTIMATED).getValue();
     return new MinimumFeatureFilter(project, rawDataFiles, groupingParameter, minFInSamples,
-        minFInGroups, minHeight, minIPercOverlap, strict, excludeEstimated);
+        minFInGroups, minHeight, minIPercOverlap, excludeEstimated);
   }
 
   /**
@@ -143,10 +136,9 @@ public class MinimumFeaturesFilterParameters extends SimpleParameterSet {
     AbsoluteNRelativeInt minFInGroups = this.getParameter(MIN_SAMPLES_GROUP).getValue();
     double minFeatureHeight = this.getParameter(MIN_HEIGHT).getValue();
     double minIPercOverlap = this.getParameter(MIN_INTENSITY_OVERLAP).getValue();
-    boolean strict = this.getParameter(STRICT_RULES).getValue();
     boolean excludeEstimated = this.getParameter(EXCLUDE_ESTIMATED).getValue();
     return new MinimumFeatureFilter(minFInSamples, minFInGroups, minFeatureHeight, minIPercOverlap,
-        strict, excludeEstimated);
+        excludeEstimated);
   }
 
 

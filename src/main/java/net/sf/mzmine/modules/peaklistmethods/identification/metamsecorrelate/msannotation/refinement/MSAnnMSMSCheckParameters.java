@@ -45,12 +45,13 @@ public class MSAnnMSMSCheckParameters extends SimpleParameterSet {
   // General parameters
   public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter();
 
-  public static final MassListParameter MASS_LIST = new MassListParameter();
+  public static final MassListParameter MASS_LIST =
+      new MassListParameter("Mass lists (MS2)", "MS2 mass lists");
 
   // INCLUDED in sub
   // MZ-tolerance: deisotoping, adducts
   public static final MZToleranceParameter MZ_TOLERANCE = new MZToleranceParameter(
-      "m/z tolerance (MS/MS)",
+      "m/z tolerance (MS2)",
       "Tolerance value of the m/z difference between MS2 signals (and the precursor, if selected)");
 
   public static final DoubleParameter MIN_HEIGHT = new DoubleParameter("Min height (in MS2)",

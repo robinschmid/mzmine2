@@ -37,6 +37,10 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.RTToleranceParameter;
 import net.sf.mzmine.util.ExitCode;
 
 public class MSAnnotationParameters extends SimpleParameterSet {
+  // different depth of settings
+  public enum Setup {
+    FULL, SUB, SIMPLE;
+  }
 
   // NOT INCLUDED in sub
   // General parameters
@@ -84,17 +88,40 @@ public class MSAnnotationParameters extends SimpleParameterSet {
       new OptionalModuleParameter<AnnotationRefinementParameters>("Annotation refinement", "",
           new AnnotationRefinementParameters(true), true);
 
+  // setup
+  private Setup setup;
+
   // Constructor
   public MSAnnotationParameters() {
-    this(false);
+    this(Setup.FULL);
   }
 
-  public MSAnnotationParameters(boolean isSub) {
-    super(isSub ? // no peak list and rt tolerance, min height
-        new Parameter[] {MZ_TOLERANCE, CHECK_MODE, POSITIVE_MODE, MAX_CHARGE, MAX_MOLECULES,
-            MSMS_CHECK, ANNOTATION_REFINEMENTS, ADDUCTS}
-        : new Parameter[] {PEAK_LISTS, RT_TOLERANCE, MZ_TOLERANCE, CHECK_MODE, MIN_HEIGHT,
-            POSITIVE_MODE, MAX_CHARGE, MAX_MOLECULES, MSMS_CHECK, ANNOTATION_REFINEMENTS, ADDUCTS});
+  public MSAnnotationParameters(Setup setup) {
+    super(createParam(setup));
+    this.setup = setup;
+  }
+
+  private static Parameter[] createParam(Setup setup) {
+    switch (setup) {
+      case FULL:
+        return new Parameter[] {PEAK_LISTS, RT_TOLERANCE, MZ_TOLERANCE, CHECK_MODE, MIN_HEIGHT,
+            POSITIVE_MODE, MAX_CHARGE, MAX_MOLECULES, MSMS_CHECK, ANNOTATION_REFINEMENTS, ADDUCTS};
+      case SUB:
+        return new Parameter[] {MZ_TOLERANCE, CHECK_MODE, POSITIVE_MODE, MAX_CHARGE, MAX_MOLECULES,
+            MSMS_CHECK, ANNOTATION_REFINEMENTS, ADDUCTS};
+      case SIMPLE:
+        return new Parameter[] {CHECK_MODE, POSITIVE_MODE, MAX_MOLECULES, ADDUCTS};
+    }
+    return new Parameter[0];
+  }
+
+  /**
+   * The setup mode
+   * 
+   * @return
+   */
+  public Setup getSetup() {
+    return setup;
   }
 
   @Override

@@ -35,19 +35,17 @@ public class MinimumFeatureFilter {
   // percent of intensity of the smaller to overlap the larger feature
   private double minIPercOverlap;
   // do not accept that feature in one raw file is out of rtRange or minIPercOverlap
-  private boolean strictRules = true;
+  private boolean strictRules = false;
 
   private boolean excludeEstimatedFeatures = false;
 
 
   public MinimumFeatureFilter(AbsoluteNRelativeInt minFInSamples, AbsoluteNRelativeInt minFInGroups,
-      double minFeatureHeight, double minIPercOverlap, boolean strictRules,
-      boolean excludeEstimatedFeatures) {
+      double minFeatureHeight, double minIPercOverlap, boolean excludeEstimatedFeatures) {
     this.minFInSamples = minFInSamples;
     this.minFInGroups = minFInGroups;
     this.minFeatureHeight = minFeatureHeight;
     this.minIPercOverlap = minIPercOverlap;
-    this.strictRules = strictRules;
     this.excludeEstimatedFeatures = excludeEstimatedFeatures;
   }
 
@@ -63,10 +61,8 @@ public class MinimumFeatureFilter {
    */
   public MinimumFeatureFilter(MZmineProject project, RawDataFile[] raw, String groupParam,
       AbsoluteNRelativeInt minFInSamples, AbsoluteNRelativeInt minFInGroups,
-      double minFeatureHeight, double minIPercOverlap, boolean strictRules,
-      boolean excludeEstimatedFeatures) {
-    this(minFInSamples, minFInGroups, minFeatureHeight, minIPercOverlap, strictRules,
-        excludeEstimatedFeatures);
+      double minFeatureHeight, double minIPercOverlap, boolean excludeEstimatedFeatures) {
+    this(minFInSamples, minFInGroups, minFeatureHeight, minIPercOverlap, excludeEstimatedFeatures);
     this.project = project;
     setSampleGroups(project, raw, groupParam);
   }

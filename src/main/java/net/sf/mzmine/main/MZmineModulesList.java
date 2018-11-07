@@ -51,6 +51,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.formulapredictionpea
 import net.sf.mzmine.modules.peaklistmethods.identification.fragmentsearch.FragmentSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.lipididentification.LipidSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.MetaMSEcorrelateModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.SimpleMetaMSEcorrelateModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.export.ExportCorrAnnotationModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ms2search.Ms2SearchModule;
@@ -192,7 +193,7 @@ public class MZmineModulesList {
       AdductSearchModule.class, ComplexSearchModule.class, OnlineDBSearchModule.class,
       LipidSearchModule.class, CameraSearchModule.class, NistMsSearchModule.class,
       FormulaPredictionPeakListModule.class, Ms2SearchModule.class, SiriusProcessingModule.class,
-      MetaMSEcorrelateModule.class, MSAnnotationModule.class,
+      MetaMSEcorrelateModule.class, SimpleMetaMSEcorrelateModule.class, MSAnnotationModule.class,
 
       // Visualizers
       TICVisualizerModule.class, SpectraVisualizerModule.class, TwoDVisualizerModule.class,
