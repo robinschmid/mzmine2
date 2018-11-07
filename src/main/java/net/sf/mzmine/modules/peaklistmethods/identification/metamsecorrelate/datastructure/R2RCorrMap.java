@@ -1,10 +1,8 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure;
 
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -21,7 +19,7 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
  * @author Robin Schmid
  *
  */
-public class R2RCorrMap extends ConcurrentHashMap<String, R2RCorrelationData> {
+public class R2RCorrMap extends R2RMap<R2RCorrelationData> {
   private static final Logger LOG = Logger.getLogger(R2RCorrMap.class.getName());
   /**
    * 
@@ -43,21 +41,6 @@ public class R2RCorrMap extends ConcurrentHashMap<String, R2RCorrelationData> {
 
   public MinimumFeatureFilter getMinFeatureFilter() {
     return minFFilter;
-  }
-
-  /**
-   * Redirects to Map.put
-   * 
-   * @param row
-   * @param row2
-   * @param corr
-   */
-  public void add(PeakListRow row, PeakListRow row2, R2RCorrelationData corr) {
-    this.put(toKey(row, row2), corr);
-  }
-
-  public R2RCorrelationData get(PeakListRow row, PeakListRow row2) {
-    return get(toKey(row, row2));
   }
 
   public Stream<R2RFullCorrelationData> streamCorrData() {
@@ -183,26 +166,4 @@ public class R2RCorrMap extends ConcurrentHashMap<String, R2RCorrelationData> {
     }
   }
 
-  /**
-   * Key as lowID,highID
-   * 
-   * @param row
-   * @param row2
-   * @return
-   */
-  public static String toKey(PeakListRow row, PeakListRow row2) {
-    int id = row.getID();
-    int id2 = row2.getID();
-    return Math.min(id, id2) + "," + Math.max(id, id2);
-  }
-
-  /**
-   * The two row IDs the first is always the lower one
-   * 
-   * @param key
-   * @return
-   */
-  public static int[] toKeyIDs(String key) {
-    return Arrays.stream(key.split(",")).mapToInt(Integer::parseInt).toArray();
-  }
 }

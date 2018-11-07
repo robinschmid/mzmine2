@@ -19,7 +19,6 @@
 package net.sf.mzmine.datamodel.impl;
 
 import java.text.Format;
-
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.main.MZmineCore;
 
@@ -56,6 +55,14 @@ public class SimpleDataPoint implements DataPoint {
   @Override
   public double getMZ() {
     return mz;
+  }
+
+  public void setIntensity(double intensity) {
+    this.intensity = intensity;
+  }
+
+  public void setMz(double mz) {
+    this.mz = mz;
   }
 
   @Override
