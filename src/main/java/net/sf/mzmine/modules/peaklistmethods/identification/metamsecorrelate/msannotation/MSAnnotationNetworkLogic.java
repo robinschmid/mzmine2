@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 import net.sf.mzmine.datamodel.PeakIdentity;
@@ -425,8 +426,9 @@ public class MSAnnotationNetworkLogic {
    * @return
    */
   public static AnnotationNetwork[] getAllNetworks(PeakListRow row) {
-    return MSAnnotationNetworkLogic.getAllAnnotations(row).stream().map(id -> id.getNetwork())
-        .filter(net -> net != null).toArray(AnnotationNetwork[]::new);
+    return MSAnnotationNetworkLogic.getAllAnnotations(row).stream()
+        .map(ESIAdductIdentity::getNetwork).filter(Objects::nonNull).distinct()
+        .toArray(AnnotationNetwork[]::new);
   }
 
   /**

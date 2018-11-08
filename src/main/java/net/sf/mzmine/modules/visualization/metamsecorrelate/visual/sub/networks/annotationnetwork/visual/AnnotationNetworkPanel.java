@@ -73,13 +73,12 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     clear();
 
     if (rows != null) {
-      // sort by rt
+      // sort by ID
       Arrays.sort(rows, new PeakListRowSorter(SortingProperty.ID, SortingDirection.Ascending));
 
       AtomicInteger added = new AtomicInteger(0);
       // add all connections
       for (PeakListRow row : rows) {
-        int rowID = row.getID();
         for (AnnotationNetwork net : MSAnnotationNetworkLogic.getAllNetworks(row)) {
           if (net.hasSmallestID(row)) {
             addNetworkToGraph(rows, net, added);

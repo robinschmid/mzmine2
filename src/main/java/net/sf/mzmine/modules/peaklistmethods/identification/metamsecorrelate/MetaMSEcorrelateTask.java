@@ -53,6 +53,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RFullCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter.OverlapResult;
@@ -66,6 +67,8 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msa
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.AnnotationRefinementTask;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.MSAnnMSMSCheckParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.MSAnnMSMSCheckTask;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.similarity.MS2SimilarityTask;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.similarity.R2RMS2Similarity;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
@@ -81,7 +84,8 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   private static final Logger LOG = Logger.getLogger(MetaMSEcorrelateTask.class.getName());
 
   public enum Stage {
-    CORRELATION_ANNOTATION(0.7), GROUPING(0.75), ANNOTATION(0.95), REFINEMENT(1d);
+    CORRELATION_ANNOTATION(0.5), GROUPING(0.6), MS2_SIMILARITY(0.8), ANNOTATION(0.95), REFINEMENT(
+        1d);
     private double finalProgress;
 
     Stage(double finalProgress) {
@@ -316,6 +320,15 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         groupedPKL.setCorrelationMap(corrMap);
         groupedPKL.setGroups(groups);
 
+        // do MSMS comparison of group
+        double maxDiff = msmsChecks.getParameter(MSAnnMSMSCheckParameters.MZ_TOLERANCE).getValue()
+            .getMzTolerance();
+        maxDiff = Math.min(maxDiff, 0.0015);
+        setStage(Stage.MS2_SIMILARITY);
+        doGroupMSMSSimilarityCheck(this, stageProgress, groups,
+            msmsChecks.getParameter(MSAnnMSMSCheckParameters.MASS_LIST).getValue(), maxDiff, 3, 3,
+            25);
+
 
         // annotation at groups stage
         if (searchAdducts && annotateOnlyCorrelated) {
@@ -404,6 +417,25 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       setErrorMessage(t.getMessage());
       throw new MSDKRuntimeException(t);
     }
+  }
+
+  public static void doGroupMSMSSimilarityCheck(AbstractTask task, AtomicDouble stageProgress,
+      PKLRowGroupList groups, String massList, double maxMassDiff, int minMatch, int minDP,
+      int maxDPForDiff) {
+    LOG.info("Calc MS/MS similarity of groups");
+    groups.parallelStream().forEach(g -> {
+      if (!task.isCanceled()) {
+        doGroupMSMSSimilarityCheck(g, massList, maxMassDiff, minMatch, minDP, maxDPForDiff);
+        stageProgress.addAndGet(1d / groups.size());
+      }
+    });
+  }
+
+  public static void doGroupMSMSSimilarityCheck(PKLRowGroup g, String massList, double maxMassDiff,
+      int minMatch, int minDP, int maxDPForDiff) {
+    R2RMap<R2RMS2Similarity> map = MS2SimilarityTask.doCheck(g.toArray(new PeakListRow[g.size()]),
+        massList, maxMassDiff, minMatch, minDP, maxDPForDiff);
+    g.setMS2SimilarityMap(map);
   }
 
   /**

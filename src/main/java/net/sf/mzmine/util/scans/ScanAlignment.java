@@ -152,9 +152,10 @@ public class ScanAlignment {
   public static double[][] toIntensityArray(List<DataPoint[]> diffAligned) {
     double[][] data = new double[diffAligned.size()][];
     for (int i = 0; i < data.length; i++) {
-      data[i] = new double[diffAligned.get(i).length];
-      for (int d = 0; d < diffAligned.size(); d++) {
-        DataPoint dp = diffAligned.get(i)[d];
+      DataPoint[] dps = diffAligned.get(i);
+      data[i] = new double[dps.length];
+      for (int d = 0; d < dps.length; d++) {
+        DataPoint dp = dps[d];
         data[i][d] = dp != null ? dp.getIntensity() : 0;
       }
     }

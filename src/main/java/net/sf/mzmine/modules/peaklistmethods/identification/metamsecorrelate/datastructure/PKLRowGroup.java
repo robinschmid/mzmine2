@@ -8,6 +8,7 @@ import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.similarity.R2RMS2Similarity;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 
 public class PKLRowGroup extends ArrayList<PeakListRow> {
@@ -26,6 +27,8 @@ public class PKLRowGroup extends ArrayList<PeakListRow> {
   private double[] rtSum;
   private int[] rtValues;
   private double[] min, max;
+  // MS/MS similarity map
+  private R2RMap<R2RMS2Similarity> ms2SimilarityMap;
 
   public PKLRowGroup(final RawDataFile[] raw, int groupID) {
     super();
@@ -275,6 +278,15 @@ public class PKLRowGroup extends ArrayList<PeakListRow> {
     if (index != -1)
       return getCorr(index);
     return null;
+  }
+
+
+  public R2RMap<R2RMS2Similarity> getMS2SimilarityMap() {
+    return ms2SimilarityMap;
+  }
+
+  public void setMS2SimilarityMap(R2RMap<R2RMS2Similarity> map) {
+    this.ms2SimilarityMap = map;
   }
 
 }

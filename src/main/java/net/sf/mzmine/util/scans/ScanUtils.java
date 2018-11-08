@@ -27,17 +27,17 @@ import java.text.Format;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
-
 import javax.annotation.Nonnull;
-
 import com.google.common.collect.Range;
-
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.MassSpectrumType;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.util.DataPointSorter;
+import net.sf.mzmine.util.SortingDirection;
+import net.sf.mzmine.util.SortingProperty;
 
 /**
  * Scan related utilities
@@ -523,7 +523,7 @@ public class ScanUtils {
     return Range.closed(lowRt, highRt);
   }
 
-   public static byte[] encodeDataPointsToBytes(DataPoint dataPoints[]) {
+  public static byte[] encodeDataPointsToBytes(DataPoint dataPoints[]) {
     ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
     DataOutputStream peakStream = new DataOutputStream(byteStream);
     for (int i = 0; i < dataPoints.length; i++) {
@@ -572,6 +572,23 @@ public class ScanUtils {
     byte[] bytes = Base64.getDecoder().decode(new String(encodedData));
     DataPoint dataPoints[] = decodeDataPointsFromBytes(bytes);
     return dataPoints;
+  }
+
+  /**
+   * Most abundant n signals
+   * 
+   * @param scan
+   * @param n
+   * @return
+   */
+  public static DataPoint[] getMostAbundantSignals(DataPoint[] scan, int n) {
+    if (scan.length <= n)
+      return scan;
+    else {
+      Arrays.sort(scan,
+          new DataPointSorter(SortingProperty.Intensity, SortingDirection.Descending));
+      return Arrays.copyOf(scan, n);
+    }
   }
 
 }

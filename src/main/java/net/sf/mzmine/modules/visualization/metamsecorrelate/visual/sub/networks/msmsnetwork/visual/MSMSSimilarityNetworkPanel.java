@@ -67,11 +67,11 @@ public class MSMSSimilarityNetworkPanel extends NetworkPanel {
       if (r2r.getSpectralAvgCosine() >= minCosine)
         addNewEdge(node1, node2, r2r.getSpectralAvgCosine(), "specCos", "rgb(50,150,50)");
       if (r2r.getSpectralAvgOverlap() >= minOverlap)
-        addNewEdge(node1, node2, r2r.getSpectralAvgCosine(), "specShared", "rgb(150,50,50)");
+        addNewEdge(node1, node2, r2r.getSpectralAvgOverlap(), "specShared", "rgb(150,50,50)");
       if (r2r.getDiffAvgCosine() >= minCosine)
-        addNewEdge(node1, node2, r2r.getSpectralAvgCosine(), "diffCos", "rgb(50,50,150)");
+        addNewEdge(node1, node2, r2r.getDiffAvgCosine(), "diffCos", "rgb(50,50,150)");
       if (r2r.getDiffAvgOverlap() >= minOverlap)
-        addNewEdge(node1, node2, r2r.getSpectralAvgCosine(), "diffShared", "rgb(150,150,150)");
+        addNewEdge(node1, node2, r2r.getDiffAvgOverlap(), "diffShared", "rgb(150,150,150)");
     }
 
     // add id name
@@ -81,11 +81,10 @@ public class MSMSSimilarityNetworkPanel extends NetworkPanel {
 
   private void addNewEdge(String node1, String node2, double corr, String edgeSuffix,
       String color) {
-    String label = edgeSuffix + percForm.format(corr);
+    String label = edgeSuffix + "=" + percForm.format(corr);
     String edge = node1 + node2 + edgeSuffix;
     graph.addEdge(edge, node1, node2);
     graph.getEdge(edge).addAttribute("ui.label", label);
-    graph.getEdge(edge).setAttribute("edge.stroke-color", color);
   }
 
   private String toNodeName(PeakListRow row) {

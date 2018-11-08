@@ -75,6 +75,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msa
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.annotationnetwork.visual.AnnotationNetworkPanel;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.corrnetwork.visual.CorrNetworkPanel;
+import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.msmsnetwork.visual.MSMSSimilarityNetworkPanel;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.rtnetwork.visual.RTNetworkPanel;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.pseudospectra.PseudoSpectrum;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.table.GroupedPeakListTable;
@@ -129,12 +130,14 @@ public class MSEcorrGroupWindow extends JFrame {
   private AnnotationNetworkPanel pnAnnNetwork;
   private CorrNetworkPanel pnCorrNetwork;
   private RTNetworkPanel pnRTNetwork;
+  private MSMSSimilarityNetworkPanel pnMSMSNetwork;
   private JButton btnSubWindow;
   private JButton btnMsmsWindow;
   private JLabel lblNet;
   private JTextField txtSkipSmallNetwork;
   private JPanel panel_8;
   private JComboBox<SimilarityMeasure> comboSimilarity;
+  private JCheckBox cbMS2SimilarityNetwork;
 
   /**
    * Create the frame.
@@ -200,9 +203,12 @@ public class MSEcorrGroupWindow extends JFrame {
     pnCorrNetwork = new CorrNetworkPanel(true);
     splitNetworkSub.setRightComponent(pnCorrNetwork);
 
+    pnMSMSNetwork = new MSMSSimilarityNetworkPanel(true);
+    pnMSMSNetwork.setMin(0.4, 3);
+    splitNetworkSub.setLeftComponent(pnMSMSNetwork);
+
     pnRTNetwork = new RTNetworkPanel(true);
     pnRTNetwork.setTitle("Average retention time network");
-    splitNetworkSub.setLeftComponent(pnRTNetwork);
     // crucial need to set up
     R2RCorrMap map = peakList.getCorrelationMap();
     if (map != null)
@@ -386,7 +392,13 @@ public class MSEcorrGroupWindow extends JFrame {
 
     panel_8 = new JPanel();
     pnMenu.add(panel_8);
-    panel_8.setLayout(new MigLayout("", "[grow]", "[]"));
+    panel_8.setLayout(new MigLayout("", "[][grow]", "[][]"));
+
+    cbMS2SimilarityNetwork = new JCheckBox("MS/MS similarity network");
+    cbMS2SimilarityNetwork.setSelected(true);
+    cbMS2SimilarityNetwork.addItemListener(e -> setActiveFirstNetwork(
+        cbMS2SimilarityNetwork.isSelected() ? pnMSMSNetwork : pnRTNetwork));
+    panel_8.add(cbMS2SimilarityNetwork, "cell 0 1");
 
     comboSimilarity = new JComboBox<SimilarityMeasure>(SimilarityMeasure.values());
     comboSimilarity.setSelectedItem(SimilarityMeasure.COSINE_SIM);
@@ -420,6 +432,15 @@ public class MSEcorrGroupWindow extends JFrame {
     subWindow.setVisible(true);
     addKeyBindings();
     setCurrentGroupView(index);
+  }
+
+  /**
+   * Change from RT network to
+   * 
+   * @param pn
+   */
+  private void setActiveFirstNetwork(JPanel pn) {
+    splitNetworkSub.setLeftComponent(pn);
   }
 
   private GroupedPeakListTableModel getTableModel() {
@@ -649,6 +670,7 @@ public class MSEcorrGroupWindow extends JFrame {
     PeakListRow row = g.get(i);
     pnAnnNetwork.setSelectedRow(row);
     pnCorrNetwork.setSelectedRow(row);
+    pnMSMSNetwork.setSelectedRow(row);
     pnRTNetwork.setSelectedRow(row);
     // auto show raw file containing lastViewed row
     boolean renewRaw = checkAutoShowRawFile();
@@ -683,6 +705,8 @@ public class MSEcorrGroupWindow extends JFrame {
       createCorrelationNetwork();
       // create RT network
       createRTNetwork();
+      // create msms network
+      createMSMSNetwork();
 
       // MSMS window
       if (msmsWindow.isVisible()) {
@@ -1076,6 +1100,21 @@ public class MSEcorrGroupWindow extends JFrame {
       pnCorrNetwork.resetZoom();
       pnCorrNetwork.revalidate();
       pnCorrNetwork.repaint();
+    } else {
+      pnAnnNetwork.setPeakListRows(null);
+    }
+  }
+
+  /**
+   * MSMS network
+   */
+  private void createMSMSNetwork() {
+    PKLRowGroup g = peakList.getLastViewedGroup();
+    if (g != null) {
+      pnMSMSNetwork.setMap(g.getMS2SimilarityMap());
+      pnMSMSNetwork.resetZoom();
+      pnMSMSNetwork.revalidate();
+      pnMSMSNetwork.repaint();
     } else {
       pnAnnNetwork.setPeakListRows(null);
     }

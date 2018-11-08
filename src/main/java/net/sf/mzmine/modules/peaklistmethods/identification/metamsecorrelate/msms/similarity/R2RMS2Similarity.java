@@ -9,6 +9,11 @@ public class R2RMS2Similarity {
   private List<MS2Similarity> massDiffSim = new ArrayList<>();
   private List<MS2Similarity> spectralSim = new ArrayList<>();
 
+  public R2RMS2Similarity(PeakListRow a, PeakListRow b) {
+    super();
+    this.a = a;
+    this.b = b;
+  }
 
   public void addMassDiffSim(MS2Similarity sim) {
     massDiffSim.add(sim);

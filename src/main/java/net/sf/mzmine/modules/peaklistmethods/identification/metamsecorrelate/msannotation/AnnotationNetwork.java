@@ -225,7 +225,7 @@ public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
     if (!containsKey(row))
       return false;
     else {
-      return !keySet().stream().anyMatch(r -> r.getID() < row.getID());
+      return keySet().stream().noneMatch(r -> r.getID() < row.getID());
     }
   }
 
@@ -237,7 +237,7 @@ public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
    */
   public boolean hasSmallestID(int id) {
     return keySet().stream().anyMatch(r -> r.getID() == id)
-        && !keySet().stream().anyMatch(r -> r.getID() < id);
+        && keySet().stream().noneMatch(r -> r.getID() < id);
   }
 
   /**
@@ -291,4 +291,5 @@ public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
         addAllLinksTo(a.getKey(), adduct);
     }
   }
+
 }

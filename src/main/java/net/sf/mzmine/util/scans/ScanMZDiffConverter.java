@@ -7,6 +7,25 @@ import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 
 public class ScanMZDiffConverter {
 
+
+  /**
+   * Takes all data points of a scan or masslist and converts them to a mz differences array. The
+   * resulting data points contain a deltaMZ and the number n of occurance in the scan. (e.g. [18,
+   * 3] would correspond to three losses of H2O)
+   * 
+   * @param scan
+   * @param maxDiff absolute max difference of neutral loss mass (in Da)
+   * @return
+   */
+  public static DataPoint[] getAllMZDiff(DataPoint[] scan, double maxDiff, int maxSignals) {
+    if (maxSignals <= 0 || scan.length <= maxSignals)
+      return getAllMZDiff(scan, maxDiff);
+    else {
+      DataPoint[] max = ScanUtils.getMostAbundantSignals(scan, maxSignals);
+      return getAllMZDiff(max, maxDiff);
+    }
+  }
+
   /**
    * Takes all data points of a scan or masslist and converts them to a mz differences array. The
    * resulting data points contain a deltaMZ and the number n of occurance in the scan. (e.g. [18,

@@ -34,9 +34,9 @@ import net.sf.mzmine.util.maths.similarity.Similarity;
 import net.sf.mzmine.util.scans.ScanAlignment;
 import net.sf.mzmine.util.scans.ScanMZDiffConverter;
 
-public class MSMSSimilarityTask extends AbstractTask {
+public class MS2SimilarityTask extends AbstractTask {
   // Logger.
-  private static final Logger LOG = Logger.getLogger(MSMSSimilarityTask.class.getName());
+  private static final Logger LOG = Logger.getLogger(MS2SimilarityTask.class.getName());
 
   public static Function<List<DataPoint[]>, Integer> DIFF_OVERLAP =
       list -> ScanMZDiffConverter.getOverlapOfAlignedDiff(list, 0, 1);
@@ -51,8 +51,10 @@ public class MSMSSimilarityTask extends AbstractTask {
   private double maxMassDiff;
   private int minMatch;
   private int minDP;
+  private int maxDPForDiff = 25;
 
   private R2RMap<R2RMS2Similarity> map;
+
 
   /**
    * Create the task.
@@ -60,7 +62,7 @@ public class MSMSSimilarityTask extends AbstractTask {
    * @param parameterSet the parameters.
    * @param list peak list.
    */
-  public MSMSSimilarityTask(final MZmineProject project, final ParameterSet parameterSet,
+  public MS2SimilarityTask(final MZmineProject project, final ParameterSet parameterSet,
       final PeakList peakLists) {
     this.project = project;
 
@@ -84,7 +86,7 @@ public class MSMSSimilarityTask extends AbstractTask {
   }
 
   public void doCheck() {
-    map = doCheck(rows, massList, maxMassDiff, minMatch, minDP);
+    map = doCheck(rows, massList, maxMassDiff, minMatch, minDP, maxDPForDiff);
   }
 
   /**
@@ -97,28 +99,29 @@ public class MSMSSimilarityTask extends AbstractTask {
   }
 
   public static R2RMap<R2RMS2Similarity> doCheck(PeakListRow[] rows, String massList,
-      double maxMassDiff, int minMatch, int minDP) {
+      double maxMassDiff, int minMatch, int minDP, int maxDPForDiff) {
     R2RMap<R2RMS2Similarity> map = new R2RMap<>();
     for (int i = 0; i < rows.length - 1; i++) {
       for (int j = 1; j < rows.length; j++) {
-        R2RMS2Similarity r2r = checkR2R(rows[i], rows[j], massList, maxMassDiff, minDP, minMatch);
+        R2RMS2Similarity r2r =
+            checkR2R(rows[i], rows[j], massList, maxMassDiff, minDP, minMatch, maxDPForDiff);
         if (r2r != null)
-          map.add(rows[i], rows[2], r2r);
+          map.add(rows[i], rows[j], r2r);
       }
     }
     return map;
   }
 
   public static R2RMS2Similarity checkR2R(PeakListRow a, PeakListRow b, String massList,
-      double maxMassDiff, int minDP, int minMatch) {
-    R2RMS2Similarity r2r = new R2RMS2Similarity();
+      double maxMassDiff, int minDP, int minMatch, int maxDPForDiff) {
+    R2RMS2Similarity r2r = new R2RMS2Similarity(a, b);
 
     MZTolerance mzTol = new MZTolerance(maxMassDiff, 0);
     for (Feature fa : a.getPeaks()) {
       DataPoint[] dpa = getMassList(fa, massList);
       if (dpa != null && dpa.length >= minDP) {
         // create mass diff array
-        DataPoint[] massDiffA = ScanMZDiffConverter.getAllMZDiff(dpa, maxMassDiff);
+        DataPoint[] massDiffA = ScanMZDiffConverter.getAllMZDiff(dpa, maxMassDiff, maxDPForDiff);
         for (Feature fb : b.getPeaks()) {
           DataPoint[] dpb = getMassList(fb, massList);
           if (dpb != null && dpb.length >= minDP) {
@@ -127,7 +130,8 @@ public class MSMSSimilarityTask extends AbstractTask {
 
             // alignment and sim of neutral losses
             MS2Similarity massDiffSim = createMS2Sim(mzTol, massDiffA,
-                ScanMZDiffConverter.getAllMZDiff(dpb, maxMassDiff), minMatch, DIFF_OVERLAP);
+                ScanMZDiffConverter.getAllMZDiff(dpb, maxMassDiff, maxDPForDiff), minMatch,
+                DIFF_OVERLAP);
 
             if (massDiffSim != null)
               r2r.addMassDiffSim(massDiffSim);
