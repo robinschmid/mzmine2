@@ -2,8 +2,10 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.ms
 
 import java.util.ArrayList;
 import java.util.List;
+import net.sf.mzmine.datamodel.PeakListRow;
 
 public class R2RMS2Similarity {
+  private PeakListRow a, b;
   private List<MS2Similarity> massDiffSim = new ArrayList<>();
   private List<MS2Similarity> spectralSim = new ArrayList<>();
 
@@ -26,6 +28,14 @@ public class R2RMS2Similarity {
 
   public List<MS2Similarity> getSpectralSim() {
     return spectralSim;
+  }
+
+  public PeakListRow getA() {
+    return a;
+  }
+
+  public PeakListRow getB() {
+    return b;
   }
 
   public int getDiffMaxOverlap() {

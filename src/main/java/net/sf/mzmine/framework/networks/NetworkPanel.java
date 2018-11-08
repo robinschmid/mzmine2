@@ -238,15 +238,17 @@ public class NetworkPanel extends JPanel {
     selectedNodes.clear();
   }
 
-  public void addNewEdge(String node1, String node2) {
+  public String addNewEdge(String node1, String node2) {
     String edge = node1 + node2;
     graph.addEdge(edge, node1, node2);
+    return edge;
   }
 
-  public void addNewEdge(String node1, String node2, Object edgeLabel) {
+  public String addNewEdge(String node1, String node2, Object edgeLabel) {
     String edge = node1 + node2;
     graph.addEdge(edge, node1, node2);
     graph.getEdge(edge).addAttribute("ui.label", edgeLabel);
+    return edge;
   }
 
   public void zoom(boolean zoomOut) {
