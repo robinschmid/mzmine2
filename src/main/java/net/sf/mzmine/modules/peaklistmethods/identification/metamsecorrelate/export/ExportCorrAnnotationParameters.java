@@ -38,7 +38,14 @@ public class ExportCorrAnnotationParameters extends SimpleParameterSet {
   public static final BooleanParameter EX_ANNOT =
       new BooleanParameter("Export MS1 annotation edges", "", true);
   public static final BooleanParameter EX_CORR =
-      new BooleanParameter("Export correlation edges", "", true);
+      new BooleanParameter("Export correlation edges", "", false);
+  public static final BooleanParameter EX_MS2_SIMILARITY =
+      new BooleanParameter("Export MS2 similarity edges", "", false);
+  public static final BooleanParameter EX_MS2_DIFF_SIMILARITY =
+      new BooleanParameter("Export MS2 neutral loss similarity edges", "", false);
+
+
+
   public static final PercentParameter MIN_R =
       new PercentParameter("Min correlation (r)", "Minimum Pearson correlation", 0.9);
 
@@ -48,7 +55,8 @@ public class ExportCorrAnnotationParameters extends SimpleParameterSet {
 
   // Constructor
   public ExportCorrAnnotationParameters() {
-    super(new Parameter[] {PEAK_LISTS, FILENAME, EX_ANNOT, EX_CORR, FILTER, MIN_R});
+    super(new Parameter[] {PEAK_LISTS, FILENAME, EX_ANNOT, EX_CORR, EX_MS2_SIMILARITY,
+        EX_MS2_DIFF_SIMILARITY, FILTER, MIN_R});
   }
 
 }
