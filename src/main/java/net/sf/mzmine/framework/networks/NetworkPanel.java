@@ -67,6 +67,8 @@ public class NetworkPanel extends JPanel {
    */
   public NetworkPanel(String title, boolean showTitle) {
     this(title, STYLE_SHEET, showTitle);
+    System.setProperty("org.graphstream.ui.renderer",
+        "org.graphstream.ui.j2dviewer.J2DGraphRenderer");
   }
 
   public NetworkPanel(String title, String styleSheet, boolean showTitle) {
