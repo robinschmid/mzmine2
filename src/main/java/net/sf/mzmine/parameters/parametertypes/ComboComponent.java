@@ -17,6 +17,7 @@
  */
 package net.sf.mzmine.parameters.parametertypes;
 
+import java.awt.event.ItemListener;
 import javax.swing.BorderFactory;
 import javax.swing.ComboBoxModel;
 import javax.swing.JComboBox;
@@ -59,5 +60,9 @@ public class ComboComponent<ValueType> extends JPanel {
   public void setEnabled(boolean enabled) {
     super.setEnabled(enabled);
     comboBox.setEnabled(enabled);
+  }
+
+  public void addItemListener(ItemListener il) {
+    comboBox.addItemListener(il);
   }
 }
