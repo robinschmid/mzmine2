@@ -19,13 +19,11 @@
 package net.sf.mzmine.datamodel.impl;
 
 import javax.annotation.Nonnull;
-
+import com.google.common.collect.Range;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.IsotopePattern;
 import net.sf.mzmine.datamodel.MassSpectrumType;
-import net.sf.mzmine.util.ScanUtils;
-
-import com.google.common.collect.Range;
+import net.sf.mzmine.util.scans.ScanUtils;
 
 /**
  * Simple implementation of IsotopePattern interface
@@ -37,17 +35,17 @@ public class ExtendedIsotopePattern implements IsotopePattern {
   private IsotopePatternStatus status;
   private String description;
   private Range<Double> mzRange;
-  
+
   private String[] isotopeCompostion;
-  
+
   public ExtendedIsotopePattern(DataPoint dataPoints[], IsotopePatternStatus status,
       String description, String[] isotopeCompostion) {
 
     assert dataPoints.length > 0;
 
     highestIsotope = dataPoints[0];
-    for(int i = 0; i < dataPoints.length; i++) {
-      if(highestIsotope.getIntensity() < dataPoints[i].getIntensity()) {
+    for (int i = 0; i < dataPoints.length; i++) {
+      if (highestIsotope.getIntensity() < dataPoints[i].getIntensity()) {
         highestIsotopeIndex = i;
         highestIsotope = dataPoints[0];
       }
@@ -55,9 +53,9 @@ public class ExtendedIsotopePattern implements IsotopePattern {
     this.dataPoints = dataPoints;
     this.status = status;
     this.description = description;
-    this.mzRange = ScanUtils.findMzRange(dataPoints); 
+    this.mzRange = ScanUtils.findMzRange(dataPoints);
     this.isotopeCompostion = isotopeCompostion;
-    
+
   }
 
   @Override
@@ -119,17 +117,17 @@ public class ExtendedIsotopePattern implements IsotopePattern {
   }
 
   public String getIsotopeComposition(int num) {
-    if(isotopeCompostion != null && num < isotopeCompostion.length)
+    if (isotopeCompostion != null && num < isotopeCompostion.length)
       return isotopeCompostion[num];
     return "";
   }
-  
+
   public String[] getIsotopeCompositions() {
-    if(isotopeCompostion != null)
+    if (isotopeCompostion != null)
       return isotopeCompostion;
     return null;
   }
-  
+
   public int getHighestDataPointIndex() {
     return highestIsotopeIndex;
   }
