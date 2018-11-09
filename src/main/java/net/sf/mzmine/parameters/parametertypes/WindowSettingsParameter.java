@@ -162,23 +162,6 @@ public class WindowSettingsParameter implements Parameter<Object>, ComponentList
       frame.setExtendedState(Frame.MAXIMIZED_HORIZ | Frame.MAXIMIZED_VERT);
     }
 
-<<<<<<< HEAD
-    if (!isOnScreen(frame)) {
-      frame.setLocation(0, 0);
-      frame.setSize(1024, 800);
-      frame.setExtendedState(Frame.MAXIMIZED_HORIZ | Frame.MAXIMIZED_VERT);
-    }
-  }
-
-
-
-  public boolean isOnScreen(JFrame frame) {
-    Rectangle virtualBounds = getVirtualBounds();
-    return virtualBounds.contains(frame.getBounds());
-  }
-
-  public static Rectangle getVirtualBounds() {
-=======
     // when still outside of screen
     // e.g. changing from 2 screens to one
     if (!isOnScreen(frame)) {
@@ -197,7 +180,6 @@ public class WindowSettingsParameter implements Parameter<Object>, ComponentList
   }
 
   private Rectangle getVirtualBounds() {
->>>>>>> refs/heads/tomasmaster_RawFileMerge
     Rectangle bounds = new Rectangle(0, 0, 0, 0);
     GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
     GraphicsDevice lstGDs[] = ge.getScreenDevices();
