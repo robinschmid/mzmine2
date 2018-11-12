@@ -28,7 +28,7 @@ import java.awt.BorderLayout;
 import java.util.Arrays;
 import javax.swing.JButton;
 import javax.swing.JLabel;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.actions.AddESIAdductsAction;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.actions.CombineESIAdductsAction;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.actions.DefaultESIAdductsAction;
@@ -57,7 +57,7 @@ public class ESIAdductsComponent extends GridBagPanel {
    *
    * @param choicesAdducts the adduct choices.
    */
-  public ESIAdductsComponent(ESIAdductType[] choicesAdducts, ESIAdductType[] choicesMods) {
+  public ESIAdductsComponent(AdductType[] choicesAdducts, AdductType[] choicesMods) {
     adducts = new MultiChoiceComponent(choicesAdducts);
     // add top label
     adducts.add(new JLabel("Adducts"), BorderLayout.NORTH);
@@ -82,10 +82,10 @@ public class ESIAdductsComponent extends GridBagPanel {
     add(mods, 1, 0);
   }
 
-  public ESIAdductType[][] getChoices() {
-    ESIAdductType[] ad = (ESIAdductType[]) adducts.getChoices();
-    ESIAdductType[] md = (ESIAdductType[]) mods.getChoices();
-    ESIAdductType[][] all = {ad, md};
+  public AdductType[][] getChoices() {
+    AdductType[] ad = (AdductType[]) adducts.getChoices();
+    AdductType[] md = (AdductType[]) mods.getChoices();
+    AdductType[][] all = {ad, md};
     return all;
   }
 
@@ -94,15 +94,15 @@ public class ESIAdductsComponent extends GridBagPanel {
    *
    * @return the selected choices.
    */
-  public ESIAdductType[][] getValue() {
+  public AdductType[][] getValue() {
     Object[] ad = adducts.getValue();
     Object[] md = mods.getValue();
-    ESIAdductType[][] all = {Arrays.copyOf(ad, ad.length, ESIAdductType[].class),
-        Arrays.copyOf(md, md.length, ESIAdductType[].class)};
+    AdductType[][] all = {Arrays.copyOf(ad, ad.length, AdductType[].class),
+        Arrays.copyOf(md, md.length, AdductType[].class)};
     return all;
   }
 
-  public void setValue(final ESIAdductType[][] values) {
+  public void setValue(final AdductType[][] values) {
     if (values != null) {
       if (values[0] != null)
         adducts.setValue(values[0]);

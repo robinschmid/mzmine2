@@ -3,7 +3,7 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.ms
 import java.util.ArrayList;
 import java.util.List;
 import net.sf.mzmine.datamodel.DataPoint;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 /**
@@ -17,7 +17,7 @@ public class MSMSMultimerIdentity extends MSMSIonIdentity {
   // the identified x-mer
   private List<MSMSMultimerIdentity> links;
 
-  public MSMSMultimerIdentity(MZTolerance mzTolerance, DataPoint dp, ESIAdductType type) {
+  public MSMSMultimerIdentity(MZTolerance mzTolerance, DataPoint dp, AdductType type) {
     super(mzTolerance, dp, type);
   }
 

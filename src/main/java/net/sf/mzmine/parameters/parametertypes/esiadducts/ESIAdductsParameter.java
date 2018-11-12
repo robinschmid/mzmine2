@@ -34,7 +34,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
 import net.sf.mzmine.parameters.UserParameter;
 import net.sf.mzmine.parameters.parametertypes.MultiChoiceParameter;
 
@@ -44,7 +44,7 @@ import net.sf.mzmine.parameters.parametertypes.MultiChoiceParameter;
  * @author $Author$
  * @version $Revision$
  */
-public class ESIAdductsParameter implements UserParameter<ESIAdductType[][], ESIAdductsComponent> {
+public class ESIAdductsParameter implements UserParameter<AdductType[][], ESIAdductsComponent> {
 
   // Logger.
   private static final Logger LOG = Logger.getLogger(ESIAdductsParameter.class.getName());
@@ -59,7 +59,7 @@ public class ESIAdductsParameter implements UserParameter<ESIAdductType[][], ESI
   private static final String MOLECULES_ATTRIBUTE = "molecules";
   private static final String SELECTED_ATTRIBUTE = "selected";
 
-  private MultiChoiceParameter<ESIAdductType> adducts, modification;
+  private MultiChoiceParameter<AdductType> adducts, modification;
 
   private ESIAdductsComponent comp;
 
@@ -71,9 +71,9 @@ public class ESIAdductsParameter implements UserParameter<ESIAdductType[][], ESI
    */
   public ESIAdductsParameter(final String name, final String description) {
     super();
-    adducts = new MultiChoiceParameter<ESIAdductType>(name, description, new ESIAdductType[0]);
-    modification = new MultiChoiceParameter<ESIAdductType>("Modifications",
-        "Modifications on adducts", new ESIAdductType[0]);
+    adducts = new MultiChoiceParameter<AdductType>(name, description, new AdductType[0]);
+    modification = new MultiChoiceParameter<AdductType>("Modifications",
+        "Modifications on adducts", new AdductType[0]);
   }
 
   @Override
@@ -85,28 +85,28 @@ public class ESIAdductsParameter implements UserParameter<ESIAdductType[][], ESI
   @Override
   public void loadValueFromXML(final Element xmlElement) {
     // Start with current choices and empty selections.
-    final ArrayList<ESIAdductType> newChoices =
-        new ArrayList<ESIAdductType>(Arrays.asList(adducts.getChoices()));
-    final ArrayList<ESIAdductType> selections = new ArrayList<>();
+    final ArrayList<AdductType> newChoices =
+        new ArrayList<AdductType>(Arrays.asList(adducts.getChoices()));
+    final ArrayList<AdductType> selections = new ArrayList<>();
     // load all adducts
     loadAdducts(xmlElement, ADDUCTS_TAG, newChoices, selections);
     // Set choices and selections (value).
-    adducts.setChoices(newChoices.toArray(new ESIAdductType[newChoices.size()]));
-    adducts.setValue(selections.toArray(new ESIAdductType[selections.size()]));
+    adducts.setChoices(newChoices.toArray(new AdductType[newChoices.size()]));
+    adducts.setValue(selections.toArray(new AdductType[selections.size()]));
 
     // Start with current choices and empty selections.
-    final ArrayList<ESIAdductType> newChoicesMod =
-        new ArrayList<ESIAdductType>(Arrays.asList(modification.getChoices()));
-    final ArrayList<ESIAdductType> selectionsMod = new ArrayList<ESIAdductType>();
+    final ArrayList<AdductType> newChoicesMod =
+        new ArrayList<AdductType>(Arrays.asList(modification.getChoices()));
+    final ArrayList<AdductType> selectionsMod = new ArrayList<AdductType>();
     // load all modification
     loadAdducts(xmlElement, MODIFICTAION_TAG, newChoicesMod, selectionsMod);
     // Set choices and selections (value).
-    modification.setChoices(newChoicesMod.toArray(new ESIAdductType[newChoicesMod.size()]));
-    modification.setValue(selectionsMod.toArray(new ESIAdductType[selectionsMod.size()]));
+    modification.setChoices(newChoicesMod.toArray(new AdductType[newChoicesMod.size()]));
+    modification.setValue(selectionsMod.toArray(new AdductType[selectionsMod.size()]));
   }
 
   private void loadAdducts(final Element xmlElement, String TAG,
-      ArrayList<ESIAdductType> newChoices, ArrayList<ESIAdductType> selections) {
+      ArrayList<AdductType> newChoices, ArrayList<AdductType> selections) {
     NodeList adductElements = xmlElement.getChildNodes();
     for (int i = 0; i < adductElements.getLength(); i++) {
       Node a = adductElements.item(i);
@@ -120,7 +120,7 @@ public class ESIAdductsParameter implements UserParameter<ESIAdductType[][], ESI
         // sub adduct types that define the total adducttype
         NodeList childs = a.getChildNodes();
 
-        List<ESIAdductType> adducts = new ArrayList<>();
+        List<AdductType> adducts = new ArrayList<>();
 
         // composite types have multiple child nodes
         for (int c = 0; c < childs.getLength(); c++) {
@@ -139,7 +139,7 @@ public class ESIAdductsParameter implements UserParameter<ESIAdductType[][], ESI
 
               try {
                 // Create new adduct.
-                ESIAdductType add = new ESIAdductType(nameNode.getNodeValue(),
+                AdductType add = new AdductType(nameNode.getNodeValue(),
                     Double.parseDouble(massNode.getNodeValue()),
                     Integer.parseInt(chargeNode.getNodeValue()),
                     Integer.parseInt(moleculesNode.getNodeValue()));
@@ -152,7 +152,7 @@ public class ESIAdductsParameter implements UserParameter<ESIAdductType[][], ESI
           }
         }
         // create adduct as combination of all childs
-        ESIAdductType adduct = new ESIAdductType(adducts.toArray(new ESIAdductType[0]));
+        AdductType adduct = new AdductType(adducts.toArray(new AdductType[0]));
 
         // A new choice?
         if (!newChoices.contains(adduct)) {
@@ -177,14 +177,14 @@ public class ESIAdductsParameter implements UserParameter<ESIAdductType[][], ESI
 
     // Get choices and selections.
     for (int i = 0; i < 2; i++) {
-      final ESIAdductType[] choices = i == 0 ? adducts.getChoices() : modification.getChoices();
-      final ESIAdductType[] value = i == 0 ? adducts.getValue() : modification.getValue();
-      final List<ESIAdductType> selections =
-          Arrays.asList(value == null ? new ESIAdductType[] {} : value);
+      final AdductType[] choices = i == 0 ? adducts.getChoices() : modification.getChoices();
+      final AdductType[] value = i == 0 ? adducts.getValue() : modification.getValue();
+      final List<AdductType> selections =
+          Arrays.asList(value == null ? new AdductType[] {} : value);
 
       if (choices != null) {
         final Document parent = xmlElement.getOwnerDocument();
-        for (final ESIAdductType item : choices) {
+        for (final AdductType item : choices) {
           final Element element = parent.createElement(i == 0 ? ADDUCTS_TAG : MODIFICTAION_TAG);
           saveTypeToXML(parent, element, item, selections);
           xmlElement.appendChild(element);
@@ -201,11 +201,11 @@ public class ESIAdductsParameter implements UserParameter<ESIAdductType[][], ESI
    * @param item
    * @param selections
    */
-  private void saveTypeToXML(Document parent, Element parentElement, ESIAdductType type,
-      List<ESIAdductType> selections) {
+  private void saveTypeToXML(Document parent, Element parentElement, AdductType type,
+      List<AdductType> selections) {
     parentElement.setAttribute(SELECTED_ATTRIBUTE, Boolean.toString(selections.contains(type)));
     // all adducts
-    for (ESIAdductType item : type.getAdducts()) {
+    for (AdductType item : type.getAdducts()) {
       final Element element = parent.createElement(ADDUCTS_ITEM_TAG);
       element.setAttribute(NAME_ATTRIBUTE, item.getRawName());
       element.setAttribute(MASS_ATTRIBUTE, Double.toString(item.getMassDifference()));
@@ -223,7 +223,7 @@ public class ESIAdductsParameter implements UserParameter<ESIAdductType[][], ESI
     return copy;
   }
 
-  private void setChoices(ESIAdductType[] ad, ESIAdductType[] mods) {
+  private void setChoices(AdductType[] ad, AdductType[] mods) {
     adducts.setChoices(ad);
     modification.setChoices(mods);
   }
@@ -251,7 +251,7 @@ public class ESIAdductsParameter implements UserParameter<ESIAdductType[][], ESI
   public void setValueFromComponent(ESIAdductsComponent component) {
     adducts.setValueFromComponent(component.getAdducts());
     modification.setValueFromComponent(component.getMods());
-    ESIAdductType[][] choices = component.getChoices();
+    AdductType[][] choices = component.getChoices();
     adducts.setChoices(choices[0]);
     modification.setChoices(choices[1]);
     choices = component.getValue();
@@ -260,19 +260,19 @@ public class ESIAdductsParameter implements UserParameter<ESIAdductType[][], ESI
   }
 
   @Override
-  public ESIAdductType[][] getValue() {
-    ESIAdductType[][] ad = {adducts.getValue(), modification.getValue()};
+  public AdductType[][] getValue() {
+    AdductType[][] ad = {adducts.getValue(), modification.getValue()};
     return ad;
   }
 
   @Override
-  public void setValue(ESIAdductType[][] newValue) {
+  public void setValue(AdductType[][] newValue) {
     adducts.setValue(newValue[0]);
     modification.setValue(newValue[1]);
   }
 
   @Override
-  public void setValueToComponent(ESIAdductsComponent component, ESIAdductType[][] newValue) {
+  public void setValueToComponent(ESIAdductsComponent component, AdductType[][] newValue) {
     component.setValue(newValue);
   }
 }

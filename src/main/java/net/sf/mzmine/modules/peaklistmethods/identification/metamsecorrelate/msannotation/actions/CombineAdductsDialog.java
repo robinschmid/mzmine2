@@ -15,21 +15,21 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import net.miginfocom.swing.MigLayout;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
 
 public class CombineAdductsDialog extends JDialog implements MouseListener {
 
   public static void main(String[] args) {
-    CombineAdductsDialog d = new CombineAdductsDialog(new ESIAdductType[0]);
+    CombineAdductsDialog d = new CombineAdductsDialog(new AdductType[0]);
     d.setVisible(true);
   }
 
-  private JList<ESIAdductType> adducts, combine;
+  private JList<AdductType> adducts, combine;
 
   // new types to be added
-  private List<ESIAdductType> newTypes = new ArrayList<>();
+  private List<AdductType> newTypes = new ArrayList<>();
 
-  public CombineAdductsDialog(ESIAdductType[] add) {
+  public CombineAdductsDialog(AdductType[] add) {
     setModalityType(ModalityType.APPLICATION_MODAL);
     setSize(650, 500);
 
@@ -74,12 +74,12 @@ public class CombineAdductsDialog extends JDialog implements MouseListener {
     JScrollPane scrollPane_1 = new JScrollPane();
     main.add(scrollPane_1, "cell 2 0,grow");
 
-    combine = new JList<>(new DefaultListModel<ESIAdductType>());
+    combine = new JList<>(new DefaultListModel<AdductType>());
     scrollPane_1.setViewportView(combine);
     combine.addMouseListener(this);
 
     // add all
-    DefaultListModel<ESIAdductType> model = new DefaultListModel<>();
+    DefaultListModel<AdductType> model = new DefaultListModel<>();
     Arrays.stream(add).forEach(a -> model.addElement(a));
     adducts.setModel(model);
     adducts.addMouseListener(this);
@@ -90,33 +90,33 @@ public class CombineAdductsDialog extends JDialog implements MouseListener {
   }
 
   private void createCombined() {
-    DefaultListModel<ESIAdductType> model = (DefaultListModel<ESIAdductType>) combine.getModel();
-    ESIAdductType[] com = new ESIAdductType[model.size()];
+    DefaultListModel<AdductType> model = (DefaultListModel<AdductType>) combine.getModel();
+    AdductType[] com = new AdductType[model.size()];
     for (int i = 0; i < com.length; i++) {
       com[i] = model.get(i);
     }
-    ESIAdductType nt = new ESIAdductType(com);
+    AdductType nt = new AdductType(com);
     newTypes.add(nt);
     // add to adducts
     DefaultListModel addModel = (DefaultListModel) adducts.getModel();
     addModel.addElement(nt);
   }
 
-  public List<ESIAdductType> getNewTypes() {
+  public List<AdductType> getNewTypes() {
     return newTypes;
   }
 
-  private void add(List<ESIAdductType> list) {
+  private void add(List<AdductType> list) {
     DefaultListModel model = (DefaultListModel) combine.getModel();
     list.stream().forEach(e -> model.addElement(e));
   }
 
-  private void add(ESIAdductType e) {
+  private void add(AdductType e) {
     DefaultListModel model = (DefaultListModel) combine.getModel();
     model.addElement(e);
   }
 
-  private void remove(List<ESIAdductType> list) {
+  private void remove(List<AdductType> list) {
     DefaultListModel model = (DefaultListModel) combine.getModel();
     list.stream().forEach(e -> model.removeElement(e));
   }
@@ -128,7 +128,7 @@ public class CombineAdductsDialog extends JDialog implements MouseListener {
     if (evt.getClickCount() == 2) {
       // Double-click detected
       int index = list.locationToIndex(evt.getPoint());
-      add((ESIAdductType) list.getModel().getElementAt(index));
+      add((AdductType) list.getModel().getElementAt(index));
     }
   }
 

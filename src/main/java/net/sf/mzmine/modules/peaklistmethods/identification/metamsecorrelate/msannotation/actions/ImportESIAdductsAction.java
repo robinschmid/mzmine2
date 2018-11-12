@@ -3,22 +3,23 @@
  *
  * This file is part of MZmine 2.
  *
- * MZmine 2 is free software; you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation; either version 2 of the License, or (at your option) any later
- * version.
+ * MZmine 2 is free software; you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
  *
- * MZmine 2 is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * MZmine 2 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * MZmine 2; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
- * Fifth Floor, Boston, MA 02110-1301 USA
+ * You should have received a copy of the GNU General Public License along with MZmine 2; if not,
+ * write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+ * USA
  */
 
-/* Code created was by or on behalf of Syngenta and is released under the open source license in use for the
- * pre-existing code or project. Syngenta does not assert ownership or copyright any over pre-existing work.
+/*
+ * Code created was by or on behalf of Syngenta and is released under the open source license in use
+ * for the pre-existing code or project. Syngenta does not assert ownership or copyright any over
+ * pre-existing work.
  */
 
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.actions;
@@ -33,18 +34,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import javax.swing.AbstractAction;
 import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileNameExtensionFilter;
-
 import com.Ostermiller.util.CSVParser;
-
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.adductsearch.AdductType;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
 import net.sf.mzmine.parameters.parametertypes.MultiChoiceComponent;
-import net.sf.mzmine.parameters.parametertypes.esiadducts.ESIAdductsComponent;
 import net.sf.mzmine.util.dialogs.LoadSaveFileChooser;
 
 /**
@@ -56,120 +52,112 @@ import net.sf.mzmine.util.dialogs.LoadSaveFileChooser;
 
 public class ImportESIAdductsAction extends AbstractAction {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+  /**
+   * 
+   */
+  private static final long serialVersionUID = 1L;
 
-	// Logger.
-	private static final Logger LOG = Logger
-			.getLogger(ImportESIAdductsAction.class.getName());
+  // Logger.
+  private static final Logger LOG = Logger.getLogger(ImportESIAdductsAction.class.getName());
 
-	// Filename extension.
-	private static final String FILENAME_EXTENSION = "csv";
+  // Filename extension.
+  private static final String FILENAME_EXTENSION = "csv";
 
-	private LoadSaveFileChooser chooser;
+  private LoadSaveFileChooser chooser;
 
-	private MultiChoiceComponent parent;
-	/**
-	 * Create the action.
-	 */
-	public ImportESIAdductsAction(MultiChoiceComponent parent) {
+  private MultiChoiceComponent parent;
 
-		super("Import...");
-		putValue(SHORT_DESCRIPTION, "Import custom adducts from a CSV file");
+  /**
+   * Create the action.
+   */
+  public ImportESIAdductsAction(MultiChoiceComponent parent) {
 
-		chooser = null;
-		this.parent = parent;
-	}
+    super("Import...");
+    putValue(SHORT_DESCRIPTION, "Import custom adducts from a CSV file");
 
-	@Override
-	public void actionPerformed(final ActionEvent e) { 
+    chooser = null;
+    this.parent = parent;
+  }
 
-		if (parent != null) {
+  @Override
+  public void actionPerformed(final ActionEvent e) {
 
-			// Create the chooser if necessary.
-			if (chooser == null) {
+    if (parent != null) {
 
-				chooser = new LoadSaveFileChooser("Select Adducts File");
-				chooser.addChoosableFileFilter(new FileNameExtensionFilter(
-						"Comma-separated values files", FILENAME_EXTENSION));
-			}
+      // Create the chooser if necessary.
+      if (chooser == null) {
 
-			// Select a file.
-			final File file = chooser.getLoadFile(parent);
-			if (file != null) {
+        chooser = new LoadSaveFileChooser("Select Adducts File");
+        chooser.addChoosableFileFilter(
+            new FileNameExtensionFilter("Comma-separated values files", FILENAME_EXTENSION));
+      }
 
-				// Read the CSV file into a string array.
-				String[][] csvLines = null;
-				try {
+      // Select a file.
+      final File file = chooser.getLoadFile(parent);
+      if (file != null) {
 
-					csvLines = CSVParser.parse(new FileReader(file));
-				} catch (IOException ex) {
-					final Window window = (Window) SwingUtilities
-							.getAncestorOfClass(Window.class,
-									(Component) e.getSource());
-					final String msg = "There was a problem reading the adducts file.";
-					MZmineCore.getDesktop().displayErrorMessage(window,
-							"I/O Error", msg + "\n(" + ex.getMessage() + ')');
-					LOG.log(Level.SEVERE, msg, ex);
-				}
+        // Read the CSV file into a string array.
+        String[][] csvLines = null;
+        try {
 
-				// Read the adducts data.
-				if (csvLines != null) {
+          csvLines = CSVParser.parse(new FileReader(file));
+        } catch (IOException ex) {
+          final Window window =
+              (Window) SwingUtilities.getAncestorOfClass(Window.class, (Component) e.getSource());
+          final String msg = "There was a problem reading the adducts file.";
+          MZmineCore.getDesktop().displayErrorMessage(window, "I/O Error",
+              msg + "\n(" + ex.getMessage() + ')');
+          LOG.log(Level.SEVERE, msg, ex);
+        }
 
-					// Load adducts from CSV data into parent choices.
-					parent.setChoices(loadAdductsIntoChoices(csvLines,
-							(ESIAdductType[]) parent.getChoices()));
-				}
-			}
-		}
-	}
+        // Read the adducts data.
+        if (csvLines != null) {
 
-	/**
-	 * Load the adducts into the list of adduct choices.
-	 *
-	 * @param lines
-	 *            CSV lines to parse.
-	 * @param esiAdductTypes
-	 *            the current adduct choices.
-	 * @return a new list of adduct choices that includes the original choices
-	 *         plus any new ones found by parsing the CSV lines.
-	 */
-	private static ESIAdductType[] loadAdductsIntoChoices(final String[][] lines,
-			final ESIAdductType[] esiAdductTypes) {
+          // Load adducts from CSV data into parent choices.
+          parent.setChoices(loadAdductsIntoChoices(csvLines, (AdductType[]) parent.getChoices()));
+        }
+      }
+    }
+  }
 
-		// Create a list of adducts.
-		final ArrayList<ESIAdductType> choices = new ArrayList<ESIAdductType>(
-				Arrays.asList(esiAdductTypes));
+  /**
+   * Load the adducts into the list of adduct choices.
+   *
+   * @param lines CSV lines to parse.
+   * @param esiAdductTypes the current adduct choices.
+   * @return a new list of adduct choices that includes the original choices plus any new ones found
+   *         by parsing the CSV lines.
+   */
+  private static AdductType[] loadAdductsIntoChoices(final String[][] lines,
+      final AdductType[] esiAdductTypes) {
 
-		int i = 1;
-		for (final String[] line : lines) {
+    // Create a list of adducts.
+    final ArrayList<AdductType> choices = new ArrayList<AdductType>(Arrays.asList(esiAdductTypes));
 
-			if (line.length >= 2) {
+    int i = 1;
+    for (final String[] line : lines) {
 
-				try {
+      if (line.length >= 2) {
 
-					// Create new adduct and add it to the choices if it's new.
-					final ESIAdductType adduct = new ESIAdductType(line[0],
-							Double.parseDouble(line[1]), Integer.parseInt(line[2]),
-							Integer.parseInt(line[3]));
-					if (!choices.contains(adduct)) { 
-						choices.add(adduct);
-					} 
-				} catch (final NumberFormatException ignored) {
+        try {
 
-					LOG.warning("Invalid numeric value (" + line[1]
-							+ ") - ignored.");
-				}
-			} else {
+          // Create new adduct and add it to the choices if it's new.
+          final AdductType adduct = new AdductType(line[0], Double.parseDouble(line[1]),
+              Integer.parseInt(line[2]), Integer.parseInt(line[3]));
+          if (!choices.contains(adduct)) {
+            choices.add(adduct);
+          }
+        } catch (final NumberFormatException ignored) {
 
-				LOG.warning("Line #" + i
-						+ " contains too few fields - ignored.");
-			}
-			i++;
-		}
+          LOG.warning("Invalid numeric value (" + line[1] + ") - ignored.");
+        }
+      } else {
 
-		return choices.toArray(new ESIAdductType[choices.size()]);
-	}
+        LOG.warning("Line #" + i + " contains too few fields - ignored.");
+      }
+      i++;
+    }
+
+    return choices.toArray(new AdductType[choices.size()]);
+  }
 }

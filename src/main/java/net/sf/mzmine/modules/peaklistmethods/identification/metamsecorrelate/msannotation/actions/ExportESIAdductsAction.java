@@ -39,7 +39,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import com.Ostermiller.util.CSVPrinter;
 
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
 import net.sf.mzmine.parameters.parametertypes.MultiChoiceComponent;
 import net.sf.mzmine.util.dialogs.LoadSaveFileChooser;
 
@@ -99,7 +99,7 @@ public class ExportESIAdductsAction extends AbstractAction {
 				try {
 
 					exportAdductsToFile(file,
-							(ESIAdductType[]) parent.getChoices());
+							(AdductType[]) parent.getChoices());
 				} catch (IOException ex) {
 					final Window window = (Window) SwingUtilities
 							.getAncestorOfClass(Window.class,
@@ -124,10 +124,10 @@ public class ExportESIAdductsAction extends AbstractAction {
 	 *             if there are i/o problems.
 	 */
 	private static void exportAdductsToFile(final File file,
-			final ESIAdductType[] adducts) throws IOException {
+			final AdductType[] adducts) throws IOException {
 
 		final CSVPrinter writer = new CSVPrinter(new FileWriter(file));
-		for (final ESIAdductType adduct : adducts) {
+		for (final AdductType adduct : adducts) {
 
 			writer.writeln(new String[] { adduct.getRawName(),
 					String.valueOf(adduct.getMassDifference()),

@@ -9,7 +9,7 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 public class MSAnnotationLibrary {
@@ -26,9 +26,9 @@ public class MSAnnotationLibrary {
 
   private MZTolerance mzTolerance;
   // adducts
-  private final ESIAdductType[] selectedAdducts, selectedMods;
-  private List<ESIAdductType> allAdducts = new ArrayList<ESIAdductType>();
-  private List<ESIAdductType> allModification = new ArrayList<ESIAdductType>();
+  private final AdductType[] selectedAdducts, selectedMods;
+  private List<AdductType> allAdducts = new ArrayList<AdductType>();
+  private List<AdductType> allModification = new ArrayList<AdductType>();
   private final boolean isPositive;
   private final int maxMolecules, maxCharge;
 
@@ -62,7 +62,7 @@ public class MSAnnotationLibrary {
    */
   private void createAllAdducts(boolean positive, int maxMolecules, int maxCharge) {
     // normal primary adducts
-    for (ESIAdductType a : selectedAdducts)
+    for (AdductType a : selectedAdducts)
       if ((a.getCharge() > 0 && positive) || (a.getCharge() < 0 && !positive))
         allAdducts.add(a);
 
@@ -78,7 +78,7 @@ public class MSAnnotationLibrary {
     // multiple molecules
     addMultipleMolecules(maxMolecules);
     // print them out
-    for (ESIAdductType a : allAdducts)
+    for (AdductType a : allAdducts)
       LOG.info(a.toString());
   }
 
@@ -88,7 +88,7 @@ public class MSAnnotationLibrary {
    * @param mainRow main peak.
    * @param possibleAdduct candidate adduct peak.
    */
-  public ESIAdductType[] findAdducts(final PeakList peakList, final PeakListRow row1,
+  public AdductType[] findAdducts(final PeakList peakList, final PeakListRow row1,
       final PeakListRow row2, final CheckMode mode, final double minHeight) {
     return findAdducts(peakList, row1, row2, row1.getRowCharge(), row2.getRowCharge(), mode,
         minHeight);
@@ -104,13 +104,13 @@ public class MSAnnotationLibrary {
    * @param z2 -1 or 0 if not set (charge state always positive)
    * @return
    */
-  public ESIAdductType[] findAdducts(final PeakList peakList, final PeakListRow row1,
+  public AdductType[] findAdducts(final PeakList peakList, final PeakListRow row1,
       final PeakListRow row2, int z1, int z2, final CheckMode mode, final double minHeight) {
     z1 = Math.abs(z1);
     z2 = Math.abs(z2);
     // check all combinations of adducts
-    for (ESIAdductType adduct : allAdducts) {
-      for (ESIAdductType adduct2 : allAdducts) {
+    for (AdductType adduct : allAdducts) {
+      for (AdductType adduct2 : allAdducts) {
         if (adduct.equals(adduct2))
           continue;
 
@@ -126,19 +126,19 @@ public class MSAnnotationLibrary {
             // reduce mol if mol1==mol2
             // [2M+H] and [2M+Na] --> [M+H] [M+Na]
             if (adduct.getMolecules() == adduct2.getMolecules()) {
-              adduct = new ESIAdductType(adduct);
+              adduct = new AdductType(adduct);
               adduct.setMolecules(1);
-              adduct2 = new ESIAdductType(adduct2);
+              adduct2 = new AdductType(adduct2);
               adduct2.setMolecules(1);
             }
 
             // is a2 a modification of a1? (same adducts - different mods
             if (adduct2.isModificationOf(adduct)) {
-              ESIAdductType mod = adduct2.subtractMods(adduct);
-              ESIAdductIdentity.addAdductIdentityToRow(row1, ESIAdductType.M_UNMODIFIED, row1, mod);
+              AdductType mod = adduct2.subtractMods(adduct);
+              ESIAdductIdentity.addAdductIdentityToRow(row1, AdductType.M_UNMODIFIED, row1, mod);
             } else if (adduct.isModificationOf(adduct2)) {
-              ESIAdductType mod = adduct.subtractMods(adduct2);
-              ESIAdductIdentity.addAdductIdentityToRow(row1, mod, row2, ESIAdductType.M_UNMODIFIED);
+              AdductType mod = adduct.subtractMods(adduct2);
+              ESIAdductIdentity.addAdductIdentityToRow(row1, mod, row2, AdductType.M_UNMODIFIED);
             } else {
               // Add adduct identity and notify GUI.
               // only if not already present
@@ -148,7 +148,7 @@ public class MSAnnotationLibrary {
             MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row1, false);
             MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row2, false);
             // there can only be one hit for a row-row comparison
-            return new ESIAdductType[] {adduct, adduct2};
+            return new AdductType[] {adduct, adduct2};
           }
         }
       }
@@ -165,7 +165,7 @@ public class MSAnnotationLibrary {
    * @param b
    * @return only true if charge is equal or no modification or adduct sub part equals
    */
-  private boolean checkMultiChargeDifference(ESIAdductType a, ESIAdductType b) {
+  private boolean checkMultiChargeDifference(AdductType a, AdductType b) {
     return a.getCharge() == b.getCharge() || (a.uniqueModificationsTo(b) && a.uniqueAdductsTo(b));
   }
 
@@ -176,7 +176,7 @@ public class MSAnnotationLibrary {
    * @param b
    * @return
    */
-  private boolean checkMolCount(ESIAdductType a, ESIAdductType b) {
+  private boolean checkMolCount(AdductType a, AdductType b) {
     return a.getMolecules() != b.getMolecules() || (a.getMolecules() == 1 && b.getMolecules() == 1);
   }
 
@@ -189,7 +189,7 @@ public class MSAnnotationLibrary {
    * @param z2
    * @return
    */
-  private boolean checkChargeStates(ESIAdductType adduct, ESIAdductType adduct2, int z1, int z2) {
+  private boolean checkChargeStates(AdductType adduct, AdductType adduct2, int z1, int z2) {
     return (z1 <= 0 || adduct.getAbsCharge() == z1) && (z2 <= 0 || adduct2.getAbsCharge() == z2);
   }
 
@@ -200,7 +200,7 @@ public class MSAnnotationLibrary {
    * @param adduct2
    * @return
    */
-  private boolean checkMaxMod(ESIAdductType adduct, ESIAdductType adduct2) {
+  private boolean checkMaxMod(AdductType adduct, AdductType adduct2) {
     return !(adduct.getModCount() > 0 && adduct2.getModCount() > 0);
   }
 
@@ -217,7 +217,7 @@ public class MSAnnotationLibrary {
    * @return false if one peak pair with height>=minHeight is outside of mzTolerance
    */
   private boolean checkAdduct(final PeakList peakList, final PeakListRow row1,
-      final PeakListRow row2, final ESIAdductType adduct, final ESIAdductType adduct2,
+      final PeakListRow row2, final AdductType adduct, final AdductType adduct2,
       final CheckMode mode, double minHeight) {
     // averarge mz
     if (mode.equals(CheckMode.AVGERAGE)) {
@@ -264,16 +264,16 @@ public class MSAnnotationLibrary {
    */
   private void addModification() {
     // normal mods
-    for (ESIAdductType a : selectedMods)
+    for (AdductType a : selectedMods)
       allModification.add(a);
 
     // add new modified adducts
     int size = allAdducts.size();
     for (int i = 0; i < size; i++) {
-      ESIAdductType a = allAdducts.get(i);
+      AdductType a = allAdducts.get(i);
       // all mods
-      for (ESIAdductType mod : allModification) {
-        allAdducts.add(ESIAdductType.createModified(a, mod));
+      for (AdductType mod : allModification) {
+        allAdducts.add(AdductType.createModified(a, mod));
       }
     }
   }
@@ -281,9 +281,9 @@ public class MSAnnotationLibrary {
   private void addMultipleMolecules(int maxMolecules) {
     int size = allAdducts.size();
     for (int k = 0; k < size; k++) {
-      ESIAdductType a = allAdducts.get(k);
+      AdductType a = allAdducts.get(k);
       for (int i = 2; i <= maxMolecules; i++) {
-        allAdducts.add(new ESIAdductType(a));
+        allAdducts.add(new AdductType(a));
         allAdducts.get(allAdducts.size() - 1).setMolecules(i);
       }
     }
@@ -297,14 +297,14 @@ public class MSAnnotationLibrary {
    * @param maxCharge
    * @param run init with 1
    */
-  private void combineAdducts(List<ESIAdductType> targetList, ESIAdductType[] selectedList,
-      final List<ESIAdductType> adducts, int maxCombination, int run, boolean zeroChargeAllowed) {
-    List<ESIAdductType> newAdducts = new ArrayList<ESIAdductType>();
+  private void combineAdducts(List<AdductType> targetList, AdductType[] selectedList,
+      final List<AdductType> adducts, int maxCombination, int run, boolean zeroChargeAllowed) {
+    List<AdductType> newAdducts = new ArrayList<AdductType>();
     for (int i = 0; i < adducts.size(); i++) {
-      ESIAdductType a1 = adducts.get(i);
+      AdductType a1 = adducts.get(i);
       for (int k = 0; k < selectedList.length; k++) {
-        ESIAdductType a2 = selectedList[k];
-        ESIAdductType na = new ESIAdductType(a1, a2);
+        AdductType a2 = selectedList[k];
+        AdductType na = new AdductType(a1, a2);
         if ((zeroChargeAllowed || na.getCharge() != 0) && !isContainedIn(targetList, na)) {
           newAdducts.add(na);
           targetList.add(na);
@@ -318,8 +318,8 @@ public class MSAnnotationLibrary {
     }
   }
 
-  private boolean isContainedIn(List<ESIAdductType> adducts, ESIAdductType na) {
-    for (ESIAdductType a : adducts) {
+  private boolean isContainedIn(List<AdductType> adducts, AdductType na) {
+    for (AdductType a : adducts) {
       if (a.sameMathDifference(na))
         return true;
     }
@@ -332,15 +332,15 @@ public class MSAnnotationLibrary {
    * @param positive
    */
   private void addRemoveHydrogen(boolean positive) {
-    ESIAdductType H = ESIAdductType.H;
-    ESIAdductType Hneg = ESIAdductType.H_NEG;
+    AdductType H = AdductType.H;
+    AdductType Hneg = AdductType.H_NEG;
     // remove/add hydrogen from double charged ones to get single charge
     // example: M+Fe]2+ will be M+Fe-H]+
     for (int i = 0; i < allAdducts.size(); i++) {
-      ESIAdductType a = allAdducts.get(i);
+      AdductType a = allAdducts.get(i);
       for (int z = a.getAbsCharge(); z > 1; z--) {
         // positive remove H ; negative add H
-        ESIAdductType tmpA = new ESIAdductType(a, positive ? Hneg : H);
+        AdductType tmpA = new AdductType(a, positive ? Hneg : H);
         if (!isContainedIn(allAdducts, tmpA))
           allAdducts.add(tmpA);
         a = tmpA;
@@ -349,20 +349,20 @@ public class MSAnnotationLibrary {
     // find !positve selectedAdducts and
     // add/remove as many H as possible
     for (int i = 0; i < selectedAdducts.length; i++) {
-      ESIAdductType a = selectedAdducts[i];
+      AdductType a = selectedAdducts[i];
       // adduct has a different charge state than MS mode
       if (((a.getCharge() > 0) != positive)) {
         // add/remove H to absCharge == 1 (+- like positive)
-        ESIAdductType[] start = new ESIAdductType[a.getAbsCharge() + 2];
+        AdductType[] start = new AdductType[a.getAbsCharge() + 2];
         start[0] = a;
         for (int k = 1; k < start.length; k++)
           start[k] = positive ? H : Hneg;
-        a = new ESIAdductType(start);
+        a = new AdductType(start);
         if (!isContainedIn(allAdducts, a))
           allAdducts.add(a);
         // loop runs:
         for (int z = 2; z <= maxCharge; z++) {
-          ESIAdductType tmpA = new ESIAdductType(a, positive ? H : Hneg);
+          AdductType tmpA = new AdductType(a, positive ? H : Hneg);
           if (!isContainedIn(allAdducts, tmpA))
             allAdducts.add(tmpA);
           a = tmpA;
@@ -379,19 +379,19 @@ public class MSAnnotationLibrary {
     return mzTolerance;
   }
 
-  public ESIAdductType[] getSelectedAdducts() {
+  public AdductType[] getSelectedAdducts() {
     return selectedAdducts;
   }
 
-  public ESIAdductType[] getSelectedMods() {
+  public AdductType[] getSelectedMods() {
     return selectedMods;
   }
 
-  public List<ESIAdductType> getAllAdducts() {
+  public List<AdductType> getAllAdducts() {
     return allAdducts;
   }
 
-  public List<ESIAdductType> getAllModification() {
+  public List<AdductType> getAllModification() {
     return allModification;
   }
 

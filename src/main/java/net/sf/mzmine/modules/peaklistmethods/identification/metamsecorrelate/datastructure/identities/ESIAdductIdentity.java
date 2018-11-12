@@ -37,7 +37,7 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
 
   private NumberFormat netIDForm = new DecimalFormat("#000");
 
-  private ESIAdductType a;
+  private AdductType a;
   // identifier like [M+H]+
   private String adduct;
   private String massDifference;
@@ -59,7 +59,7 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
    * @param originalPeakListRow adduct of this peak list row.
    * @param adduct type of adduct.
    */
-  public ESIAdductIdentity(ESIAdductType adduct) {
+  public ESIAdductIdentity(AdductType adduct) {
     super("later");
     a = adduct;
     this.adduct = adduct.toString(false);
@@ -75,8 +75,8 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
    * @param row1 row to add the identity to
    * @param row2 identified by this row
    */
-  public static void addAdductIdentityToRow(PeakListRow row1, ESIAdductType row1ID,
-      PeakListRow row2, ESIAdductType row2ID) {
+  public static void addAdductIdentityToRow(PeakListRow row1, AdductType row1ID,
+      PeakListRow row2, AdductType row2ID) {
     ESIAdductIdentity a = getAdductEqualIdentity(row1, row1ID);
     ESIAdductIdentity b = getAdductEqualIdentity(row2, row2ID);
 
@@ -100,7 +100,7 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
    * @param adduct
    * @return equal identity or null
    */
-  public static ESIAdductIdentity getAdductEqualIdentity(PeakListRow row, ESIAdductType adduct) {
+  public static ESIAdductIdentity getAdductEqualIdentity(PeakListRow row, AdductType adduct) {
     // is old?
     for (PeakIdentity id : row.getPeakIdentities()) {
       if (ESIAdductIdentity.class.isInstance(id)) {
@@ -119,7 +119,7 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
    * 
    * @return
    */
-  public ESIAdductType getA() {
+  public AdductType getA() {
     return a;
   }
 
@@ -185,7 +185,7 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
     return getIDString();
   }
 
-  public boolean equalsAdduct(ESIAdductType acompare) {
+  public boolean equalsAdduct(AdductType acompare) {
     return acompare.toString(false).equals(this.adduct);
   }
 

@@ -38,7 +38,7 @@ import net.sf.mzmine.datamodel.impl.SimplePeakListAppliedMethod;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
@@ -56,7 +56,7 @@ public class AlignedIsotopeGrouperTask extends AbstractTask {
   private Logger logger = Logger.getLogger(this.getClass().getName());
 
   // mass 1.003354838
-  private static final double isotopeDistance = ESIAdductType.C13.getMassDifference();
+  private static final double isotopeDistance = AdductType.C13.getMassDifference();
 
   private final MZmineProject project;
   // peaks counter
@@ -662,7 +662,7 @@ public class AlignedIsotopeGrouperTask extends AbstractTask {
    */
   public static int find13CIsotope(PeakList peakList, PeakListRow row1, PeakListRow row2,
       int maximumCharge, MZTolerance mzTolerance) {
-    ESIAdductType iso = ESIAdductType.C13;
+    AdductType iso = AdductType.C13;
     // for all possible charge states
     for (int z = maximumCharge; z >= 1; z--) {
       // checks each raw file - only true if all m/z are in range
@@ -670,10 +670,10 @@ public class AlignedIsotopeGrouperTask extends AbstractTask {
         // Add adduct identity and notify GUI.
         // only if not already present
         if (row2.getAverageMZ() < row1.getAverageMZ()) {
-          ESIAdductIdentity.addAdductIdentityToRow(row1, iso, row2, ESIAdductType.M_UNMODIFIED);
+          ESIAdductIdentity.addAdductIdentityToRow(row1, iso, row2, AdductType.M_UNMODIFIED);
           MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row1, false);
         } else {
-          ESIAdductIdentity.addAdductIdentityToRow(row2, iso, row1, ESIAdductType.M_UNMODIFIED);
+          ESIAdductIdentity.addAdductIdentityToRow(row2, iso, row1, AdductType.M_UNMODIFIED);
           MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row2, false);
         }
         // there can only be one hit for a row-row comparison
@@ -684,7 +684,7 @@ public class AlignedIsotopeGrouperTask extends AbstractTask {
   }
 
   private static boolean checkIsotope(final PeakList peakList, final PeakListRow row1,
-      final PeakListRow row2, final ESIAdductType iso, int charge, MZTolerance mzTolerance) {
+      final PeakListRow row2, final AdductType iso, int charge, MZTolerance mzTolerance) {
     // for each peak[rawfile] in row
     boolean hasCommonPeak = false;
     //

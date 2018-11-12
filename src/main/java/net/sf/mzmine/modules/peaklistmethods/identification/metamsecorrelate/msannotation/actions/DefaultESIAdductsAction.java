@@ -28,7 +28,7 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 import javax.swing.SwingUtilities;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
 import net.sf.mzmine.parameters.parametertypes.MultiChoiceComponent;
 import net.sf.mzmine.parameters.parametertypes.esiadducts.ESIAdductsComponent;
 
@@ -55,7 +55,7 @@ public class DefaultESIAdductsAction extends AbstractAction {
 	public void actionPerformed(final ActionEvent e) { 
 		if (parent != null) {
 			// Reset default choices.
-			parent.setChoices(ESIAdductType.getDefaultValuesPos());
+			parent.setChoices(AdductType.getDefaultValuesPos());
 		}
 	}
 }

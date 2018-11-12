@@ -12,7 +12,7 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.framework.networks.NetworkPanel;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.AnnotationNetwork;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.util.PeakListRowSorter;
@@ -108,7 +108,7 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     String neutralNode = "NEUTRAL LOSSES";
     // add center neutral M
     net.entrySet().stream().forEach(e -> {
-      if (!e.getValue().getA().equals(ESIAdductType.M_UNMODIFIED)) {
+      if (!e.getValue().getA().equals(AdductType.M_UNMODIFIED)) {
         int charge = e.getValue().getA().getAbsCharge();
         String node = toNodeName(e.getKey(), e.getValue());
 

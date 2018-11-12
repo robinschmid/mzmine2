@@ -1,89 +1,18 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities;
 
 import java.text.MessageFormat;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import net.sf.mzmine.main.MZmineCore;
 
-public class ESIAdductType implements Comparable<ESIAdductType> {
-  private NumberFormat mzForm = MZmineCore.getConfiguration().getMZFormat();
+public class IonType implements Comparable<IonType> {
 
-  // values
-  // unmodified molecule for mod connection [M] -> [M-H2O]
-  public static final ESIAdductType M_UNMODIFIED = new ESIAdductType("(unmodified)", 0, 0, 1);
-
-  // use combinations of X adducts (2H++; -H+Na2+) and modifications
-  public static final ESIAdductType M_MINUS = new ESIAdductType("e", +0.00054858, -1, 1);
-  public static final ESIAdductType H_NEG = new ESIAdductType("H", -1.007276, -1, 1);
-  public static final ESIAdductType M_PLUS = new ESIAdductType("e", -0.00054858, 1, 1);
-  public static final ESIAdductType H = new ESIAdductType("H", 1.007276, 1, 1);
-  //
-  private static final ESIAdductType NA = new ESIAdductType("Na", 22.989218, 1, 1);
-  private static final ESIAdductType NH4 = new ESIAdductType("NH4", 18.033823, 1, 1);
-  private static final ESIAdductType K = new ESIAdductType("K", 38.963158, 1, 1);
-  private static final ESIAdductType FE = new ESIAdductType("Fe", 55.933840, 2, 1);
-  private static final ESIAdductType CA = new ESIAdductType("Ca", 39.961493820, 2, 1);
-  private static final ESIAdductType MG = new ESIAdductType("Mg", 47.96953482, 2, 1);
-  // combined
-  private static final ESIAdductType H2plus = new ESIAdductType(new ESIAdductType[] {H, H});
-  private static final ESIAdductType NA_H = new ESIAdductType(new ESIAdductType[] {NA, H});
-  private static final ESIAdductType K_H = new ESIAdductType(new ESIAdductType[] {K, H});
-  private static final ESIAdductType NH4_H = new ESIAdductType(new ESIAdductType[] {NH4, H});
-  private static final ESIAdductType Hneg_NA2 =
-      new ESIAdductType(new ESIAdductType[] {NA, NA, H_NEG});
-  private static final ESIAdductType Hneg_CA = new ESIAdductType(new ESIAdductType[] {CA, H_NEG});
-  private static final ESIAdductType Hneg_FE = new ESIAdductType(new ESIAdductType[] {FE, H_NEG});
-  private static final ESIAdductType Hneg_MG = new ESIAdductType(new ESIAdductType[] {MG, H_NEG});
-
-  // NEGATIVE
-  private static final ESIAdductType CL = new ESIAdductType("Cl", 34.969401, -1, 1);
-  private static final ESIAdductType BR = new ESIAdductType("Br", 78.918886, -1, 1);
-  private static final ESIAdductType FA = new ESIAdductType("FA", 44.99820285, -1, 1);
-  // combined
-  // +Na -2H+]-
-  private static final ESIAdductType NA_2H =
-      new ESIAdductType(new ESIAdductType[] {NA, H_NEG, H_NEG});
-
-  // modifications
-  private static final ESIAdductType H2 = new ESIAdductType("C2H4", -2.015650, 0, 1);
-  private static final ESIAdductType C2H4 = new ESIAdductType("C2H4", -28.031301, 0, 1);
-  private static final ESIAdductType MEOH = new ESIAdductType("MeOH", 32.026215, 0, 1);
-  private static final ESIAdductType HFA = new ESIAdductType("HFA", 46.005479, 0, 1);
-  private static final ESIAdductType HAc = new ESIAdductType("HAc", 60.021129, 0, 1);
-  private static final ESIAdductType ACN = new ESIAdductType("ACN", 41.026549, 0, 1);
-  private static final ESIAdductType O = new ESIAdductType("O", 15.99491462, 0, 1);
-  private static final ESIAdductType H2O = new ESIAdductType("H2O", -18.010565, 0, 1);
-  private static final ESIAdductType H2O_2 = new ESIAdductType(new ESIAdductType[] {H2O, H2O});
-
-  private static final ESIAdductType NH3 = new ESIAdductType("NH3", -17.026549, 0, 1);
-  private static final ESIAdductType CO = new ESIAdductType("CO", -27.994915, 0, 1);
-  private static final ESIAdductType CO2 = new ESIAdductType("CO2", -43.989829, 0, 1);
-  private static final ESIAdductType ISOPROP = new ESIAdductType("IsoProp", 60.058064, 0, 1);
-  // isotopes
-  public static final ESIAdductType C13 = new ESIAdductType("(13C)", 1.003354838, 0, 1);
-
-  // default values
-  private static final ESIAdductType[] DEFAULT_VALUES_POSITIVE = {H_NEG, M_PLUS, H, NA, K, NH4,
-      H2plus, CA, FE, MG, NA_H, NH4_H, K_H, Hneg_NA2, Hneg_CA, Hneg_FE, Hneg_MG};
-  private static final ESIAdductType[] DEFAULT_VALUES_NEGATIVE =
-      {M_MINUS, H_NEG, NA_2H, NA, CL, BR, FA};
-  // default modifications
-  private static final ESIAdductType[] DEFAULT_VALUES_MODIFICATIONS =
-      {H2O, H2O_2, NH3, O, CO, CO2, C2H4, HFA, HAc, MEOH, ACN, ISOPROP};
-  // isotopes
-  private static final ESIAdductType[] DEFAULT_VALUES_ISOTOPES = {C13};
-
-
-  // data
-  private String name;
+  private AdductType adduct;
+  private NeutralModification[] mod;
+  private int molecules = 1;
   private String parsedName;
   private double massDifference;
-  // charge and count of molecules
-  private int charge, molecules;
-  private ESIAdductType[] modification;
-  private ESIAdductType[] adducts;
 
   /**
    * 
@@ -98,7 +27,7 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    * 
    * @param a
    */
-  public ESIAdductType(ESIAdductType a) {
+  public IonType(IonType a) {
     super();
     if (a.getModification() != null)
       this.modification = a.getModification().clone();
@@ -118,14 +47,14 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    * @param charge
    * @param molecules
    */
-  public ESIAdductType(String name, double massDifference, int charge, int molecules) {
+  public IonType(String name, double massDifference, int charge, int molecules) {
     super();
     this.name = name;
     this.modification = null;
     this.massDifference = massDifference;
     this.charge = charge;
     this.molecules = molecules;
-    this.adducts = new ESIAdductType[1];
+    this.adducts = new IonType[1];
     this.adducts[0] = this;
     this.parsedName = parseName();
   }
@@ -137,7 +66,7 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    * @param massDifference
    * @param charge
    */
-  public ESIAdductType(String name, double massDifference, int charge) {
+  public IonType(String name, double massDifference, int charge) {
     this(name, massDifference, charge, 1);
   }
 
@@ -146,16 +75,16 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    * 
    * @param adduct
    */
-  public ESIAdductType(final ESIAdductType[] adduct) {
+  public IonType(final IonType[] adduct) {
     // all mods
-    List<ESIAdductType> mod = new ArrayList<>();
-    for (ESIAdductType a : adduct)
+    List<IonType> mod = new ArrayList<>();
+    for (IonType a : adduct)
       if (a.getModification() != null)
-        for (ESIAdductType m : a.getModification())
+        for (IonType m : a.getModification())
           mod.add(m);
 
     if (mod.size() > 0)
-      modification = mod.toArray(new ESIAdductType[mod.size()]);
+      modification = mod.toArray(new IonType[mod.size()]);
     else
       modification = null;
     // adducts
@@ -164,7 +93,7 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
     int z = 0;
     int mol = 0;
     for (int i = 0; i < adduct.length; i++) {
-      ESIAdductType a = adduct[i];
+      IonType a = adduct[i];
       md += a.getMassDifference();
       z += a.getCharge();
       mol = a.getMolecules();
@@ -181,7 +110,7 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    * @param a1
    * @param a2
    */
-  public ESIAdductType(final ESIAdductType a1, final ESIAdductType a2) {
+  public IonType(final IonType a1, final IonType a2) {
     name = "";
     // add modification
     int length = 0;
@@ -190,7 +119,7 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
     if (a2.getModification() != null)
       length += a2.getModification().length;
     if (length != 0) {
-      this.modification = new ESIAdductType[length];
+      this.modification = new IonType[length];
       int c = 0;
       for (c = 0; a1.getModification() != null && c < a1.getModification().length; c++)
         modification[c] = a1.getModification()[c];
@@ -199,12 +128,12 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
     } else
       this.modification = null;
     // all adducts
-    List<ESIAdductType> ad = new ArrayList<ESIAdductType>();
-    for (ESIAdductType n : a1.getAdducts())
+    List<IonType> ad = new ArrayList<IonType>();
+    for (IonType n : a1.getAdducts())
       ad.add(n);
-    for (ESIAdductType n : a2.getAdducts())
+    for (IonType n : a2.getAdducts())
       ad.add(n);
-    adducts = ad.toArray(new ESIAdductType[ad.size()]);
+    adducts = ad.toArray(new IonType[ad.size()]);
     charge = a1.getCharge() + a2.getCharge();
     molecules = a1.getMolecules();
     massDifference = a1.getMassDifference() + a2.getMassDifference();
@@ -218,15 +147,15 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    * @param mod
    * @return
    */
-  public static ESIAdductType createModified(final ESIAdductType a, final ESIAdductType mod) {
-    ESIAdductType na = new ESIAdductType(a);
+  public static IonType createModified(final IonType a, final IonType mod) {
+    IonType na = new IonType(a);
     // modification are saved in adducts for combined mods
-    ESIAdductType[] realMod = mod.getAdducts();
+    IonType[] realMod = mod.getAdducts();
     // add modification
     int length = realMod.length;
     if (a.getModification() != null)
       length += a.getModification().length;
-    na.modification = new ESIAdductType[length];
+    na.modification = new IonType[length];
     for (int i = 0; i < realMod.length; i++) {
       na.modification[i] = realMod[i];
       na.massDifference += realMod[i].getMassDifference();
@@ -239,7 +168,7 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
     return na;
   }
 
-  public ESIAdductType[] getModification() {
+  public IonType[] getModification() {
     return modification;
   }
 
@@ -348,7 +277,7 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    * @param a
    * @return
    */
-  public boolean nameEquals(ESIAdductType a) {
+  public boolean nameEquals(IonType a) {
     boolean state = ((name != null && a.name != null && name.length() > 0 && a.name.length() > 0
         && name.equals(a.name)));
     if (state)
@@ -373,7 +302,7 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    * @param a
    * @return
    */
-  public boolean modsEqual(ESIAdductType a) {
+  public boolean modsEqual(IonType a) {
     if (!hasMods() && !a.hasMods())
       return true;
     // check all sub adducts
@@ -420,7 +349,7 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    * @param adduct
    * @return
    */
-  public boolean sameMathDifference(ESIAdductType adduct) {
+  public boolean sameMathDifference(IonType adduct) {
     return sameMassDifference(adduct) && charge == adduct.charge && molecules == adduct.molecules;
   }
 
@@ -430,7 +359,7 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    * @param adduct
    * @return
    */
-  public boolean sameMassDifference(ESIAdductType adduct) {
+  public boolean sameMassDifference(IonType adduct) {
     return Double.compare(massDifference, adduct.massDifference) == 0;
   }
 
@@ -438,11 +367,11 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
     return Math.abs(charge);
   }
 
-  public ESIAdductType[] getAdducts() {
+  public IonType[] getAdducts() {
     return adducts;
   }
 
-  public void setAdducts(ESIAdductType[] adducts) {
+  public void setAdducts(IonType[] adducts) {
     this.adducts = adducts;
   }
 
@@ -463,7 +392,7 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    * sorting
    */
   @Override
-  public int compareTo(ESIAdductType a) {
+  public int compareTo(IonType a) {
     int i = this.getRawName().compareTo(a.getRawName());
     if (i == 0) {
       double md1 = getMassDifference();
@@ -480,7 +409,7 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    * @param adduct
    * @return
    */
-  public boolean isModificationOf(ESIAdductType adduct) {
+  public boolean isModificationOf(IonType adduct) {
     return !sameMassDifference(adduct) && molecules == adduct.molecules && charge == adduct.charge
         && nameEquals(adduct)
         && (this.hasMods()
@@ -494,16 +423,16 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    * @param adduct
    * @return
    */
-  public ESIAdductType subtractMods(ESIAdductType adduct) {
+  public IonType subtractMods(IonType adduct) {
     // return an identity with only the modifications
     if (!adduct.hasMods())
-      return new ESIAdductType(modification);
+      return new IonType(modification);
     else if (hasMods()) {
-      List<ESIAdductType> mods = new ArrayList<>();
+      List<IonType> mods = new ArrayList<>();
       for (int i = 0; i < modification.length; i++)
         if (adduct.modification.length <= i || !modification[i].equals(adduct.modification[i]))
           mods.add(modification[i]);
-      return new ESIAdductType(mods.toArray(new ESIAdductType[mods.size()]));
+      return new IonType(mods.toArray(new IonType[mods.size()]));
     } else
       return null;
   }
@@ -513,12 +442,12 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    * 
    * @return modifications only or null
    */
-  public ESIAdductType getModifiedOnly() {
-    ESIAdductType[] all = getModification();
+  public IonType getModifiedOnly() {
+    IonType[] all = getModification();
     if (all == null)
       return null;
 
-    return new ESIAdductType(all);
+    return new IonType(all);
   }
 
   /**
@@ -558,27 +487,27 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    *
    * @return the list of default adducts.
    */
-  public static ESIAdductType[] getDefaultValuesPos() {
+  public static IonType[] getDefaultValuesPos() {
     return Arrays.copyOf(DEFAULT_VALUES_POSITIVE, DEFAULT_VALUES_POSITIVE.length);
   }
 
-  public static ESIAdductType[] getDefaultValuesNeg() {
+  public static IonType[] getDefaultValuesNeg() {
     return Arrays.copyOf(DEFAULT_VALUES_NEGATIVE, DEFAULT_VALUES_NEGATIVE.length);
   }
 
-  public static ESIAdductType[] getDefaultModifications() {
+  public static IonType[] getDefaultModifications() {
     return Arrays.copyOf(DEFAULT_VALUES_MODIFICATIONS, DEFAULT_VALUES_MODIFICATIONS.length);
   }
 
-  public static ESIAdductType[] getDefaultIsotopes() {
+  public static IonType[] getDefaultIsotopes() {
     return Arrays.copyOf(DEFAULT_VALUES_MODIFICATIONS, DEFAULT_VALUES_ISOTOPES.length);
   }
 
   @Override
   public boolean equals(final Object obj) {
     final boolean eq;
-    if (obj instanceof ESIAdductType) {
-      final ESIAdductType adduct = (ESIAdductType) obj;
+    if (obj instanceof IonType) {
+      final IonType adduct = (IonType) obj;
 
       eq = adduct == this
           || (sameMathDifference(adduct) && nameEquals(adduct) && modsEqual(adduct));
@@ -597,8 +526,8 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
     return getModification() != null || getCharge() == 0;
   }
 
-  public ESIAdductType createModified(ESIAdductType mod) {
-    return ESIAdductType.createModified(this, mod);
+  public IonType createModified(IonType mod) {
+    return IonType.createModified(this, mod);
   }
 
   /**
@@ -606,7 +535,7 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    * @param b
    * @return true if no modification is a duplicate
    */
-  public boolean uniqueModificationsTo(ESIAdductType b) {
+  public boolean uniqueModificationsTo(IonType b) {
     return (this.getModCount() == 0 && b.getModCount() == 0) || (this.getModCount() == 0)
         || b.getModCount() == 0 || Arrays.stream(getModification()).noneMatch(
             moda -> Arrays.stream(b.getModification()).anyMatch(modb -> moda.equals(modb)));
@@ -617,7 +546,7 @@ public class ESIAdductType implements Comparable<ESIAdductType> {
    * @param b
    * @return true if no adduct is a duplicate
    */
-  public boolean uniqueAdductsTo(ESIAdductType b) {
+  public boolean uniqueAdductsTo(IonType b) {
     return (this.getAdducts().length == 0 && b.getAdducts().length == 0)
         || (this.getAdducts().length == 0) || b.getAdducts().length == 0
         || Arrays.stream(getAdducts())

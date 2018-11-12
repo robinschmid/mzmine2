@@ -32,7 +32,7 @@ import java.util.Collection;
 import javax.swing.AbstractAction;
 import net.sf.mzmine.framework.listener.DelayedDocumentListener;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
@@ -98,15 +98,15 @@ public class AddESIAdductsAction extends AbstractAction {
           charge = parameters.getParameter(AddESIAdductParameters.CHARGE).getValue();
         }
 
-        final ESIAdductType adduct = new ESIAdductType(name, mz, charge);
+        final AdductType adduct = new AdductType(name, mz, charge);
 
         // Add to list of choices (if not already present).
-        final Collection<ESIAdductType> choices =
-            new ArrayList<ESIAdductType>(Arrays.asList((ESIAdductType[]) parent.getChoices()));
+        final Collection<AdductType> choices =
+            new ArrayList<AdductType>(Arrays.asList((AdductType[]) parent.getChoices()));
         if (!choices.contains(adduct)) {
 
           choices.add(adduct);
-          parent.setChoices(choices.toArray(new ESIAdductType[choices.size()]));
+          parent.setChoices(choices.toArray(new AdductType[choices.size()]));
         }
       }
     }

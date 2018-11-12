@@ -7,7 +7,7 @@ import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.MassList;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIdentityList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIonRelationIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSMultimerIdentity;
@@ -31,7 +31,7 @@ public class MSMSLogic {
    * @return List of identities. The first is always the one for the precursor
    */
   public static MSMSIdentityList checkMultiMolCluster(Scan scan, String masslist,
-      double precursorMZ, ESIAdductType adduct, MZTolerance mzTolerance, double minHeight) {
+      double precursorMZ, AdductType adduct, MZTolerance mzTolerance, double minHeight) {
     return checkMultiMolCluster(scan, masslist, precursorMZ, adduct, adduct.getMolecules(),
         mzTolerance, minHeight);
   }
@@ -49,16 +49,16 @@ public class MSMSLogic {
    * @return List of identities. The first is always the one for the precursor
    */
   public static MSMSIdentityList checkMultiMolCluster(Scan scan, String masslist,
-      double precursorMZ, ESIAdductType adduct, int maxM, MZTolerance mzTolerance,
+      double precursorMZ, AdductType adduct, int maxM, MZTolerance mzTolerance,
       double minHeight) {
     MassList masses = scan.getMassList(masslist);
     if (masses == null)
       return null;
 
     // generate all M adducts 3M+X -> 2M+X -> M+X
-    List<ESIAdductType> list = new ArrayList<>();
+    List<AdductType> list = new ArrayList<>();
     for (int i = 1; i <= maxM; i++) {
-      ESIAdductType m = new ESIAdductType(adduct);
+      AdductType m = new AdductType(adduct);
       m.setMolecules(i);
       list.add(m);
     }
@@ -78,10 +78,10 @@ public class MSMSLogic {
     // check each adduct againt all other
     for (int i = 1; i < list.size(); i++) {
       ident = new MSMSIdentityList();
-      ESIAdductType b = list.get(i);
+      AdductType b = list.get(i);
       double massb = b.getMass(precursorMZ);
       for (int k = 0; k < i; k++) {
-        ESIAdductType a = list.get(k);
+        AdductType a = list.get(k);
 
         // calc mz for neutral mass with this adduct type
         double mza = a.getMZ(massb);
@@ -136,7 +136,7 @@ public class MSMSLogic {
    * @param mzTolerance
    * @return List of identities. The first is always the one for the precursor
    */
-  public static MSMSIdentityList checkNeutralLoss(DataPoint[] dps, ESIAdductType adduct,
+  public static MSMSIdentityList checkNeutralLoss(DataPoint[] dps, AdductType adduct,
       MZTolerance mzTolerance, double minHeight) {
     if (dps == null || dps.length == 0)
       return null;
