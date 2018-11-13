@@ -9,8 +9,8 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModification;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModificationType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonType;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
@@ -29,8 +29,8 @@ public class MSAnnotationLibrary {
 
   private MZTolerance mzTolerance;
   // adducts
-  private final AdductType[] selectedAdducts;
-  private final AdductType[] selectedMods;
+  private final IonModification[] selectedAdducts;
+  private final IonModification[] selectedMods;
   private List<IonType> allAdducts = new ArrayList<>();
   private final boolean isPositive;
   private final int maxMolecules, maxCharge;
@@ -69,9 +69,9 @@ public class MSAnnotationLibrary {
     // add all [M+?]c+ as references to neutral loss
     // [M-H2O+?]c+
     for (int c = 1; c <= maxCharge; c++)
-      allAdducts.add(1, new IonType(AdductType.getUndefinedforCharge(positive ? c : -c)));
+      allAdducts.add(1, new IonType(IonModification.getUndefinedforCharge(positive ? c : -c)));
 
-    for (AdductType a : selectedAdducts) {
+    for (IonModification a : selectedAdducts) {
       if ((a.getCharge() > 0 && positive) || (a.getCharge() < 0 && !positive)) {
         if (a.getAbsCharge() <= maxCharge) {
           for (int n = 1; n <= maxMolecules; n++)
@@ -92,7 +92,7 @@ public class MSAnnotationLibrary {
    * @param mainRow main peak.
    * @param possibleAdduct candidate adduct peak.
    */
-  public @Nonnull List<ESIAdductIdentity[]> findAdducts(final PeakList peakList,
+  public @Nonnull List<IonIdentity[]> findAdducts(final PeakList peakList,
       final PeakListRow row1, final PeakListRow row2, final CheckMode mode,
       final double minHeight) {
     return findAdducts(peakList, row1, row2, row1.getRowCharge(), row2.getRowCharge(), mode,
@@ -109,12 +109,12 @@ public class MSAnnotationLibrary {
    * @param z2 -1 or 0 if not set (charge state always positive)
    * @return
    */
-  public @Nonnull List<ESIAdductIdentity[]> findAdducts(final PeakList peakList,
+  public @Nonnull List<IonIdentity[]> findAdducts(final PeakList peakList,
       final PeakListRow row1, final PeakListRow row2, int z1, int z2, final CheckMode mode,
       final double minHeight) {
     z1 = Math.abs(z1);
     z2 = Math.abs(z2);
-    List<ESIAdductIdentity[]> list = new ArrayList<>();
+    List<IonIdentity[]> list = new ArrayList<>();
     // check all combinations of adducts
     for (IonType adduct : allAdducts) {
       for (IonType adduct2 : allAdducts) {
@@ -134,17 +134,17 @@ public class MSAnnotationLibrary {
             // is a2 a modification of a1? (same adducts - different mods
             if (adduct2.isModificationOf(adduct)) {
               IonType mod = adduct2.subtractMods(adduct);
-              IonType undefined = new IonType(AdductType.getUndefinedforCharge(adduct.getCharge()));
-              list.add(ESIAdductIdentity.addAdductIdentityToRow(row1, undefined, row1, mod));
+              IonType undefined = new IonType(IonModification.getUndefinedforCharge(adduct.getCharge()));
+              list.add(IonIdentity.addAdductIdentityToRow(row1, undefined, row1, mod));
             } else if (adduct.isModificationOf(adduct2)) {
               IonType mod = adduct.subtractMods(adduct2);
               IonType undefined =
-                  new IonType(AdductType.getUndefinedforCharge(adduct2.getCharge()));
-              list.add(ESIAdductIdentity.addAdductIdentityToRow(row1, mod, row2, undefined));
+                  new IonType(IonModification.getUndefinedforCharge(adduct2.getCharge()));
+              list.add(IonIdentity.addAdductIdentityToRow(row1, mod, row2, undefined));
             } else {
               // Add adduct identity and notify GUI.
               // only if not already present
-              list.add(ESIAdductIdentity.addAdductIdentityToRow(row1, adduct, row2, adduct2));
+              list.add(IonIdentity.addAdductIdentityToRow(row1, adduct, row2, adduct2));
             }
             // update
             MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row1, false);
@@ -279,13 +279,13 @@ public class MSAnnotationLibrary {
    * adds modification to the existing adducts
    */
   private void addModification() {
-    for (AdductType a : selectedMods)
+    for (IonModification a : selectedMods)
       for (IonType ion : allAdducts)
         allAdducts.add(ion.createModified(a));
   }
 
-  private boolean isContainedIn(List<AdductType> adducts, AdductType na) {
-    for (AdductType a : adducts) {
+  private boolean isContainedIn(List<IonModification> adducts, IonModification na) {
+    for (IonModification a : adducts) {
       if (a.sameMathDifference(na))
         return true;
     }
@@ -300,11 +300,11 @@ public class MSAnnotationLibrary {
     return mzTolerance;
   }
 
-  public AdductType[] getSelectedAdducts() {
+  public IonModification[] getSelectedAdducts() {
     return selectedAdducts;
   }
 
-  public AdductType[] getSelectedMods() {
+  public IonModification[] getSelectedMods() {
     return selectedMods;
   }
 

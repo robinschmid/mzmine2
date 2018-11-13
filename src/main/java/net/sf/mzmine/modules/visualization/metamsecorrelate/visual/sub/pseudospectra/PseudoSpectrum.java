@@ -21,7 +21,7 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 
 public class PseudoSpectrum {
 
@@ -37,11 +37,11 @@ public class PseudoSpectrum {
     for (PeakListRow row : group) {
       String annotation = null;
       for (PeakIdentity id : row.getPeakIdentities()) {
-        if (id instanceof ESIAdductIdentity) {
+        if (id instanceof IonIdentity) {
           if (annotation == null)
-            annotation = ((ESIAdductIdentity) id).getAdduct();
+            annotation = ((IonIdentity) id).getAdduct();
           else
-            annotation += "\n" + ((ESIAdductIdentity) id).getAdduct();
+            annotation += "\n" + ((IonIdentity) id).getAdduct();
         }
       }
       // sum -> heighest peak

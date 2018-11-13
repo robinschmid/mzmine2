@@ -30,7 +30,7 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.MSMSLogic;
@@ -131,7 +131,7 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
       NeutralLossCheck neutralLossCheck) {
 
     // has annotations?
-    List<ESIAdductIdentity> ident = MSAnnotationNetworkLogic.getAllAnnotations(row);
+    List<IonIdentity> ident = MSAnnotationNetworkLogic.getAllAnnotations(row);
     if (ident == null || ident.isEmpty())
       return;
 
@@ -161,13 +161,13 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
    * @param minHeight
    */
   public static void checkNeutralLosses(PeakList pkl, NeutralLossCheck neutralLossCheck,
-      PeakListRow row, String massList, List<ESIAdductIdentity> ident, MZTolerance mzTolerance,
+      PeakListRow row, String massList, List<IonIdentity> ident, MZTolerance mzTolerance,
       double minHeight) {
     if (ident == null || ident.isEmpty())
       return;
 
     int c = 0;
-    for (ESIAdductIdentity ad : ident) {
+    for (IonIdentity ad : ident) {
       // do not test the unmodified
       if (!ad.getA().isModifiedUndefinedAdduct())
         continue;
@@ -220,7 +220,7 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
       }
     }
 
-    ESIAdductIdentity best =
+    IonIdentity best =
         MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, PKLRowGroup.from(row));
     if (c > 0)
       LOG.info(MessageFormat.format(
@@ -241,7 +241,7 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
    * @param precursorMZ
    */
   public static boolean checkParentForNeutralLoss(NeutralLossCheck neutralLossCheck,
-      DataPoint[] dps, ESIAdductIdentity identity, IonType mod, MZTolerance mzTolerance,
+      DataPoint[] dps, IonIdentity identity, IonType mod, MZTolerance mzTolerance,
       double minHeight, double precursorMZ) {
     boolean result = false;
     // loss for precursor mz
@@ -275,10 +275,10 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
    * @param mzTolerance
    * @param minHeight
    */
-  public static void checkMultimers(PeakListRow row, String massList, List<ESIAdductIdentity> ident,
+  public static void checkMultimers(PeakListRow row, String massList, List<IonIdentity> ident,
       MZTolerance mzTolerance, double minHeight) {
     for (int i = 0; i < ident.size(); i++) {
-      ESIAdductIdentity adduct = ident.get(i);
+      IonIdentity adduct = ident.get(i);
       for (Feature f : row.getPeaks()) {
         int sn = f.getMostIntenseFragmentScanNumber();
         if (sn != -1) {
@@ -292,8 +292,8 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
     }
   }
 
-  public static boolean checkMultimers(PeakListRow row, String massList, ESIAdductIdentity adduct,
-      Scan msmsScan, List<ESIAdductIdentity> ident, MZTolerance mzTolerance, double minHeight,
+  public static boolean checkMultimers(PeakListRow row, String massList, IonIdentity adduct,
+      Scan msmsScan, List<IonIdentity> ident, MZTolerance mzTolerance, double minHeight,
       double precursorMZ) {
     Feature f = row.getPeak(msmsScan.getDataFile());
     // only for M>1

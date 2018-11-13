@@ -38,7 +38,7 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.io.gnpsexport.GNPSExportParameters.RowFilter;
 import net.sf.mzmine.parameters.ParameterSet;
@@ -342,7 +342,7 @@ public class CSVExportTask extends AbstractTask {
             line.append((id == -1 ? "" : id) + fieldSeparator);
             break;
           case ROW_BEST_ANNOTATION:
-            ESIAdductIdentity adduct =
+            IonIdentity adduct =
                 MSAnnotationNetworkLogic.getMostLikelyAnnotation(peakListRow, true);
             if (adduct == null)
               line.append(fieldSeparator);
@@ -351,7 +351,7 @@ public class CSVExportTask extends AbstractTask {
             }
             break;
           case ROW_BEST_ANNOTATION_AND_SUPPORT:
-            ESIAdductIdentity ad =
+            IonIdentity ad =
                 MSAnnotationNetworkLogic.getMostLikelyAnnotation(peakListRow, true);
             if (ad == null)
               line.append(fieldSeparator + fieldSeparator + fieldSeparator + fieldSeparator);
@@ -370,7 +370,7 @@ public class CSVExportTask extends AbstractTask {
             }
             break;
           case ROW_MOL_NETWORK_ID:
-            ESIAdductIdentity ad2 =
+            IonIdentity ad2 =
                 MSAnnotationNetworkLogic.getMostLikelyAnnotation(peakListRow, true);
             if (ad2 == null || ad2.getNetwork() == null)
               line.append(fieldSeparator);
@@ -378,7 +378,7 @@ public class CSVExportTask extends AbstractTask {
               line.append(ad2.getNetwork().getID() + fieldSeparator);
             break;
           case ROW_NEUTRAL_MASS:
-            ESIAdductIdentity ad3 =
+            IonIdentity ad3 =
                 MSAnnotationNetworkLogic.getMostLikelyAnnotation(peakListRow, true);
             if (ad3 == null || ad3.getNetwork() == null)
               line.append(fieldSeparator);

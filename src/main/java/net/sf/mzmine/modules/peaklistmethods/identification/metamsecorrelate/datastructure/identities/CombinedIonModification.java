@@ -4,33 +4,33 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class CombinedAdductType extends AdductType {
+public class CombinedIonModification extends IonModification {
 
-  private AdductType[] adducts;
+  private IonModification[] adducts;
 
   /**
    * fast creation of combined adducts
    * 
    * @param adduct
    */
-  public CombinedAdductType(AdductType... adduct) {
+  public CombinedIonModification(IonModification... adduct) {
     super();
 
     // all adducts
-    List<AdductType> ad = new ArrayList<AdductType>();
+    List<IonModification> ad = new ArrayList<IonModification>();
     for (int i = 0; i < adduct.length; i++) {
-      for (AdductType n : adduct[i].getAdducts()) {
+      for (IonModification n : adduct[i].getAdducts()) {
         ad.add(n);
       }
     }
-    adducts = ad.toArray(new AdductType[ad.size()]);
+    adducts = ad.toArray(new IonModification[ad.size()]);
     Arrays.sort(adducts);
     type = IonModificationType.getType(adducts);
 
     double md = 0;
     int z = 0;
     for (int i = 0; i < adducts.length; i++) {
-      AdductType a = adducts[i];
+      IonModification a = adducts[i];
       md += a.getMass();
       z += a.getCharge();
     }
@@ -40,7 +40,7 @@ public class CombinedAdductType extends AdductType {
   }
 
   @Override
-  public AdductType[] getAdducts() {
+  public IonModification[] getAdducts() {
     return adducts;
   }
 
@@ -92,19 +92,19 @@ public class CombinedAdductType extends AdductType {
   }
 
   @Override
-  public AdductType remove(AdductType type) {
-    List<AdductType> newList = new ArrayList<>();
-    for (AdductType m : this.getAdducts())
+  public IonModification remove(IonModification type) {
+    List<IonModification> newList = new ArrayList<>();
+    for (IonModification m : this.getAdducts())
       newList.add(m);
 
-    for (AdductType m : type.getAdducts())
+    for (IonModification m : type.getAdducts())
       newList.remove(m);
 
     if (newList.isEmpty())
       return null;
     else if (newList.size() == 1)
-      return new AdductType(newList.get(0));
+      return new IonModification(newList.get(0));
     else
-      return new CombinedAdductType(newList.toArray(new AdductType[newList.size()]));
+      return new CombinedIonModification(newList.toArray(new IonModification[newList.size()]));
   }
 }

@@ -12,7 +12,7 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.framework.networks.NetworkPanel;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter.OverlapResult;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
@@ -147,8 +147,8 @@ public class RTNetworkPanel extends NetworkPanel {
     String id = "";
     if (pid != null) {
       id = pid.getName();
-      if (pid instanceof ESIAdductIdentity) {
-        ESIAdductIdentity esi = (ESIAdductIdentity) pid;
+      if (pid instanceof IonIdentity) {
+        IonIdentity esi = (IonIdentity) pid;
         id = esi.getAdduct() + " by n=" + esi.getPartnerRowsID().length;
 
         if (esi.getNetID() != -1)

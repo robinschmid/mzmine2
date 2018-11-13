@@ -13,7 +13,7 @@ public enum IonModificationType {
    * @param adducts
    * @return
    */
-  public static IonModificationType getType(AdductType[] adducts) {
+  public static IonModificationType getType(IonModification[] adducts) {
     IonModificationType t = adducts[0].getType();
     for (int i = 1; i < adducts.length; i++)
       if (!t.equals(adducts[i].getType()))

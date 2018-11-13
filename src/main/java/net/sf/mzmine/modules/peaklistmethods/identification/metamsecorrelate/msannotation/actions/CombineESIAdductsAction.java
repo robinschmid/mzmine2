@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import javax.swing.AbstractAction;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModification;
 import net.sf.mzmine.parameters.parametertypes.MultiChoiceComponent;
 
 /**
@@ -58,23 +58,23 @@ public class CombineESIAdductsAction extends AbstractAction {
   public void actionPerformed(final ActionEvent e) {
     if (parent != null) {
       // Show dialog.
-      CombineAdductsDialog dialog = new CombineAdductsDialog((AdductType[]) parent.getChoices());
+      CombineAdductsDialog dialog = new CombineAdductsDialog((IonModification[]) parent.getChoices());
 
       dialog.setVisible(true);
-      List<AdductType> add = dialog.getNewTypes();
+      List<IonModification> add = dialog.getNewTypes();
       if (!add.isEmpty())
         addAll(add);
     }
   }
 
-  private void addAll(List<AdductType> add) {
+  private void addAll(List<IonModification> add) {
     // Add to list of choices (if not already present).
-    List<AdductType> choices =
-        new ArrayList<AdductType>(Arrays.asList((AdductType[]) parent.getChoices()));
+    List<IonModification> choices =
+        new ArrayList<IonModification>(Arrays.asList((IonModification[]) parent.getChoices()));
 
     add.stream().filter(a -> !choices.contains(a)).forEach(a -> choices.add(a));
 
-    parent.setChoices(choices.toArray(new AdductType[choices.size()]));
+    parent.setChoices(choices.toArray(new IonModification[choices.size()]));
   }
 
 }

@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
@@ -88,11 +88,11 @@ public class AnnotationRefinementTask extends AbstractTask {
 
   public static void refine(PeakList pkl, int trueThreshold, boolean deleteXmersOnMSMS) {
     for (PeakListRow row : pkl.getRows()) {
-      ESIAdductIdentity best = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, true);
+      IonIdentity best = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, true);
       if (best == null)
         continue;
 
-      List<ESIAdductIdentity> all = MSAnnotationNetworkLogic.getAllAnnotationsSorted(row);
+      List<IonIdentity> all = MSAnnotationNetworkLogic.getAllAnnotationsSorted(row);
       if (deleteXmersOnMSMS && all.size() > 1) {
         // xmers
         if (deleteXmersOnMSMS(row, best, all, trueThreshold)) {
@@ -108,7 +108,7 @@ public class AnnotationRefinementTask extends AbstractTask {
         int links = getLinks(best);
 
         if (links >= trueThreshold) {
-          for (ESIAdductIdentity other : all)
+          for (IonIdentity other : all)
             if (!other.equals(best))
               other.delete(row);
         }
@@ -116,7 +116,7 @@ public class AnnotationRefinementTask extends AbstractTask {
     }
   }
 
-  private static int getLinks(ESIAdductIdentity best) {
+  private static int getLinks(IonIdentity best) {
     int links = best.getPartnerRowsID().length;
     if (best.getMSMSModVerify() > 0)
       links++;
@@ -131,12 +131,12 @@ public class AnnotationRefinementTask extends AbstractTask {
    * @param all
    * @return
    */
-  private static boolean deleteXmersOnMSMS(PeakListRow row, ESIAdductIdentity best,
-      List<ESIAdductIdentity> all, int trueThreshold) {
+  private static boolean deleteXmersOnMSMS(PeakListRow row, IonIdentity best,
+      List<IonIdentity> all, int trueThreshold) {
     // check best first
     if (best.getMSMSMultimerCount() > 0) {
       // delete rest of annotations
-      for (ESIAdductIdentity other : all)
+      for (IonIdentity other : all)
         if (!other.equals(best))
           other.delete(row);
 
@@ -144,12 +144,12 @@ public class AnnotationRefinementTask extends AbstractTask {
       return true;
     } else {
       // check rest
-      for (ESIAdductIdentity other : all) {
+      for (IonIdentity other : all) {
         if (other.getMSMSMultimerCount() > 0) {
           row.setPreferredPeakIdentity(other);
 
           // delete rest of annotations
-          for (ESIAdductIdentity e : all)
+          for (IonIdentity e : all)
             if (!other.equals(e) && (trueThreshold <= 1 || getLinks(e) < trueThreshold))
               e.delete(row);
           return true;

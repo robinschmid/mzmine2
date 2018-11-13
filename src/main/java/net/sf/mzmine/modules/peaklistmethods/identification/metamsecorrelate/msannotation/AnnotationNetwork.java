@@ -3,7 +3,7 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.ms
 import java.util.HashMap;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonType;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
@@ -13,7 +13,7 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
  * @author Robin Schmid (robinschmid@uni-muenster.de)
  *
  */
-public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
+public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity> {
   private MZTolerance mzTolerance;
   private int id;
   private Double neutralMass = null;
@@ -41,15 +41,15 @@ public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
 
 
   @Override
-  public ESIAdductIdentity put(PeakListRow key, ESIAdductIdentity value) {
-    ESIAdductIdentity e = super.put(key, value);
+  public IonIdentity put(PeakListRow key, IonIdentity value) {
+    IonIdentity e = super.put(key, value);
     fireChanged();
     return e;
   }
 
   @Override
-  public ESIAdductIdentity remove(Object key) {
-    ESIAdductIdentity e = super.remove(key);
+  public IonIdentity remove(Object key) {
+    IonIdentity e = super.remove(key);
     fireChanged();
     return e;
   }
@@ -61,8 +61,8 @@ public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
   }
 
   @Override
-  public ESIAdductIdentity replace(PeakListRow key, ESIAdductIdentity value) {
-    ESIAdductIdentity e = super.replace(key, value);
+  public IonIdentity replace(PeakListRow key, IonIdentity value) {
+    IonIdentity e = super.replace(key, value);
     fireChanged();
     return e;
   }
@@ -91,7 +91,7 @@ public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
       return 0;
 
     double mass = 0;
-    for (Entry<PeakListRow, ESIAdductIdentity> e : entrySet()) {
+    for (Entry<PeakListRow, IonIdentity> e : entrySet()) {
       mass += e.getValue().getA().getMass(e.getKey().getAverageMZ());
     }
     neutralMass = mass / size();
@@ -109,7 +109,7 @@ public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
       return 0;
 
     double rt = 0;
-    for (Entry<PeakListRow, ESIAdductIdentity> e : entrySet()) {
+    for (Entry<PeakListRow, IonIdentity> e : entrySet()) {
       rt += e.getKey().getAverageRT();
     }
     avgRT = rt / size();
@@ -135,7 +135,7 @@ public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
       return 0;
 
     double max = 0;
-    for (Entry<PeakListRow, ESIAdductIdentity> e : entrySet()) {
+    for (Entry<PeakListRow, IonIdentity> e : entrySet()) {
       double mass = getMass(e);
       max = Math.max(Math.abs(neutralMass - mass), max);
     }
@@ -149,7 +149,7 @@ public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
    * @param e
    * @return
    */
-  public double getMass(Entry<PeakListRow, ESIAdductIdentity> e) {
+  public double getMass(Entry<PeakListRow, IonIdentity> e) {
     return e.getValue().getA().getMass(e.getKey().getAverageMZ());
   }
 
@@ -194,7 +194,7 @@ public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
    * @param row
    * @param pid
    */
-  public void addAllLinksTo(PeakListRow row, ESIAdductIdentity pid) {
+  public void addAllLinksTo(PeakListRow row, IonIdentity pid) {
     double nmass = pid.getA().getMass(row.getAverageMZ());
     this.entrySet().stream().forEach(e -> {
       if (e.getKey().getID() != row.getID()) {
@@ -285,8 +285,8 @@ public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
     // }
 
     // add all links
-    for (Entry<PeakListRow, ESIAdductIdentity> a : entrySet()) {
-      ESIAdductIdentity adduct = a.getValue();
+    for (Entry<PeakListRow, IonIdentity> a : entrySet()) {
+      IonIdentity adduct = a.getValue();
       if (adduct.getA().getAbsCharge() > 0)
         addAllLinksTo(a.getKey(), adduct);
     }

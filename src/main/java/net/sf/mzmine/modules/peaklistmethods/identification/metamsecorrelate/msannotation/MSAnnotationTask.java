@@ -30,7 +30,7 @@ import net.sf.mzmine.datamodel.impl.SimplePeakListAppliedMethod;
 import net.sf.mzmine.desktop.Desktop;
 import net.sf.mzmine.desktop.impl.HeadLessDesktop;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary.CheckMode;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.MSAnnMSMSCheckParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.MSAnnMSMSCheckTask;
@@ -161,7 +161,7 @@ public class MSAnnotationTask extends AbstractTask {
           // check row against row
           if (inRange) {
             // check for adducts in library
-            List<ESIAdductIdentity[]> id = library.findAdducts(peakList, p0, p1, p0.getRowCharge(),
+            List<IonIdentity[]> id = library.findAdducts(peakList, p0, p1, p0.getRowCharge(),
                 p1.getRowCharge(), checkMode, minHeight);
             compared++;
             if (!id.isEmpty())

@@ -31,7 +31,7 @@ import net.sf.mzmine.datamodel.impl.SimpleFeature;
 import net.sf.mzmine.datamodel.impl.SimplePeakList;
 import net.sf.mzmine.datamodel.impl.SimplePeakListAppliedMethod;
 import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.AnnotationNetwork;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
@@ -127,8 +127,8 @@ public class FilterAnnotationTask extends AbstractTask {
     for (PeakListRow row : pkl.getRows()) {
       PeakIdentity[] ident = row.getPeakIdentities();
       for (int i = 0; i < ident.length; i++) {
-        if (ident[i] instanceof ESIAdductIdentity) {
-          ESIAdductIdentity adduct = (ESIAdductIdentity) ident[i];
+        if (ident[i] instanceof IonIdentity) {
+          IonIdentity adduct = (IonIdentity) ident[i];
           AnnotationNetwork net = adduct.getNetwork();
           if (net == null) {
             row.removePeakIdentity(adduct);

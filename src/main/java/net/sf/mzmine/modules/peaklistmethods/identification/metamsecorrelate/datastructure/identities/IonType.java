@@ -11,24 +11,24 @@ import net.sf.mzmine.main.MZmineCore;
 
 public class IonType extends NeutralMolecule implements Comparable<IonType> {
 
-  protected final @Nonnull AdductType adduct;
-  protected final @Nullable AdductType mod;
+  protected final @Nonnull IonModification adduct;
+  protected final @Nullable IonModification mod;
   protected final int molecules;
   protected final int charge;
 
-  public IonType(AdductType adduct) {
+  public IonType(IonModification adduct) {
     this(adduct, null);
   }
 
-  public IonType(AdductType adduct, AdductType mod) {
+  public IonType(IonModification adduct, IonModification mod) {
     this(1, adduct, mod);
   }
 
-  public IonType(int molecules, AdductType adduct) {
+  public IonType(int molecules, IonModification adduct) {
     this(molecules, adduct, null);
   }
 
-  public IonType(int molecules, AdductType adduct, AdductType mod) {
+  public IonType(int molecules, IonModification adduct, IonModification mod) {
     this.adduct = adduct;
     this.mod = mod;
     this.charge = adduct.charge;
@@ -57,18 +57,18 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
    * @param mod
    * @return
    */
-  public IonType createModified(final @Nonnull AdductType... newMod) {
+  public IonType createModified(final @Nonnull IonModification... newMod) {
     if (newMod == null)
       throw new NullPointerException("Parameter cannot be null");
 
-    List<AdductType> allMod = new ArrayList<>();
-    for (AdductType m : newMod)
+    List<IonModification> allMod = new ArrayList<>();
+    for (IonModification m : newMod)
       allMod.add(m);
     if (this.mod != null)
-      for (AdductType m : this.mod.getAdducts())
+      for (IonModification m : this.mod.getAdducts())
         allMod.add(m);
 
-    AdductType nm = new CombinedAdductType(allMod.toArray(new AdductType[allMod.size()]));
+    IonModification nm = new CombinedIonModification(allMod.toArray(new IonModification[allMod.size()]));
     return new IonType(this.adduct, nm);
   }
 
@@ -77,7 +77,7 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
    * 
    * @return
    */
-  public AdductType getModification() {
+  public IonModification getModification() {
     return mod;
   }
 
@@ -137,12 +137,12 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
    * @return
    */
   public boolean hasModificationOverlap(IonType ion) {
-    AdductType[] a = mod.getAdducts();
-    AdductType[] b = ion.mod.getAdducts();
+    IonModification[] a = mod.getAdducts();
+    IonModification[] b = ion.mod.getAdducts();
     if (a == b)
       return true;
 
-    for (final AdductType aa : a)
+    for (final IonModification aa : a)
       if (Arrays.stream(b).anyMatch(ab -> aa.equals(ab)))
         return true;
     return false;
@@ -155,12 +155,12 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
    * @return
    */
   public boolean hasAdductOverlap(IonType ion) {
-    AdductType[] a = adduct.getAdducts();
-    AdductType[] b = ion.adduct.getAdducts();
+    IonModification[] a = adduct.getAdducts();
+    IonModification[] b = ion.adduct.getAdducts();
     if (a == b)
       return true;
 
-    for (final AdductType aa : a)
+    for (final IonModification aa : a)
       if (Arrays.stream(b).anyMatch(ab -> aa.equals(ab)))
         return true;
     return false;
@@ -215,7 +215,7 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
     return Math.abs(charge);
   }
 
-  public AdductType getAdduct() {
+  public IonModification getAdduct() {
     return adduct;
   }
 
@@ -271,7 +271,7 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
   public @Nonnull IonType subtractMods(IonType ion) {
     // return an identity with only the modifications
     if (hasMods() && ion.hasMods()) {
-      AdductType na = this.mod.remove(ion.mod);
+      IonModification na = this.mod.remove(ion.mod);
       // na can be null
       return new IonType(this.molecules, this.adduct, na);
     } else
@@ -285,7 +285,7 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
    * @return modifications only or null
    */
   public IonType getModifiedOnly() {
-    return new IonType(1, AdductType.getUndefinedforCharge(this.charge), mod);
+    return new IonType(1, IonModification.getUndefinedforCharge(this.charge), mod);
   }
 
   /**

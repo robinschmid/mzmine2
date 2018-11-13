@@ -33,7 +33,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msm
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSMultimerIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.interf.AbstractMSMSIdentity;
 
-public class ESIAdductIdentity extends SimplePeakIdentity {
+public class IonIdentity extends SimplePeakIdentity {
 
   private NumberFormat netIDForm = new DecimalFormat("#000");
 
@@ -42,7 +42,7 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
   private String adduct;
   private String massDifference;
   // partner rowIDs
-  private ConcurrentHashMap<PeakListRow, ESIAdductIdentity> partner = new ConcurrentHashMap<>();
+  private ConcurrentHashMap<PeakListRow, IonIdentity> partner = new ConcurrentHashMap<>();
   // network id (number)
   private AnnotationNetwork network;
 
@@ -59,7 +59,7 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
    * @param originalPeakListRow adduct of this peak list row.
    * @param adduct type of adduct.
    */
-  public ESIAdductIdentity(IonType adduct) {
+  public IonIdentity(IonType adduct) {
     super("later");
     a = adduct;
     this.adduct = adduct.toString(false);
@@ -75,23 +75,23 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
    * @param row1 row to add the identity to
    * @param row2 identified by this row
    */
-  public static ESIAdductIdentity[] addAdductIdentityToRow(PeakListRow row1, IonType row1ID,
+  public static IonIdentity[] addAdductIdentityToRow(PeakListRow row1, IonType row1ID,
       PeakListRow row2, IonType row2ID) {
-    ESIAdductIdentity a = getAdductEqualIdentity(row1, row1ID);
-    ESIAdductIdentity b = getAdductEqualIdentity(row2, row2ID);
+    IonIdentity a = getAdductEqualIdentity(row1, row1ID);
+    IonIdentity b = getAdductEqualIdentity(row2, row2ID);
 
     // create new
     if (a == null) {
-      a = new ESIAdductIdentity(row1ID);
+      a = new IonIdentity(row1ID);
       row1.addPeakIdentity(a, false);
     }
     if (b == null) {
-      b = new ESIAdductIdentity(row2ID);
+      b = new IonIdentity(row2ID);
       row2.addPeakIdentity(b, false);
     }
     a.addPartnerRow(row2, b);
     b.addPartnerRow(row1, a);
-    return new ESIAdductIdentity[] {a, b};
+    return new IonIdentity[] {a, b};
   }
 
   /**
@@ -101,11 +101,11 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
    * @param adduct
    * @return equal identity or null
    */
-  public static ESIAdductIdentity getAdductEqualIdentity(PeakListRow row, IonType adduct) {
+  public static IonIdentity getAdductEqualIdentity(PeakListRow row, IonType adduct) {
     // is old?
     for (PeakIdentity id : row.getPeakIdentities()) {
-      if (ESIAdductIdentity.class.isInstance(id)) {
-        ESIAdductIdentity a = (ESIAdductIdentity) id;
+      if (IonIdentity.class.isInstance(id)) {
+        IonIdentity a = (IonIdentity) id;
         // equals? add row2 to partners
         if (a.equalsAdduct(adduct)) {
           return a;
@@ -147,7 +147,7 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
         .collect(Collectors.joining(delimiter));
   }
 
-  public void addPartnerRow(PeakListRow row, ESIAdductIdentity pid) {
+  public void addPartnerRow(PeakListRow row, IonIdentity pid) {
     partner.put(row, pid);
     setPropertyValue(PROPERTY_NAME, getIDString());
   }
@@ -197,7 +197,7 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
     return partner.keySet().stream().mapToInt(PeakListRow::getID).toArray();
   }
 
-  public ConcurrentHashMap<PeakListRow, ESIAdductIdentity> getPartner() {
+  public ConcurrentHashMap<PeakListRow, IonIdentity> getPartner() {
     return partner;
   }
 
@@ -230,11 +230,11 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
    * @param link
    * @return The identity of row, determined by link or null if there is no connection
    */
-  public static ESIAdductIdentity getIdentityOf(PeakListRow row, PeakListRow link) {
+  public static IonIdentity getIdentityOf(PeakListRow row, PeakListRow link) {
     for (PeakIdentity pi : row.getPeakIdentities()) {
       // identity by ms annotation module
-      if (pi instanceof ESIAdductIdentity) {
-        ESIAdductIdentity adduct = (ESIAdductIdentity) pi;
+      if (pi instanceof IonIdentity) {
+        IonIdentity adduct = (IonIdentity) pi;
         if (adduct.hasPartnerID(link.getID()))
           return adduct;
       }

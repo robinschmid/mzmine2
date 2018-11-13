@@ -54,7 +54,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RFullCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RMap;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter.OverlapResult;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeaturesFilterParameters;
@@ -500,7 +500,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       for (int k = i + 1; k < g.size(); k++) {
         compared.incrementAndGet();
         // check for adducts in library
-        List<ESIAdductIdentity[]> id =
+        List<IonIdentity[]> id =
             library.findAdducts(peakList, g.get(i), g.get(k), adductCheckMode, minHeight);
         if (!id.isEmpty())
           annotPairs.incrementAndGet();
@@ -572,7 +572,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
                 if (searchAdducts && !annotateOnlyCorrelated) {
                   compared.incrementAndGet();
                   // check for adducts in library
-                  List<ESIAdductIdentity[]> id =
+                  List<IonIdentity[]> id =
                       library.findAdducts(peakList, row, row2, adductCheckMode, minHeight);
                   if (!id.isEmpty())
                     annotPairs.incrementAndGet();

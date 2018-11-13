@@ -33,7 +33,7 @@ import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.io.gnpsexport.GNPSExportParameters.RowFilter;
 import net.sf.mzmine.modules.peaklistmethods.io.siriusexport.SiriusExportTask;
@@ -308,7 +308,7 @@ public class GNPSExportTask extends AbstractTask {
     PKLRowGroup g = null;
     if (peakList instanceof MSEGroupedPeakList)
       g = ((MSEGroupedPeakList) peakList).getGroup(row);
-    ESIAdductIdentity id = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, g);
+    IonIdentity id = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, g);
     if (id != null)
       ion = id.getAdduct();
 

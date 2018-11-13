@@ -30,7 +30,7 @@ import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIonIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.interf.AbstractMSMSIdentity;
@@ -377,7 +377,7 @@ public class MultiMSMSWindow extends JFrame {
       // limited by correlation group
       PKLRowGroup group = PKLRowGroup.from(row);
 
-      ESIAdductIdentity best = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, group);
+      IonIdentity best = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, group);
       if (best == null)
         continue;
 
@@ -390,7 +390,7 @@ public class MultiMSMSWindow extends JFrame {
             new MSMSIonIdentity(mzTolerance, new SimpleDataPoint(precursorMZ, 1f), best.getA()));
 
         // add all MSMS annotations (found in MSMS)
-        for (ESIAdductIdentity id : MSAnnotationNetworkLogic.getAllAnnotations(row)) {
+        for (IonIdentity id : MSAnnotationNetworkLogic.getAllAnnotations(row)) {
           addMSMSAnnotations(id.getMSMSIdentities());
         }
       }

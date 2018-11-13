@@ -15,22 +15,22 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import net.miginfocom.swing.MigLayout;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.CombinedAdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModification;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.CombinedIonModification;
 
 public class CombineAdductsDialog extends JDialog implements MouseListener {
 
   public static void main(String[] args) {
-    CombineAdductsDialog d = new CombineAdductsDialog(new AdductType[0]);
+    CombineAdductsDialog d = new CombineAdductsDialog(new IonModification[0]);
     d.setVisible(true);
   }
 
-  private JList<AdductType> adducts, combine;
+  private JList<IonModification> adducts, combine;
 
   // new types to be added
-  private List<AdductType> newTypes = new ArrayList<>();
+  private List<IonModification> newTypes = new ArrayList<>();
 
-  public CombineAdductsDialog(AdductType[] add) {
+  public CombineAdductsDialog(IonModification[] add) {
     setModalityType(ModalityType.APPLICATION_MODAL);
     setSize(650, 500);
 
@@ -75,12 +75,12 @@ public class CombineAdductsDialog extends JDialog implements MouseListener {
     JScrollPane scrollPane_1 = new JScrollPane();
     main.add(scrollPane_1, "cell 2 0,grow");
 
-    combine = new JList<>(new DefaultListModel<AdductType>());
+    combine = new JList<>(new DefaultListModel<IonModification>());
     scrollPane_1.setViewportView(combine);
     combine.addMouseListener(this);
 
     // add all
-    DefaultListModel<AdductType> model = new DefaultListModel<>();
+    DefaultListModel<IonModification> model = new DefaultListModel<>();
     Arrays.stream(add).forEach(a -> model.addElement(a));
     adducts.setModel(model);
     adducts.addMouseListener(this);
@@ -91,33 +91,33 @@ public class CombineAdductsDialog extends JDialog implements MouseListener {
   }
 
   private void createCombined() {
-    DefaultListModel<AdductType> model = (DefaultListModel<AdductType>) combine.getModel();
-    AdductType[] com = new AdductType[model.size()];
+    DefaultListModel<IonModification> model = (DefaultListModel<IonModification>) combine.getModel();
+    IonModification[] com = new IonModification[model.size()];
     for (int i = 0; i < com.length; i++) {
       com[i] = model.get(i);
     }
-    AdductType nt = new CombinedAdductType(com);
+    IonModification nt = new CombinedIonModification(com);
     newTypes.add(nt);
     // add to adducts
     DefaultListModel addModel = (DefaultListModel) adducts.getModel();
     addModel.addElement(nt);
   }
 
-  public List<AdductType> getNewTypes() {
+  public List<IonModification> getNewTypes() {
     return newTypes;
   }
 
-  private void add(List<AdductType> list) {
+  private void add(List<IonModification> list) {
     DefaultListModel model = (DefaultListModel) combine.getModel();
     list.stream().forEach(e -> model.addElement(e));
   }
 
-  private void add(AdductType e) {
+  private void add(IonModification e) {
     DefaultListModel model = (DefaultListModel) combine.getModel();
     model.addElement(e);
   }
 
-  private void remove(List<AdductType> list) {
+  private void remove(List<IonModification> list) {
     DefaultListModel model = (DefaultListModel) combine.getModel();
     list.stream().forEach(e -> model.removeElement(e));
   }
@@ -129,7 +129,7 @@ public class CombineAdductsDialog extends JDialog implements MouseListener {
     if (evt.getClickCount() == 2) {
       // Double-click detected
       int index = list.locationToIndex(evt.getPoint());
-      add((AdductType) list.getModel().getElementAt(index));
+      add((IonModification) list.getModel().getElementAt(index));
     }
   }
 

@@ -37,7 +37,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import com.Ostermiller.util.CSVPrinter;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModification;
 import net.sf.mzmine.parameters.parametertypes.MultiChoiceComponent;
 import net.sf.mzmine.util.dialogs.LoadSaveFileChooser;
 
@@ -96,7 +96,7 @@ public class ExportESIAdductsAction extends AbstractAction {
         // Export the adducts.
         try {
 
-          exportAdductsToFile(file, (AdductType[]) parent.getChoices());
+          exportAdductsToFile(file, (IonModification[]) parent.getChoices());
         } catch (IOException ex) {
           final Window window =
               (Window) SwingUtilities.getAncestorOfClass(Window.class, (Component) e.getSource());
@@ -116,12 +116,12 @@ public class ExportESIAdductsAction extends AbstractAction {
    * @param adducts the adducts to export.
    * @throws IOException if there are i/o problems.
    */
-  private static void exportAdductsToFile(final File file, final AdductType[] adducts)
+  private static void exportAdductsToFile(final File file, final IonModification[] adducts)
       throws IOException {
 
     // TODO export full structure for combined
     final CSVPrinter writer = new CSVPrinter(new FileWriter(file));
-    for (final AdductType adduct : adducts) {
+    for (final IonModification adduct : adducts) {
 
       writer.writeln(new String[] {adduct.getName(), String.valueOf(adduct.getMass()),
           String.valueOf(adduct.getCharge())});

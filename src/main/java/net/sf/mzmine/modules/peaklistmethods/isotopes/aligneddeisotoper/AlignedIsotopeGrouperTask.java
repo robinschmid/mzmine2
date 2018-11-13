@@ -37,8 +37,8 @@ import net.sf.mzmine.datamodel.impl.SimplePeakList;
 import net.sf.mzmine.datamodel.impl.SimplePeakListAppliedMethod;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModification;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonType;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
@@ -57,7 +57,7 @@ public class AlignedIsotopeGrouperTask extends AbstractTask {
   private Logger logger = Logger.getLogger(this.getClass().getName());
 
   // mass 1.003354838
-  private static final double isotopeDistance = AdductType.C13.getMass();
+  private static final double isotopeDistance = IonModification.C13.getMass();
 
   private final MZmineProject project;
   // peaks counter
@@ -663,20 +663,20 @@ public class AlignedIsotopeGrouperTask extends AbstractTask {
    */
   public static int find13CIsotope(PeakList peakList, PeakListRow row1, PeakListRow row2,
       int maximumCharge, MZTolerance mzTolerance) {
-    AdductType iso = AdductType.C13;
+    IonModification iso = IonModification.C13;
     // for all possible charge states
     for (int z = maximumCharge; z >= 1; z--) {
       // checks each raw file - only true if all m/z are in range
       if (checkIsotope(peakList, row1, row2, iso, z, mzTolerance)) {
-        IonType parent = new IonType(AdductType.getUndefinedforCharge(z));
+        IonType parent = new IonType(IonModification.getUndefinedforCharge(z));
         IonType isoIon = parent.createModified(iso);
         // Add adduct identity and notify GUI.
         // only if not already present
         if (row2.getAverageMZ() < row1.getAverageMZ()) {
-          ESIAdductIdentity.addAdductIdentityToRow(row1, isoIon, row2, parent);
+          IonIdentity.addAdductIdentityToRow(row1, isoIon, row2, parent);
           MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row1, false);
         } else {
-          ESIAdductIdentity.addAdductIdentityToRow(row2, isoIon, row1, parent);
+          IonIdentity.addAdductIdentityToRow(row2, isoIon, row1, parent);
           MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row2, false);
         }
         // there can only be one hit for a row-row comparison
@@ -687,7 +687,7 @@ public class AlignedIsotopeGrouperTask extends AbstractTask {
   }
 
   private static boolean checkIsotope(final PeakList peakList, final PeakListRow row1,
-      final PeakListRow row2, final AdductType iso, int charge, MZTolerance mzTolerance) {
+      final PeakListRow row2, final IonModification iso, int charge, MZTolerance mzTolerance) {
     // for each peak[rawfile] in row
     boolean hasCommonPeak = false;
     //

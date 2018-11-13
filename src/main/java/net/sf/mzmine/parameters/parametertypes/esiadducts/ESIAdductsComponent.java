@@ -28,7 +28,7 @@ import java.awt.BorderLayout;
 import java.util.Arrays;
 import javax.swing.JButton;
 import javax.swing.JLabel;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModification;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.actions.AddESIAdductsAction;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.actions.CombineESIAdductsAction;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.actions.DefaultESIAdductsAction;
@@ -57,7 +57,7 @@ public class ESIAdductsComponent extends GridBagPanel {
    *
    * @param choicesAdducts the adduct choices.
    */
-  public ESIAdductsComponent(AdductType[] choicesAdducts, AdductType[] choicesMods) {
+  public ESIAdductsComponent(IonModification[] choicesAdducts, IonModification[] choicesMods) {
     adducts = new MultiChoiceComponent(choicesAdducts);
     // add top label
     adducts.add(new JLabel("Adducts"), BorderLayout.NORTH);
@@ -82,10 +82,10 @@ public class ESIAdductsComponent extends GridBagPanel {
     add(mods, 1, 0);
   }
 
-  public AdductType[][] getChoices() {
-    AdductType[] ad = (AdductType[]) adducts.getChoices();
-    AdductType[] md = (AdductType[]) mods.getChoices();
-    AdductType[][] all = {ad, md};
+  public IonModification[][] getChoices() {
+    IonModification[] ad = (IonModification[]) adducts.getChoices();
+    IonModification[] md = (IonModification[]) mods.getChoices();
+    IonModification[][] all = {ad, md};
     return all;
   }
 
@@ -94,15 +94,15 @@ public class ESIAdductsComponent extends GridBagPanel {
    *
    * @return the selected choices.
    */
-  public AdductType[][] getValue() {
+  public IonModification[][] getValue() {
     Object[] ad = adducts.getValue();
     Object[] md = mods.getValue();
-    AdductType[][] all = {Arrays.copyOf(ad, ad.length, AdductType[].class),
-        Arrays.copyOf(md, md.length, AdductType[].class)};
+    IonModification[][] all = {Arrays.copyOf(ad, ad.length, IonModification[].class),
+        Arrays.copyOf(md, md.length, IonModification[].class)};
     return all;
   }
 
-  public void setValue(final AdductType[][] values) {
+  public void setValue(final IonModification[][] values) {
     if (values != null) {
       if (values[0] != null)
         adducts.setValue(values[0]);

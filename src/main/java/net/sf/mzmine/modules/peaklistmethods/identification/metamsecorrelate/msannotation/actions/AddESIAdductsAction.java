@@ -33,7 +33,7 @@ import javax.swing.AbstractAction;
 import javax.swing.DefaultComboBoxModel;
 import net.sf.mzmine.framework.listener.DelayedDocumentListener;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModification;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModificationType;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
@@ -103,15 +103,15 @@ public class AddESIAdductsAction extends AbstractAction {
           charge = parameters.getParameter(AddESIAdductParameters.CHARGE).getValue();
         }
 
-        final AdductType adduct = new AdductType(type, name, mz, charge);
+        final IonModification adduct = new IonModification(type, name, mz, charge);
 
         // Add to list of choices (if not already present).
-        final Collection<AdductType> choices =
-            new ArrayList<AdductType>(Arrays.asList((AdductType[]) parent.getChoices()));
+        final Collection<IonModification> choices =
+            new ArrayList<IonModification>(Arrays.asList((IonModification[]) parent.getChoices()));
         if (!choices.contains(adduct)) {
 
           choices.add(adduct);
-          parent.setChoices(choices.toArray(new AdductType[choices.size()]));
+          parent.setChoices(choices.toArray(new IonModification[choices.size()]));
         }
       }
     }

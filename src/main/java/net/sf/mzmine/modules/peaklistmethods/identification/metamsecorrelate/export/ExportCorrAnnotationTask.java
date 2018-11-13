@@ -39,7 +39,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RMap;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.similarity.R2RMS2Similarity;
 import net.sf.mzmine.modules.peaklistmethods.io.gnpsexport.GNPSExportParameters.RowFilter;
@@ -190,14 +190,14 @@ public class ExportCorrAnnotationTask extends AbstractTask {
 
         //
         MSAnnotationNetworkLogic.getAllAnnotations(r).stream().forEach(adduct -> {
-          ConcurrentHashMap<PeakListRow, ESIAdductIdentity> links = adduct.getPartner();
+          ConcurrentHashMap<PeakListRow, IonIdentity> links = adduct.getPartner();
 
           // add all connection for ids>rowID
           links.entrySet().stream().filter(e -> e != null).filter(e -> e.getKey().getID() > rowID)
               .forEach(e -> {
                 PeakListRow link = e.getKey();
                 if (!limitToMSMS || link.getBestFragmentation() != null) {
-                  ESIAdductIdentity id = e.getValue();
+                  IonIdentity id = e.getValue();
                   double dmz = Math.abs(r.getAverageMZ() - link.getAverageMZ());
                   // the data
                   exportEdge(ann, "MS1 annotation", rowID, e.getKey().getID(),

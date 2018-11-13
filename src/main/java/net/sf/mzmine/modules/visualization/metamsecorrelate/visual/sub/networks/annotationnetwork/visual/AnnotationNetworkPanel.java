@@ -11,7 +11,7 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.framework.networks.NetworkPanel;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModificationType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.AnnotationNetwork;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
@@ -132,7 +132,7 @@ public class AnnotationNetworkPanel extends NetworkPanel {
           for (int id : partnerID) {
             PeakListRow prow = findRowByID(id, rows);
             if (prow != null) {
-              ESIAdductIdentity link = net.get(prow);
+              IonIdentity link = net.get(prow);
               if (link != null) {
                 String node2 = toNodeName(prow, link);
                 addNewEdge(node1, node2, Math.abs(e.getKey().getAverageMZ() - prow.getAverageMZ()));
@@ -171,8 +171,8 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     String id = "";
     if (pid != null) {
       id = pid.getName();
-      if (pid instanceof ESIAdductIdentity) {
-        ESIAdductIdentity esi = (ESIAdductIdentity) pid;
+      if (pid instanceof IonIdentity) {
+        IonIdentity esi = (IonIdentity) pid;
         id = esi.getAdduct() + " by n=" + esi.getPartnerRowsID().length;
 
         if (esi.getNetID() != -1)
@@ -183,7 +183,7 @@ public class AnnotationNetworkPanel extends NetworkPanel {
         id);
   }
 
-  private String toNodeName(PeakListRow row, ESIAdductIdentity esi) {
+  private String toNodeName(PeakListRow row, IonIdentity esi) {
     String id = "";
     if (esi != null) {
       id = esi.getAdduct() + " by n=" + esi.getPartnerRowsID().length;

@@ -14,7 +14,7 @@ import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 
 public class CorrNetworkPanel extends NetworkPanel {
   private static final Logger LOG = Logger.getLogger(CorrNetworkPanel.class.getName());
@@ -165,8 +165,8 @@ public class CorrNetworkPanel extends NetworkPanel {
     String id = "";
     if (pid != null) {
       id = pid.getName();
-      if (pid instanceof ESIAdductIdentity) {
-        ESIAdductIdentity esi = (ESIAdductIdentity) pid;
+      if (pid instanceof IonIdentity) {
+        IonIdentity esi = (IonIdentity) pid;
         id = esi.getAdduct() + " by n=" + esi.getPartnerRowsID().length;
 
         if (esi.getNetID() != -1)

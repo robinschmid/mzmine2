@@ -17,7 +17,7 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonType;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.util.PeakListRowSorter;
@@ -36,7 +36,7 @@ public class MSAnnotationNetworkLogic {
    */
   public static void showMostlikelyAnnotations(PeakList pkl) {
     for (PeakListRow row : pkl.getRows()) {
-      ESIAdductIdentity best = getMostLikelyAnnotation(row, null);
+      IonIdentity best = getMostLikelyAnnotation(row, null);
       // set best
       if (best != null)
         row.setPreferredPeakIdentity(best);
@@ -51,7 +51,7 @@ public class MSAnnotationNetworkLogic {
    */
   public static void showMostlikelyAnnotations(MSEGroupedPeakList pkl, boolean useGroups) {
     for (PeakListRow row : pkl.getRows()) {
-      ESIAdductIdentity best = getMostLikelyAnnotation(row, useGroups ? pkl.getGroup(row) : null);
+      IonIdentity best = getMostLikelyAnnotation(row, useGroups ? pkl.getGroup(row) : null);
       // set best
       if (best != null)
         row.setPreferredPeakIdentity(best);
@@ -65,7 +65,7 @@ public class MSAnnotationNetworkLogic {
    * @param useGroup searches for a correlation group or null
    * @return Most likely annotation or null if none present
    */
-  public static ESIAdductIdentity getMostLikelyAnnotation(PeakListRow row, boolean useGroup) {
+  public static IonIdentity getMostLikelyAnnotation(PeakListRow row, boolean useGroup) {
     return getMostLikelyAnnotation(row, useGroup ? PKLRowGroup.from(row) : null);
   }
 
@@ -75,11 +75,11 @@ public class MSAnnotationNetworkLogic {
    * @param g can be null. can be used to limit the number of links
    * @return
    */
-  public static ESIAdductIdentity getMostLikelyAnnotation(PeakListRow row, PKLRowGroup g) {
-    ESIAdductIdentity best = null;
+  public static IonIdentity getMostLikelyAnnotation(PeakListRow row, PKLRowGroup g) {
+    IonIdentity best = null;
     for (PeakIdentity id : row.getPeakIdentities()) {
-      if (id instanceof ESIAdductIdentity) {
-        ESIAdductIdentity esi = (ESIAdductIdentity) id;
+      if (id instanceof IonIdentity) {
+        IonIdentity esi = (IonIdentity) id;
         int compare = compareRows(best, esi, g);
         if (compare < 0)
           best = esi;
@@ -97,7 +97,7 @@ public class MSAnnotationNetworkLogic {
    */
   public static boolean hasIonAnnotation(PeakListRow row) {
     for (PeakIdentity id : row.getPeakIdentities()) {
-      if (id instanceof ESIAdductIdentity) {
+      if (id instanceof IonIdentity) {
         return true;
       }
     }
@@ -110,7 +110,7 @@ public class MSAnnotationNetworkLogic {
    * @param esi
    * @return -1 if esi is better than best 1 if opposite
    */
-  public static int compareRows(ESIAdductIdentity best, ESIAdductIdentity esi, PKLRowGroup g) {
+  public static int compareRows(IonIdentity best, IonIdentity esi, PKLRowGroup g) {
     if (best == null || best.getA().isUndefinedAdductParent())
       return -1;
     else if (esi.getA().isUndefinedAdductParent())
@@ -148,7 +148,7 @@ public class MSAnnotationNetworkLogic {
    * @param esi
    * @return onyl true if best so far was not verified by MSMS and esi was verified
    */
-  private static boolean compareMSMSMolIdentity(ESIAdductIdentity best, ESIAdductIdentity esi) {
+  private static boolean compareMSMSMolIdentity(IonIdentity best, IonIdentity esi) {
     if (best.getMSMSMultimerCount() == 0 && esi.getMSMSMultimerCount() > 0)
       return true;
     else
@@ -161,8 +161,8 @@ public class MSAnnotationNetworkLogic {
    * @param esi
    * @return onyl true if best was not verified by MSMS and and esi is
    */
-  private static boolean compareMSMSNeutralLossIdentity(ESIAdductIdentity best,
-      ESIAdductIdentity esi) {
+  private static boolean compareMSMSNeutralLossIdentity(IonIdentity best,
+      IonIdentity esi) {
     if (best.getMSMSModVerify() == 0 && esi.getMSMSModVerify() > 0)
       return true;
     else
@@ -175,7 +175,7 @@ public class MSAnnotationNetworkLogic {
    * @param g can be null. can be used to limit the number of links
    * @return
    */
-  public static int getLinksTo(ESIAdductIdentity esi, PKLRowGroup g) {
+  public static int getLinksTo(IonIdentity esi, PKLRowGroup g) {
     // TODO change to real links after refinement
     if (g == null)
       return esi.getPartnerRowsID().length;
@@ -195,7 +195,7 @@ public class MSAnnotationNetworkLogic {
    * @param b
    * @return True if b is a better choice
    */
-  private static boolean compareCharge(ESIAdductIdentity a, ESIAdductIdentity b) {
+  private static boolean compareCharge(IonIdentity a, IonIdentity b) {
     int ca = a.getA().getAbsCharge();
     int cb = b.getA().getAbsCharge();
     return cb != 0 // a is better if b is uncharged
@@ -246,8 +246,8 @@ public class MSAnnotationNetworkLogic {
               PeakListRow r = (PeakListRow) iterator.next();
               for (PeakIdentity pi : r.getPeakIdentities()) {
                 // identity by ms annotation module
-                if (pi instanceof ESIAdductIdentity) {
-                  ESIAdductIdentity adduct = (ESIAdductIdentity) pi;
+                if (pi instanceof IonIdentity) {
+                  IonIdentity adduct = (IonIdentity) pi;
                   adduct.setNetwork(current);
                 }
               }
@@ -323,7 +323,7 @@ public class MSAnnotationNetworkLogic {
    */
   private static Collection<AnnotationNetwork> splitByGroup(AnnotationNetwork net) {
     Map<Integer, AnnotationNetwork> map = new HashMap<>();
-    for (Entry<PeakListRow, ESIAdductIdentity> e : net.entrySet()) {
+    for (Entry<PeakListRow, IonIdentity> e : net.entrySet()) {
       Integer id = PKLRowGroup.idFrom(e.getKey());
       if (id != -1) {
         AnnotationNetwork nnet = map.get(id);
@@ -353,8 +353,8 @@ public class MSAnnotationNetworkLogic {
     for (PeakListRow row : rows) {
       for (PeakIdentity pi : row.getPeakIdentities()) {
         // identity by ms annotation module
-        if (pi instanceof ESIAdductIdentity) {
-          ESIAdductIdentity neutral = (ESIAdductIdentity) pi;
+        if (pi instanceof IonIdentity) {
+          IonIdentity neutral = (IonIdentity) pi;
           // only if charged (neutral losses do not point to the real neutral mass)
           if (!neutral.getA().isModifiedUndefinedAdduct())
             continue;
@@ -373,7 +373,7 @@ public class MSAnnotationNetworkLogic {
               AnnotationNetwork newNet = new AnnotationNetwork(mzTolerance, nets.size());
               nets.add(newNet);
               newNet.put(row, neutral);
-              newNet.put(partner, ESIAdductIdentity.getIdentityOf(partner, row));
+              newNet.put(partner, IonIdentity.getIdentityOf(partner, row));
               newNet.setNetworkToAllRows();
             } else {
               // add neutral loss to nets
@@ -384,10 +384,10 @@ public class MSAnnotationNetworkLogic {
                 // modified
                 pid = pid.createModified(neutral.getA().getModification());
 
-                ESIAdductIdentity realID = neutral;
+                IonIdentity realID = neutral;
                 if (pnet.checkForAnnotation(row, pid)) {
                   // create new
-                  realID = new ESIAdductIdentity(pid);
+                  realID = new IonIdentity(pid);
                   row.addPeakIdentity(realID, false);
                   realID.setNetwork(pnet);
                   // set partners
@@ -412,7 +412,7 @@ public class MSAnnotationNetworkLogic {
    */
   public static AnnotationNetwork[] getAllNetworks(PeakListRow row) {
     return MSAnnotationNetworkLogic.getAllAnnotations(row).stream()
-        .map(ESIAdductIdentity::getNetwork).filter(Objects::nonNull).distinct()
+        .map(IonIdentity::getNetwork).filter(Objects::nonNull).distinct()
         .toArray(AnnotationNetwork[]::new);
   }
 
@@ -438,8 +438,8 @@ public class MSAnnotationNetworkLogic {
     for (PeakListRow row : rows) {
       for (PeakIdentity pi : row.getPeakIdentities()) {
         // identity by ms annotation module
-        if (pi instanceof ESIAdductIdentity) {
-          ESIAdductIdentity adduct = (ESIAdductIdentity) pi;
+        if (pi instanceof IonIdentity) {
+          IonIdentity adduct = (IonIdentity) pi;
           // only if charged (neutral losses do not point to the real neutral mass)
           if (adduct.getA().getAbsCharge() == 0)
             continue;
@@ -468,7 +468,7 @@ public class MSAnnotationNetworkLogic {
    * @param e
    * @return
    */
-  public static double calcMass(Entry<PeakListRow, ESIAdductIdentity> e) {
+  public static double calcMass(Entry<PeakListRow, IonIdentity> e) {
     return e.getValue().getA().getMass(e.getKey().getAverageMZ());
   }
 
@@ -484,8 +484,8 @@ public class MSAnnotationNetworkLogic {
       int masterID) {
     for (PeakIdentity pi : row.getPeakIdentities()) {
       // identity by ms annotation module
-      if (pi instanceof ESIAdductIdentity) {
-        ESIAdductIdentity adduct = (ESIAdductIdentity) pi;
+      if (pi instanceof IonIdentity) {
+        IonIdentity adduct = (IonIdentity) pi;
 
         // try to add all
         if (current.isEmpty())
@@ -497,7 +497,7 @@ public class MSAnnotationNetworkLogic {
           if (id != masterID) {
             if (id > masterID) {
               PeakListRow row2 = findRowByID(id, rows);
-              ESIAdductIdentity adduct2 = ESIAdductIdentity.getIdentityOf(row2, row);
+              IonIdentity adduct2 = IonIdentity.getIdentityOf(row2, row);
               // new row found?
               if (row2 != null && !current.containsKey(row2)) {
                 current.put(row2, adduct2);
@@ -540,8 +540,8 @@ public class MSAnnotationNetworkLogic {
 
     for (PeakIdentity pi : row.getPeakIdentities()) {
       // identity by ms annotation module
-      if (pi instanceof ESIAdductIdentity) {
-        ESIAdductIdentity adduct = (ESIAdductIdentity) pi;
+      if (pi instanceof IonIdentity) {
+        IonIdentity adduct = (IonIdentity) pi;
 
         // add all connection
         int[] ids = adduct.getPartnerRowsID();
@@ -559,11 +559,11 @@ public class MSAnnotationNetworkLogic {
    * @param row
    * @return list of annotations or an empty list
    */
-  public static List<ESIAdductIdentity> getAllAnnotations(PeakListRow row) {
-    List<ESIAdductIdentity> ident = new ArrayList<>();
+  public static List<IonIdentity> getAllAnnotations(PeakListRow row) {
+    List<IonIdentity> ident = new ArrayList<>();
     for (PeakIdentity pi : row.getPeakIdentities()) {
-      if (pi instanceof ESIAdductIdentity)
-        ident.add((ESIAdductIdentity) pi);
+      if (pi instanceof IonIdentity)
+        ident.add((IonIdentity) pi);
     }
     return ident;
   }
@@ -573,15 +573,15 @@ public class MSAnnotationNetworkLogic {
    * @param row
    * @return list of annotations or an empty list
    */
-  public static List<ESIAdductIdentity> getAllAnnotationsSorted(PeakListRow row) {
-    List<ESIAdductIdentity> ident = new ArrayList<>();
+  public static List<IonIdentity> getAllAnnotationsSorted(PeakListRow row) {
+    List<IonIdentity> ident = new ArrayList<>();
     for (PeakIdentity pi : row.getPeakIdentities()) {
-      if (pi instanceof ESIAdductIdentity)
-        ident.add((ESIAdductIdentity) pi);
+      if (pi instanceof IonIdentity)
+        ident.add((IonIdentity) pi);
     }
-    ident.sort(new Comparator<ESIAdductIdentity>() {
+    ident.sort(new Comparator<IonIdentity>() {
       @Override
-      public int compare(ESIAdductIdentity a, ESIAdductIdentity b) {
+      public int compare(IonIdentity a, IonIdentity b) {
         return compareRows(a, b, (PKLRowGroup) null);
       }
     });
@@ -594,10 +594,10 @@ public class MSAnnotationNetworkLogic {
    * @param row
    * @param op
    */
-  public static void forEachAnnotation(PeakListRow row, Consumer<ESIAdductIdentity> op) {
+  public static void forEachAnnotation(PeakListRow row, Consumer<IonIdentity> op) {
     for (PeakIdentity pi : row.getPeakIdentities()) {
-      if (pi instanceof ESIAdductIdentity)
-        op.accept((ESIAdductIdentity) pi);
+      if (pi instanceof IonIdentity)
+        op.accept((IonIdentity) pi);
     }
   }
 
@@ -626,7 +626,7 @@ public class MSAnnotationNetworkLogic {
   public static AnnotationNetwork getBestNetwork(PKLRowGroup g) {
     AnnotationNetwork best = null;
     for (PeakListRow r : g) {
-      ESIAdductIdentity id = getMostLikelyAnnotation(r, g);
+      IonIdentity id = getMostLikelyAnnotation(r, g);
       AnnotationNetwork net = id != null ? id.getNetwork() : null;
       if (net != null && (best == null || best.size() < net.size()))
         best = net;

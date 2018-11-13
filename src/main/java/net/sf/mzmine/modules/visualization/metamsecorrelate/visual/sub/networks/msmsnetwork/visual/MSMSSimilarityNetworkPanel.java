@@ -11,7 +11,7 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.framework.networks.NetworkPanel;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RMap;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.similarity.R2RMS2Similarity;
 
 public class MSMSSimilarityNetworkPanel extends NetworkPanel {
@@ -92,8 +92,8 @@ public class MSMSSimilarityNetworkPanel extends NetworkPanel {
     String id = "";
     if (pid != null) {
       id = pid.getName();
-      if (pid instanceof ESIAdductIdentity) {
-        ESIAdductIdentity esi = (ESIAdductIdentity) pid;
+      if (pid instanceof IonIdentity) {
+        IonIdentity esi = (IonIdentity) pid;
         id = esi.getAdduct() + " by n=" + esi.getPartnerRowsID().length;
 
         if (esi.getNetID() != -1)
