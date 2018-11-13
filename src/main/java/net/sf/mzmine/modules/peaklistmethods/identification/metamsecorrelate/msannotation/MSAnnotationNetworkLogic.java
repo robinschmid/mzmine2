@@ -17,8 +17,9 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonType;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.util.PeakListRowSorter;
 import net.sf.mzmine.util.SortingDirection;
@@ -370,8 +371,7 @@ public class MSAnnotationNetworkLogic {
         if (pi instanceof ESIAdductIdentity) {
           ESIAdductIdentity neutral = (ESIAdductIdentity) pi;
           // only if charged (neutral losses do not point to the real neutral mass)
-          if (neutral.getA().getAbsCharge() != 0
-              && !neutral.getA().equals(AdductType.M_UNMODIFIED))
+          if (neutral.getA().getAbsCharge() != 0 && !neutral.getA().equals(AdductType.M_UNMODIFIED))
             continue;
 
           // all partners
@@ -395,7 +395,7 @@ public class MSAnnotationNetworkLogic {
               // do not if its already in this network (e.g. as adduct)
               Arrays.stream(partnerNets).filter(pnet -> !pnet.containsKey(row)).forEach(pnet -> {
                 // try to find real annotation
-                AdductType pid = pnet.get(partner).getA();
+                IonType pid = pnet.get(partner).getA();
                 // modified
                 pid = pid.createModified(neutral.getA());
 

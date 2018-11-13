@@ -8,8 +8,8 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 public class MSAnnotationLibrary {
@@ -104,7 +104,7 @@ public class MSAnnotationLibrary {
    * @param z2 -1 or 0 if not set (charge state always positive)
    * @return
    */
-  public AdductType[] findAdducts(final PeakList peakList, final PeakListRow row1,
+  public IonType[] findAdducts(final PeakList peakList, final PeakListRow row1,
       final PeakListRow row2, int z1, int z2, final CheckMode mode, final double minHeight) {
     z1 = Math.abs(z1);
     z2 = Math.abs(z2);

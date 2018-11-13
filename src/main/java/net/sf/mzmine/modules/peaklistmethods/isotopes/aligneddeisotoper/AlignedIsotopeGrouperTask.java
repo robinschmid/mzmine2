@@ -37,8 +37,8 @@ import net.sf.mzmine.datamodel.impl.SimplePeakList;
 import net.sf.mzmine.datamodel.impl.SimplePeakListAppliedMethod;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
@@ -56,7 +56,7 @@ public class AlignedIsotopeGrouperTask extends AbstractTask {
   private Logger logger = Logger.getLogger(this.getClass().getName());
 
   // mass 1.003354838
-  private static final double isotopeDistance = AdductType.C13.getMassDifference();
+  private static final double isotopeDistance = AdductType.C13.getMass();
 
   private final MZmineProject project;
   // peaks counter

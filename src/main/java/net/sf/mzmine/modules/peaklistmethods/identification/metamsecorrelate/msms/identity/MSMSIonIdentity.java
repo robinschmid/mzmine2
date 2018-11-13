@@ -1,7 +1,7 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity;
 
 import net.sf.mzmine.datamodel.DataPoint;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.interf.AbstractMSMSDataPointIdentity;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
@@ -12,11 +12,11 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
  */
 public class MSMSIonIdentity extends AbstractMSMSDataPointIdentity {
 
-  protected AdductType type;
+  protected IonType type;
 
-  public MSMSIonIdentity(MZTolerance mzTolerance, DataPoint dp, AdductType type) {
+  public MSMSIonIdentity(MZTolerance mzTolerance, DataPoint dp, IonType b) {
     super(mzTolerance, dp);
-    this.type = type;
+    this.type = b;
   }
 
   @Override
@@ -24,7 +24,7 @@ public class MSMSIonIdentity extends AbstractMSMSDataPointIdentity {
     return type.toString(false);
   }
 
-  public AdductType getType() {
+  public IonType getType() {
     return type;
   }
 }

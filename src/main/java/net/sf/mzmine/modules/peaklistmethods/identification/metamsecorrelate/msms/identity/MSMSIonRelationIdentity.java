@@ -1,7 +1,7 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity;
 
 import net.sf.mzmine.datamodel.DataPoint;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonType;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 /**
@@ -20,13 +20,13 @@ public class MSMSIonRelationIdentity extends MSMSIonIdentity {
   }
 
 
-  public MSMSIonRelationIdentity(MZTolerance mzTolerance, DataPoint dp, AdductType type,
+  public MSMSIonRelationIdentity(MZTolerance mzTolerance, DataPoint dp, IonType type,
       double parent) {
     super(mzTolerance, dp, type);
     this.parentMZ = parent;
   }
 
-  public MSMSIonRelationIdentity(MZTolerance mzTolerance, DataPoint dp, AdductType type,
+  public MSMSIonRelationIdentity(MZTolerance mzTolerance, DataPoint dp, IonType type,
       DataPoint parent) {
     super(mzTolerance, dp, type);
     this.parentDP = parent;

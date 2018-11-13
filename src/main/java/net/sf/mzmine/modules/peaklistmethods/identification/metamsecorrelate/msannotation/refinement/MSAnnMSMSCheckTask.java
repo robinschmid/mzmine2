@@ -30,8 +30,9 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.MSMSLogic;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIdentityList;
@@ -172,7 +173,7 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
       if (ad.getA().equals(AdductType.M_UNMODIFIED))
         continue;
 
-      AdductType mod = ad.getA().getAbsCharge() == 0 ? ad.getA() : ad.getA().getModifiedOnly();
+      IonType mod = ad.getA().getAbsCharge() == 0 ? ad.getA() : ad.getA().getModifiedOnly();
 
       if (mod == null)
         continue;
@@ -244,7 +245,7 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
    * @param precursorMZ
    */
   public static boolean checkParentForNeutralLoss(NeutralLossCheck neutralLossCheck,
-      DataPoint[] dps, ESIAdductIdentity identity, AdductType mod, MZTolerance mzTolerance,
+      DataPoint[] dps, ESIAdductIdentity identity, IonType mod, MZTolerance mzTolerance,
       double minHeight, double precursorMZ) {
     boolean result = false;
     // loss for precursor mz

@@ -35,6 +35,16 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
   }
 
   /**
+   * New ion type with different molecules count
+   * 
+   * @param molecules
+   * @param ion
+   */
+  public IonType(int molecules, IonType ion) {
+    this(molecules, ion.adduct, ion.mod);
+  }
+
+  /**
    * for adding modifications
    * 
    * @param a
