@@ -3,25 +3,34 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.da
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Objects;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import net.sf.mzmine.main.MZmineCore;
 
 public class AdductType extends NeutralMolecule implements Comparable<AdductType> {
-  // values
-  // unmodified molecule for mod connection [M] -> [M-H2O]
-  public static final AdductType M_UNMODIFIED = new AdductType("(unmodified)", 0, 0);
 
   // use combinations of X adducts (2H++; -H+Na2+) and modifications
-  public static final AdductType M_MINUS = new AdductType("e", +0.00054858, -1);
-  public static final AdductType H_NEG = new AdductType("H", "H", -1.007276, -1);
-  public static final AdductType M_PLUS = new AdductType("e", -0.00054858, 1);
-  public static final AdductType H = new AdductType("H", "H", 1.007276, 1);
+  public static final AdductType M_MINUS =
+      new AdductType(IonModificationType.ADDUCT, "e", +0.00054858, -1);
+  public static final AdductType H_NEG =
+      new AdductType(IonModificationType.ADDUCT, "H", "H", -1.007276, -1);
+  public static final AdductType M_PLUS =
+      new AdductType(IonModificationType.ADDUCT, "e", -0.00054858, 1);
+  public static final AdductType H =
+      new AdductType(IonModificationType.ADDUCT, "H", "H", 1.007276, 1);
   //
-  private static final AdductType NA = new AdductType("Na", "Na", 22.989218, 1);
-  private static final AdductType NH4 = new AdductType("NH4", "NH4", 18.033823, 1);
-  private static final AdductType K = new AdductType("K", "K", 38.963158, 1);
-  private static final AdductType FE = new AdductType("Fe", "Fe", 55.933840, 2);
-  private static final AdductType CA = new AdductType("Ca", "Ca", 39.961493820, 2);
-  private static final AdductType MG = new AdductType("Mg", "Mg", 47.96953482, 2);
+  private static final AdductType NA =
+      new AdductType(IonModificationType.ADDUCT, "Na", "Na", 22.989218, 1);
+  private static final AdductType NH4 =
+      new AdductType(IonModificationType.ADDUCT, "NH4", "NH4", 18.033823, 1);
+  private static final AdductType K =
+      new AdductType(IonModificationType.ADDUCT, "K", "K", 38.963158, 1);
+  private static final AdductType FE =
+      new AdductType(IonModificationType.ADDUCT, "Fe", "Fe", 55.933840, 2);
+  private static final AdductType CA =
+      new AdductType(IonModificationType.ADDUCT, "Ca", "Ca", 39.961493820, 2);
+  private static final AdductType MG =
+      new AdductType(IonModificationType.ADDUCT, "Mg", "Mg", 47.96953482, 2);
   // combined
   private static final AdductType H2plus = new CombinedAdductType(new AdductType[] {H, H});
   private static final AdductType NA_H = new CombinedAdductType(new AdductType[] {NA, H});
@@ -34,31 +43,48 @@ public class AdductType extends NeutralMolecule implements Comparable<AdductType
   private static final AdductType Hneg_MG = new CombinedAdductType(new AdductType[] {MG, H_NEG});
 
   // NEGATIVE
-  private static final AdductType CL = new AdductType("Cl", "Cl", 34.969401, -1);
-  private static final AdductType BR = new AdductType("Br", "Br", 78.918886, -1);
-  private static final AdductType FA = new AdductType("FA", "HCO2", 44.99820285, -1);
+  private static final AdductType CL =
+      new AdductType(IonModificationType.ADDUCT, "Cl", "Cl", 34.969401, -1);
+  private static final AdductType BR =
+      new AdductType(IonModificationType.ADDUCT, "Br", "Br", 78.918886, -1);
+  private static final AdductType FA =
+      new AdductType(IonModificationType.ADDUCT, "FA", "HCO2", 44.99820285, -1);
   // combined
   // +Na -2H+]-
   private static final AdductType NA_2H =
       new CombinedAdductType(new AdductType[] {NA, H_NEG, H_NEG});
 
   // modifications
-  private static final AdductType H2 = new AdductType("H2", "H2", -2.015650, 0);
-  private static final AdductType C2H4 = new AdductType("C2H4", "C2H4", -28.031301, 0);
-  private static final AdductType MEOH = new AdductType("MeOH", "CH3OH", 32.026215, 0);
-  private static final AdductType HFA = new AdductType("HFA", "CHOOH", 46.005479, 0);
-  private static final AdductType HAc = new AdductType("HAc", "CH3COOH", 60.021129, 0);
-  private static final AdductType ACN = new AdductType("ACN", "CH3CN", 41.026549, 0);
-  private static final AdductType O = new AdductType("O", "O", 15.99491462, 0);
-  private static final AdductType H2O = new AdductType("H2O", "H2O", -18.010565, 0);
+  private static final AdductType H2 =
+      new AdductType(IonModificationType.NEUTRAL_LOSS, "H2", "H2", -2.015650, 0);
+  private static final AdductType C2H4 =
+      new AdductType(IonModificationType.NEUTRAL_LOSS, "C2H4", "C2H4", -28.031301, 0);
+  private static final AdductType H2O =
+      new AdductType(IonModificationType.NEUTRAL_LOSS, "H2O", "H2O", -18.010565, 0);
   private static final AdductType H2O_2 = new CombinedAdductType(new AdductType[] {H2O, H2O});
 
-  private static final AdductType NH3 = new AdductType("NH3", "NH3", -17.026549, 0);
-  private static final AdductType CO = new AdductType("CO", "CO", -27.994915, 0);
-  private static final AdductType CO2 = new AdductType("CO2", "CO2", -43.989829, 0);
-  private static final AdductType ISOPROP = new AdductType("IsoProp", "C3H8O", 60.058064, 0);
+  private static final AdductType NH3 =
+      new AdductType(IonModificationType.NEUTRAL_LOSS, "NH3", "NH3", -17.026549, 0);
+  private static final AdductType CO =
+      new AdductType(IonModificationType.NEUTRAL_LOSS, "CO", "CO", -27.994915, 0);
+  private static final AdductType CO2 =
+      new AdductType(IonModificationType.NEUTRAL_LOSS, "CO2", "CO2", -43.989829, 0);
+  // cluster
+  private static final AdductType MEOH =
+      new AdductType(IonModificationType.CLUSTER, "MeOH", "CH3OH", 32.026215, 0);
+  private static final AdductType HFA =
+      new AdductType(IonModificationType.CLUSTER, "HFA", "CHOOH", 46.005479, 0);
+  private static final AdductType HAc =
+      new AdductType(IonModificationType.CLUSTER, "HAc", "CH3COOH", 60.021129, 0);
+  private static final AdductType ACN =
+      new AdductType(IonModificationType.CLUSTER, "ACN", "CH3CN", 41.026549, 0);
+  private static final AdductType O =
+      new AdductType(IonModificationType.CLUSTER, "O", "O", 15.99491462, 0);
+  private static final AdductType ISOPROP =
+      new AdductType(IonModificationType.CLUSTER, "IsoProp", "C3H8O", 60.058064, 0);
   // isotopes
-  public static final AdductType C13 = new AdductType("(13C)", 1.003354838, 0);
+  public static final AdductType C13 =
+      new AdductType(IonModificationType.ISOTOPE, "(13C)", 1.003354838, 0);
 
   // default values
   private static final AdductType[] DEFAULT_VALUES_POSITIVE = {H_NEG, M_PLUS, H, NA, K, NH4, H2plus,
@@ -72,6 +98,7 @@ public class AdductType extends NeutralMolecule implements Comparable<AdductType
   private static final AdductType[] DEFAULT_VALUES_ISOTOPES = {C13};
 
   // charge
+  protected IonModificationType type;
   protected String parsedName = "";
   protected int charge;
 
@@ -90,7 +117,7 @@ public class AdductType extends NeutralMolecule implements Comparable<AdductType
    * @param a
    */
   public AdductType(AdductType a) {
-    this(a.getName(), a.getMolFormula(), a.getMass(), a.getCharge());
+    this(a.type, a.getName(), a.getMolFormula(), a.getMass(), a.getCharge());
   }
 
   /**
@@ -101,13 +128,15 @@ public class AdductType extends NeutralMolecule implements Comparable<AdductType
    * @param charge
    * @param molecules
    */
-  public AdductType(String name, String molFormula, double massDifference, int charge) {
+  public AdductType(IonModificationType type, String name, String molFormula, double massDifference,
+      int charge) {
     super();
     this.name = name;
     this.mass = massDifference;
     this.charge = charge;
     this.molFormula = molFormula;
     parsedName = parseName();
+    this.type = type;
   }
 
   /**
@@ -117,12 +146,16 @@ public class AdductType extends NeutralMolecule implements Comparable<AdductType
    * @param massDifference
    * @param charge
    */
-  public AdductType(String name, double massDifference, int charge) {
-    this(name, "", massDifference, charge);
+  public AdductType(IonModificationType type, String name, double massDifference, int charge) {
+    this(type, name, "", massDifference, charge);
   }
 
   public AdductType() {
-    this("", 0, 0);
+    this(IonModificationType.UNKNOWN, "", 0, 0);
+  }
+
+  public IonModificationType getType() {
+    return type;
   }
 
   /**
@@ -203,7 +236,7 @@ public class AdductType extends NeutralMolecule implements Comparable<AdductType
     return Math.abs(charge);
   }
 
-  public AdductType[] getAdducts() {
+  public @Nonnull AdductType[] getAdducts() {
     return new AdductType[] {this};
   }
 
@@ -320,6 +353,48 @@ public class AdductType extends NeutralMolecule implements Comparable<AdductType
    */
   public static AdductType getUndefinedforCharge(int charge) {
     double mass = AdductType.M_PLUS.getMass() * charge;
-    return new AdductType("?", mass, charge);
+    return new AdductType(IonModificationType.UNDEFINED_ADDUCT, "?", mass, charge);
+  }
+
+  /**
+   * All sub types of this need to be in parameter b
+   * 
+   * @param b
+   * @return
+   */
+  public boolean isSubsetOf(AdductType b) {
+    if (b instanceof CombinedAdductType) {
+      // ion modifications all need to be in the mod array of this
+      AdductType[] full = b.getAdducts();
+      AdductType[] subset = this.getAdducts();
+      boolean[] used = new boolean[full.length];
+
+      for (int i = 0; i < subset.length; i++) {
+        boolean found = false;
+        for (int tm = 0; tm < used.length && !found; tm++) {
+          if (!used[tm] && full[tm].equals(subset[i])) {
+            used[tm] = true;
+            found = true;
+          }
+        }
+        if (!found)
+          return false;
+      }
+      return true;
+    } else
+      return false;
+  }
+
+  /**
+   * Removes all sub types of parameter from this type
+   * 
+   * @param type
+   * @return
+   */
+  public @Nullable AdductType remove(AdductType type) {
+    if (this.isSubsetOf(type) || this.equals(type))
+      return null;
+    else
+      return this;
   }
 }

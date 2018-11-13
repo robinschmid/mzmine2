@@ -56,6 +56,10 @@ public class ComboComponent<ValueType> extends JPanel {
     comboBox.setModel(model);
   }
 
+  public JComboBox<ValueType> getComboBox() {
+    return comboBox;
+  }
+
   @Override
   public void setEnabled(boolean enabled) {
     super.setEnabled(enabled);

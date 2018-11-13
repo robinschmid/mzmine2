@@ -12,7 +12,7 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.framework.networks.NetworkPanel;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModificationType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.AnnotationNetwork;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.util.PeakListRowSorter;
@@ -106,39 +106,41 @@ public class AnnotationNetworkPanel extends NetworkPanel {
         mzForm.format(net.getNeutralMass()), net.getID(), net.getCorrID());
 
     String neutralNode = "NEUTRAL LOSSES";
+
     // add center neutral M
-    net.entrySet().stream().forEach(e -> {
-      if (!e.getValue().getA().equals(AdductType.M_UNMODIFIED)) {
-        int charge = e.getValue().getA().getAbsCharge();
-        String node = toNodeName(e.getKey(), e.getValue());
+    net.entrySet().stream().filter(
+        e -> e.getValue().getA().getAdduct().getType().equals(IonModificationType.UNDEFINED_ADDUCT))
+        .forEach(e -> {
+          int charge = e.getValue().getA().getAbsCharge();
+          String node = toNodeName(e.getKey(), e.getValue());
 
-        if (charge > 0)
-          addNewEdge(mnode, node, Math.abs(net.getNeutralMass() - e.getKey().getAverageMZ()));
-        else {
-          // neutral
-          addNewEdge(neutralNode, node);
-          graph.getNode(node).setAttribute("ui.class", "NEUTRAL");
-        }
-        added.incrementAndGet();
-      }
-    });
-    // add all edges between ions
-    net.entrySet().stream().forEach(e -> {
-      String node1 = toNodeName(e.getKey(), e.getValue());
-
-      int[] partnerID = e.getValue().getPartnerRowsID();
-      for (int id : partnerID) {
-        PeakListRow prow = findRowByID(id, rows);
-        if (prow != null) {
-          ESIAdductIdentity link = net.get(prow);
-          if (link != null) {
-            String node2 = toNodeName(prow, link);
-            addNewEdge(node1, node2, Math.abs(e.getKey().getAverageMZ() - prow.getAverageMZ()));
-            added.incrementAndGet();
+          if (charge > 0)
+            addNewEdge(mnode, node, Math.abs(net.getNeutralMass() - e.getKey().getAverageMZ()));
+          else {
+            // neutral
+            addNewEdge(neutralNode, node);
+            graph.getNode(node).setAttribute("ui.class", "NEUTRAL");
           }
-        }
-      }
-    });
+          added.incrementAndGet();
+        });
+    // add all edges between ions
+    net.entrySet().stream().filter(e -> !e.getValue().getA().getAdduct().getType()
+        .equals(IonModificationType.UNDEFINED_ADDUCT)).forEach(e -> {
+          String node1 = toNodeName(e.getKey(), e.getValue());
+
+          int[] partnerID = e.getValue().getPartnerRowsID();
+          for (int id : partnerID) {
+            PeakListRow prow = findRowByID(id, rows);
+            if (prow != null) {
+              ESIAdductIdentity link = net.get(prow);
+              if (link != null) {
+                String node2 = toNodeName(prow, link);
+                addNewEdge(node1, node2, Math.abs(e.getKey().getAverageMZ() - prow.getAverageMZ()));
+                added.incrementAndGet();
+              }
+            }
+          }
+        });
   }
 
   public void setSelectedRow(PeakListRow row) {

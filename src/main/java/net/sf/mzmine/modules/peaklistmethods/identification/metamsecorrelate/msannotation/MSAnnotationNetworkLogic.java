@@ -17,7 +17,6 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonType;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
@@ -112,9 +111,9 @@ public class MSAnnotationNetworkLogic {
    * @return -1 if esi is better than best 1 if opposite
    */
   public static int compareRows(ESIAdductIdentity best, ESIAdductIdentity esi, PKLRowGroup g) {
-    if (best == null || best.getA().equals(AdductType.M_UNMODIFIED))
+    if (best == null || best.getA().isUndefinedAdductParent())
       return -1;
-    else if (esi.getA().equals(AdductType.M_UNMODIFIED))
+    else if (esi.getA().isUndefinedAdductParent())
       return 1;
     // size of network (ions pointing to the same neutral mass)
     else if (esi.getNetwork() != null
@@ -135,8 +134,7 @@ public class MSAnnotationNetworkLogic {
 
     int esiLinks = getLinksTo(esi, g);
     int bestLinks = getLinksTo(best, g);
-    if (esiLinks == bestLinks
-        && (compareCharge(best, esi) || (isTheUnmodified(best) && !isTheUnmodified(esi)))) {
+    if (esiLinks == bestLinks && (compareCharge(best, esi))) {
       return -1;
     } else if (esiLinks > bestLinks) {
       return -1;
@@ -190,19 +188,6 @@ public class MSAnnotationNetworkLogic {
       return c;
     }
   }
-
-
-
-  /**
-   * Checks if this identity is the unmodified reference. e.g., for [M (unmodified)] --> [M+H]
-   * 
-   * @param a
-   * @return
-   */
-  private static boolean isTheUnmodified(ESIAdductIdentity a) {
-    return a.getA().equals(AdductType.M_UNMODIFIED);
-  }
-
 
   /**
    * 
@@ -357,7 +342,7 @@ public class MSAnnotationNetworkLogic {
   }
 
   /**
-   * fill in neutral losses [M-H2O] is not iserted yet. they might be if [M+H2O+X]+ was also
+   * fill in neutral losses [M-H2O+?] is not inserted yet. they might be if [M+H2O+X]+ was also
    * annotated by another link
    * 
    * @param rows
@@ -371,7 +356,7 @@ public class MSAnnotationNetworkLogic {
         if (pi instanceof ESIAdductIdentity) {
           ESIAdductIdentity neutral = (ESIAdductIdentity) pi;
           // only if charged (neutral losses do not point to the real neutral mass)
-          if (neutral.getA().getAbsCharge() != 0 && !neutral.getA().equals(AdductType.M_UNMODIFIED))
+          if (!neutral.getA().isModifiedUndefinedAdduct())
             continue;
 
           // all partners
@@ -397,7 +382,7 @@ public class MSAnnotationNetworkLogic {
                 // try to find real annotation
                 IonType pid = pnet.get(partner).getA();
                 // modified
-                pid = pid.createModified(neutral.getA());
+                pid = pid.createModified(neutral.getA().getModification());
 
                 ESIAdductIdentity realID = neutral;
                 if (pnet.checkForAnnotation(row, pid)) {

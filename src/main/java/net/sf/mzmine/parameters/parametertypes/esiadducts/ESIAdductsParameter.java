@@ -35,6 +35,8 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.CombinedAdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModificationType;
 import net.sf.mzmine.parameters.UserParameter;
 import net.sf.mzmine.parameters.parametertypes.MultiChoiceParameter;
 
@@ -56,7 +58,8 @@ public class ESIAdductsParameter implements UserParameter<AdductType[][], ESIAdd
   private static final String NAME_ATTRIBUTE = "name";
   private static final String MASS_ATTRIBUTE = "mass_difference";
   private static final String CHARGE_ATTRIBUTE = "charge";
-  private static final String MOLECULES_ATTRIBUTE = "molecules";
+  private static final String MOL_FORMULA_ATTRIBUTE = "mol_formula";
+  private static final String TYPE_ATTRIBUTE = "type";
   private static final String SELECTED_ATTRIBUTE = "selected";
 
   private MultiChoiceParameter<AdductType> adducts, modification;
@@ -72,8 +75,8 @@ public class ESIAdductsParameter implements UserParameter<AdductType[][], ESIAdd
   public ESIAdductsParameter(final String name, final String description) {
     super();
     adducts = new MultiChoiceParameter<AdductType>(name, description, new AdductType[0]);
-    modification = new MultiChoiceParameter<AdductType>("Modifications",
-        "Modifications on adducts", new AdductType[0]);
+    modification = new MultiChoiceParameter<AdductType>("Modifications", "Modifications on adducts",
+        new AdductType[0]);
   }
 
   @Override
@@ -105,8 +108,8 @@ public class ESIAdductsParameter implements UserParameter<AdductType[][], ESIAdd
     modification.setValue(selectionsMod.toArray(new AdductType[selectionsMod.size()]));
   }
 
-  private void loadAdducts(final Element xmlElement, String TAG,
-      ArrayList<AdductType> newChoices, ArrayList<AdductType> selections) {
+  private void loadAdducts(final Element xmlElement, String TAG, ArrayList<AdductType> newChoices,
+      ArrayList<AdductType> selections) {
     NodeList adductElements = xmlElement.getChildNodes();
     for (int i = 0; i < adductElements.getLength(); i++) {
       Node a = adductElements.item(i);
@@ -131,18 +134,19 @@ public class ESIAdductsParameter implements UserParameter<AdductType[][], ESIAdd
             final Node nameNode = attributes.getNamedItem(NAME_ATTRIBUTE);
             final Node massNode = attributes.getNamedItem(MASS_ATTRIBUTE);
             final Node chargeNode = attributes.getNamedItem(CHARGE_ATTRIBUTE);
-            final Node moleculesNode = attributes.getNamedItem(MOLECULES_ATTRIBUTE);
+            final Node molFormulaNode = attributes.getNamedItem(MOL_FORMULA_ATTRIBUTE);
+            final Node typeNode = attributes.getNamedItem(TYPE_ATTRIBUTE);
 
             // Valid attributes?
-            if (nameNode != null && massNode != null && chargeNode != null
-                && moleculesNode != null) {
+            if (nameNode != null && massNode != null && chargeNode != null && molFormulaNode != null
+                && typeNode != null) {
 
               try {
                 // Create new adduct.
-                AdductType add = new AdductType(nameNode.getNodeValue(),
-                    Double.parseDouble(massNode.getNodeValue()),
-                    Integer.parseInt(chargeNode.getNodeValue()),
-                    Integer.parseInt(moleculesNode.getNodeValue()));
+                AdductType add = new AdductType(
+                    IonModificationType.valueOf(typeNode.getNodeValue()), nameNode.getNodeValue(),
+                    molFormulaNode.getNodeValue(), Double.parseDouble(massNode.getNodeValue()),
+                    Integer.parseInt(chargeNode.getNodeValue()));
                 adducts.add(add);
               } catch (NumberFormatException ex) {
                 // Ignore.
@@ -152,7 +156,12 @@ public class ESIAdductsParameter implements UserParameter<AdductType[][], ESIAdd
           }
         }
         // create adduct as combination of all childs
-        AdductType adduct = new AdductType(adducts.toArray(new AdductType[0]));
+        AdductType adduct = null;
+        if (adducts.size() == 1) {
+          adduct = new AdductType(adducts.get(0));
+        } else
+          adduct = new CombinedAdductType(adducts.toArray(new AdductType[adducts.size()]));
+
 
         // A new choice?
         if (!newChoices.contains(adduct)) {
@@ -207,10 +216,11 @@ public class ESIAdductsParameter implements UserParameter<AdductType[][], ESIAdd
     // all adducts
     for (AdductType item : type.getAdducts()) {
       final Element element = parent.createElement(ADDUCTS_ITEM_TAG);
-      element.setAttribute(NAME_ATTRIBUTE, item.getRawName());
-      element.setAttribute(MASS_ATTRIBUTE, Double.toString(item.getMassDifference()));
+      element.setAttribute(NAME_ATTRIBUTE, item.getName());
+      element.setAttribute(MASS_ATTRIBUTE, Double.toString(item.getMass()));
       element.setAttribute(CHARGE_ATTRIBUTE, Integer.toString(item.getCharge()));
-      element.setAttribute(MOLECULES_ATTRIBUTE, Integer.toString(item.getMolecules()));
+      element.setAttribute(MOL_FORMULA_ATTRIBUTE, item.getMolFormula());
+      element.setAttribute(TYPE_ATTRIBUTE, item.getType().toString());
       parentElement.appendChild(element);
     }
   }

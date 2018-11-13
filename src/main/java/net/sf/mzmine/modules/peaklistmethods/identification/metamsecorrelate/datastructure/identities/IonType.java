@@ -12,15 +12,23 @@ import net.sf.mzmine.main.MZmineCore;
 public class IonType extends NeutralMolecule implements Comparable<IonType> {
 
   protected final @Nonnull AdductType adduct;
-  protected final @Nullable NeutralModification[] mod;
+  protected final @Nullable AdductType mod;
   protected final int molecules;
   protected final int charge;
 
-  public IonType(AdductType adduct, NeutralModification... mod) {
+  public IonType(AdductType adduct) {
+    this(adduct, null);
+  }
+
+  public IonType(AdductType adduct, AdductType mod) {
     this(1, adduct, mod);
   }
 
-  public IonType(int molecules, AdductType adduct, NeutralModification... mod) {
+  public IonType(int molecules, AdductType adduct) {
+    this(molecules, adduct, null);
+  }
+
+  public IonType(int molecules, AdductType adduct, AdductType mod) {
     this.adduct = adduct;
     this.mod = mod;
     this.charge = adduct.charge;
@@ -28,10 +36,8 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
     name = parseName();
     //
     mass = adduct.getMass();
-    if (mod != null) {
-      Arrays.sort(mod);
-      mass += Arrays.stream(mod).mapToDouble(NeutralModification::getMass).sum();
-    }
+    if (mod != null)
+      mass += mod.getMass();
   }
 
   /**
@@ -51,15 +57,19 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
    * @param mod
    * @return
    */
-  public IonType createModified(final NeutralModification... newMod) {
-    List<NeutralMolecule> allMod = new ArrayList<>();
-    for (NeutralModification m : newMod)
+  public IonType createModified(final @Nonnull AdductType... newMod) {
+    if (newMod == null)
+      throw new NullPointerException("Parameter cannot be null");
+
+    List<AdductType> allMod = new ArrayList<>();
+    for (AdductType m : newMod)
       allMod.add(m);
     if (this.mod != null)
-      for (NeutralModification m : this.mod)
+      for (AdductType m : this.mod.getAdducts())
         allMod.add(m);
 
-    return new IonType(this.adduct, allMod.toArray(new NeutralModification[allMod.size()]));
+    AdductType nm = new CombinedAdductType(allMod.toArray(new AdductType[allMod.size()]));
+    return new IonType(this.adduct, nm);
   }
 
   /**
@@ -67,7 +77,7 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
    * 
    * @return
    */
-  public NeutralModification[] getModification() {
+  public AdductType getModification() {
     return mod;
   }
 
@@ -76,7 +86,7 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
     StringBuilder sb = new StringBuilder();
     // modification first
     if (mod != null)
-      Arrays.stream(mod).map(NeutralModification::getParsedName).forEach(n -> sb.append(n));
+      sb.append(mod.getParsedName());
     // adducts
     sb.append(adduct.getParsedName());
 
@@ -112,19 +122,12 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
    * @return
    */
   public boolean modsEqual(IonType a) {
-    if (this.mod == a.mod)
+    if (this.mod == a.mod || (mod == null && a.mod == null))
       return true;
     if (this.mod == null ^ a.mod == null)
       return false;
 
-    if (this.mod.length != a.mod.length)
-      return false;
-
-    // is already sorted
-    for (int i = 0; i < mod.length; i++)
-      if (!mod[i].equals(a.mod[i]))
-        return false;
-    return true;
+    return mod.equals(a.mod);
   }
 
   /**
@@ -133,19 +136,32 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
    * @param a
    * @return
    */
-  public boolean hasModificationOverlap(IonType a) {
-    if (this.mod == a.mod || (mod == null && a.mod == null))
+  public boolean hasModificationOverlap(IonType ion) {
+    AdductType[] a = mod.getAdducts();
+    AdductType[] b = ion.mod.getAdducts();
+    if (a == b)
       return true;
 
-    if (this.mod == null ^ a.mod == null)
-      return false;
+    for (final AdductType aa : a)
+      if (Arrays.stream(b).anyMatch(ab -> aa.equals(ab)))
+        return true;
+    return false;
+  }
 
-    if (this.mod.length == 0 || a.mod.length == 0)
-      return false;
+  /**
+   * checks if at least one adduct is shared
+   * 
+   * @param a
+   * @return
+   */
+  public boolean hasAdductOverlap(IonType ion) {
+    AdductType[] a = adduct.getAdducts();
+    AdductType[] b = ion.adduct.getAdducts();
+    if (a == b)
+      return true;
 
-    // is already sorted
-    for (final NeutralModification thisMod : mod)
-      if (Arrays.stream(a.mod).anyMatch(moda -> moda.equals(thisMod)))
+    for (final AdductType aa : a)
+      if (Arrays.stream(b).anyMatch(ab -> aa.equals(ab)))
         return true;
     return false;
   }
@@ -209,7 +225,7 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
    * @return
    */
   public boolean hasMods() {
-    return mod != null && mod.length > 0;
+    return mod != null;
   }
 
   /**
@@ -222,6 +238,8 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
       double md1 = getMassDifference();
       double md2 = a.getMassDifference();
       i = Double.compare(md1, md2);
+      if (i == 0)
+        i = Integer.compare(getMolecules(), a.getMolecules());
     }
     return i;
   }
@@ -240,21 +258,7 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
     else if (!ion.hasMods())
       return true;
     else {
-      // ion modifications all need to be in the mod array of this
-      boolean[] used = new boolean[this.mod.length];
-
-      for (int i = 0; i < ion.getModCount(); i++) {
-        boolean found = false;
-        for (int tm = 0; tm < used.length && !found; tm++) {
-          if (!used[tm] && this.mod[tm].equals(ion.mod[i])) {
-            used[tm] = true;
-            found = true;
-          }
-        }
-        if (!found)
-          return false;
-      }
-      return true;
+      return ion.mod.isSubsetOf(mod);
     }
   }
 
@@ -264,17 +268,12 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
    * @param adduct
    * @return
    */
-  public IonType subtractMods(IonType ion) {
+  public @Nonnull IonType subtractMods(IonType ion) {
     // return an identity with only the modifications
     if (hasMods() && ion.hasMods()) {
-      List<NeutralModification> newMods = new ArrayList<>();
-      for (NeutralModification m : mod)
-        newMods.add(m);
-
-      for (NeutralModification m : ion.mod)
-        newMods.remove(m);
-      return new IonType(this.molecules, this.adduct,
-          newMods.toArray(new NeutralModification[newMods.size()]));
+      AdductType na = this.mod.remove(ion.mod);
+      // na can be null
+      return new IonType(this.molecules, this.adduct, na);
     } else
       return this;
   }
@@ -294,7 +293,7 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
    * @return count of modification
    */
   public int getModCount() {
-    return mod == null ? 0 : mod.length;
+    return mod == null ? 0 : mod.getAdducts().length;
   }
 
   /**
@@ -343,5 +342,32 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
    */
   public boolean adductsEqual(IonType b) {
     return adduct.equals(b.adduct);
+  }
+
+  /**
+   * Has modifications and the adduct type is undefined (this should be target to refinement)
+   * 
+   * @return
+   */
+  public boolean isModifiedUndefinedAdduct() {
+    return isUndefinedAdduct() && getModCount() > 0;
+  }
+
+  /**
+   * Undefined adduct [M+?]c+
+   * 
+   * @return
+   */
+  public boolean isUndefinedAdduct() {
+    return adduct.getType().equals(IonModificationType.UNDEFINED_ADDUCT);
+  }
+
+  /**
+   * Undefined adduct [M+?]c+ but not modified
+   * 
+   * @return
+   */
+  public boolean isUndefinedAdductParent() {
+    return adduct.getType().equals(IonModificationType.UNDEFINED_ADDUCT) && getModCount() == 0;
   }
 }

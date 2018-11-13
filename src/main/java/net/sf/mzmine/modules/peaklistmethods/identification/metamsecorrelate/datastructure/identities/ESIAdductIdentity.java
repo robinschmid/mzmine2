@@ -75,8 +75,8 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
    * @param row1 row to add the identity to
    * @param row2 identified by this row
    */
-  public static void addAdductIdentityToRow(PeakListRow row1, IonType row1ID, PeakListRow row2,
-      IonType row2ID) {
+  public static ESIAdductIdentity[] addAdductIdentityToRow(PeakListRow row1, IonType row1ID,
+      PeakListRow row2, IonType row2ID) {
     ESIAdductIdentity a = getAdductEqualIdentity(row1, row1ID);
     ESIAdductIdentity b = getAdductEqualIdentity(row2, row2ID);
 
@@ -91,6 +91,7 @@ public class ESIAdductIdentity extends SimplePeakIdentity {
     }
     a.addPartnerRow(row2, b);
     b.addPartnerRow(row1, a);
+    return new ESIAdductIdentity[] {a, b};
   }
 
   /**

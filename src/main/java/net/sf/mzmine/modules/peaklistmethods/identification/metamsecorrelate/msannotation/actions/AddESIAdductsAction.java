@@ -30,13 +30,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import javax.swing.AbstractAction;
+import javax.swing.DefaultComboBoxModel;
 import net.sf.mzmine.framework.listener.DelayedDocumentListener;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModificationType;
 import net.sf.mzmine.parameters.Parameter;
-import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
+import net.sf.mzmine.parameters.parametertypes.ComboComponent;
+import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.MultiChoiceComponent;
@@ -73,14 +76,16 @@ public class AddESIAdductsAction extends AbstractAction {
     if (parent != null) {
 
       // Show dialog.
-      final ParameterSet parameters = new AddESIAdductParameters();
-      if (parameters.showSetupDialog(MZmineCore.getDesktop().getMainWindow(),
-          true) == ExitCode.OK) {
+      final AddESIAdductParameters parameters = new AddESIAdductParameters();
+      if (parameters.showSetupDialog(MZmineCore.getDesktop().getMainWindow(), true,
+          IonModificationType.ADDUCT, IonModificationType.CLUSTER, IonModificationType.NEUTRAL_LOSS,
+          IonModificationType.ISOTOPE) == ExitCode.OK) {
 
         //
         int charge = 0;
         Double mz = null;
         String name = parameters.getParameter(AddESIAdductParameters.NAME).getValue();
+        IonModificationType type = parameters.getParameter(AddESIAdductParameters.TYPE).getValue();
         // Create new adduct.
         SumformulaParameter form = parameters.getParameter(AddESIAdductParameters.FORMULA);
         if (form.checkValue() && !form.isEmpty()) {
@@ -98,7 +103,7 @@ public class AddESIAdductsAction extends AbstractAction {
           charge = parameters.getParameter(AddESIAdductParameters.CHARGE).getValue();
         }
 
-        final AdductType adduct = new AdductType(name, mz, charge);
+        final AdductType adduct = new AdductType(type, name, mz, charge);
 
         // Add to list of choices (if not already present).
         final Collection<AdductType> choices =
@@ -117,6 +122,10 @@ public class AddESIAdductsAction extends AbstractAction {
    */
   private static class AddESIAdductParameters extends SimpleParameterSet {
 
+    // type
+    private static final ComboParameter<IonModificationType> TYPE = new ComboParameter<>("Type",
+        "The type of ion modification", IonModificationType.values(), IonModificationType.ADDUCT);
+
     // Adduct name.
     private static final StringParameter NAME =
         new StringParameter("Name", "A name to identify the new adduct.", "", false);
@@ -134,7 +143,7 @@ public class AddESIAdductsAction extends AbstractAction {
         new IntegerParameter("Charge", "Charge of adduct", 1, false);
 
     private AddESIAdductParameters() {
-      super(new Parameter[] {NAME, FORMULA, MASS_DIFFERENCE, CHARGE});
+      super(new Parameter[] {TYPE, NAME, FORMULA, MASS_DIFFERENCE, CHARGE});
     }
 
     @Override
@@ -148,6 +157,32 @@ public class AddESIAdductsAction extends AbstractAction {
             .setEnabled(e.getDocument().getLength() == 0);
         dialog.getComponentForParameter(CHARGE).setEnabled(e.getDocument().getLength() == 0);
       }));
+
+      dialog.setVisible(true);
+      return dialog.getExitCode();
+    }
+
+    public ExitCode showSetupDialog(Window parent, boolean valueCheckRequired,
+        IonModificationType... types) {
+      ParameterSetupDialog dialog = new ParameterSetupDialog(parent, valueCheckRequired, this);
+
+      // enable
+      SumformulaComponent com = (SumformulaComponent) dialog.getComponentForParameter(FORMULA);
+      com.getTextField().getDocument().addDocumentListener(new DelayedDocumentListener(100, e -> {
+        dialog.getComponentForParameter(MASS_DIFFERENCE)
+            .setEnabled(e.getDocument().getLength() == 0);
+        dialog.getComponentForParameter(CHARGE).setEnabled(e.getDocument().getLength() == 0);
+      }));
+
+      ComboComponent<IonModificationType> comType =
+          (ComboComponent<IonModificationType>) dialog.getComponentForParameter(TYPE);
+      if (types == null || types.length == 1)
+        comType.setVisible(false);
+      else {
+        comType.getComboBox().setModel(new DefaultComboBoxModel<IonModificationType>(types));
+        comType.getComboBox().setSelectedIndex(0);
+      }
+
 
       dialog.setVisible(true);
       return dialog.getExitCode();

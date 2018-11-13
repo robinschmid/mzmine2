@@ -39,6 +39,7 @@ import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonType;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
@@ -667,13 +668,15 @@ public class AlignedIsotopeGrouperTask extends AbstractTask {
     for (int z = maximumCharge; z >= 1; z--) {
       // checks each raw file - only true if all m/z are in range
       if (checkIsotope(peakList, row1, row2, iso, z, mzTolerance)) {
+        IonType parent = new IonType(AdductType.getUndefinedforCharge(z));
+        IonType isoIon = parent.createModified(iso);
         // Add adduct identity and notify GUI.
         // only if not already present
         if (row2.getAverageMZ() < row1.getAverageMZ()) {
-          ESIAdductIdentity.addAdductIdentityToRow(row1, iso, row2, AdductType.M_UNMODIFIED);
+          ESIAdductIdentity.addAdductIdentityToRow(row1, isoIon, row2, parent);
           MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row1, false);
         } else {
-          ESIAdductIdentity.addAdductIdentityToRow(row2, iso, row1, AdductType.M_UNMODIFIED);
+          ESIAdductIdentity.addAdductIdentityToRow(row2, isoIon, row1, parent);
           MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row2, false);
         }
         // there can only be one hit for a row-row comparison
@@ -695,7 +698,7 @@ public class AlignedIsotopeGrouperTask extends AbstractTask {
         hasCommonPeak = true;
         double mz1 = (f1.getMZ() * charge);
         double mz2 = (f2.getMZ() * charge);
-        mz1 = mz1 + (iso.getMassDifference() * (mz1 < mz2 ? 1 : -1));
+        mz1 = mz1 + (iso.getMass() * (mz1 < mz2 ? 1 : -1));
         if (!mzTolerance.checkWithinTolerance(mz1, mz2))
           return false;
       }

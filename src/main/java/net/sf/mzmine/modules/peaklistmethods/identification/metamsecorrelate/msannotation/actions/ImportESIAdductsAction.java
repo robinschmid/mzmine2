@@ -130,6 +130,7 @@ public class ImportESIAdductsAction extends AbstractAction {
    */
   private static AdductType[] loadAdductsIntoChoices(final String[][] lines,
       final AdductType[] esiAdductTypes) {
+    // TODO export full structure for combined
 
     // Create a list of adducts.
     final ArrayList<AdductType> choices = new ArrayList<AdductType>(Arrays.asList(esiAdductTypes));
@@ -142,8 +143,8 @@ public class ImportESIAdductsAction extends AbstractAction {
         try {
 
           // Create new adduct and add it to the choices if it's new.
-          final AdductType adduct = new AdductType(line[0], Double.parseDouble(line[1]),
-              Integer.parseInt(line[2]), Integer.parseInt(line[3]));
+          final AdductType adduct =
+              new AdductType(null, line[0], Double.parseDouble(line[1]), Integer.parseInt(line[2]));
           if (!choices.contains(adduct)) {
             choices.add(adduct);
           }

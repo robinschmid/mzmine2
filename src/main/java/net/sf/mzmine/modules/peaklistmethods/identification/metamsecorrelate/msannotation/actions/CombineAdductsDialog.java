@@ -16,6 +16,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import net.miginfocom.swing.MigLayout;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.CombinedAdductType;
 
 public class CombineAdductsDialog extends JDialog implements MouseListener {
 
@@ -95,7 +96,7 @@ public class CombineAdductsDialog extends JDialog implements MouseListener {
     for (int i = 0; i < com.length; i++) {
       com[i] = model.get(i);
     }
-    AdductType nt = new AdductType(com);
+    AdductType nt = new CombinedAdductType(com);
     newTypes.add(nt);
     // add to adducts
     DefaultListModel addModel = (DefaultListModel) adducts.getModel();

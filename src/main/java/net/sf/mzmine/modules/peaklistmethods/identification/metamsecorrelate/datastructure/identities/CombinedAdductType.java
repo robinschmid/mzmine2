@@ -13,42 +13,29 @@ public class CombinedAdductType extends AdductType {
    * 
    * @param adduct
    */
-  public CombinedAdductType(AdductType[] adduct) {
+  public CombinedAdductType(AdductType... adduct) {
     super();
-    this.adducts = adduct;
+
+    // all adducts
+    List<AdductType> ad = new ArrayList<AdductType>();
+    for (int i = 0; i < adduct.length; i++) {
+      for (AdductType n : adduct[i].getAdducts()) {
+        ad.add(n);
+      }
+    }
+    adducts = ad.toArray(new AdductType[ad.size()]);
     Arrays.sort(adducts);
+    type = IonModificationType.getType(adducts);
 
     double md = 0;
     int z = 0;
-    for (int i = 0; i < adduct.length; i++) {
-      AdductType a = adduct[i];
+    for (int i = 0; i < adducts.length; i++) {
+      AdductType a = adducts[i];
       md += a.getMass();
       z += a.getCharge();
     }
     charge = z;
     mass = md;
-    this.parsedName = parseName();
-  }
-
-
-  /**
-   * for combining two adducts
-   * 
-   * @param a1
-   * @param a2
-   */
-  public CombinedAdductType(final AdductType a1, final AdductType a2) {
-    name = "";
-    // all adducts
-    List<AdductType> ad = new ArrayList<AdductType>();
-    for (AdductType n : a1.getAdducts())
-      ad.add(n);
-    for (AdductType n : a2.getAdducts())
-      ad.add(n);
-    adducts = ad.toArray(new AdductType[ad.size()]);
-    Arrays.sort(adducts);
-    charge = a1.getCharge() + a2.getCharge();
-    mass = a1.getMass() + a2.getMass();
     this.parsedName = parseName();
   }
 
@@ -102,5 +89,22 @@ public class CombinedAdductType extends AdductType {
       nname += sign + counterS + s;
     }
     return nname;
+  }
+
+  @Override
+  public AdductType remove(AdductType type) {
+    List<AdductType> newList = new ArrayList<>();
+    for (AdductType m : this.getAdducts())
+      newList.add(m);
+
+    for (AdductType m : type.getAdducts())
+      newList.remove(m);
+
+    if (newList.isEmpty())
+      return null;
+    else if (newList.size() == 1)
+      return new AdductType(newList.get(0));
+    else
+      return new CombinedAdductType(newList.toArray(new AdductType[newList.size()]));
   }
 }

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.ESIAdductIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.AdductType;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonType;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 /**
@@ -184,7 +184,7 @@ public class AnnotationNetwork extends HashMap<PeakListRow, ESIAdductIdentity> {
    * @param pid
    * @return
    */
-  public boolean checkForAnnotation(PeakListRow row, AdductType pid) {
+  public boolean checkForAnnotation(PeakListRow row, IonType pid) {
     return mzTolerance.checkWithinTolerance(calcNeutralMass(), pid.getMass(row.getAverageMZ()));
   }
 
