@@ -1,30 +1,27 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities;
 
 import java.text.MessageFormat;
-import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Objects;
 import net.sf.mzmine.main.MZmineCore;
 
 public class AdductType extends NeutralMolecule implements Comparable<AdductType> {
-  private NumberFormat mzForm = MZmineCore.getConfiguration().getMZFormat();
-
   // values
   // unmodified molecule for mod connection [M] -> [M-H2O]
   public static final AdductType M_UNMODIFIED = new AdductType("(unmodified)", 0, 0);
 
   // use combinations of X adducts (2H++; -H+Na2+) and modifications
   public static final AdductType M_MINUS = new AdductType("e", +0.00054858, -1);
-  public static final AdductType H_NEG = new AdductType("H", -1.007276, -1);
+  public static final AdductType H_NEG = new AdductType("H", "H", -1.007276, -1);
   public static final AdductType M_PLUS = new AdductType("e", -0.00054858, 1);
-  public static final AdductType H = new AdductType("H", 1.007276, 1);
+  public static final AdductType H = new AdductType("H", "H", 1.007276, 1);
   //
-  private static final AdductType NA = new AdductType("Na", 22.989218, 1);
-  private static final AdductType NH4 = new AdductType("NH4", 18.033823, 1);
-  private static final AdductType K = new AdductType("K", 38.963158, 1);
-  private static final AdductType FE = new AdductType("Fe", 55.933840, 2);
-  private static final AdductType CA = new AdductType("Ca", 39.961493820, 2);
-  private static final AdductType MG = new AdductType("Mg", 47.96953482, 2);
+  private static final AdductType NA = new AdductType("Na", "Na", 22.989218, 1);
+  private static final AdductType NH4 = new AdductType("NH4", "NH4", 18.033823, 1);
+  private static final AdductType K = new AdductType("K", "K", 38.963158, 1);
+  private static final AdductType FE = new AdductType("Fe", "Fe", 55.933840, 2);
+  private static final AdductType CA = new AdductType("Ca", "Ca", 39.961493820, 2);
+  private static final AdductType MG = new AdductType("Mg", "Mg", 47.96953482, 2);
   // combined
   private static final AdductType H2plus = new CombinedAdductType(new AdductType[] {H, H});
   private static final AdductType NA_H = new CombinedAdductType(new AdductType[] {NA, H});
@@ -37,29 +34,29 @@ public class AdductType extends NeutralMolecule implements Comparable<AdductType
   private static final AdductType Hneg_MG = new CombinedAdductType(new AdductType[] {MG, H_NEG});
 
   // NEGATIVE
-  private static final AdductType CL = new AdductType("Cl", 34.969401, -1);
-  private static final AdductType BR = new AdductType("Br", 78.918886, -1);
-  private static final AdductType FA = new AdductType("FA", 44.99820285, -1);
+  private static final AdductType CL = new AdductType("Cl", "Cl", 34.969401, -1);
+  private static final AdductType BR = new AdductType("Br", "Br", 78.918886, -1);
+  private static final AdductType FA = new AdductType("FA", "HCO2", 44.99820285, -1);
   // combined
   // +Na -2H+]-
   private static final AdductType NA_2H =
       new CombinedAdductType(new AdductType[] {NA, H_NEG, H_NEG});
 
   // modifications
-  private static final AdductType H2 = new AdductType("C2H4", -2.015650, 0);
-  private static final AdductType C2H4 = new AdductType("C2H4", -28.031301, 0);
-  private static final AdductType MEOH = new AdductType("MeOH", 32.026215, 0);
-  private static final AdductType HFA = new AdductType("HFA", 46.005479, 0);
-  private static final AdductType HAc = new AdductType("HAc", 60.021129, 0);
-  private static final AdductType ACN = new AdductType("ACN", 41.026549, 0);
-  private static final AdductType O = new AdductType("O", 15.99491462, 0);
-  private static final AdductType H2O = new AdductType("H2O", -18.010565, 0);
+  private static final AdductType H2 = new AdductType("H2", "H2", -2.015650, 0);
+  private static final AdductType C2H4 = new AdductType("C2H4", "C2H4", -28.031301, 0);
+  private static final AdductType MEOH = new AdductType("MeOH", "CH3OH", 32.026215, 0);
+  private static final AdductType HFA = new AdductType("HFA", "CHOOH", 46.005479, 0);
+  private static final AdductType HAc = new AdductType("HAc", "CH3COOH", 60.021129, 0);
+  private static final AdductType ACN = new AdductType("ACN", "CH3CN", 41.026549, 0);
+  private static final AdductType O = new AdductType("O", "O", 15.99491462, 0);
+  private static final AdductType H2O = new AdductType("H2O", "H2O", -18.010565, 0);
   private static final AdductType H2O_2 = new CombinedAdductType(new AdductType[] {H2O, H2O});
 
-  private static final AdductType NH3 = new AdductType("NH3", -17.026549, 0);
-  private static final AdductType CO = new AdductType("CO", -27.994915, 0);
-  private static final AdductType CO2 = new AdductType("CO2", -43.989829, 0);
-  private static final AdductType ISOPROP = new AdductType("IsoProp", 60.058064, 0);
+  private static final AdductType NH3 = new AdductType("NH3", "NH3", -17.026549, 0);
+  private static final AdductType CO = new AdductType("CO", "CO", -27.994915, 0);
+  private static final AdductType CO2 = new AdductType("CO2", "CO2", -43.989829, 0);
+  private static final AdductType ISOPROP = new AdductType("IsoProp", "C3H8O", 60.058064, 0);
   // isotopes
   public static final AdductType C13 = new AdductType("(13C)", 1.003354838, 0);
 
@@ -93,7 +90,7 @@ public class AdductType extends NeutralMolecule implements Comparable<AdductType
    * @param a
    */
   public AdductType(AdductType a) {
-    this(a.getName(), a.getMass(), a.getCharge(), a.getMolFormula());
+    this(a.getName(), a.getMolFormula(), a.getMass(), a.getCharge());
   }
 
   /**
@@ -104,7 +101,7 @@ public class AdductType extends NeutralMolecule implements Comparable<AdductType
    * @param charge
    * @param molecules
    */
-  public AdductType(String name, double massDifference, int charge, String molFormula) {
+  public AdductType(String name, String molFormula, double massDifference, int charge) {
     super();
     this.name = name;
     this.mass = massDifference;
@@ -121,7 +118,7 @@ public class AdductType extends NeutralMolecule implements Comparable<AdductType
    * @param charge
    */
   public AdductType(String name, double massDifference, int charge) {
-    this(name, massDifference, charge, "");
+    this(name, "", massDifference, charge);
   }
 
   public AdductType() {
@@ -133,26 +130,17 @@ public class AdductType extends NeutralMolecule implements Comparable<AdductType
    * @return array of names
    */
   public String[] getRawNames() {
-    return new String[] {getRawName()};
-  }
-
-  public String getRawName() {
-    return name;
+    return new String[] {getName()};
   }
 
   /**
    * 
    * @return parsed name (f.e. -2H+Na)
    */
-  @Override
-  public String getName() {
+  public String getParsedName() {
     return parsedName;
   }
 
-  public String parseName() {
-    String sign = this.getMass() < 0 ? "-" : "+";
-    return sign + getRawName();
-  }
 
   public int getCharge() {
     return charge;
@@ -181,7 +169,8 @@ public class AdductType extends NeutralMolecule implements Comparable<AdductType
       z = "";
     // molecules
     if (showMass)
-      return MessageFormat.format("[M{0}]{1} ({2})", parsedName, z, mzForm.format(getMass()));
+      return MessageFormat.format("[M{0}]{1} ({2})", parsedName, z,
+          MZmineCore.getConfiguration().getMZFormat().format(getMass()));
     else
       return MessageFormat.format("[M{0}]{1}", parsedName, z);
   }
@@ -295,11 +284,10 @@ public class AdductType extends NeutralMolecule implements Comparable<AdductType
    * @param b
    * @return true if no adduct is a duplicate
    */
-  public boolean uniqueAdductsTo(AdductType b) {
-    return (this.getAdducts().length == 0 && b.getAdducts().length == 0)
-        || (this.getAdducts().length == 0) || b.getAdducts().length == 0
-        || Arrays.stream(getAdducts())
-            .noneMatch(adda -> Arrays.stream(b.getAdducts()).anyMatch(addb -> adda.equals(addb)));
+  public boolean uniqueAdductsTo(AdductType adduct) {
+    AdductType[] a = getAdducts();
+    AdductType[] b = adduct.getAdducts();
+    return Arrays.stream(a).noneMatch(adda -> Arrays.stream(b).anyMatch(addb -> adda.equals(addb)));
   }
 
 
@@ -322,5 +310,16 @@ public class AdductType extends NeutralMolecule implements Comparable<AdductType
 
   public static AdductType[] getDefaultIsotopes() {
     return Arrays.copyOf(DEFAULT_VALUES_MODIFICATIONS, DEFAULT_VALUES_ISOTOPES.length);
+  }
+
+  /**
+   * Undefined adduct for charge
+   * 
+   * @param charge
+   * @return
+   */
+  public static AdductType getUndefinedforCharge(int charge) {
+    double mass = AdductType.M_PLUS.getMass() * charge;
+    return new AdductType("?", mass, charge);
   }
 }

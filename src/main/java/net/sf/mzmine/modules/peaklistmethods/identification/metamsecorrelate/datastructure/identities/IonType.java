@@ -4,263 +4,77 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import net.sf.mzmine.main.MZmineCore;
 
-public class IonType implements Comparable<IonType> {
+public class IonType extends NeutralMolecule implements Comparable<IonType> {
 
-  private AdductType adduct;
-  private NeutralModification[] mod;
-  private int molecules = 1;
-  private String parsedName;
-  private double massDifference;
+  protected final @Nonnull AdductType adduct;
+  protected final @Nullable NeutralModification[] mod;
+  protected final int molecules;
+  protected final int charge;
 
-  /**
-   * 
-   * @param name
-   * @param massDifference mass difference (for single charge, Molecule) for example M to M+H+
-   *        (1.0072) M to M+Na+ (22.9892)
-   * @param charge negative for negatives
-   * @param molecules count of molecules in a cluster
-   */
-  /**
-   * copy of adduct
-   * 
-   * @param a
-   */
-  public IonType(IonType a) {
-    super();
-    if (a.getModification() != null)
-      this.modification = a.getModification().clone();
-    this.massDifference = a.massDifference;
-    this.charge = a.charge;
-    this.molecules = a.molecules;
-    this.name = a.name;
-    this.adducts = a.getAdducts().clone();
-    this.parsedName = parseName();
+  public IonType(AdductType adduct, NeutralModification... mod) {
+    this(1, adduct, mod);
   }
 
-  /**
-   * new raw adduct
-   * 
-   * @param name
-   * @param massDifference
-   * @param charge
-   * @param molecules
-   */
-  public IonType(String name, double massDifference, int charge, int molecules) {
-    super();
-    this.name = name;
-    this.modification = null;
-    this.massDifference = massDifference;
-    this.charge = charge;
+  public IonType(int molecules, AdductType adduct, NeutralModification... mod) {
+    this.adduct = adduct;
+    this.mod = mod;
+    this.charge = adduct.charge;
     this.molecules = molecules;
-    this.adducts = new IonType[1];
-    this.adducts[0] = this;
-    this.parsedName = parseName();
-  }
-
-  /**
-   * new raw adduct
-   * 
-   * @param name
-   * @param massDifference
-   * @param charge
-   */
-  public IonType(String name, double massDifference, int charge) {
-    this(name, massDifference, charge, 1);
-  }
-
-  /**
-   * fast creation of combined adducts
-   * 
-   * @param adduct
-   */
-  public IonType(final IonType[] adduct) {
-    // all mods
-    List<IonType> mod = new ArrayList<>();
-    for (IonType a : adduct)
-      if (a.getModification() != null)
-        for (IonType m : a.getModification())
-          mod.add(m);
-
-    if (mod.size() > 0)
-      modification = mod.toArray(new IonType[mod.size()]);
-    else
-      modification = null;
-    // adducts
-    this.adducts = adduct;
-    double md = 0;
-    int z = 0;
-    int mol = 0;
-    for (int i = 0; i < adduct.length; i++) {
-      IonType a = adduct[i];
-      md += a.getMassDifference();
-      z += a.getCharge();
-      mol = a.getMolecules();
+    name = parseName();
+    //
+    mass = adduct.getMass();
+    if (mod != null) {
+      Arrays.sort(mod);
+      mass += Arrays.stream(mod).mapToDouble(NeutralModification::getMass).sum();
     }
-    charge = z;
-    molecules = mol;
-    massDifference = md;
-    this.parsedName = parseName();
   }
 
   /**
-   * for combining two adducts
-   * 
-   * @param a1
-   * @param a2
-   */
-  public IonType(final IonType a1, final IonType a2) {
-    name = "";
-    // add modification
-    int length = 0;
-    if (a1.getModification() != null)
-      length += a1.getModification().length;
-    if (a2.getModification() != null)
-      length += a2.getModification().length;
-    if (length != 0) {
-      this.modification = new IonType[length];
-      int c = 0;
-      for (c = 0; a1.getModification() != null && c < a1.getModification().length; c++)
-        modification[c] = a1.getModification()[c];
-      for (int i = 0; a2.getModification() != null && i < a2.getModification().length; i++)
-        modification[c + i] = a2.getModification()[i];
-    } else
-      this.modification = null;
-    // all adducts
-    List<IonType> ad = new ArrayList<IonType>();
-    for (IonType n : a1.getAdducts())
-      ad.add(n);
-    for (IonType n : a2.getAdducts())
-      ad.add(n);
-    adducts = ad.toArray(new IonType[ad.size()]);
-    charge = a1.getCharge() + a2.getCharge();
-    molecules = a1.getMolecules();
-    massDifference = a1.getMassDifference() + a2.getMassDifference();
-    this.parsedName = parseName();
-  }
-
-  /**
-   * for adding a modifcation
+   * for adding modifications
    * 
    * @param a
    * @param mod
    * @return
    */
-  public static IonType createModified(final IonType a, final IonType mod) {
-    IonType na = new IonType(a);
-    // modification are saved in adducts for combined mods
-    IonType[] realMod = mod.getAdducts();
-    // add modification
-    int length = realMod.length;
-    if (a.getModification() != null)
-      length += a.getModification().length;
-    na.modification = new IonType[length];
-    for (int i = 0; i < realMod.length; i++) {
-      na.modification[i] = realMod[i];
-      na.massDifference += realMod[i].getMassDifference();
-    }
-    if (a.getModification() != null)
-      for (int i = 0; i < na.modification.length - realMod.length; i++)
-        na.modification[i + realMod.length] = a.getModification()[i];
-    // parse name
-    na.parsedName = na.parseName();
-    return na;
-  }
+  public IonType createModified(final NeutralModification... newMod) {
+    List<NeutralMolecule> allMod = new ArrayList<>();
+    for (NeutralModification m : newMod)
+      allMod.add(m);
+    if (this.mod != null)
+      for (NeutralModification m : this.mod)
+        allMod.add(m);
 
-  public IonType[] getModification() {
-    return modification;
+    return new IonType(this.adduct, allMod.toArray(new NeutralModification[allMod.size()]));
   }
 
   /**
+   * All modifications
    * 
-   * @return array of names
+   * @return
    */
-  public String[] getNames() {
-    String[] names = new String[adducts.length];
-    for (int i = 0; i < names.length; i++)
-      names[i] = adducts[i].getRawName();
-    return names;
+  public NeutralModification[] getModification() {
+    return mod;
   }
 
-  public String[] getModNames() {
-    String[] names = new String[modification.length];
-    for (int i = 0; i < names.length; i++)
-      names[i] = modification[i].getRawName();
-    return names;
-  }
-
-  public String getRawName() {
-    return name;
-  }
-
-  /**
-   * 
-   * @return parsed name (f.e. -2H+Na)
-   */
-  public String getName() {
-    return parsedName;
-  }
-
+  @Override
   public String parseName() {
+    StringBuilder sb = new StringBuilder();
+    // modification first
+    if (mod != null)
+      Arrays.stream(mod).map(NeutralModification::getParsedName).forEach(n -> sb.append(n));
+    // adducts
+    sb.append(adduct.getParsedName());
 
-    String s = null;
-    int counter = 0;
-    String add, counterS;
-
-    String mod = "";
-    if (modification != null) {
-      Arrays.sort(modification);
-
-      for (int i = 0; i < modification.length; i++) {
-        String cs = modification[i].getRawName();
-        if (s == null) {
-          s = cs;
-          counter = 1;
-        } else if (s == cs)
-          counter++;
-        else {
-          add = (modification[i - 1].getMassDifference() < 0 ? "-" : "+");
-          counterS = counter > 1 ? String.valueOf(counter) : "";
-          mod += add + counterS + s;
-          s = cs;
-          counter = 1;
-        }
-      }
-      add = (modification[modification.length - 1].getMassDifference() < 0 ? "-" : "+");
-      counterS = counter > 1 ? String.valueOf(counter) : "";
-      mod += add + counterS + s;
-    }
-
-    s = null;
-    String nname = "";
-    if (adducts != null) {
-      Arrays.sort(adducts);
-      for (int i = 0; i < adducts.length; i++) {
-        String cs = adducts[i].getRawName();
-        if (s == null) {
-          s = cs;
-          counter = 1;
-        } else if (s == cs)
-          counter++;
-        else {
-          add = (adducts[i - 1].getMassDifference() < 0 ? "-" : "+");
-          counterS = counter > 1 ? String.valueOf(counter) : "";
-          nname += add + counterS + s;
-          s = cs;
-          counter = 1;
-        }
-      }
-      add = (adducts[adducts.length - 1].getMassDifference() < 0 ? "-" : "+");
-      counterS = counter > 1 ? String.valueOf(counter) : "";
-      nname += add + counterS + s;
-    }
-
-    return mod + nname;
+    return sb.toString();
   }
 
   public double getMassDifference() {
-    return massDifference;
+    return mass;
   }
 
   public int getCharge() {
@@ -278,22 +92,7 @@ public class IonType implements Comparable<IonType> {
    * @return
    */
   public boolean nameEquals(IonType a) {
-    boolean state = ((name != null && a.name != null && name.length() > 0 && a.name.length() > 0
-        && name.equals(a.name)));
-    if (state)
-      return true;
-    // check all sub adducts
-    if (adducts.length != a.adducts.length)
-      return false;
-
-    // is already sorted?
-    Arrays.sort(adducts);
-    Arrays.sort(a.adducts);
-    for (int i = 0; i < adducts.length; i++)
-      if (!adducts[i].getRawName().equals(a.adducts[i].getRawName())
-          || !adducts[i].sameMathDifference(a.adducts[i]))
-        return false;
-    return true;
+    return name.equals(a.name);
   }
 
   /**
@@ -303,19 +102,42 @@ public class IonType implements Comparable<IonType> {
    * @return
    */
   public boolean modsEqual(IonType a) {
-    if (!hasMods() && !a.hasMods())
+    if (this.mod == a.mod)
       return true;
-    // check all sub adducts
-    if (modification.length != a.modification.length)
+    if (this.mod == null ^ a.mod == null)
       return false;
-    // is already sorted?
-    Arrays.sort(modification);
-    Arrays.sort(a.modification);
-    for (int i = 0; i < modification.length; i++)
-      if (!modification[i].getRawName().equals(a.modification[i].getRawName())
-          || !modification[i].sameMathDifference(a.modification[i]))
+
+    if (this.mod.length != a.mod.length)
+      return false;
+
+    // is already sorted
+    for (int i = 0; i < mod.length; i++)
+      if (!mod[i].equals(a.mod[i]))
         return false;
     return true;
+  }
+
+  /**
+   * checks if at least one modification is shared
+   * 
+   * @param a
+   * @return
+   */
+  public boolean hasModificationOverlap(IonType a) {
+    if (this.mod == a.mod || (mod == null && a.mod == null))
+      return true;
+
+    if (this.mod == null ^ a.mod == null)
+      return false;
+
+    if (this.mod.length == 0 || a.mod.length == 0)
+      return false;
+
+    // is already sorted
+    for (final NeutralModification thisMod : mod)
+      if (Arrays.stream(a.mod).anyMatch(moda -> moda.equals(thisMod)))
+        return true;
+    return false;
   }
 
 
@@ -333,14 +155,14 @@ public class IonType implements Comparable<IonType> {
     // molecules
     String mol = molecules > 1 ? String.valueOf(molecules) : "";
     if (showMass)
-      return MessageFormat.format("[{0}M{1}]{2} ({3})", mol, parsedName, z,
-          mzForm.format(getMassDifference()));
+      return MessageFormat.format("[{0}M{1}]{2} ({3})", mol, name, z,
+          MZmineCore.getConfiguration().getMZFormat().format(getMassDifference()));
     else
-      return MessageFormat.format("[{0}M{1}]{2}", mol, parsedName, z);
+      return MessageFormat.format("[{0}M{1}]{2}", mol, name, z);
   }
 
   public String getMassDiffString() {
-    return MZmineCore.getConfiguration().getMZFormat().format(massDifference) + " m/z";
+    return MZmineCore.getConfiguration().getMZFormat().format(mass) + " m/z";
   }
 
   /**
@@ -360,23 +182,15 @@ public class IonType implements Comparable<IonType> {
    * @return
    */
   public boolean sameMassDifference(IonType adduct) {
-    return Double.compare(massDifference, adduct.massDifference) == 0;
+    return Double.compare(mass, adduct.mass) == 0;
   }
 
   public int getAbsCharge() {
     return Math.abs(charge);
   }
 
-  public IonType[] getAdducts() {
-    return adducts;
-  }
-
-  public void setAdducts(IonType[] adducts) {
-    this.adducts = adducts;
-  }
-
-  public void setMolecules(int i) {
-    molecules = i;
+  public AdductType getAdduct() {
+    return adduct;
   }
 
   /**
@@ -385,7 +199,7 @@ public class IonType implements Comparable<IonType> {
    * @return
    */
   public boolean hasMods() {
-    return modification != null && modification.length > 0;
+    return mod != null && mod.length > 0;
   }
 
   /**
@@ -393,7 +207,7 @@ public class IonType implements Comparable<IonType> {
    */
   @Override
   public int compareTo(IonType a) {
-    int i = this.getRawName().compareTo(a.getRawName());
+    int i = this.getName().compareTo(a.getName());
     if (i == 0) {
       double md1 = getMassDifference();
       double md2 = a.getMassDifference();
@@ -409,12 +223,29 @@ public class IonType implements Comparable<IonType> {
    * @param adduct
    * @return
    */
-  public boolean isModificationOf(IonType adduct) {
-    return !sameMassDifference(adduct) && molecules == adduct.molecules && charge == adduct.charge
-        && nameEquals(adduct)
-        && (this.hasMods()
-            && (!adduct.hasMods() || (adduct.modification.length < this.modification.length
-                && adduct.modification[0].equals(this.modification[0]))));
+  public boolean isModificationOf(IonType ion) {
+    if (!hasMods() || !(ion.getModCount() < getModCount() && mass != ion.mass
+        && adduct.equals(ion.adduct) && molecules == ion.molecules && charge == ion.charge))
+      return false;
+    else if (!ion.hasMods())
+      return true;
+    else {
+      // ion modifications all need to be in the mod array of this
+      boolean[] used = new boolean[this.mod.length];
+
+      for (int i = 0; i < ion.getModCount(); i++) {
+        boolean found = false;
+        for (int tm = 0; tm < used.length && !found; tm++) {
+          if (!used[tm] && this.mod[tm].equals(ion.mod[i])) {
+            used[tm] = true;
+            found = true;
+          }
+        }
+        if (!found)
+          return false;
+      }
+      return true;
+    }
   }
 
   /**
@@ -423,31 +254,29 @@ public class IonType implements Comparable<IonType> {
    * @param adduct
    * @return
    */
-  public IonType subtractMods(IonType adduct) {
+  public IonType subtractMods(IonType ion) {
     // return an identity with only the modifications
-    if (!adduct.hasMods())
-      return new IonType(modification);
-    else if (hasMods()) {
-      List<IonType> mods = new ArrayList<>();
-      for (int i = 0; i < modification.length; i++)
-        if (adduct.modification.length <= i || !modification[i].equals(adduct.modification[i]))
-          mods.add(modification[i]);
-      return new IonType(mods.toArray(new IonType[mods.size()]));
+    if (hasMods() && ion.hasMods()) {
+      List<NeutralModification> newMods = new ArrayList<>();
+      for (NeutralModification m : mod)
+        newMods.add(m);
+
+      for (NeutralModification m : ion.mod)
+        newMods.remove(m);
+      return new IonType(this.molecules, this.adduct,
+          newMods.toArray(new NeutralModification[newMods.size()]));
     } else
-      return null;
+      return this;
   }
 
 
   /**
+   * Undefined adduct with 1 molecule and all modifications
    * 
    * @return modifications only or null
    */
   public IonType getModifiedOnly() {
-    IonType[] all = getModification();
-    if (all == null)
-      return null;
-
-    return new IonType(all);
+    return new IonType(1, AdductType.getUndefinedforCharge(this.charge), mod);
   }
 
   /**
@@ -455,7 +284,7 @@ public class IonType implements Comparable<IonType> {
    * @return count of modification
    */
   public int getModCount() {
-    return modification == null ? 0 : modification.length;
+    return mod == null ? 0 : mod.length;
   }
 
   /**
@@ -481,64 +310,20 @@ public class IonType implements Comparable<IonType> {
     return (neutralmass * getMolecules() + getMassDifference()) / getAbsCharge();
   }
 
+  @Override
+  public boolean equals(final Object obj) {
+    if (obj == null || !obj.getClass().equals(this.getClass()) || !(obj instanceof IonType))
+      return false;
+    if (!super.equals(obj))
+      return false;
 
-  /**
-   * Get the default adducts.
-   *
-   * @return the list of default adducts.
-   */
-  public static IonType[] getDefaultValuesPos() {
-    return Arrays.copyOf(DEFAULT_VALUES_POSITIVE, DEFAULT_VALUES_POSITIVE.length);
-  }
-
-  public static IonType[] getDefaultValuesNeg() {
-    return Arrays.copyOf(DEFAULT_VALUES_NEGATIVE, DEFAULT_VALUES_NEGATIVE.length);
-  }
-
-  public static IonType[] getDefaultModifications() {
-    return Arrays.copyOf(DEFAULT_VALUES_MODIFICATIONS, DEFAULT_VALUES_MODIFICATIONS.length);
-  }
-
-  public static IonType[] getDefaultIsotopes() {
-    return Arrays.copyOf(DEFAULT_VALUES_MODIFICATIONS, DEFAULT_VALUES_ISOTOPES.length);
+    final IonType a = (IonType) obj;
+    return (sameMathDifference(a) && adductsEqual(a) && modsEqual(a));
   }
 
   @Override
-  public boolean equals(final Object obj) {
-    final boolean eq;
-    if (obj instanceof IonType) {
-      final IonType adduct = (IonType) obj;
-
-      eq = adduct == this
-          || (sameMathDifference(adduct) && nameEquals(adduct) && modsEqual(adduct));
-    } else {
-      eq = false;
-    }
-    return eq;
-  }
-
-  /**
-   * is a fragment
-   * 
-   * @return
-   */
-  public boolean isFragment() {
-    return getModification() != null || getCharge() == 0;
-  }
-
-  public IonType createModified(IonType mod) {
-    return IonType.createModified(this, mod);
-  }
-
-  /**
-   * 
-   * @param b
-   * @return true if no modification is a duplicate
-   */
-  public boolean uniqueModificationsTo(IonType b) {
-    return (this.getModCount() == 0 && b.getModCount() == 0) || (this.getModCount() == 0)
-        || b.getModCount() == 0 || Arrays.stream(getModification()).noneMatch(
-            moda -> Arrays.stream(b.getModification()).anyMatch(modb -> moda.equals(modb)));
+  public int hashCode() {
+    return Objects.hash(adduct, mod == null ? "" : mod, charge, molecules, mass, name);
   }
 
   /**
@@ -546,10 +331,7 @@ public class IonType implements Comparable<IonType> {
    * @param b
    * @return true if no adduct is a duplicate
    */
-  public boolean uniqueAdductsTo(IonType b) {
-    return (this.getAdducts().length == 0 && b.getAdducts().length == 0)
-        || (this.getAdducts().length == 0) || b.getAdducts().length == 0
-        || Arrays.stream(getAdducts())
-            .noneMatch(adda -> Arrays.stream(b.getAdducts()).anyMatch(addb -> adda.equals(addb)));
+  public boolean adductsEqual(IonType b) {
+    return adduct.equals(b.adduct);
   }
 }

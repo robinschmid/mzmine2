@@ -26,13 +26,13 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
-import net.sf.mzmine.datamodel.IonizationType;
 import org.openscience.cdk.config.Isotopes;
 import org.openscience.cdk.interfaces.IChemObjectBuilder;
 import org.openscience.cdk.interfaces.IIsotope;
 import org.openscience.cdk.interfaces.IMolecularFormula;
 import org.openscience.cdk.silent.SilentChemObjectBuilder;
 import org.openscience.cdk.tools.manipulator.MolecularFormulaManipulator;
+import net.sf.mzmine.datamodel.IonizationType;
 
 public class FormulaUtils {
 
@@ -172,7 +172,7 @@ public class FormulaUtils {
    * @return true / false
    */
   public static boolean checkMolecularFormula(String formula) {
-    if(formula.matches(".*[äöüÄÖÜß°§$%&/()=?ß²³´`+*~'#;:<>|]")) { // check for this first
+    if (formula.matches(".*[äöüÄÖÜß°§$%&/()=?ß²³´`+*~'#;:<>|]")) { // check for this first
       logger.info("Formula contains illegal characters.");
       return false;
     }
@@ -207,5 +207,15 @@ public class FormulaUtils {
       return false;
     }
     return true;
+  }
+
+  public static IMolecularFormula createMajorIsotopeMolFormula(String formula) {
+    try {
+      IChemObjectBuilder builder = SilentChemObjectBuilder.getInstance();
+      return MolecularFormulaManipulator.getMajorIsotopeMolecularFormula(formula.replace(" ", ""),
+          builder);
+    } catch (Exception e) {
+      return null;
+    }
   }
 }

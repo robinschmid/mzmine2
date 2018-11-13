@@ -72,7 +72,7 @@ public class CombinedAdductType extends AdductType {
       return new String[0];
     String[] names = new String[adducts.length];
     for (int i = 0; i < names.length; i++)
-      names[i] = adducts[i].getRawName();
+      names[i] = adducts[i].getName();
     return names;
   }
 
@@ -83,7 +83,7 @@ public class CombinedAdductType extends AdductType {
       String s = null;
       int counter = 0;
       for (int i = 0; i < adducts.length; i++) {
-        String cs = adducts[i].getRawName();
+        String cs = adducts[i].getName();
         if (s == null) {
           s = cs;
           counter = 1;
