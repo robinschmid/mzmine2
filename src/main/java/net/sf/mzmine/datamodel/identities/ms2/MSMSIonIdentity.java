@@ -1,8 +1,8 @@
 package net.sf.mzmine.datamodel.identities.ms2;
 
 import net.sf.mzmine.datamodel.DataPoint;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonType;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.interf.AbstractMSMSDataPointIdentity;
+import net.sf.mzmine.datamodel.identities.iontype.IonType;
+import net.sf.mzmine.datamodel.identities.ms2.interf.AbstractMSMSDataPointIdentity;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 /**

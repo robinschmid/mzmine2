@@ -17,8 +17,6 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonType;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.util.PeakListRowSorter;
 import net.sf.mzmine.util.SortingDirection;
@@ -161,8 +159,7 @@ public class MSAnnotationNetworkLogic {
    * @param esi
    * @return onyl true if best was not verified by MSMS and and esi is
    */
-  private static boolean compareMSMSNeutralLossIdentity(IonIdentity best,
-      IonIdentity esi) {
+  private static boolean compareMSMSNeutralLossIdentity(IonIdentity best, IonIdentity esi) {
     if (best.getMSMSModVerify() == 0 && esi.getMSMSModVerify() > 0)
       return true;
     else
@@ -411,9 +408,8 @@ public class MSAnnotationNetworkLogic {
    * @return
    */
   public static AnnotationNetwork[] getAllNetworks(PeakListRow row) {
-    return MSAnnotationNetworkLogic.getAllAnnotations(row).stream()
-        .map(IonIdentity::getNetwork).filter(Objects::nonNull).distinct()
-        .toArray(AnnotationNetwork[]::new);
+    return MSAnnotationNetworkLogic.getAllAnnotations(row).stream().map(IonIdentity::getNetwork)
+        .filter(Objects::nonNull).distinct().toArray(AnnotationNetwork[]::new);
   }
 
   /**

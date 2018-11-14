@@ -21,9 +21,9 @@ package net.sf.mzmine.datamodel.identities;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import org.apache.commons.lang3.StringUtils;
+import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
 import net.sf.mzmine.datamodel.impl.SimplePeakIdentity;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.AnnotationNetwork;
 
 public class MoleculeIdentity extends SimplePeakIdentity {
 

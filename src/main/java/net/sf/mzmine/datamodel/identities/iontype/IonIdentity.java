@@ -25,13 +25,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.datamodel.identities.ms2.MSMSIdentityList;
+import net.sf.mzmine.datamodel.identities.ms2.MSMSIonRelationIdentity;
+import net.sf.mzmine.datamodel.identities.ms2.MSMSIonRelationIdentity.Relation;
+import net.sf.mzmine.datamodel.identities.ms2.MSMSMultimerIdentity;
+import net.sf.mzmine.datamodel.identities.ms2.interf.AbstractMSMSIdentity;
 import net.sf.mzmine.datamodel.impl.SimplePeakIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.AnnotationNetwork;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIdentityList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIonRelationIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIonRelationIdentity.Relation;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSMultimerIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.interf.AbstractMSMSIdentity;
 
 public class IonIdentity extends SimplePeakIdentity {
 

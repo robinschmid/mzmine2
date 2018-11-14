@@ -3,8 +3,6 @@ package net.sf.mzmine.datamodel.identities.iontype;
 import java.util.HashMap;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonType;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 /**
