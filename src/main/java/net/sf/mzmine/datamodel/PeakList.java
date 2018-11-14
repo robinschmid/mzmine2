@@ -215,5 +215,4 @@ public interface PeakList {
    * Returns the whole retention time range of the peak list
    */
   public Range<Double> getRowsRTRange();
-
 }

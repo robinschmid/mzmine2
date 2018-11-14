@@ -2,7 +2,6 @@ package net.sf.mzmine.datamodel.identities.iontype;
 
 import java.util.HashMap;
 import net.sf.mzmine.datamodel.PeakListRow;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 /**
@@ -246,7 +245,7 @@ public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity> {
   public int getCorrID() {
     if (isEmpty())
       return -1;
-    return PKLRowGroup.idFrom(keySet().iterator().next());
+    return keySet().iterator().next().getGroupID();
   }
 
   /**
@@ -259,7 +258,7 @@ public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity> {
       return true;
     int cid = getCorrID();
     for (PeakListRow r : keySet()) {
-      if (PKLRowGroup.idFrom(r) != cid)
+      if (r.getGroupID() != cid)
         return false;
     }
     return true;

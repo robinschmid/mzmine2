@@ -15,8 +15,7 @@ import java.util.logging.Logger;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
+import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.util.PeakListRowSorter;
 import net.sf.mzmine.util.SortingDirection;
@@ -47,9 +46,9 @@ public class MSAnnotationNetworkLogic {
    * @param mseGroupedPeakList
    * @param g can be null. can be used to limit the number of links
    */
-  public static void showMostlikelyAnnotations(MSEGroupedPeakList pkl, boolean useGroups) {
+  public static void showMostlikelyAnnotations(PeakList pkl, boolean useGroups) {
     for (PeakListRow row : pkl.getRows()) {
-      IonIdentity best = getMostLikelyAnnotation(row, useGroups ? pkl.getGroup(row) : null);
+      IonIdentity best = getMostLikelyAnnotation(row, useGroups ? row.getGroup() : null);
       // set best
       if (best != null)
         row.setPreferredPeakIdentity(best);
@@ -64,7 +63,7 @@ public class MSAnnotationNetworkLogic {
    * @return Most likely annotation or null if none present
    */
   public static IonIdentity getMostLikelyAnnotation(PeakListRow row, boolean useGroup) {
-    return getMostLikelyAnnotation(row, useGroup ? PKLRowGroup.from(row) : null);
+    return getMostLikelyAnnotation(row, useGroup ? row.getGroup() : null);
   }
 
   /**
@@ -73,7 +72,7 @@ public class MSAnnotationNetworkLogic {
    * @param g can be null. can be used to limit the number of links
    * @return
    */
-  public static IonIdentity getMostLikelyAnnotation(PeakListRow row, PKLRowGroup g) {
+  public static IonIdentity getMostLikelyAnnotation(PeakListRow row, RowGroup g) {
     IonIdentity best = null;
     for (PeakIdentity id : row.getPeakIdentities()) {
       if (id instanceof IonIdentity) {
@@ -108,7 +107,7 @@ public class MSAnnotationNetworkLogic {
    * @param esi
    * @return -1 if esi is better than best 1 if opposite
    */
-  public static int compareRows(IonIdentity best, IonIdentity esi, PKLRowGroup g) {
+  public static int compareRows(IonIdentity best, IonIdentity esi, RowGroup g) {
     if (best == null || best.getIonType().isUndefinedAdductParent())
       return -1;
     else if (esi.getIonType().isUndefinedAdductParent())
@@ -172,7 +171,7 @@ public class MSAnnotationNetworkLogic {
    * @param g can be null. can be used to limit the number of links
    * @return
    */
-  public static int getLinksTo(IonIdentity esi, PKLRowGroup g) {
+  public static int getLinksTo(IonIdentity esi, RowGroup g) {
     // TODO change to real links after refinement
     if (g == null)
       return esi.getPartnerRowsID().length;
@@ -321,7 +320,7 @@ public class MSAnnotationNetworkLogic {
   private static Collection<AnnotationNetwork> splitByGroup(AnnotationNetwork net) {
     Map<Integer, AnnotationNetwork> map = new HashMap<>();
     for (Entry<PeakListRow, IonIdentity> e : net.entrySet()) {
-      Integer id = PKLRowGroup.idFrom(e.getKey());
+      Integer id = e.getKey().getGroupID();
       if (id != -1) {
         AnnotationNetwork nnet = map.get(id);
         if (nnet == null) {
@@ -578,7 +577,7 @@ public class MSAnnotationNetworkLogic {
     ident.sort(new Comparator<IonIdentity>() {
       @Override
       public int compare(IonIdentity a, IonIdentity b) {
-        return compareRows(a, b, (PKLRowGroup) null);
+        return compareRows(a, b, (RowGroup) null);
       }
     });
     return ident;
@@ -619,7 +618,7 @@ public class MSAnnotationNetworkLogic {
    * @param g
    * @return
    */
-  public static AnnotationNetwork getBestNetwork(PKLRowGroup g) {
+  public static AnnotationNetwork getBestNetwork(RowGroup g) {
     AnnotationNetwork best = null;
     for (PeakListRow r : g) {
       IonIdentity id = getMostLikelyAnnotation(r, g);
