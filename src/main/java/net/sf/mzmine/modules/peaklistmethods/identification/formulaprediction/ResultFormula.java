@@ -19,16 +19,13 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction;
 
 import java.util.Map;
-
+import org.openscience.cdk.interfaces.IMolecularFormula;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.IsotopePattern;
+import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
 
-import org.openscience.cdk.interfaces.IMolecularFormula;
-import org.openscience.cdk.tools.manipulator.MolecularFormulaManipulator;
+public class ResultFormula extends MolecularFormulaIdentity {
 
-public class ResultFormula {
-
-  private final IMolecularFormula cdkFormula;
   private Double rdbeValue, isotopeScore, msmsScore;
   private IsotopePattern predictedIsotopePattern;
   private Map<DataPoint, String> msmsAnnotation;
@@ -36,14 +33,12 @@ public class ResultFormula {
   public ResultFormula(IMolecularFormula cdkFormula, IsotopePattern predictedIsotopePattern,
       Double rdbeValue, Double isotopeScore, Double msmsScore,
       Map<DataPoint, String> msmsAnnotation) {
-
-    this.cdkFormula = cdkFormula;
+    super(cdkFormula);
     this.predictedIsotopePattern = predictedIsotopePattern;
     this.isotopeScore = isotopeScore;
     this.msmsScore = msmsScore;
     this.msmsAnnotation = msmsAnnotation;
     this.rdbeValue = rdbeValue;
-
   }
 
   public Double getRDBE() {
@@ -52,18 +47,6 @@ public class ResultFormula {
 
   public Map<DataPoint, String> getMSMSannotation() {
     return msmsAnnotation;
-  }
-
-  public String getFormulaAsString() {
-    return MolecularFormulaManipulator.getString(cdkFormula);
-  }
-
-  public String getFormulaAsHTML() {
-    return MolecularFormulaManipulator.getHTML(cdkFormula);
-  }
-
-  public IMolecularFormula getFormulaAsObject() {
-    return cdkFormula;
   }
 
   public IsotopePattern getPredictedIsotopes() {
@@ -76,10 +59,6 @@ public class ResultFormula {
 
   public Double getMSMSScore() {
     return msmsScore;
-  }
-
-  public double getExactMass() {
-    return MolecularFormulaManipulator.getTotalExactMass(cdkFormula);
   }
 
 }
