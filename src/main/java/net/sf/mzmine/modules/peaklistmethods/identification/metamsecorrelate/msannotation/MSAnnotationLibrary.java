@@ -9,8 +9,8 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModification;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModification;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModificationType;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonType;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
@@ -69,13 +69,13 @@ public class MSAnnotationLibrary {
     // add all [M+?]c+ as references to neutral loss
     // [M-H2O+?]c+
     for (int c = 1; c <= maxCharge; c++)
-      allAdducts.add(1, new IonType(IonModification.getUndefinedforCharge(positive ? c : -c)));
+      allAdducts.add(new IonType(1, IonModification.getUndefinedforCharge(positive ? c : -c)));
 
     for (IonModification a : selectedAdducts) {
       if ((a.getCharge() > 0 && positive) || (a.getCharge() < 0 && !positive)) {
         if (a.getAbsCharge() <= maxCharge) {
           for (int n = 1; n <= maxMolecules; n++)
-            allAdducts.add(n, new IonType(a));
+            allAdducts.add(new IonType(n, a));
         }
       }
     }
@@ -92,9 +92,8 @@ public class MSAnnotationLibrary {
    * @param mainRow main peak.
    * @param possibleAdduct candidate adduct peak.
    */
-  public @Nonnull List<IonIdentity[]> findAdducts(final PeakList peakList,
-      final PeakListRow row1, final PeakListRow row2, final CheckMode mode,
-      final double minHeight) {
+  public @Nonnull List<IonIdentity[]> findAdducts(final PeakList peakList, final PeakListRow row1,
+      final PeakListRow row2, final CheckMode mode, final double minHeight) {
     return findAdducts(peakList, row1, row2, row1.getRowCharge(), row2.getRowCharge(), mode,
         minHeight);
   }
@@ -109,9 +108,8 @@ public class MSAnnotationLibrary {
    * @param z2 -1 or 0 if not set (charge state always positive)
    * @return
    */
-  public @Nonnull List<IonIdentity[]> findAdducts(final PeakList peakList,
-      final PeakListRow row1, final PeakListRow row2, int z1, int z2, final CheckMode mode,
-      final double minHeight) {
+  public @Nonnull List<IonIdentity[]> findAdducts(final PeakList peakList, final PeakListRow row1,
+      final PeakListRow row2, int z1, int z2, final CheckMode mode, final double minHeight) {
     z1 = Math.abs(z1);
     z2 = Math.abs(z2);
     List<IonIdentity[]> list = new ArrayList<>();
@@ -134,7 +132,8 @@ public class MSAnnotationLibrary {
             // is a2 a modification of a1? (same adducts - different mods
             if (adduct2.isModificationOf(adduct)) {
               IonType mod = adduct2.subtractMods(adduct);
-              IonType undefined = new IonType(IonModification.getUndefinedforCharge(adduct.getCharge()));
+              IonType undefined =
+                  new IonType(IonModification.getUndefinedforCharge(adduct.getCharge()));
               list.add(IonIdentity.addAdductIdentityToRow(row1, undefined, row1, mod));
             } else if (adduct.isModificationOf(adduct2)) {
               IonType mod = adduct.subtractMods(adduct2);
@@ -279,9 +278,10 @@ public class MSAnnotationLibrary {
    * adds modification to the existing adducts
    */
   private void addModification() {
-    for (IonModification a : selectedMods)
-      for (IonType ion : allAdducts)
-        allAdducts.add(ion.createModified(a));
+    int size = allAdducts.size();
+    for (int i = 0; i < size; i++)
+      for (IonModification a : selectedMods)
+        allAdducts.add(allAdducts.get(i).createModified(a));
   }
 
   private boolean isContainedIn(List<IonModification> adducts, IonModification na) {

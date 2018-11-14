@@ -68,7 +68,8 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
       for (IonModification m : this.mod.getAdducts())
         allMod.add(m);
 
-    IonModification nm = new CombinedIonModification(allMod.toArray(new IonModification[allMod.size()]));
+    IonModification nm =
+        new CombinedIonModification(allMod.toArray(new IonModification[allMod.size()]));
     return new IonType(this.adduct, nm);
   }
 
@@ -137,6 +138,8 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
    * @return
    */
   public boolean hasModificationOverlap(IonType ion) {
+    if (!hasMods() || !ion.hasMods())
+      return false;
     IonModification[] a = mod.getAdducts();
     IonModification[] b = ion.mod.getAdducts();
     if (a == b)
