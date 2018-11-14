@@ -120,7 +120,7 @@ public class IonIdentity extends SimplePeakIdentity {
    * 
    * @return
    */
-  public IonType getA() {
+  public IonType getIonType() {
     return a;
   }
 
@@ -173,7 +173,7 @@ public class IonIdentity extends SimplePeakIdentity {
       b.append(" (MS/MS:xmer)");
     }
     // MSMS backed id for insource frag
-    if (getA().getModCount() > 0) {
+    if (getIonType().getModCount() > 0) {
       if (getMSMSModVerify() > 0) {
         b.append(" (MS/MS:insource frag)");
       }

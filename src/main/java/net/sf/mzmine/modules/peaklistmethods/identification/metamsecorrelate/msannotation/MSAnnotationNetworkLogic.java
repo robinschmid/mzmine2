@@ -111,9 +111,9 @@ public class MSAnnotationNetworkLogic {
    * @return -1 if esi is better than best 1 if opposite
    */
   public static int compareRows(IonIdentity best, IonIdentity esi, PKLRowGroup g) {
-    if (best == null || best.getA().isUndefinedAdductParent())
+    if (best == null || best.getIonType().isUndefinedAdductParent())
       return -1;
-    else if (esi.getA().isUndefinedAdductParent())
+    else if (esi.getIonType().isUndefinedAdductParent())
       return 1;
     // size of network (ions pointing to the same neutral mass)
     else if (esi.getNetwork() != null
@@ -196,8 +196,8 @@ public class MSAnnotationNetworkLogic {
    * @return True if b is a better choice
    */
   private static boolean compareCharge(IonIdentity a, IonIdentity b) {
-    int ca = a.getA().getAbsCharge();
-    int cb = b.getA().getAbsCharge();
+    int ca = a.getIonType().getAbsCharge();
+    int cb = b.getIonType().getAbsCharge();
     return cb != 0 // a is better if b is uncharged
         && ((ca == 0 && cb > 0) // b is better if charged and a uncharged
             || (ca > cb)); // b is better if charge is lower
@@ -356,7 +356,7 @@ public class MSAnnotationNetworkLogic {
         if (pi instanceof IonIdentity) {
           IonIdentity neutral = (IonIdentity) pi;
           // only if charged (neutral losses do not point to the real neutral mass)
-          if (!neutral.getA().isModifiedUndefinedAdduct())
+          if (!neutral.getIonType().isModifiedUndefinedAdduct())
             continue;
 
           // all partners
@@ -380,9 +380,9 @@ public class MSAnnotationNetworkLogic {
               // do not if its already in this network (e.g. as adduct)
               Arrays.stream(partnerNets).filter(pnet -> !pnet.containsKey(row)).forEach(pnet -> {
                 // try to find real annotation
-                IonType pid = pnet.get(partner).getA();
+                IonType pid = pnet.get(partner).getIonType();
                 // modified
-                pid = pid.createModified(neutral.getA().getModification());
+                pid = pid.createModified(neutral.getIonType().getModification());
 
                 IonIdentity realID = neutral;
                 if (pnet.checkForAnnotation(row, pid)) {
@@ -441,10 +441,10 @@ public class MSAnnotationNetworkLogic {
         if (pi instanceof IonIdentity) {
           IonIdentity adduct = (IonIdentity) pi;
           // only if charged (neutral losses do not point to the real neutral mass)
-          if (adduct.getA().getAbsCharge() == 0)
+          if (adduct.getIonType().getAbsCharge() == 0)
             continue;
 
-          double mass = adduct.getA().getMass(row.getAverageMZ());
+          double mass = adduct.getIonType().getMass(row.getAverageMZ());
           // bin to 0.1
           Integer nmass = (int) Math.round(mass * 10.0);
 
@@ -469,7 +469,7 @@ public class MSAnnotationNetworkLogic {
    * @return
    */
   public static double calcMass(Entry<PeakListRow, IonIdentity> e) {
-    return e.getValue().getA().getMass(e.getKey().getAverageMZ());
+    return e.getValue().getIonType().getMass(e.getKey().getAverageMZ());
   }
 
   /**

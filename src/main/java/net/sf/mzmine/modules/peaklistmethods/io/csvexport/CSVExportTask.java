@@ -347,7 +347,7 @@ public class CSVExportTask extends AbstractTask {
             if (adduct == null)
               line.append(fieldSeparator);
             else {
-              line.append(adduct.getA().toString(false) + fieldSeparator);
+              line.append(adduct.getIonType().toString(false) + fieldSeparator);
             }
             break;
           case ROW_BEST_ANNOTATION_AND_SUPPORT:
@@ -363,7 +363,7 @@ public class CSVExportTask extends AbstractTask {
                 msms += msms.isEmpty() ? "MS/MS verified: xmer" : ", xmer";
               String partners =
                   StringUtils.join(ArrayUtils.toObject(ad.getPartnerRowsID()), idSeparator);
-              line.append(ad.getA().toString(false) + fieldSeparator //
+              line.append(ad.getIonType().toString(false) + fieldSeparator //
                   + msms + fieldSeparator //
                   + ad.getPartnerRowsID().length + fieldSeparator //
                   + partners + fieldSeparator);

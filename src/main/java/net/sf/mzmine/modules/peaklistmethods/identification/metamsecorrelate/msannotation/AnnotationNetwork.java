@@ -92,7 +92,7 @@ public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity> {
 
     double mass = 0;
     for (Entry<PeakListRow, IonIdentity> e : entrySet()) {
-      mass += e.getValue().getA().getMass(e.getKey().getAverageMZ());
+      mass += e.getValue().getIonType().getMass(e.getKey().getAverageMZ());
     }
     neutralMass = mass / size();
     return neutralMass;
@@ -150,7 +150,7 @@ public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity> {
    * @return
    */
   public double getMass(Entry<PeakListRow, IonIdentity> e) {
-    return e.getValue().getA().getMass(e.getKey().getAverageMZ());
+    return e.getValue().getIonType().getMass(e.getKey().getAverageMZ());
   }
 
   public double getMaxDev() {
@@ -195,7 +195,7 @@ public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity> {
    * @param pid
    */
   public void addAllLinksTo(PeakListRow row, IonIdentity pid) {
-    double nmass = pid.getA().getMass(row.getAverageMZ());
+    double nmass = pid.getIonType().getMass(row.getAverageMZ());
     this.entrySet().stream().forEach(e -> {
       if (e.getKey().getID() != row.getID()) {
         double pmass = getMass(e);
@@ -287,7 +287,7 @@ public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity> {
     // add all links
     for (Entry<PeakListRow, IonIdentity> a : entrySet()) {
       IonIdentity adduct = a.getValue();
-      if (adduct.getA().getAbsCharge() > 0)
+      if (adduct.getIonType().getAbsCharge() > 0)
         addAllLinksTo(a.getKey(), adduct);
     }
   }

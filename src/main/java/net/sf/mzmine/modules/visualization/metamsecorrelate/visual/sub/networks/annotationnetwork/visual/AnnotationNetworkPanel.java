@@ -110,11 +110,11 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     net.entrySet().stream().forEach(e -> {
       String node = toNodeName(e.getKey(), e.getValue());
 
-      if (e.getValue().getA().isModifiedUndefinedAdduct()) {
+      if (e.getValue().getIonType().isModifiedUndefinedAdduct()) {
         // neutral
         addNewEdge(neutralNode, node);
         graph.getNode(node).setAttribute("ui.class", "NEUTRAL");
-      } else if (!e.getValue().getA().isUndefinedAdduct()) {
+      } else if (!e.getValue().getIonType().isUndefinedAdduct()) {
         addNewEdge(mnode, node, Math.abs(net.getNeutralMass() - e.getKey().getAverageMZ()));
       }
       added.incrementAndGet();

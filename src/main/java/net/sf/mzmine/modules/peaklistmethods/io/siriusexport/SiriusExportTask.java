@@ -322,8 +322,8 @@ public class SiriusExportTask extends AbstractTask {
       boolean fitCharge = !excludeMultiCharge || row.getRowCharge() <= 1;
       IonIdentity adduct = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, true);
       boolean fitAnnotation = !needAnnotation || adduct != null;
-      boolean fitMol = !excludeMultimers || adduct == null || adduct.getA().getMolecules() <= 1;
-      boolean fitFragments = !excludeInsourceFrag || adduct == null || !adduct.getA().hasMods();
+      boolean fitMol = !excludeMultimers || adduct == null || adduct.getIonType().getMolecules() <= 1;
+      boolean fitFragments = !excludeInsourceFrag || adduct == null || !adduct.getIonType().hasMods();
       if (fitAnnotation && fitCharge && fitMol && fitFragments) {
         if (exportPeakListRow(row, writer, fragmentScans))
           exported++;

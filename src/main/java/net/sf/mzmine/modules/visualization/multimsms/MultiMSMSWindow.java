@@ -387,7 +387,7 @@ public class MultiMSMSWindow extends JFrame {
         double precursorMZ = f != null ? f.getMZ() : row.getAverageMZ();
         // add ms1 adduct annotation
         addMSMSAnnotation(
-            new MSMSIonIdentity(mzTolerance, new SimpleDataPoint(precursorMZ, 1f), best.getA()));
+            new MSMSIonIdentity(mzTolerance, new SimpleDataPoint(precursorMZ, 1f), best.getIonType()));
 
         // add all MSMS annotations (found in MSMS)
         for (IonIdentity id : MSAnnotationNetworkLogic.getAllAnnotations(row)) {

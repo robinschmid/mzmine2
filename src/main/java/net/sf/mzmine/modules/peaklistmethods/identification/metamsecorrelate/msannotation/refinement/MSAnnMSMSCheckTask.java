@@ -169,10 +169,10 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
     int c = 0;
     for (IonIdentity ad : ident) {
       // do not test the unmodified
-      if (!ad.getA().isModifiedUndefinedAdduct())
+      if (!ad.getIonType().isModifiedUndefinedAdduct())
         continue;
 
-      IonType mod = ad.getA();
+      IonType mod = ad.getIonType();
 
       // is in group?
       PKLRowGroup group = PKLRowGroup.from(row);
@@ -297,9 +297,9 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
       double precursorMZ) {
     Feature f = row.getPeak(msmsScan.getDataFile());
     // only for M>1
-    if (adduct.getA().getMolecules() > 1) {
+    if (adduct.getIonType().getMolecules() > 1) {
       MSMSIdentityList msmsIdent = MSMSLogic.checkMultiMolCluster(msmsScan, massList, precursorMZ,
-          adduct.getA(), mzTolerance, minHeight);
+          adduct.getIonType(), mzTolerance, minHeight);
 
       // found?
       if (msmsIdent != null && msmsIdent.size() > 0) {
