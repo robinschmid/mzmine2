@@ -1,4 +1,4 @@
-package net.sf.mzmine.datamodel.identities;
+package net.sf.mzmine.datamodel.identities.iontype;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import net.sf.mzmine.datamodel.identities.NeutralMolecule;
 import net.sf.mzmine.main.MZmineCore;
 
 public class IonType extends NeutralMolecule implements Comparable<IonType> {

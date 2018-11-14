@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.datamodel.identities;
+package net.sf.mzmine.datamodel.identities.iontype;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;

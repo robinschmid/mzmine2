@@ -1,4 +1,4 @@
-package net.sf.mzmine.datamodel.identities;
+package net.sf.mzmine.datamodel.identities.iontype;
 
 import java.util.ArrayList;
 import java.util.Arrays;

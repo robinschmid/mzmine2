@@ -1,4 +1,4 @@
-package net.sf.mzmine.datamodel.identities;
+package net.sf.mzmine.datamodel.identities.iontype;
 
 public enum IonModificationType {
   ADDUCT, UNDEFINED_ADDUCT, NEUTRAL_LOSS, CLUSTER, ISOTOPE, UNKNOWN, MIXED;
