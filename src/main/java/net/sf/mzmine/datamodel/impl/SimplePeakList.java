@@ -70,7 +70,6 @@ public class SimplePeakList implements PeakList {
     descriptionOfAppliedTasks = new Vector<PeakListAppliedMethod>();
 
     dateCreated = dateFormat.format(new Date());
-
   }
 
   @Override

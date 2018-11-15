@@ -18,6 +18,8 @@
 
 package net.sf.mzmine.datamodel;
 
+import net.sf.mzmine.datamodel.impl.RowGroup;
+
 public interface PeakListRow {
 
   /**
@@ -198,4 +200,25 @@ public interface PeakListRow {
 
   // End DorresteinLab edit
 
+
+  /**
+   * Grouped rows that belong to the same analyte
+   * 
+   * @return
+   */
+  public RowGroup getGroup();
+
+  /**
+   * Grouped rows that belong to the same analyte
+   * 
+   * @param group
+   */
+  public void setGroup(RowGroup group);
+
+  /**
+   * Group id
+   * 
+   * @return -1 if there is no group
+   */
+  public int getGroupID();
 }

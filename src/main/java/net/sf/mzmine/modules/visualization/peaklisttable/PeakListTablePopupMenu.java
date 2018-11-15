@@ -45,7 +45,7 @@ import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.FormulaPredictionModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.FormulaPredictionModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.nist.NistMsSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.onlinedbsearch.OnlineDBSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.sirius.SiriusProcessingModule;

@@ -49,7 +49,7 @@ public class NeutralLossFilterParameters extends SimpleParameterSet {
 
   public static final StringParameter molecule = new StringParameter("Molecule",
       "String of a neutral loss compound (e.g. HI). If this textbox is not empty, the \"Neutral loss\" field will be ignored.",
-      "", false);
+      "");
 
   public static final StringParameter suffix = new StringParameter("Name suffix",
       "Suffix to be added to peak list name. If \"auto\" then this module will create a suffix.",

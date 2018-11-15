@@ -46,8 +46,9 @@ import net.sf.mzmine.modules.peaklistmethods.identification.adductsearch.AdductS
 import net.sf.mzmine.modules.peaklistmethods.identification.camera.CameraSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.complexsearch.ComplexSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.customdbsearch.CustomDBSearchModule;
-import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.FormulaPredictionModule;
-import net.sf.mzmine.modules.peaklistmethods.identification.formulapredictionpeaklist.FormulaPredictionPeakListModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.annotationnetwork.FormulaPredictionAnnotationNetworkModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.peaklist.FormulaPredictionPeakListModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.FormulaPredictionModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.fragmentsearch.FragmentSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.lipididentification.LipidSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.MetaMSEcorrelateModule;
@@ -193,8 +194,9 @@ public class MZmineModulesList {
       CustomDBSearchModule.class, FormulaPredictionModule.class, FragmentSearchModule.class,
       AdductSearchModule.class, ComplexSearchModule.class, OnlineDBSearchModule.class,
       LipidSearchModule.class, CameraSearchModule.class, NistMsSearchModule.class,
-      FormulaPredictionPeakListModule.class, Ms2SearchModule.class, SiriusProcessingModule.class,
-      MetaMSEcorrelateModule.class, SimpleMetaMSEcorrelateModule.class, MSAnnotationModule.class,
+      FormulaPredictionPeakListModule.class, FormulaPredictionAnnotationNetworkModule.class,
+      Ms2SearchModule.class, SiriusProcessingModule.class, MetaMSEcorrelateModule.class,
+      SimpleMetaMSEcorrelateModule.class, MSAnnotationModule.class,
 
       // Visualizers
       TICVisualizerModule.class, SpectraVisualizerModule.class, TwoDVisualizerModule.class,
