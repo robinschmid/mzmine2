@@ -38,8 +38,8 @@ import javax.swing.AbstractAction;
 import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import com.Ostermiller.util.CSVParser;
+import net.sf.mzmine.datamodel.identities.iontype.IonModification;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModification;
 import net.sf.mzmine.parameters.parametertypes.MultiChoiceComponent;
 import net.sf.mzmine.util.dialogs.LoadSaveFileChooser;
 
@@ -114,7 +114,8 @@ public class ImportESIAdductsAction extends AbstractAction {
         if (csvLines != null) {
 
           // Load adducts from CSV data into parent choices.
-          parent.setChoices(loadAdductsIntoChoices(csvLines, (IonModification[]) parent.getChoices()));
+          parent.setChoices(
+              loadAdductsIntoChoices(csvLines, (IonModification[]) parent.getChoices()));
         }
       }
     }
@@ -133,7 +134,8 @@ public class ImportESIAdductsAction extends AbstractAction {
     // TODO export full structure for combined
 
     // Create a list of adducts.
-    final ArrayList<IonModification> choices = new ArrayList<IonModification>(Arrays.asList(esiAdductTypes));
+    final ArrayList<IonModification> choices =
+        new ArrayList<IonModification>(Arrays.asList(esiAdductTypes));
 
     int i = 1;
     for (final String[] line : lines) {
@@ -143,8 +145,8 @@ public class ImportESIAdductsAction extends AbstractAction {
         try {
 
           // Create new adduct and add it to the choices if it's new.
-          final IonModification adduct =
-              new IonModification(null, line[0], Double.parseDouble(line[1]), Integer.parseInt(line[2]));
+          final IonModification adduct = new IonModification(null, line[0],
+              Double.parseDouble(line[1]), Integer.parseInt(line[2]));
           if (!choices.contains(adduct)) {
             choices.add(adduct);
           }

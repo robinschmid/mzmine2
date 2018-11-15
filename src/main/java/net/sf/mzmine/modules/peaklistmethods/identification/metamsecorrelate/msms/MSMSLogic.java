@@ -6,12 +6,12 @@ import java.util.logging.Logger;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.MassList;
 import net.sf.mzmine.datamodel.Scan;
+import net.sf.mzmine.datamodel.identities.iontype.IonType;
+import net.sf.mzmine.datamodel.identities.ms2.MSMSIdentityList;
+import net.sf.mzmine.datamodel.identities.ms2.MSMSIonRelationIdentity;
+import net.sf.mzmine.datamodel.identities.ms2.MSMSMultimerIdentity;
+import net.sf.mzmine.datamodel.identities.ms2.interf.AbstractMSMSIdentity;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonType;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIdentityList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIonRelationIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSMultimerIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.interf.AbstractMSMSIdentity;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 public class MSMSLogic {

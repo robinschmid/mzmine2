@@ -35,13 +35,13 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
+import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
+import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
+import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.AnnotationNetwork;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
@@ -320,10 +320,12 @@ public class SiriusExportTask extends AbstractTask {
     int exported = 0;
     for (PeakListRow row : peakList.getRows()) {
       boolean fitCharge = !excludeMultiCharge || row.getRowCharge() <= 1;
-      IonIdentity adduct = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, true);
+      IonIdentity adduct = row.getBestIonIdentity();
       boolean fitAnnotation = !needAnnotation || adduct != null;
-      boolean fitMol = !excludeMultimers || adduct == null || adduct.getIonType().getMolecules() <= 1;
-      boolean fitFragments = !excludeInsourceFrag || adduct == null || !adduct.getIonType().hasMods();
+      boolean fitMol =
+          !excludeMultimers || adduct == null || adduct.getIonType().getMolecules() <= 1;
+      boolean fitFragments =
+          !excludeInsourceFrag || adduct == null || !adduct.getIonType().hasMods();
       if (fitAnnotation && fitCharge && fitMol && fitFragments) {
         if (exportPeakListRow(row, writer, fragmentScans))
           exported++;
@@ -453,8 +455,8 @@ public class SiriusExportTask extends AbstractTask {
     // MS annotation and feature correlation group
     // can be null (both)
     // run MS annotations module or better metaMSEcorrelate
-    PKLRowGroup group = PKLRowGroup.from(row);
-    IonIdentity adduct = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, group);
+    RowGroup group = row.getGroup();
+    IonIdentity adduct = row.getBestIonIdentity();
     AnnotationNetwork net = adduct != null ? adduct.getNetwork() : null;
 
     // find ion species by annotation (can be null)
@@ -575,32 +577,32 @@ public class SiriusExportTask extends AbstractTask {
      * Grouped by metaMSEcorrelate Annotations by MS annotations in module
      */
     // get all rows in corr group
-    PKLRowGroup g = PKLRowGroup.from(mainRow);
+    RowGroup g = mainRow.getGroup();
     R2GroupCorrelationData corr = null;
 
-    if (g != null) {
+    if (g instanceof PKLRowGroup) {
       // export correlation group
       for (int i = 0; i < g.size(); ++i) {
         PeakListRow row = g.get(i);
-        corr = g.getCorr(i);
-        exportCorrelatedRow(writer, row, corr, g, null);
+        corr = ((PKLRowGroup) g).getCorr(i);
+        exportCorrelatedRow(writer, row, corr, null);
       }
     } else {
       // export annotation network
-      IonIdentity id = MSAnnotationNetworkLogic.getMostLikelyAnnotation(mainRow, false);
+      IonIdentity id = mainRow.getBestIonIdentity();
       AnnotationNetwork network = id == null ? null : id.getNetwork();
       if (network != null) {
         for (Entry<PeakListRow, IonIdentity> e : network.entrySet()) {
-          g = PKLRowGroup.from(e.getKey());
-          if (g != null)
-            corr = g.getCorr(e.getKey());
+          g = e.getKey().getGroup();
+          if (g instanceof PKLRowGroup)
+            corr = ((PKLRowGroup) g).getCorr(e.getKey());
           else
             corr = null;
-          exportCorrelatedRow(writer, e.getKey(), null, null, e.getValue());
+          exportCorrelatedRow(writer, e.getKey(), null, e.getValue());
         }
       } else {
         // just export mainRow
-        exportCorrelatedRow(writer, mainRow, null, null, null);
+        exportCorrelatedRow(writer, mainRow, null, null);
       }
     }
     writer.write("END IONS");
@@ -609,13 +611,12 @@ public class SiriusExportTask extends AbstractTask {
   }
 
   private void exportCorrelatedRow(BufferedWriter writer, PeakListRow row,
-      R2GroupCorrelationData corr, PKLRowGroup g, IonIdentity adduct) throws IOException {
+      R2GroupCorrelationData corr, IonIdentity adduct) throws IOException {
     double r = corr == null ? 0 : corr.getAvgPeakShapeR();
     Feature best = row.getBestPeak();
     IonIdentity id = adduct;
     if (id == null)
-      id = g != null ? MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, g)
-          : MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, true);
+      id = row.getBestIonIdentity();
     AnnotationNetwork network = id == null ? null : id.getNetwork();
 
     // TODO : best feature mz or avg?

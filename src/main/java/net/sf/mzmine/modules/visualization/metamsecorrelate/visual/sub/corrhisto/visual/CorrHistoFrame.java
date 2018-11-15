@@ -9,8 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import net.miginfocom.swing.MigLayout;
+import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.visualization.mzhistogram.chart.HistogramData;
 import net.sf.mzmine.modules.visualization.mzhistogram.chart.MultiHistogramPanel;
@@ -22,7 +22,7 @@ public class CorrHistoFrame extends JFrame {
   private MultiHistogramPanel pnMultiHisto;
 
   // data
-  private MSEGroupedPeakList pkl;
+  private PeakList pkl;
 
   /**
    * Launch the application.
@@ -68,7 +68,7 @@ public class CorrHistoFrame extends JFrame {
     panel_1.setLayout(new MigLayout("", "[]", "[]"));
   }
 
-  public MSEGroupedPeakList getPeakList() {
+  public PeakList getPeakList() {
     return pkl;
   }
 
@@ -77,7 +77,7 @@ public class CorrHistoFrame extends JFrame {
    * 
    * @param pkl
    */
-  public void setPeakList(MSEGroupedPeakList pkl) {
+  public void setPeakList(PeakList pkl) {
     this.pkl = pkl;
     setTitle("Group correlations of pkl " + pkl.getName());
     fireDataChanged();

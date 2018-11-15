@@ -38,8 +38,7 @@ import javax.swing.table.TableRowSorter;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
+import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableParameters;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.util.components.ComponentToolTipManager;
@@ -63,14 +62,14 @@ public class GroupedPeakListTable extends JTable implements ComponentToolTipProv
 
   private JFrame window;
   private GroupedPeakListTableModel pkTableModel;
-  private MSEGroupedPeakList peakList;
+  private PeakList peakList;
   private PeakListRow peakListRow;
   private TableRowSorter<GroupedPeakListTableModel> sorter;
   private GroupedPeakListTableColumnModel cm;
   private ComponentToolTipManager ttm;
   private DefaultCellEditor currentEditor = null;
 
-  public GroupedPeakListTable(JFrame window, ParameterSet parameters, MSEGroupedPeakList peakList) {
+  public GroupedPeakListTable(JFrame window, ParameterSet parameters, PeakList peakList) {
 
     this.window = window;
     this.peakList = peakList;
@@ -155,7 +154,7 @@ public class GroupedPeakListTable extends JTable implements ComponentToolTipProv
     if (commonColumn == CommonColumnType2.IDENTITY) {
 
       row = this.convertRowIndexToModel(row);
-      PKLRowGroup group = peakList.getLastViewedGroup();
+      RowGroup group = getTableModel().getGroup();
       if (group != null) {
         peakListRow = group.get(row);
 
@@ -223,6 +222,10 @@ public class GroupedPeakListTable extends JTable implements ComponentToolTipProv
     }
 
     return super.getCellEditor(row, column);
+  }
+
+  public GroupedPeakListTableModel getTableModel() {
+    return (GroupedPeakListTableModel) getModel();
   }
 
   /**

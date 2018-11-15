@@ -31,10 +31,6 @@ import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimpleFeature;
 import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.io.gnpsexport.GNPSExportParameters.RowFilter;
 import net.sf.mzmine.modules.peaklistmethods.io.siriusexport.SiriusExportTask;
 import net.sf.mzmine.parameters.ParameterSet;
@@ -161,7 +157,7 @@ public class GNPSExportTask extends AbstractTask {
       double retTimeInSeconds = ((row.getAverageRT() * 60 * 100.0) / 100.);
 
       // find ion species by annotation (can be null)
-      String ion = findIonAnnotation(peakList, row);
+      String ion = row.getBestIonIdentity() != null ? row.getBestIonIdentity().getAdduct() : "";
 
       // Get the MS/MS scan number
       Feature bestPeak = row.getBestPeak();
@@ -294,24 +290,4 @@ public class GNPSExportTask extends AbstractTask {
     return newRow;
   }
 
-
-  /**
-   * Ion or null
-   * 
-   * @param peakList
-   * @param row
-   * @return
-   */
-  private String findIonAnnotation(PeakList peakList, PeakListRow row) {
-    String ion = null;
-    // find by MS annotation
-    PKLRowGroup g = null;
-    if (peakList instanceof MSEGroupedPeakList)
-      g = ((MSEGroupedPeakList) peakList).getGroup(row);
-    IonIdentity id = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, g);
-    if (id != null)
-      ion = id.getAdduct();
-
-    return ion;
-  }
 }

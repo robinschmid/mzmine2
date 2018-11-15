@@ -36,10 +36,8 @@ import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.io.gnpsexport.GNPSExportParameters.RowFilter;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
@@ -338,12 +336,11 @@ public class CSVExportTask extends AbstractTask {
             line.append(numDetected + fieldSeparator);
             break;
           case ROW_CORR_GROUP_ID:
-            int id = PKLRowGroup.idFrom(peakListRow);
+            int id = peakListRow.getGroupID();
             line.append((id == -1 ? "" : id) + fieldSeparator);
             break;
           case ROW_BEST_ANNOTATION:
-            IonIdentity adduct =
-                MSAnnotationNetworkLogic.getMostLikelyAnnotation(peakListRow, true);
+            IonIdentity adduct = peakListRow.getBestIonIdentity();
             if (adduct == null)
               line.append(fieldSeparator);
             else {
@@ -351,8 +348,7 @@ public class CSVExportTask extends AbstractTask {
             }
             break;
           case ROW_BEST_ANNOTATION_AND_SUPPORT:
-            IonIdentity ad =
-                MSAnnotationNetworkLogic.getMostLikelyAnnotation(peakListRow, true);
+            IonIdentity ad = peakListRow.getBestIonIdentity();
             if (ad == null)
               line.append(fieldSeparator + fieldSeparator + fieldSeparator + fieldSeparator);
             else {
@@ -370,16 +366,14 @@ public class CSVExportTask extends AbstractTask {
             }
             break;
           case ROW_MOL_NETWORK_ID:
-            IonIdentity ad2 =
-                MSAnnotationNetworkLogic.getMostLikelyAnnotation(peakListRow, true);
+            IonIdentity ad2 = peakListRow.getBestIonIdentity();
             if (ad2 == null || ad2.getNetwork() == null)
               line.append(fieldSeparator);
             else
               line.append(ad2.getNetwork().getID() + fieldSeparator);
             break;
           case ROW_NEUTRAL_MASS:
-            IonIdentity ad3 =
-                MSAnnotationNetworkLogic.getMostLikelyAnnotation(peakListRow, true);
+            IonIdentity ad3 = peakListRow.getBestIonIdentity();
             if (ad3 == null || ad3.getNetwork() == null)
               line.append(fieldSeparator);
             else

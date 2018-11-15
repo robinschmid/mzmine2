@@ -23,16 +23,15 @@ import java.util.logging.Logger;
 import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.MZmineProject;
-import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakList.PeakListAppliedMethod;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
+import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.datamodel.impl.SimpleFeature;
 import net.sf.mzmine.datamodel.impl.SimplePeakList;
 import net.sf.mzmine.datamodel.impl.SimplePeakListAppliedMethod;
 import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.AnnotationNetwork;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
@@ -125,10 +124,8 @@ public class FilterAnnotationTask extends AbstractTask {
    */
   public static void doFiltering(PeakList pkl, int minNetSize) throws Exception {
     for (PeakListRow row : pkl.getRows()) {
-      PeakIdentity[] ident = row.getPeakIdentities();
-      for (int i = 0; i < ident.length; i++) {
-        if (ident[i] instanceof IonIdentity) {
-          IonIdentity adduct = (IonIdentity) ident[i];
+      if (row.hasIonIdentity()) {
+        for (IonIdentity adduct : row.getIonIdentities()) {
           AnnotationNetwork net = adduct.getNetwork();
           if (net == null) {
             row.removePeakIdentity(adduct);

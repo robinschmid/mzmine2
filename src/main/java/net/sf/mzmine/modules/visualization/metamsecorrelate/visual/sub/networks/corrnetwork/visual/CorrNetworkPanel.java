@@ -11,7 +11,6 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.framework.networks.NetworkPanel;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
@@ -47,11 +46,7 @@ public class CorrNetworkPanel extends NetworkPanel {
   public void setPeakList(PeakList pkl) {
     this.pkl = pkl;
     if (pkl != null) {
-      R2RCorrMap map = null;
-      if (pkl instanceof MSEGroupedPeakList) {
-        map = ((MSEGroupedPeakList) pkl).getCorrelationMap();
-        createNewGraph(pkl, map);
-      }
+      createNewGraph(pkl);
     } else
       clear();
   }

@@ -23,14 +23,10 @@
 
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.actions;
 
-import java.awt.Component;
 import java.awt.event.ActionEvent;
-
 import javax.swing.AbstractAction;
-import javax.swing.SwingUtilities;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModification;
+import net.sf.mzmine.datamodel.identities.iontype.IonModification;
 import net.sf.mzmine.parameters.parametertypes.MultiChoiceComponent;
-import net.sf.mzmine.parameters.parametertypes.esiadducts.ESIAdductsComponent;
 
 /**
  * An action to handle resetting the adducts list.

@@ -39,7 +39,12 @@ import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.datamodel.impl.PKLRowGroupList;
+import net.sf.mzmine.datamodel.impl.RowGroup;
+import net.sf.mzmine.datamodel.impl.SimpleFeature;
+import net.sf.mzmine.datamodel.impl.SimplePeakList;
 import net.sf.mzmine.datamodel.impl.SimplePeakListAppliedMethod;
+import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
 import net.sf.mzmine.desktop.Desktop;
 import net.sf.mzmine.desktop.impl.HeadLessDesktop;
 import net.sf.mzmine.main.MZmineCore;
@@ -47,9 +52,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.cor
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.InterSampleHeightCorrParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData.SimilarityMeasure;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RFullCorrelationData;
@@ -74,6 +77,7 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
 import net.sf.mzmine.util.PeakListRowSorter;
+import net.sf.mzmine.util.PeakUtils;
 import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
 import net.sf.mzmine.util.maths.similarity.Similarity;
@@ -149,7 +153,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   private Stage stage;
 
   // output
-  protected MSEGroupedPeakList groupedPKL;
+  protected PeakList groupedPKL;
   protected boolean performAnnotationRefinement;
   protected AnnotationRefinementParameters refineParam;
 
@@ -285,7 +289,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         return;
 
       // create new PKL for grouping
-      groupedPKL = new MSEGroupedPeakList(peakList.getRawDataFiles(), peakList, suffix);
+      groupedPKL = copyPeakList(peakList, suffix);
       // find groups and size
       if (useGroups) {
         groupedPKL.setSampleGroupsParameter(minFFilter.getGroupParam());
@@ -306,9 +310,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       LOG.info("Corr: Starting to group by correlation");
       setStage(Stage.GROUPING);
       PKLRowGroupList groups = corrMap.createCorrGroups(groupedPKL, minShapeCorrR, stageProgress);
-
-      // refine groups
-      refineGroups(groups);
 
       if (isCanceled())
         return;
@@ -419,6 +420,36 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     }
   }
 
+  private PeakList copyPeakList(PeakList peakList, String suffix) {
+    SimplePeakList pkl = new SimplePeakList(peakList + " " + suffix, peakList.getRawDataFiles());
+    for (PeakListRow row : peakList.getRows()) {
+      pkl.addRow(copyPeakRow(row));
+    }
+    return pkl;
+  }
+
+  /**
+   * Create a copy of a peak list row.
+   *
+   * @param row the row to copy.
+   * @return the newly created copy.
+   */
+  private static PeakListRow copyPeakRow(final PeakListRow row) {
+    // Copy the peak list row.
+    final PeakListRow newRow = new SimplePeakListRow(row.getID());
+    PeakUtils.copyPeakListRowProperties(row, newRow);
+
+    // Copy the peaks.
+    for (final Feature peak : row.getPeaks()) {
+      final Feature newPeak = new SimpleFeature(peak);
+      PeakUtils.copyPeakProperties(peak, newPeak);
+      newRow.addPeak(peak.getDataFile(), newPeak);
+    }
+
+    return newRow;
+  }
+
+
   public static void doGroupMSMSSimilarityCheck(AbstractTask task, AtomicDouble stageProgress,
       PKLRowGroupList groups, String massList, double maxMassDiff, int minMatch, int minDP,
       int maxDPForDiff) {
@@ -431,59 +462,14 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     });
   }
 
-  public static void doGroupMSMSSimilarityCheck(PKLRowGroup g, String massList, double maxMassDiff,
+  public static void doGroupMSMSSimilarityCheck(RowGroup g, String massList, double maxMassDiff,
       int minMatch, int minDP, int maxDPForDiff) {
     R2RMap<R2RMS2Similarity> map = MS2SimilarityTask.doCheck(g.toArray(new PeakListRow[g.size()]),
         massList, maxMassDiff, minMatch, minDP, maxDPForDiff);
-    g.setMS2SimilarityMap(map);
+
+    ((PKLRowGroup) g).setMS2SimilarityMap(map);
   }
 
-  /**
-   * Recalc
-   * 
-   * @param groups
-   */
-  private void refineGroups(PKLRowGroupList groups) {
-    // TODO refinemet
-    // refineGroup(groups, 0);
-  }
-
-
-  private void refineGroup(PKLRowGroupList groups, int i) {
-    if (i < groups.size()) {
-      PKLRowGroup g = groups.get(i);
-      // find row with highest number of negative markers and lowest number of partners
-      List<OverlapResult>[] negative = findNegativeMarkers(g);
-
-      int maxRow = -1;
-      for (int r = 0; r < g.size(); r++) {
-        if (!negative[r].isEmpty() && negative[r].size() > maxRow)
-          maxRow = r;
-      }
-
-      if (maxRow != -1) {
-        // remove
-      }
-    }
-  }
-
-  private List<OverlapResult>[] findNegativeMarkers(PKLRowGroup g) {
-    RawDataFile[] raw = groupedPKL.getRawDataFiles();
-    List<OverlapResult>[] negative = new ArrayList[g.size()];
-    for (int r = 0; r < g.size(); r++) {
-      negative[r] = new ArrayList<OverlapResult>();
-      for (int p = 0; p < g.size(); p++) {
-        if (r != p) {
-          // add only negative
-          OverlapResult overlap =
-              minFFilter.filterMinFeaturesOverlap(raw, g.get(r), g.get(p), rtTolerance);
-          if (!overlap.equals(OverlapResult.TRUE))
-            negative[r].add(overlap);
-        }
-      }
-    }
-    return negative;
-  }
 
   /**
    * Annotates all rows in a group
@@ -492,7 +478,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    * @param compared
    * @param annotPairs
    */
-  private void annotateGroup(PKLRowGroup g, AtomicInteger compared, AtomicInteger annotPairs) {
+  private void annotateGroup(RowGroup g, AtomicInteger compared, AtomicInteger annotPairs) {
     for (int i = 0; i < g.size() - 1; i++) {
       // check against existing networks
 
@@ -519,7 +505,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
    * @param peakList
    * @return
    */
-  private void doR2RComparison(MSEGroupedPeakList peakList, R2RCorrMap map) throws Exception {
+  private void doR2RComparison(PeakList peakList, R2RCorrMap map) throws Exception {
     LOG.info("Corr: Creating row2row correlation map");
     PeakListRow rows[] = peakList.getRows();
     totalRows = rows.length;

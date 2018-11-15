@@ -15,10 +15,10 @@ import java.util.logging.Logger;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonType;
+import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
+import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
+import net.sf.mzmine.datamodel.identities.iontype.IonType;
+import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.util.PeakListRowSorter;
 import net.sf.mzmine.util.SortingDirection;
@@ -49,9 +49,9 @@ public class MSAnnotationNetworkLogic {
    * @param mseGroupedPeakList
    * @param g can be null. can be used to limit the number of links
    */
-  public static void showMostlikelyAnnotations(MSEGroupedPeakList pkl, boolean useGroups) {
+  public static void showMostlikelyAnnotations(PeakList pkl, boolean useGroups) {
     for (PeakListRow row : pkl.getRows()) {
-      IonIdentity best = getMostLikelyAnnotation(row, useGroups ? pkl.getGroup(row) : null);
+      IonIdentity best = getMostLikelyAnnotation(row, useGroups);
       // set best
       if (best != null)
         row.setPreferredPeakIdentity(best);
@@ -66,7 +66,7 @@ public class MSAnnotationNetworkLogic {
    * @return Most likely annotation or null if none present
    */
   public static IonIdentity getMostLikelyAnnotation(PeakListRow row, boolean useGroup) {
-    return getMostLikelyAnnotation(row, useGroup ? PKLRowGroup.from(row) : null);
+    return getMostLikelyAnnotation(row, useGroup ? row.getGroup() : null);
   }
 
   /**
@@ -75,7 +75,7 @@ public class MSAnnotationNetworkLogic {
    * @param g can be null. can be used to limit the number of links
    * @return
    */
-  public static IonIdentity getMostLikelyAnnotation(PeakListRow row, PKLRowGroup g) {
+  public static IonIdentity getMostLikelyAnnotation(PeakListRow row, RowGroup g) {
     IonIdentity best = null;
     for (PeakIdentity id : row.getPeakIdentities()) {
       if (id instanceof IonIdentity) {
@@ -110,7 +110,7 @@ public class MSAnnotationNetworkLogic {
    * @param esi
    * @return -1 if esi is better than best 1 if opposite
    */
-  public static int compareRows(IonIdentity best, IonIdentity esi, PKLRowGroup g) {
+  public static int compareRows(IonIdentity best, IonIdentity esi, RowGroup g) {
     if (best == null || best.getIonType().isUndefinedAdductParent())
       return -1;
     else if (esi.getIonType().isUndefinedAdductParent())
@@ -161,8 +161,7 @@ public class MSAnnotationNetworkLogic {
    * @param esi
    * @return onyl true if best was not verified by MSMS and and esi is
    */
-  private static boolean compareMSMSNeutralLossIdentity(IonIdentity best,
-      IonIdentity esi) {
+  private static boolean compareMSMSNeutralLossIdentity(IonIdentity best, IonIdentity esi) {
     if (best.getMSMSModVerify() == 0 && esi.getMSMSModVerify() > 0)
       return true;
     else
@@ -175,7 +174,7 @@ public class MSAnnotationNetworkLogic {
    * @param g can be null. can be used to limit the number of links
    * @return
    */
-  public static int getLinksTo(IonIdentity esi, PKLRowGroup g) {
+  public static int getLinksTo(IonIdentity esi, RowGroup g) {
     // TODO change to real links after refinement
     if (g == null)
       return esi.getPartnerRowsID().length;
@@ -322,9 +321,10 @@ public class MSAnnotationNetworkLogic {
    * @return
    */
   private static Collection<AnnotationNetwork> splitByGroup(AnnotationNetwork net) {
+    // GroupID, Network
     Map<Integer, AnnotationNetwork> map = new HashMap<>();
     for (Entry<PeakListRow, IonIdentity> e : net.entrySet()) {
-      Integer id = PKLRowGroup.idFrom(e.getKey());
+      int id = e.getKey().getGroupID();
       if (id != -1) {
         AnnotationNetwork nnet = map.get(id);
         if (nnet == null) {
@@ -411,9 +411,8 @@ public class MSAnnotationNetworkLogic {
    * @return
    */
   public static AnnotationNetwork[] getAllNetworks(PeakListRow row) {
-    return MSAnnotationNetworkLogic.getAllAnnotations(row).stream()
-        .map(IonIdentity::getNetwork).filter(Objects::nonNull).distinct()
-        .toArray(AnnotationNetwork[]::new);
+    return MSAnnotationNetworkLogic.getAllAnnotations(row).stream().map(IonIdentity::getNetwork)
+        .filter(Objects::nonNull).distinct().toArray(AnnotationNetwork[]::new);
   }
 
   /**
@@ -582,7 +581,7 @@ public class MSAnnotationNetworkLogic {
     ident.sort(new Comparator<IonIdentity>() {
       @Override
       public int compare(IonIdentity a, IonIdentity b) {
-        return compareRows(a, b, (PKLRowGroup) null);
+        return compareRows(a, b, (RowGroup) null);
       }
     });
     return ident;
@@ -623,7 +622,7 @@ public class MSAnnotationNetworkLogic {
    * @param g
    * @return
    */
-  public static AnnotationNetwork getBestNetwork(PKLRowGroup g) {
+  public static AnnotationNetwork getBestNetwork(RowGroup g) {
     AnnotationNetwork best = null;
     for (PeakListRow r : g) {
       IonIdentity id = getMostLikelyAnnotation(r, g);

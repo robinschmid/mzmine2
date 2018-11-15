@@ -36,8 +36,8 @@ import javax.swing.AbstractAction;
 import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import com.Ostermiller.util.CSVPrinter;
+import net.sf.mzmine.datamodel.identities.iontype.IonModification;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModification;
 import net.sf.mzmine.parameters.parametertypes.MultiChoiceComponent;
 import net.sf.mzmine.util.dialogs.LoadSaveFileChooser;
 

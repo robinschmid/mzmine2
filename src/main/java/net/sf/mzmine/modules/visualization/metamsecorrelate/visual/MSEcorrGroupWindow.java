@@ -60,14 +60,15 @@ import net.sf.mzmine.chartbasics.gui.swing.EChartPanel;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.MZmineProject;
+import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.datamodel.impl.PKLRowGroupList;
+import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData.SimilarityMeasure;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RFullCorrelationData;
@@ -98,9 +99,10 @@ public class MSEcorrGroupWindow extends JFrame {
   private EStandardChartTheme theme;
 
   // data
-  private MSEGroupedPeakList peakList;
+  private PeakList peakList;
   private PKLRowGroupList groups;
-  private int currentIndex;
+  private int currentGroupIndex;
+
   private MZmineProject project;
   // visual
   private JPanel contentPane;
@@ -146,8 +148,8 @@ public class MSEcorrGroupWindow extends JFrame {
    * @param groups
    * @param peakList
    */
-  public MSEcorrGroupWindow(MZmineProject project, final MSEGroupedPeakList peakList,
-      PKLRowGroupList groups, int index) {
+  public MSEcorrGroupWindow(MZmineProject project, final PeakList peakList, PKLRowGroupList groups,
+      int index) {
     // sub window for more charts
     subWindow = new MSEcorrGroupSubWindow(this);
     msmsWindow = new MultiMSMSWindow();
@@ -160,7 +162,7 @@ public class MSEcorrGroupWindow extends JFrame {
     // data
     this.peakList = peakList;
     this.groups = groups;
-    this.currentIndex = index;
+    this.currentGroupIndex = index;
     this.project = project;
     // theme
     colors = PKLRowGroup.colors;
@@ -542,35 +544,39 @@ public class MSEcorrGroupWindow extends JFrame {
   }
 
   public void nextRaw() {
-    PKLRowGroup g = peakList.getLastViewedGroup();
+    RowGroup g = getTableModel().getGroup();
     if (g.getLastViewedRawFileI() + 1 < peakList.getRawDataFiles().length)
       setCurrentRawView(g.getLastViewedRawFileI() + 1);
   }
 
   public void prevRaw() {
-    PKLRowGroup g = peakList.getLastViewedGroup();
+    RowGroup g = getTableModel().getGroup();
     if (g.getLastViewedRawFileI() > 0)
       setCurrentRawView(g.getLastViewedRawFileI() - 1);
   }
 
   public void prevGroup() {
-    if (peakList.getLastViewedIndex() > 0)
-      setCurrentGroupView(peakList.getLastViewedIndex() - 1);
+    RowGroup g = getTableModel().getGroup();
+    if (currentGroupIndex > 0) {
+      setCurrentGroupView(currentGroupIndex - 1);
+    }
   }
 
   public void nextGroup() {
-    if (peakList.getLastViewedIndex() + 1 < peakList.getGroups().size())
-      setCurrentGroupView(peakList.getLastViewedIndex() + 1);
+    RowGroup g = getTableModel().getGroup();
+    if (currentGroupIndex < groups.size() - 1) {
+      setCurrentGroupView(currentGroupIndex + 1);
+    }
   }
 
   public void prevRow() {
-    PKLRowGroup g = peakList.getLastViewedGroup();
+    RowGroup g = getTableModel().getGroup();
     if (g.getLastViewedRowI() > 0)
       setCurrentRowView(g.getLastViewedRowI() - 1);
   }
 
   public void nextRow() {
-    PKLRowGroup g = peakList.getLastViewedGroup();
+    RowGroup g = getTableModel().getGroup();
     if (g.getLastViewedRowI() + 1 < g.size())
       setCurrentRowView(g.getLastViewedRowI() + 1);
   }
@@ -584,7 +590,7 @@ public class MSEcorrGroupWindow extends JFrame {
     // skip groups with size smaller than X
     if (getCbAutoSkipGSize().isSelected()) {
       try {
-        int lastIndex = peakList.getLastViewedIndex();
+        int lastIndex = currentGroupIndex;
         int min = Integer.valueOf(getTxtMinGroupSize().getText());
         int minNet = Integer.valueOf(getTxtSkipSmallNetwork().getText());
         while (!(groups.get(index).size() >= min
@@ -596,11 +602,13 @@ public class MSEcorrGroupWindow extends JFrame {
       }
     }
     // set index to peaklist
-    peakList.setLastViewedIndex(index);
+    currentGroupIndex = index;
+    RowGroup g = groups.get(index);
+    getTableModel().setGroup(g);
 
     // set text
     getTxtGroup().setText(String.valueOf(index));
-    getTxtRow().setText(String.valueOf(peakList.getLastViewedGroup().getLastViewedRowI()));
+    getTxtRow().setText(String.valueOf(g.getLastViewedRowI()));
 
     // auto show raw file containing lastViewed row
     checkAutoShowRawFile();
@@ -620,7 +628,7 @@ public class MSEcorrGroupWindow extends JFrame {
    */
   private boolean checkAutoShowRawFile() {
     if (getCbAutoRawFile().isSelected()) {
-      PKLRowGroup g = peakList.getLastViewedGroup();
+      RowGroup g = getTableModel().getGroup();
       PeakListRow row = g.getLastViewedRow();
 
       int maxI = 0;
@@ -648,7 +656,7 @@ public class MSEcorrGroupWindow extends JFrame {
    * @param i
    */
   protected void setCurrentRawView(int i) {
-    PKLRowGroup g = peakList.getLastViewedGroup();
+    RowGroup g = getTableModel().getGroup();
     g.setLastViewedRawFileI(i);
     renewAllPlots(true, true, false, false);
   }
@@ -661,7 +669,7 @@ public class MSEcorrGroupWindow extends JFrame {
   protected void setCurrentRowView(int i) {
     getTxtRow().setText(String.valueOf(i));
 
-    PKLRowGroup g = peakList.getLastViewedGroup();
+    RowGroup g = getTableModel().getGroup();
     g.setLastViewedRowI(i);
     // update table
     getTableModel().fireTableDataChanged();
@@ -710,7 +718,7 @@ public class MSEcorrGroupWindow extends JFrame {
 
       // MSMS window
       if (msmsWindow.isVisible()) {
-        PKLRowGroup g = peakList.getLastViewedGroup();
+        RowGroup g = getTableModel().getGroup();
         msmsWindow.setData(g.toArray(new PeakListRow[0]), peakList.getRawDataFiles(), null, false,
             SortingProperty.MZ, SortingDirection.Ascending);
       }
@@ -726,7 +734,7 @@ public class MSEcorrGroupWindow extends JFrame {
   private void plotPeakShapes() {
     ChartPanel cp = null;
     // get group
-    PKLRowGroup g = peakList.getLastViewedGroup();
+    RowGroup g = getTableModel().getGroup();
     if (g != null) {
       // PeakListRow row = g.getLastViewedRow();
       RawDataFile raw = g.getLastViewedRawFile();
@@ -793,8 +801,9 @@ public class MSEcorrGroupWindow extends JFrame {
     EChartPanel cp = null;
     try {
       // get group
-      PKLRowGroup g = peakList.getLastViewedGroup();
-      if (g != null) {
+      RowGroup cg = getTableModel().getGroup();
+      if (cg instanceof PKLRowGroup) {
+        PKLRowGroup g = (PKLRowGroup) cg;
         //
         PeakListRow row = g.getLastViewedRow();
         int rowI = g.getLastViewedRowI();
@@ -898,8 +907,9 @@ public class MSEcorrGroupWindow extends JFrame {
     EChartPanel cp = null;
     try {
       // get group
-      PKLRowGroup g = peakList.getLastViewedGroup();
-      if (g != null) {
+      RowGroup cg = getTableModel().getGroup();
+      if (cg instanceof PKLRowGroup) {
+        PKLRowGroup g = (PKLRowGroup) cg;
         //
         PeakListRow row = g.getLastViewedRow();
         int rowI = g.getLastViewedRowI();
@@ -970,7 +980,7 @@ public class MSEcorrGroupWindow extends JFrame {
     ChartPanel cp = null;
     try {
       // get group
-      PKLRowGroup g = peakList.getLastViewedGroup();
+      PKLRowGroup g = getTableModel().getGroup();
       if (g != null) {
         //
         PeakListRow row = g.getLastViewedRow();
@@ -1046,7 +1056,7 @@ public class MSEcorrGroupWindow extends JFrame {
    */
   private void plotPseudoSpectrum() {
     pnSpectrum.removeAll();
-    PKLRowGroup g = peakList.getLastViewedGroup();
+    PKLRowGroup g = getTableModel().getGroup();
     if (g != null) {
       EChartPanel chart = PseudoSpectrum.createChartPanel(g, g.getLastViewedRawFile(),
           getCbSumPseudoSpectrum().isSelected());
@@ -1061,7 +1071,7 @@ public class MSEcorrGroupWindow extends JFrame {
    * Annotation network
    */
   private void createAnnotationNetwork() {
-    PKLRowGroup g = peakList.getLastViewedGroup();
+    RowGroup g = getTableModel().getGroup();
     if (g != null) {
       PeakListRow[] rows = g.toArray(new PeakListRow[g.size()]);
       pnAnnNetwork.setPeakListRows(rows);
@@ -1077,7 +1087,7 @@ public class MSEcorrGroupWindow extends JFrame {
    * RT network
    */
   private void createRTNetwork() {
-    PKLRowGroup g = peakList.getLastViewedGroup();
+    RowGroup g = getTableModel().getGroup();
     if (g != null) {
       PeakListRow[] rows = g.toArray(new PeakListRow[g.size()]);
       pnRTNetwork.setPeakListRows(rows);
@@ -1093,8 +1103,8 @@ public class MSEcorrGroupWindow extends JFrame {
    * Correlation network
    */
   private void createCorrelationNetwork() {
-    PKLRowGroup g = peakList.getLastViewedGroup();
-    if (g != null) {
+    RowGroup g = getTableModel().getGroup();
+    if (g instanceof PKLRowGroup) {
       PeakListRow[] rows = g.toArray(new PeakListRow[g.size()]);
       pnCorrNetwork.setPeakListRows(rows, peakList.getCorrelationMap());
       pnCorrNetwork.resetZoom();
@@ -1109,9 +1119,9 @@ public class MSEcorrGroupWindow extends JFrame {
    * MSMS network
    */
   private void createMSMSNetwork() {
-    PKLRowGroup g = peakList.getLastViewedGroup();
-    if (g != null) {
-      pnMSMSNetwork.setMap(g.getMS2SimilarityMap());
+    RowGroup g = getTableModel().getGroup();
+    if (g instanceof MS2SimilarityProviderGroup) {
+      pnMSMSNetwork.setMap((MS2SimilarityProviderGroup) g.getMS2SimilarityMap());
       pnMSMSNetwork.resetZoom();
       pnMSMSNetwork.revalidate();
       pnMSMSNetwork.repaint();

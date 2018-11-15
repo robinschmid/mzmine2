@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
+import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
@@ -131,8 +131,8 @@ public class AnnotationRefinementTask extends AbstractTask {
    * @param all
    * @return
    */
-  private static boolean deleteXmersOnMSMS(PeakListRow row, IonIdentity best,
-      List<IonIdentity> all, int trueThreshold) {
+  private static boolean deleteXmersOnMSMS(PeakListRow row, IonIdentity best, List<IonIdentity> all,
+      int trueThreshold) {
     // check best first
     if (best.getMSMSMultimerCount() > 0) {
       // delete rest of annotations

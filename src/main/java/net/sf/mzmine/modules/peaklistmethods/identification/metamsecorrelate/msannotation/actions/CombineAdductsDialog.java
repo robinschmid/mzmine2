@@ -15,8 +15,8 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import net.miginfocom.swing.MigLayout;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModification;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.CombinedIonModification;
+import net.sf.mzmine.datamodel.identities.iontype.CombinedIonModification;
+import net.sf.mzmine.datamodel.identities.iontype.IonModification;
 
 public class CombineAdductsDialog extends JDialog implements MouseListener {
 
@@ -91,7 +91,8 @@ public class CombineAdductsDialog extends JDialog implements MouseListener {
   }
 
   private void createCombined() {
-    DefaultListModel<IonModification> model = (DefaultListModel<IonModification>) combine.getModel();
+    DefaultListModel<IonModification> model =
+        (DefaultListModel<IonModification>) combine.getModel();
     IonModification[] com = new IonModification[model.size()];
     for (int i = 0; i < com.length; i++) {
       com[i] = model.get(i);

@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import javax.swing.AbstractAction;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModification;
+import net.sf.mzmine.datamodel.identities.iontype.IonModification;
 import net.sf.mzmine.parameters.parametertypes.MultiChoiceComponent;
 
 /**
@@ -58,7 +58,8 @@ public class CombineESIAdductsAction extends AbstractAction {
   public void actionPerformed(final ActionEvent e) {
     if (parent != null) {
       // Show dialog.
-      CombineAdductsDialog dialog = new CombineAdductsDialog((IonModification[]) parent.getChoices());
+      CombineAdductsDialog dialog =
+          new CombineAdductsDialog((IonModification[]) parent.getChoices());
 
       dialog.setVisible(true);
       List<IonModification> add = dialog.getNewTypes();

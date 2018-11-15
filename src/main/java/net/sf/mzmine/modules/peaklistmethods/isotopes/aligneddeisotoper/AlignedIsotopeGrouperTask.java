@@ -31,21 +31,23 @@ import net.sf.mzmine.datamodel.PeakList.PeakListAppliedMethod;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
+import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
+import net.sf.mzmine.datamodel.identities.iontype.IonModification;
+import net.sf.mzmine.datamodel.identities.iontype.IonType;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
+import net.sf.mzmine.datamodel.impl.SimpleFeature;
 import net.sf.mzmine.datamodel.impl.SimpleIsotopePattern;
 import net.sf.mzmine.datamodel.impl.SimplePeakList;
 import net.sf.mzmine.datamodel.impl.SimplePeakListAppliedMethod;
+import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModification;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonType;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
 import net.sf.mzmine.util.PeakListRowSorter;
+import net.sf.mzmine.util.PeakUtils;
 import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
 
@@ -189,7 +191,7 @@ public class AlignedIsotopeGrouperTask extends AbstractTask {
       // Verify the number of detected isotopes. If there is only one
       // Isotope, we skip this left the original peak in the peak list.
       if (bestFitRows.size() <= 1) {
-        PeakListRow copy = MSEGroupedPeakList.copyPeakRow(row);
+        PeakListRow copy = copyPeakRow(row);
         deisotopedPeakList.addRow(copy);
         // try to find and fill in isotope peaks from the highest 2 raw files
         if (matchRaw) {
@@ -252,7 +254,7 @@ public class AlignedIsotopeGrouperTask extends AbstractTask {
           new SimpleIsotopePattern(isotopes, IsotopePatternStatus.DETECTED, selRow.toString());
 
       // copy
-      PeakListRow newRow = MSEGroupedPeakList.copyPeakRow(selRow);
+      PeakListRow newRow = copyPeakRow(selRow);
       // set charge and isotope pattern
       for (Feature f : newRow.getPeaks()) {
         f.setIsotopePattern(newPattern);
@@ -294,6 +296,27 @@ public class AlignedIsotopeGrouperTask extends AbstractTask {
     logger.info("Finished aligned isotopic peak grouper on " + peakList);
     setStatus(TaskStatus.FINISHED);
 
+  }
+
+  /**
+   * Create a copy of a peak list row.
+   *
+   * @param row the row to copy.
+   * @return the newly created copy.
+   */
+  private static PeakListRow copyPeakRow(final PeakListRow row) {
+    // Copy the peak list row.
+    final PeakListRow newRow = new SimplePeakListRow(row.getID());
+    PeakUtils.copyPeakListRowProperties(row, newRow);
+
+    // Copy the peaks.
+    for (final Feature peak : row.getPeaks()) {
+      final Feature newPeak = new SimpleFeature(peak);
+      PeakUtils.copyPeakProperties(peak, newPeak);
+      newRow.addPeak(peak.getDataFile(), newPeak);
+    }
+
+    return newRow;
   }
 
   private Vector<DataPoint> bestRawIsoPattern = null;

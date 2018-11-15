@@ -22,10 +22,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.table.AbstractTableModel;
 import net.sf.mzmine.datamodel.PeakIdentity;
+import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.MetaMSEcorrelateTask;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData.SimilarityMeasure;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RFullCorrelationData;
@@ -35,7 +36,8 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
    * 
    */
   private static final long serialVersionUID = 1L;
-  private MSEGroupedPeakList peakList;
+  private PeakList peakList;
+  private RowGroup group;
   private SimilarityMeasure type = SimilarityMeasure.COSINE_SIM;
 
   // Logger.
@@ -44,7 +46,7 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
   /**
    * Constructor, assign given dataset to this table
    */
-  public GroupedPeakListTableModel(MSEGroupedPeakList peakList) {
+  public GroupedPeakListTableModel(PeakList peakList) {
     this.peakList = peakList;
   }
 
@@ -56,7 +58,6 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
 
   @Override
   public int getRowCount() {
-    PKLRowGroup group = peakList.getLastViewedGroup();
     return group != null ? group.size() : 0;
   }
 
@@ -86,7 +87,6 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
   @Override
   public Object getValueAt(int row, int col) {
     // get groups
-    PKLRowGroup group = peakList.getLastViewedGroup();
     PeakListRow selectedRow = group.getLastViewedRow();
     // row of group
     if (group != null && row < group.size()) {
@@ -114,10 +114,39 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
         }
       } else {
         CorrelationColumnType corrCol = getCorrelationColumn(col);
-        R2GroupCorrelationData corr = group.getCorr(row);
-        R2RFullCorrelationData r2r = corr.getCorrelationToRow(selectedRow);
+        R2GroupCorrelationData corr = null;
+        R2RFullCorrelationData r2r = null;
+
+        if (group instanceof PKLRowGroup) {
+          corr = ((PKLRowGroup) group).getCorr(row);
+          r2r = corr.getCorrelationToRow(selectedRow);
+        }
+
 
         switch (corrCol) {
+          case MAXHEIGHT:
+            return corr == null ? 0 : corr.getMaxHeight();
+          case AVERAGE_DP_COUNT:
+            return corr == null ? 0 : corr.getAvgDPCount();
+          case AVERAGE_R_IPROFILE:
+            return corr == null ? 0 : corr.getAvgIProfileR();
+          case AVERAGE_R_PEAKSHAPE:
+            return corr == null ? 0 : corr.getAvgPeakShapeR();
+          case MAX_R_IPROFILE:
+            return corr == null ? 0 : corr.getMaxIProfileR();
+          case MAX_R_PEAKSHAPE:
+            return corr == null ? 0 : corr.getMaxPeakShapeR();
+          case AVG_TOTAL_R_PEAKSHAPE:
+            return corr == null ? 0 : corr.getAvgTotalPeakShapeR();
+          case MIN_R_IPROFILE:
+            return corr == null ? 0 : corr.getMinIProfileR();
+          case MIN_R_PEAKSHAPE:
+            return corr == null ? 0 : corr.getMinPeakShapeR();
+          case AVERAGE_COSINE_HEIGHT:
+            if (selectedRow.getID() == pklRow.getID())
+              return 1;
+            else
+              return r2r == null ? Double.NaN : r2r.getHeightSimilarity(type);
           case AVG_COSINE_SIM:
             if (selectedRow.getID() == pklRow.getID())
               return 1;
@@ -128,29 +157,6 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
               return 1;
             else
               return r2r == null ? Double.NaN : r2r.getTotalSimilarity(type);
-          case MAXHEIGHT:
-            return corr.getMaxHeight();
-          case AVERAGE_DP_COUNT:
-            return corr.getAvgDPCount();
-          case AVERAGE_R_IPROFILE:
-            return corr.getAvgIProfileR();
-          case AVERAGE_R_PEAKSHAPE:
-            return corr.getAvgPeakShapeR();
-          case MAX_R_IPROFILE:
-            return corr.getMaxIProfileR();
-          case MAX_R_PEAKSHAPE:
-            return corr.getMaxPeakShapeR();
-          case AVG_TOTAL_R_PEAKSHAPE:
-            return corr.getAvgTotalPeakShapeR();
-          case MIN_R_IPROFILE:
-            return corr.getMinIProfileR();
-          case MIN_R_PEAKSHAPE:
-            return corr.getMinPeakShapeR();
-          case AVERAGE_COSINE_HEIGHT:
-            if (selectedRow.getID() == pklRow.getID())
-              return 1;
-            else
-              return r2r == null ? Double.NaN : r2r.getHeightSimilarity(type);
         }
       }
     } else {
@@ -175,9 +181,6 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
   @Override
   public void setValueAt(Object value, int row, int col) {
     CommonColumnType2 columnType = getCommonColumn(col);
-
-    // get groups
-    PKLRowGroup group = peakList.getLastViewedGroup();
     // row of group
     if (row < group.size()) {
       PeakListRow peakListRow = group.get(row);
@@ -216,6 +219,17 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
       col -= commonColumns.length;
       return corrColumns[col];
     }
+  }
+
+  public RowGroup getGroup() {
+    return group;
+  }
+
+  public void setGroup(RowGroup group) {
+    boolean update = !group.equals(this.group);
+    this.group = group;
+    if (update)
+      fireTableDataChanged();
   }
 
 }

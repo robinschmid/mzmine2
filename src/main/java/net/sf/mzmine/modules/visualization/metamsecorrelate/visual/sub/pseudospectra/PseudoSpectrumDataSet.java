@@ -5,8 +5,8 @@ import java.util.Map;
 import org.jfree.data.xy.XYDataItem;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.interf.AbstractMSMSDataPointIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.interf.AbstractMSMSIdentity;
+import net.sf.mzmine.datamodel.identities.ms2.interf.AbstractMSMSDataPointIdentity;
+import net.sf.mzmine.datamodel.identities.ms2.interf.AbstractMSMSIdentity;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 public class PseudoSpectrumDataSet extends XYSeriesCollection {

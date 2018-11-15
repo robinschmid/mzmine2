@@ -28,7 +28,7 @@ import java.awt.BorderLayout;
 import java.util.Arrays;
 import javax.swing.JButton;
 import javax.swing.JLabel;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModification;
+import net.sf.mzmine.datamodel.identities.iontype.IonModification;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.actions.AddESIAdductsAction;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.actions.CombineESIAdductsAction;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.actions.DefaultESIAdductsAction;

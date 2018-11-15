@@ -29,14 +29,14 @@ import net.sf.mzmine.datamodel.MassList;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.Scan;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonType;
+import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
+import net.sf.mzmine.datamodel.identities.iontype.IonType;
+import net.sf.mzmine.datamodel.identities.ms2.MSMSIdentityList;
+import net.sf.mzmine.datamodel.identities.ms2.MSMSIonRelationIdentity;
+import net.sf.mzmine.datamodel.identities.ms2.interf.AbstractMSMSIdentity;
+import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.MSMSLogic;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIdentityList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIonRelationIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.interf.AbstractMSMSIdentity;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
@@ -175,7 +175,7 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
       IonType mod = ad.getIonType();
 
       // is in group?
-      PKLRowGroup group = PKLRowGroup.from(row);
+      RowGroup group = row.getGroup();
       if (group != null && !group.isEmpty()) {
         for (PeakListRow parent : group) {
           // has MS/MS
@@ -220,8 +220,7 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
       }
     }
 
-    IonIdentity best =
-        MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, PKLRowGroup.from(row));
+    IonIdentity best = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, true);
     if (c > 0)
       LOG.info(MessageFormat.format(
           "Found {0} MS/MS fragments for neutral loss identifiers of rowID=[1} m/z={2} RT={3} best:{4}",
@@ -241,8 +240,8 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
    * @param precursorMZ
    */
   public static boolean checkParentForNeutralLoss(NeutralLossCheck neutralLossCheck,
-      DataPoint[] dps, IonIdentity identity, IonType mod, MZTolerance mzTolerance,
-      double minHeight, double precursorMZ) {
+      DataPoint[] dps, IonIdentity identity, IonType mod, MZTolerance mzTolerance, double minHeight,
+      double precursorMZ) {
     boolean result = false;
     // loss for precursor mz
     DataPoint loss = MSMSLogic.findDPAt(dps, precursorMZ, mzTolerance, minHeight);

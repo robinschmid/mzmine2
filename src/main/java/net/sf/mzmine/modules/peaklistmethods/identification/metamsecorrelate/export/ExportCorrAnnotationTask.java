@@ -24,6 +24,7 @@ import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -32,15 +33,14 @@ import org.apache.commons.lang3.StringUtils;
 import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
+import net.sf.mzmine.datamodel.impl.PKLRowGroupList;
+import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.MetaMSEcorrelateModule;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroupList;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MS2SimilarityProviderGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RMap;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.similarity.R2RMS2Similarity;
 import net.sf.mzmine.modules.peaklistmethods.io.gnpsexport.GNPSExportParameters.RowFilter;
 import net.sf.mzmine.parameters.ParameterSet;
@@ -138,14 +138,11 @@ public class ExportCorrAnnotationTask extends AbstractTask {
         exportAnnotationEdges(peakList, filename, filter.equals(RowFilter.ONLY_WITH_MS2), progress,
             this);
 
-      if (peakList instanceof MSEGroupedPeakList) {
-        // export MS2Similarity edges
-        if (exportMS2DiffSimilarityEdges)
-          exportMS2DiffSimilarityEdges((MSEGroupedPeakList) peakList, filename, filter, progress,
-              this);
-        if (exportMS2SimilarityEdges)
-          exportMS2SimilarityEdges((MSEGroupedPeakList) peakList, filename, filter, progress, this);
-      }
+      // export MS2Similarity edges
+      if (exportMS2DiffSimilarityEdges)
+        exportMS2DiffSimilarityEdges(peakList, filename, filter, progress, this);
+      if (exportMS2SimilarityEdges)
+        exportMS2SimilarityEdges(peakList, filename, filter, progress, this);
 
       // export edges of corr
       if (exportCorrelationEdges)
@@ -189,24 +186,26 @@ public class ExportCorrAnnotationTask extends AbstractTask {
         int rowID = r.getID();
 
         //
-        MSAnnotationNetworkLogic.getAllAnnotations(r).stream().forEach(adduct -> {
-          ConcurrentHashMap<PeakListRow, IonIdentity> links = adduct.getPartner();
+        if (r.hasIonIdentity()) {
+          r.getIonIdentities().forEach(adduct -> {
+            ConcurrentHashMap<PeakListRow, IonIdentity> links = adduct.getPartner();
 
-          // add all connection for ids>rowID
-          links.entrySet().stream().filter(e -> e != null).filter(e -> e.getKey().getID() > rowID)
-              .forEach(e -> {
-                PeakListRow link = e.getKey();
-                if (!limitToMSMS || link.getBestFragmentation() != null) {
-                  IonIdentity id = e.getValue();
-                  double dmz = Math.abs(r.getAverageMZ() - link.getAverageMZ());
-                  // the data
-                  exportEdge(ann, "MS1 annotation", rowID, e.getKey().getID(),
-                      corrForm.format((id.getScore() + adduct.getScore()) / 2d), //
-                      id.getAdduct() + " " + adduct.getAdduct() + " dm/z=" + mzForm.format(dmz));
-                  added.incrementAndGet();
-                }
-              });
-        });
+            // add all connection for ids>rowID
+            links.entrySet().stream().filter(Objects::nonNull)
+                .filter(e -> e.getKey().getID() > rowID).forEach(e -> {
+                  PeakListRow link = e.getKey();
+                  if (!limitToMSMS || link.getBestFragmentation() != null) {
+                    IonIdentity id = e.getValue();
+                    double dmz = Math.abs(r.getAverageMZ() - link.getAverageMZ());
+                    // the data
+                    exportEdge(ann, "MS1 annotation", rowID, e.getKey().getID(),
+                        corrForm.format((id.getScore() + adduct.getScore()) / 2d), //
+                        id.getAdduct() + " " + adduct.getAdduct() + " dm/z=" + mzForm.format(dmz));
+                    added.incrementAndGet();
+                  }
+                });
+          });
+        }
       }
 
       LOG.info("Annotation edges exported " + added.get() + "");
@@ -223,8 +222,8 @@ public class ExportCorrAnnotationTask extends AbstractTask {
     }
   }
 
-  public static boolean exportMS2SimilarityEdges(MSEGroupedPeakList pkl, File filename,
-      RowFilter filter, Double progress, AbstractTask task) {
+  public static boolean exportMS2SimilarityEdges(PeakList pkl, File filename, RowFilter filter,
+      Double progress, AbstractTask task) {
     try {
       PKLRowGroupList groups = pkl.getGroups();
       if (groups != null && !groups.isEmpty()) {
@@ -238,26 +237,28 @@ public class ExportCorrAnnotationTask extends AbstractTask {
         ann.append("\n");
         AtomicInteger added = new AtomicInteger(0);
 
-        for (PKLRowGroup g : groups) {
+        for (RowGroup g : groups) {
           if (task != null && task.isCanceled()) {
             return false;
           }
 
-          R2RMap<R2RMS2Similarity> map = g.getMS2SimilarityMap();
-          for (Entry<String, R2RMS2Similarity> e : map.entrySet()) {
-            R2RMS2Similarity r2r = e.getValue();
-            if (r2r.getDiffAvgCosine() == 0 && r2r.getDiffMaxOverlap() == 0)
-              continue;
-            PeakListRow a = r2r.getA();
-            PeakListRow b = r2r.getB();
-            // no self-loops
-            if (a.getID() != b.getID() && filter.filter(a) && filter.filter(b)) {
-              // the data
-              exportEdge(ann, "MS2 sim", a.getID(), b.getID(),
-                  corrForm.format(r2r.getDiffAvgCosine()), //
-                  MessageFormat.format("cos={0} ({1})", corrForm.format(r2r.getDiffAvgCosine()),
-                      overlapForm.format(r2r.getDiffMaxOverlap())));
-              added.incrementAndGet();
+          if (g instanceof MS2SimilarityProviderGroup) {
+            R2RMap<R2RMS2Similarity> map = ((MS2SimilarityProviderGroup) g).getMS2SimilarityMap();
+            for (Entry<String, R2RMS2Similarity> e : map.entrySet()) {
+              R2RMS2Similarity r2r = e.getValue();
+              if (r2r.getDiffAvgCosine() == 0 && r2r.getDiffMaxOverlap() == 0)
+                continue;
+              PeakListRow a = r2r.getA();
+              PeakListRow b = r2r.getB();
+              // no self-loops
+              if (a.getID() != b.getID() && filter.filter(a) && filter.filter(b)) {
+                // the data
+                exportEdge(ann, "MS2 sim", a.getID(), b.getID(),
+                    corrForm.format(r2r.getDiffAvgCosine()), //
+                    MessageFormat.format("cos={0} ({1})", corrForm.format(r2r.getDiffAvgCosine()),
+                        overlapForm.format(r2r.getDiffMaxOverlap())));
+                added.incrementAndGet();
+              }
             }
           }
         }
@@ -278,8 +279,8 @@ public class ExportCorrAnnotationTask extends AbstractTask {
     return false;
   }
 
-  public static boolean exportMS2DiffSimilarityEdges(MSEGroupedPeakList pkl, File filename,
-      RowFilter filter, Double progress, AbstractTask task) {
+  public static boolean exportMS2DiffSimilarityEdges(PeakList pkl, File filename, RowFilter filter,
+      Double progress, AbstractTask task) {
     try {
       PKLRowGroupList groups = pkl.getGroups();
       if (groups != null && !groups.isEmpty()) {
@@ -293,27 +294,29 @@ public class ExportCorrAnnotationTask extends AbstractTask {
         ann.append("\n");
         AtomicInteger added = new AtomicInteger(0);
 
-        for (PKLRowGroup g : groups) {
+        for (RowGroup g : groups) {
           if (task != null && task.isCanceled()) {
             return false;
           }
 
-          R2RMap<R2RMS2Similarity> map = g.getMS2SimilarityMap();
-          for (Entry<String, R2RMS2Similarity> e : map.entrySet()) {
-            R2RMS2Similarity r2r = e.getValue();
-            if (r2r.getSpectralAvgCosine() == 0 && r2r.getSpectralMaxOverlap() == 0)
-              continue;
-            PeakListRow a = r2r.getA();
-            PeakListRow b = r2r.getB();
-            // no self-loops
-            if (a.getID() != b.getID() && filter.filter(a) && filter.filter(b)) {
-              // the data
-              exportEdge(ann, "MS2 diff sim", a.getID(), b.getID(),
-                  corrForm.format(r2r.getSpectralAvgCosine()), //
-                  MessageFormat.format("diff cos={0} ({1})",
-                      corrForm.format(r2r.getSpectralAvgCosine()),
-                      overlapForm.format(r2r.getSpectralMaxOverlap())));
-              added.incrementAndGet();
+          if (g instanceof MS2SimilarityProviderGroup) {
+            R2RMap<R2RMS2Similarity> map = ((MS2SimilarityProviderGroup) g).getMS2SimilarityMap();
+            for (Entry<String, R2RMS2Similarity> e : map.entrySet()) {
+              R2RMS2Similarity r2r = e.getValue();
+              if (r2r.getSpectralAvgCosine() == 0 && r2r.getSpectralMaxOverlap() == 0)
+                continue;
+              PeakListRow a = r2r.getA();
+              PeakListRow b = r2r.getB();
+              // no self-loops
+              if (a.getID() != b.getID() && filter.filter(a) && filter.filter(b)) {
+                // the data
+                exportEdge(ann, "MS2 diff sim", a.getID(), b.getID(),
+                    corrForm.format(r2r.getSpectralAvgCosine()), //
+                    MessageFormat.format("diff cos={0} ({1})",
+                        corrForm.format(r2r.getSpectralAvgCosine()),
+                        overlapForm.format(r2r.getSpectralMaxOverlap())));
+                added.incrementAndGet();
+              }
             }
           }
         }
@@ -336,10 +339,6 @@ public class ExportCorrAnnotationTask extends AbstractTask {
 
   public static boolean exportCorrelationEdges(PeakList pkl, File filename, Double progress,
       AbstractTask task, double minCorr, RowFilter filter) {
-    if (!(pkl instanceof MSEGroupedPeakList))
-      return false;
-
-    R2RCorrMap map = ((MSEGroupedPeakList) pkl).getCorrelationMap();
 
     NumberFormat corrForm = new DecimalFormat("0.000");
     try {

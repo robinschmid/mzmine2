@@ -28,12 +28,11 @@ import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
+import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
+import net.sf.mzmine.datamodel.identities.ms2.MSMSIonIdentity;
+import net.sf.mzmine.datamodel.identities.ms2.interf.AbstractMSMSIdentity;
+import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.MSMSIonIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.identity.interf.AbstractMSMSIdentity;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.pseudospectra.PseudoSpectrum;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.pseudospectra.PseudoSpectrumDataSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
@@ -374,10 +373,10 @@ public class MultiMSMSWindow extends JFrame {
   public void addAllMSMSAnnotations(PeakListRow[] rows, RawDataFile raw) {
     for (PeakListRow row : rows) {
       // add MS1 annotations
-      // limited by correlation group
-      PKLRowGroup group = PKLRowGroup.from(row);
+      // limited by correlation group can be null
+      RowGroup group = row.getGroup();
 
-      IonIdentity best = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, group);
+      IonIdentity best = row.getBestIonIdentity();
       if (best == null)
         continue;
 
@@ -386,12 +385,14 @@ public class MultiMSMSWindow extends JFrame {
         Feature f = row.getPeak(scan.getDataFile());
         double precursorMZ = f != null ? f.getMZ() : row.getAverageMZ();
         // add ms1 adduct annotation
-        addMSMSAnnotation(
-            new MSMSIonIdentity(mzTolerance, new SimpleDataPoint(precursorMZ, 1f), best.getIonType()));
+        addMSMSAnnotation(new MSMSIonIdentity(mzTolerance, new SimpleDataPoint(precursorMZ, 1f),
+            best.getIonType()));
 
         // add all MSMS annotations (found in MSMS)
-        for (IonIdentity id : MSAnnotationNetworkLogic.getAllAnnotations(row)) {
-          addMSMSAnnotations(id.getMSMSIdentities());
+        if (row.hasIonIdentity()) {
+          for (IonIdentity id : row.getIonIdentities()) {
+            addMSMSAnnotations(id.getMSMSIdentities());
+          }
         }
       }
     }

@@ -24,7 +24,6 @@ import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.modules.MZmineModuleCategory;
 import net.sf.mzmine.modules.MZmineRunnableModule;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MSEGroupedPeakList;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.corrhisto.visual.CorrHistoFrame;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.Task;
@@ -56,12 +55,10 @@ public class CorrHistoModule implements MZmineRunnableModule {
     PeakList[] pkls =
         parameters.getParameter(CorrHistoParameters.PEAK_LISTS).getValue().getMatchingPeakLists();
     if (pkls != null && pkls.length > 0) {
-      if (pkls[0] instanceof MSEGroupedPeakList) {
-        CorrHistoFrame f = new CorrHistoFrame();
-        f.setPeakList((MSEGroupedPeakList) pkls[0]);
-        f.setVisible(true);
-        return ExitCode.OK;
-      }
+      CorrHistoFrame f = new CorrHistoFrame();
+      f.setPeakList(pkls[0]);
+      f.setVisible(true);
+      return ExitCode.OK;
     }
     return ExitCode.ERROR;
   }

@@ -34,9 +34,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModification;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.CombinedIonModification;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonModificationType;
+import net.sf.mzmine.datamodel.identities.iontype.CombinedIonModification;
+import net.sf.mzmine.datamodel.identities.iontype.IonModification;
+import net.sf.mzmine.datamodel.identities.iontype.IonModificationType;
 import net.sf.mzmine.parameters.UserParameter;
 import net.sf.mzmine.parameters.parametertypes.MultiChoiceParameter;
 
@@ -46,7 +46,8 @@ import net.sf.mzmine.parameters.parametertypes.MultiChoiceParameter;
  * @author $Author$
  * @version $Revision$
  */
-public class ESIAdductsParameter implements UserParameter<IonModification[][], ESIAdductsComponent> {
+public class ESIAdductsParameter
+    implements UserParameter<IonModification[][], ESIAdductsComponent> {
 
   // Logger.
   private static final Logger LOG = Logger.getLogger(ESIAdductsParameter.class.getName());
@@ -75,8 +76,8 @@ public class ESIAdductsParameter implements UserParameter<IonModification[][], E
   public ESIAdductsParameter(final String name, final String description) {
     super();
     adducts = new MultiChoiceParameter<IonModification>(name, description, new IonModification[0]);
-    modification = new MultiChoiceParameter<IonModification>("Modifications", "Modifications on adducts",
-        new IonModification[0]);
+    modification = new MultiChoiceParameter<IonModification>("Modifications",
+        "Modifications on adducts", new IonModification[0]);
   }
 
   @Override
@@ -108,8 +109,8 @@ public class ESIAdductsParameter implements UserParameter<IonModification[][], E
     modification.setValue(selectionsMod.toArray(new IonModification[selectionsMod.size()]));
   }
 
-  private void loadAdducts(final Element xmlElement, String TAG, ArrayList<IonModification> newChoices,
-      ArrayList<IonModification> selections) {
+  private void loadAdducts(final Element xmlElement, String TAG,
+      ArrayList<IonModification> newChoices, ArrayList<IonModification> selections) {
     NodeList adductElements = xmlElement.getChildNodes();
     for (int i = 0; i < adductElements.getLength(); i++) {
       Node a = adductElements.item(i);
@@ -160,7 +161,8 @@ public class ESIAdductsParameter implements UserParameter<IonModification[][], E
         if (adducts.size() == 1) {
           adduct = new IonModification(adducts.get(0));
         } else
-          adduct = new CombinedIonModification(adducts.toArray(new IonModification[adducts.size()]));
+          adduct =
+              new CombinedIonModification(adducts.toArray(new IonModification[adducts.size()]));
 
 
         // A new choice?

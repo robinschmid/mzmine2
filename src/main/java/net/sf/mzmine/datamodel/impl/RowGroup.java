@@ -7,10 +7,14 @@ import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 
 public class RowGroup extends ArrayList<PeakListRow> {
+  // visualization
+  private int lastViewedRow = 0;
+  private int lastViewedRawFile = 0;
+
   // running index of groups
-  private int groupID = 0;
+  protected int groupID = 0;
   // raw files used for peak list creation
-  private final RawDataFile[] raw;
+  protected final RawDataFile[] raw;
   // center RT values for each sample
   private double[] rtSum;
   private int[] rtValues;
@@ -57,6 +61,10 @@ public class RowGroup extends ArrayList<PeakListRow> {
     }
     // last position
     return super.add(e);
+  }
+
+  public RawDataFile[] getRaw() {
+    return raw;
   }
 
   /**
@@ -140,4 +148,34 @@ public class RowGroup extends ArrayList<PeakListRow> {
     this.groupID = groupID;
   }
 
+  // ###########################################
+  // for visuals
+
+  public int getLastViewedRowI() {
+    return lastViewedRow;
+  }
+
+  public PeakListRow getLastViewedRow() {
+    return get(lastViewedRow);
+  }
+
+  public void setLastViewedRowI(int lastViewedRow) {
+    this.lastViewedRow = lastViewedRow;
+  }
+
+  public int getLastViewedRawFileI() {
+    return lastViewedRawFile;
+  }
+
+  public RawDataFile getLastViewedRawFile() {
+    return raw[lastViewedRawFile];
+  }
+
+  public void setLastViewedRawFileI(int lastViewedRawFile) {
+    if (lastViewedRawFile < 0)
+      lastViewedRawFile = 0;
+    else if (lastViewedRawFile >= raw.length)
+      lastViewedRawFile = raw.length - 1;
+    this.lastViewedRawFile = lastViewedRawFile;
+  }
 }
