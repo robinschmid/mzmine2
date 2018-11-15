@@ -106,7 +106,7 @@ public class PeakListTableModel extends AbstractTableModel {
         case NETID:
           return ion != null ? ion.getNetID() : -1;
         case IONTYPE:
-          return ion.getIonType();
+          return ion.toString();
         case NEUTRAL_MASS:
           return ion != null ? ion.getIonType().getMass(peakListRow.getAverageMZ()) : "";
         case ION_FORMULA:
