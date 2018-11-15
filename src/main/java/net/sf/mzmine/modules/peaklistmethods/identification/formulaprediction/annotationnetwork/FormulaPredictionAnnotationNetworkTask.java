@@ -151,6 +151,7 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
     if (totalRows == 0) {
       setStatus(TaskStatus.ERROR);
       setErrorMessage("No annotation networks found in this list. Run MS annotation");
+      cancel();
       return;
     }
 
@@ -164,19 +165,16 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
           ion.setMolFormulas(list);
         }
         // find best formula for neutral mol of network
-
       }
       finishedNets.incrementAndGet();
     });
 
-    logger.finest("Finished formula search for all the peaks");
-
+    logger.finest("Finished formula search for all networks");
     setStatus(TaskStatus.FINISHED);
-
   }
 
-  private List<ResultFormula> predictFormulas(PeakListRow row, IonType ion) {
-    List<ResultFormula> ResultingFormulas = new ArrayList<>();
+  private List<MolecularFormulaIdentity> predictFormulas(PeakListRow row, IonType ion) {
+    List<MolecularFormulaIdentity> resultingFormulas = new ArrayList<>();
     this.searchedMass = ion.getMass(row.getAverageMZ());
 
     massRange = mzTolerance.getToleranceRange(searchedMass);
@@ -188,14 +186,15 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
     IMolecularFormula cdkFormula;
     while ((cdkFormula = generator.getNextFormula()) != null) {
       // Mass is ok, so test other constraints
-      checkConstraints(cdkFormula, row, ion, ion.getCharge());
+      checkConstraints(resultingFormulas, cdkFormula, row, ion);
     }
 
-    return ResultingFormulas;
+    return resultingFormulas;
   }
 
-  private void checkConstraints(IMolecularFormula cdkFormula, PeakListRow peakListRow,
-      IonType ionType, int charge) {
+  private void checkConstraints(List<MolecularFormulaIdentity> resultingFormulas,
+      IMolecularFormula cdkFormula, PeakListRow peakListRow, IonType ionType) {
+    int charge = ionType.getCharge();
 
     // Check elemental ratios
     if (checkRatios) {
@@ -286,8 +285,7 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
         rdbeValue, isotopeScore, msmsScore, msmsAnnotations);
 
     // Add the new formula entry
-    ResultingFormulas.add(resultEntry);
-
+    resultingFormulas.add(resultEntry);
   }
 
   @Override

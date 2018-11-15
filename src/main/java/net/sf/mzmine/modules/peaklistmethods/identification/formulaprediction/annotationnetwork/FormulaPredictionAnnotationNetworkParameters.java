@@ -55,7 +55,13 @@ public class FormulaPredictionAnnotationNetworkParameters extends SimpleParamete
       new OptionalModuleParameter("MS/MS filter", "Check MS/MS data", new MSMSScoreParameters());
 
   public FormulaPredictionAnnotationNetworkParameters() {
-    super(new Parameter[] {PEAK_LISTS, mzTolerance, elements, elementalRatios, rdbeRestrictions,
-        isotopeFilter, msmsFilter});
+    this(false);
+  }
+
+  public FormulaPredictionAnnotationNetworkParameters(boolean isSub) {
+    super(isSub ? //
+        new Parameter[] {elements, elementalRatios, rdbeRestrictions, isotopeFilter, msmsFilter}
+        : new Parameter[] {PEAK_LISTS, mzTolerance, elements, elementalRatios, rdbeRestrictions,
+            isotopeFilter, msmsFilter});
   }
 }
