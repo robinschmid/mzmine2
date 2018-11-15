@@ -26,16 +26,28 @@ public enum CommonColumnType {
   ROWID("ID", Integer.class), //
   AVERAGEMZ("m/z", Double.class), //
   AVERAGERT("RT", Double.class), //
-  IDENTITY("Identity", PeakIdentity.class), //
-  COMMENT("Comment", String.class), //
+  IDENTITY("Identity", PeakIdentity.class, true), //
+  COMMENT("Comment", String.class, true), //
+  GROUPID("GID", Integer.class), //
+  NETID("NetID", Integer.class), //
+  IONTYPE("Ion", String.class, true), //
+  NEUTRAL_MASS("Neutral mass", Double.class), //
+  NEUTRAL_FORMULA("Formula (M)", String.class, true), //
+  ION_FORMULA("Formula (ion)", String.class, true), //
   PEAKSHAPE("Peak shape", PeakListRow.class);
 
   private final String columnName;
   private final Class<?> columnClass;
+  private final boolean isEditable;
 
   CommonColumnType(String columnName, Class<?> columnClass) {
+    this(columnName, columnClass, false);
+  }
+
+  CommonColumnType(String columnName, Class<?> columnClass, boolean isEditable) {
     this.columnName = columnName;
     this.columnClass = columnClass;
+    this.isEditable = isEditable;
   }
 
   public String getColumnName() {
@@ -46,8 +58,12 @@ public enum CommonColumnType {
     return columnClass;
   }
 
+  @Override
   public String toString() {
     return columnName;
   }
 
+  public boolean isEditable() {
+    return isEditable;
+  }
 }

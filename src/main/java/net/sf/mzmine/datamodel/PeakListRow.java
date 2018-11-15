@@ -18,6 +18,8 @@
 
 package net.sf.mzmine.datamodel;
 
+import java.util.List;
+import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.datamodel.impl.RowGroup;
 
 public interface PeakListRow {
@@ -221,4 +223,63 @@ public interface PeakListRow {
    * @return -1 if there is no group
    */
   public int getGroupID();
+
+  // #########################################################
+  // ION identites such as [2M-H2O+H]2+
+  /**
+   * Adds ion identity to the end (least probable)
+   * 
+   * @param ion
+   */
+  void addIonIdentity(IonIdentity ion);
+
+  /**
+   * Adds the ion identity as the least probable or the best (index 0)
+   * 
+   * @param ion
+   * @param markAsBest
+   */
+  void addIonIdentity(IonIdentity ion, boolean markAsBest);
+
+  /**
+   * Remove all ions
+   */
+  void clearIonIdentites();
+
+  /**
+   * The list of the ion identities. Sorted: 0: best pick -> n: lowest probability
+   * 
+   * @return
+   */
+  List<IonIdentity> getIonIdentities();
+
+  /**
+   * The best ion identity is always the first (it is also the one selected in the peak list table
+   * visualizer
+   * 
+   * @return
+   */
+  IonIdentity getBestIonIdentity();
+
+  /**
+   * Has ion identity
+   * 
+   * @return
+   */
+  boolean hasIonIdentity();
+
+  /**
+   * Sets this ion as the best identity. If not already in the list it is going to be added at index
+   * 0
+   * 
+   * @param ion
+   */
+  void setBestIonIdentity(IonIdentity ion);
+
+  /**
+   * Remove ion identity
+   * 
+   * @param identity
+   */
+  void removeIonIdentity(IonIdentity ion);
 }

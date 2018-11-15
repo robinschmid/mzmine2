@@ -19,13 +19,13 @@
 package net.sf.mzmine.modules.visualization.peaklisttable.table;
 
 import javax.swing.table.AbstractTableModel;
-
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.Feature.FeatureStatus;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 
 public class PeakListTableModel extends AbstractTableModel {
 
@@ -43,19 +43,23 @@ public class PeakListTableModel extends AbstractTableModel {
 
   }
 
+  @Override
   public int getColumnCount() {
     return CommonColumnType.values().length
         + peakList.getNumberOfRawDataFiles() * DataFileColumnType.values().length;
   }
 
+  @Override
   public int getRowCount() {
     return peakList.getNumberOfRows();
   }
 
+  @Override
   public String getColumnName(int col) {
     return "column" + col;
   }
 
+  @Override
   public Class<?> getColumnClass(int col) {
 
     if (isCommonColumn(col)) {
@@ -73,28 +77,45 @@ public class PeakListTableModel extends AbstractTableModel {
    * value
    */
 
+  @Override
   public Object getValueAt(int row, int col) {
 
     PeakListRow peakListRow = peakList.getRow(row);
+    IonIdentity ion = peakListRow.getBestIonIdentity();
 
     if (isCommonColumn(col)) {
       CommonColumnType commonColumn = getCommonColumn(col);
 
       switch (commonColumn) {
         case ROWID:
-          return new Integer(peakListRow.getID());
+          return peakListRow.getID();
         case AVERAGEMZ:
-          return new Double(peakListRow.getAverageMZ());
+          return peakListRow.getAverageMZ();
         case AVERAGERT:
           if (peakListRow.getAverageRT() <= 0)
             return null;
-          return new Double(peakListRow.getAverageRT());
+          return peakListRow.getAverageRT();
         case COMMENT:
           return peakListRow.getComment();
         case IDENTITY:
           return peakListRow.getPreferredPeakIdentity();
         case PEAKSHAPE:
           return peakListRow;
+        case GROUPID:
+          return peakListRow.getGroupID();
+        case NETID:
+          return ion != null ? ion.getNetID() : -1;
+        case IONTYPE:
+          return ion.toString();
+        case NEUTRAL_MASS:
+          return ion != null ? ion.getIonType().getMass(peakListRow.getAverageMZ()) : "";
+        case ION_FORMULA:
+          return ion != null ? ion.getBestMolFormula().toString() : "";
+        case NEUTRAL_FORMULA:
+          return ion != null && ion.getNetwork() != null ? //
+              ion.getNetwork().getBestMolFormula().toString() : "";
+        default:
+          break;
       }
 
     } else {
@@ -134,7 +155,7 @@ public class PeakListTableModel extends AbstractTableModel {
         case CHARGE:
           if (peak.getCharge() <= 0)
             return null;
-          return new Integer(peak.getCharge());
+          return peak.getCharge();
         case RT_START:
           return peak.getRawDataPointsRTRange().lowerEndpoint();
         case RT_END:
@@ -155,29 +176,25 @@ public class PeakListTableModel extends AbstractTableModel {
 
   }
 
+  @Override
   public boolean isCellEditable(int row, int col) {
-
     CommonColumnType columnType = getCommonColumn(col);
-
-    return ((columnType == CommonColumnType.COMMENT) || (columnType == CommonColumnType.IDENTITY));
-
+    return columnType != null && columnType.isEditable();
   }
 
+  @Override
   public void setValueAt(Object value, int row, int col) {
-
     CommonColumnType columnType = getCommonColumn(col);
-
     PeakListRow peakListRow = peakList.getRow(row);
 
-    if (columnType == CommonColumnType.COMMENT) {
+    if (columnType.equals(CommonColumnType.COMMENT))
       peakListRow.setComment((String) value);
-    }
 
-    if (columnType == CommonColumnType.IDENTITY) {
-      if (value instanceof PeakIdentity)
-        peakListRow.setPreferredPeakIdentity((PeakIdentity) value);
-    }
+    if (columnType.equals(CommonColumnType.IDENTITY) && (value instanceof PeakIdentity))
+      peakListRow.setPreferredPeakIdentity((PeakIdentity) value);
 
+    if (columnType.equals(CommonColumnType.IONTYPE) && (value instanceof IonIdentity))
+      peakListRow.setBestIonIdentity((IonIdentity) value);
   }
 
   boolean isCommonColumn(int col) {

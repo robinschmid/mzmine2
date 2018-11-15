@@ -50,4 +50,8 @@ public class MolecularFormulaIdentity {
     return MolecularFormulaManipulator.getTotalExactMass(cdkFormula);
   }
 
+  @Override
+  public String toString() {
+    return getFormulaAsString();
+  }
 }
