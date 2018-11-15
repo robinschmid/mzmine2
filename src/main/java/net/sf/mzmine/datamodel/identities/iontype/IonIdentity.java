@@ -20,11 +20,14 @@ package net.sf.mzmine.datamodel.identities.iontype;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
 import net.sf.mzmine.datamodel.identities.ms2.MSMSIdentityList;
 import net.sf.mzmine.datamodel.identities.ms2.MSMSIonRelationIdentity;
 import net.sf.mzmine.datamodel.identities.ms2.MSMSIonRelationIdentity.Relation;
@@ -36,10 +39,9 @@ public class IonIdentity extends SimplePeakIdentity {
 
   private NumberFormat netIDForm = new DecimalFormat("#000");
 
-  private IonType a;
+  private IonType ionType;
   // identifier like [M+H]+
   private String adduct;
-  private String massDifference;
   // partner rowIDs
   private ConcurrentHashMap<PeakListRow, IonIdentity> partner = new ConcurrentHashMap<>();
   // network id (number)
@@ -50,19 +52,22 @@ public class IonIdentity extends SimplePeakIdentity {
    */
   private MSMSIdentityList msmsIdent;
 
+  // possible formulas for this neutral mass
+  private List<MolecularFormulaIdentity> molFormulas;
+
+  // mark as beeing deleted
   private boolean isDeleted;
 
   /**
    * Create the identity.
    *
    * @param originalPeakListRow adduct of this peak list row.
-   * @param adduct type of adduct.
+   * @param ionType type of adduct.
    */
-  public IonIdentity(IonType adduct) {
+  public IonIdentity(IonType ionType) {
     super("later");
-    a = adduct;
-    this.adduct = adduct.toString(false);
-    this.massDifference = adduct.getMassDiffString();
+    this.ionType = ionType;
+    this.adduct = ionType.toString(false);
     setPropertyValue(PROPERTY_METHOD, "MS annotation");
     setPropertyValue(PROPERTY_NAME, getIDString());
   }
@@ -120,7 +125,7 @@ public class IonIdentity extends SimplePeakIdentity {
    * @return
    */
   public IonType getIonType() {
-    return a;
+    return ionType;
   }
 
   public String getAdduct() {
@@ -186,7 +191,7 @@ public class IonIdentity extends SimplePeakIdentity {
   }
 
   public boolean equalsAdduct(IonType ion) {
-    return ion.equals(this.a);
+    return ion.equals(this.ionType);
   }
 
   public int[] getPartnerRowsID() {
@@ -326,4 +331,31 @@ public class IonIdentity extends SimplePeakIdentity {
     return network.size() + (getMSMSMultimerCount() > 0 ? 1 : 0) + (getMSMSModVerify() > 0 ? 1 : 0);
   }
 
+  public List<MolecularFormulaIdentity> getMolFormulas() {
+    return molFormulas;
+  }
+
+  /**
+   * The first formula should be the best
+   * 
+   * @param molFormulas
+   */
+  public void setMolFormulas(List<MolecularFormulaIdentity> molFormulas) {
+    this.molFormulas = molFormulas;
+  }
+
+  public void addMolFormula(MolecularFormulaIdentity formula) {
+    if (molFormulas == null)
+      molFormulas = new ArrayList<>();
+    this.molFormulas.add(formula);
+  }
+
+  /**
+   * Best molecular formula (first in list)
+   * 
+   * @return
+   */
+  public MolecularFormulaIdentity getBestMolFormula() {
+    return molFormulas == null || molFormulas.isEmpty() ? null : molFormulas.get(0);
+  }
 }

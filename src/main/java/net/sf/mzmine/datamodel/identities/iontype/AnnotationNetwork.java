@@ -1,7 +1,10 @@
 package net.sf.mzmine.datamodel.identities.iontype;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 /**
@@ -11,12 +14,19 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
  *
  */
 public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity> {
+  // MZtolerance on MS1 to generate this network
   private MZTolerance mzTolerance;
+  // network id
   private int id;
+  // neutral mass of central molecule which is described by all members of this network
   private Double neutralMass = null;
-  // maximum deviation from neutral mass average
+  // maximum absolute deviation from neutral mass average
   private Double maxDev = null;
+  // average retention time of network
   private double avgRT;
+
+  // possible formulas for this neutral mass
+  private List<MolecularFormulaIdentity> molFormulas;
 
   public AnnotationNetwork(MZTolerance mzTolerance, int id) {
     super();
@@ -24,18 +34,51 @@ public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity> {
     this.id = id;
   }
 
+  /**
+   * Network ID
+   * 
+   * @return
+   */
   public int getID() {
     return id;
   }
 
-  public void setNeutralMass(double neutralMass) {
-    this.neutralMass = neutralMass;
+  public List<MolecularFormulaIdentity> getMolFormulas() {
+    return molFormulas;
   }
 
+  /**
+   * The first formula should be the best
+   * 
+   * @param molFormulas
+   */
+  public void setMolFormulas(List<MolecularFormulaIdentity> molFormulas) {
+    this.molFormulas = molFormulas;
+  }
+
+  public void addMolFormula(MolecularFormulaIdentity formula) {
+    if (molFormulas == null)
+      molFormulas = new ArrayList<>();
+    this.molFormulas.add(formula);
+  }
+
+  /**
+   * Best molecular formula (first in list)
+   * 
+   * @return
+   */
+  public MolecularFormulaIdentity getBestMolFormula() {
+    return molFormulas == null || molFormulas.isEmpty() ? null : molFormulas.get(0);
+  }
+
+  /**
+   * Neutral mass of center molecule which is described by all members of this network
+   * 
+   * @param neutralMass
+   */
   public double getNeutralMass() {
     return neutralMass == null ? calcNeutralMass() : neutralMass;
   }
-
 
   @Override
   public IonIdentity put(PeakListRow key, IonIdentity value) {
@@ -73,6 +116,9 @@ public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity> {
     neutralMass = null;
   }
 
+  /**
+   * Maximum absolute deviation from central neutral mass
+   */
   public void resetMaxDev() {
     maxDev = null;
   }

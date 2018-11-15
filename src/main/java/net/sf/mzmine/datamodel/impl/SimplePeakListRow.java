@@ -32,7 +32,6 @@ import net.sf.mzmine.datamodel.PeakInformation;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
-import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.util.PeakSorter;
@@ -57,7 +56,6 @@ public class SimplePeakListRow implements PeakListRow {
   private RowGroup group;
   // ion identity
   private List<IonIdentity> ionIdentity;
-  private List<MolecularFormulaIdentity> molFormula;
 
   /**
    * These variables are used for caching the average values, so we don't need to calculate them
