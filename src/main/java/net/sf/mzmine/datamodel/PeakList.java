@@ -21,6 +21,7 @@ package net.sf.mzmine.datamodel;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import com.google.common.collect.Range;
+import net.sf.mzmine.datamodel.impl.PKLRowGroupList;
 
 /**
  * 
@@ -226,4 +227,18 @@ public interface PeakList {
   public Range<Double> getRowsRTRange();
 
   public PeakListRow findRowByID(int id);
+
+  /**
+   * List of all groups
+   * 
+   * @param groups
+   */
+  public void setGroups(PKLRowGroupList groups);
+
+  /**
+   * All groups
+   * 
+   * @return
+   */
+  public PKLRowGroupList getGroups();
 }

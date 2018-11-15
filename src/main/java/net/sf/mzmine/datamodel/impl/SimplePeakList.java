@@ -49,6 +49,7 @@ public class SimplePeakList implements PeakList {
   private Range<Double> mzRange, rtRange;
 
   public static DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+  private PKLRowGroupList groups;
 
   public SimplePeakList(String name, RawDataFile dataFile) {
     this(name, new RawDataFile[] {dataFile});
@@ -381,5 +382,16 @@ public class SimplePeakList implements PeakList {
 
       return null;
     }
+  }
+
+  @Override
+  public void setGroups(PKLRowGroupList groups) {
+    this.groups = groups;
+
+  }
+
+  @Override
+  public PKLRowGroupList getGroups() {
+    return groups;
   }
 }
