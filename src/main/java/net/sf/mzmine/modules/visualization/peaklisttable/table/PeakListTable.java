@@ -22,7 +22,7 @@ import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
-
+import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultCellEditor;
 import javax.swing.DefaultComboBoxModel;
@@ -35,13 +35,15 @@ import javax.swing.UIManager;
 import javax.swing.event.RowSorterEvent;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableRowSorter;
-
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
+import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableParameters;
 import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTablePopupMenu;
 import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableWindow;
+import net.sf.mzmine.modules.visualization.peaklisttable.iontype.ManualIonIdentityCreationDialog;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.util.components.ComponentToolTipManager;
 import net.sf.mzmine.util.components.ComponentToolTipProvider;
@@ -108,6 +110,7 @@ public class PeakListTable extends JTable implements ComponentToolTipProvider {
 
   }
 
+  @Override
   public JComponent getCustomToolTipComponent(MouseEvent event) {
 
     JComponent component = null;
@@ -150,14 +153,17 @@ public class PeakListTable extends JTable implements ComponentToolTipProvider {
     return sorter;
   }
 
+  @Override
   public TableCellEditor getCellEditor(int row, int column) {
-
     CommonColumnType commonColumn = pkTableModel.getCommonColumn(column);
+
+    if (!commonColumn.isEditable())
+      return null;
+
+    row = this.convertRowIndexToModel(row);
+    peakListRow = peakList.getRow(row);
+
     if (commonColumn == CommonColumnType.IDENTITY) {
-
-      row = this.convertRowIndexToModel(row);
-      peakListRow = peakList.getRow(row);
-
       PeakIdentity identities[] = peakListRow.getPeakIdentities();
       PeakIdentity preferredIdentity = peakListRow.getPreferredPeakIdentity();
       JComboBox<Object> combo;
@@ -179,6 +185,7 @@ public class PeakListTable extends JTable implements ComponentToolTipProvider {
 
       combo.addActionListener(new ActionListener() {
 
+        @Override
         public void actionPerformed(ActionEvent e) {
           JComboBox<?> combo = (JComboBox<?>) e.getSource();
           Object item = combo.getSelectedItem();
@@ -214,18 +221,119 @@ public class PeakListTable extends JTable implements ComponentToolTipProvider {
 
       // Keep the reference to the editor
       currentEditor = new DefaultCellEditor(combo);
+      return currentEditor;
+    }
 
+    // Ion type
+    if (commonColumn == CommonColumnType.IONTYPE) {
+      List<IonIdentity> identities = peakListRow.getIonIdentities();
+      IonIdentity preferredIdentity = peakListRow.getBestIonIdentity();
+      JComboBox<Object> combo;
+
+      if ((identities != null) && (identities.size() > 0)) {
+        combo = new JComboBox<>(identities.toArray(new IonIdentity[identities.size()]));
+        combo.addItem("-------------------------");
+        combo.addItem(REMOVE_IDENTITY);
+      } else {
+        combo = new JComboBox<>();
+      }
+
+      combo.setFont(comboFont);
+      combo.addItem(NEW_IDENTITY);
+      if (preferredIdentity != null)
+        combo.setSelectedItem(preferredIdentity);
+
+      combo.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          JComboBox<?> combo = (JComboBox<?>) e.getSource();
+          Object item = combo.getSelectedItem();
+          if (item != null) {
+            if (item.toString() == NEW_IDENTITY) {
+              ManualIonIdentityCreationDialog dialog =
+                  new ManualIonIdentityCreationDialog(window, peakListRow);
+              dialog.setVisible(true);
+              return;
+            }
+            if (item.toString() == REMOVE_IDENTITY) {
+              IonIdentity identity = peakListRow.getBestIonIdentity();
+              if (identity != null) {
+                peakListRow.removeIonIdentity(identity);
+                DefaultComboBoxModel<?> comboModel = (DefaultComboBoxModel<?>) combo.getModel();
+                comboModel.removeElement(identity);
+              }
+              return;
+            }
+            if (item instanceof IonIdentity) {
+              peakListRow.setBestIonIdentity((IonIdentity) item);
+              return;
+            }
+          }
+        }
+      });
+      // Keep the reference to the editor
+      currentEditor = new DefaultCellEditor(combo);
+      return currentEditor;
+    }
+
+    //
+    if (commonColumn == CommonColumnType.ION_FORMULA) {
+      IonIdentity bestIon = peakListRow.getBestIonIdentity();
+      if (bestIon == null)
+        return null;
+
+      List<MolecularFormulaIdentity> identities = bestIon.getMolFormulas();
+      MolecularFormulaIdentity preferredIdentity = bestIon.getBestMolFormula();
+      JComboBox<Object> combo;
+
+      if ((identities != null) && (identities.size() > 0)) {
+        combo = new JComboBox<>(identities.toArray());
+        combo.addItem("-------------------------");
+        combo.addItem(REMOVE_IDENTITY);
+      } else {
+        combo = new JComboBox<>();
+      }
+      combo.setFont(comboFont);
+      if (preferredIdentity != null)
+        combo.setSelectedItem(preferredIdentity);
+
+      combo.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          JComboBox<?> combo = (JComboBox<?>) e.getSource();
+          Object item = combo.getSelectedItem();
+          if (item != null) {
+            if (item.toString() == REMOVE_IDENTITY) {
+              IonIdentity bestIon = peakListRow.getBestIonIdentity();
+              if (bestIon != null && item instanceof MolecularFormulaIdentity) {
+                bestIon.removeMolFormula((MolecularFormulaIdentity) item);
+                DefaultComboBoxModel<?> comboModel = (DefaultComboBoxModel<?>) combo.getModel();
+                comboModel.removeElement(item);
+              }
+              return;
+            }
+            if (item instanceof MolecularFormulaIdentity) {
+              IonIdentity bestIon = peakListRow.getBestIonIdentity();
+              if (bestIon != null)
+                bestIon.setBestMolFormula((MolecularFormulaIdentity) item);
+              return;
+            }
+          }
+        }
+      });
+      // Keep the reference to the editor
+      currentEditor = new DefaultCellEditor(combo);
       return currentEditor;
     }
 
     return super.getCellEditor(row, column);
-
   }
 
   /**
    * When user sorts the table, we have to cancel current combobox for identity selection.
    * Unfortunately, this doesn't happen automatically.
    */
+  @Override
   public void sorterChanged(RowSorterEvent e) {
     if (currentEditor != null) {
       currentEditor.stopCellEditing();

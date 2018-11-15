@@ -26,7 +26,6 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
-
 import javax.swing.DefaultCellEditor;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -34,7 +33,6 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
-
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.main.MZmineCore;
@@ -158,6 +156,7 @@ public class PeakListTableColumnModel extends DefaultTableColumnModel implements
 
       switch (commonColumn) {
         case AVERAGEMZ:
+        case NEUTRAL_MASS:
           newColumn.setCellRenderer(mzRenderer);
           break;
         case AVERAGERT:
@@ -264,6 +263,7 @@ public class PeakListTableColumnModel extends DefaultTableColumnModel implements
   /**
    * @see java.awt.event.MouseListener#mouseClicked(java.awt.event.MouseEvent)
    */
+  @Override
   public void mouseClicked(MouseEvent e) {
     // ignore
   }
@@ -271,6 +271,7 @@ public class PeakListTableColumnModel extends DefaultTableColumnModel implements
   /**
    * @see java.awt.event.MouseListener#mouseEntered(java.awt.event.MouseEvent)
    */
+  @Override
   public void mouseEntered(MouseEvent e) {
     // ignore
   }
@@ -278,6 +279,7 @@ public class PeakListTableColumnModel extends DefaultTableColumnModel implements
   /**
    * @see java.awt.event.MouseListener#mouseExited(java.awt.event.MouseEvent)
    */
+  @Override
   public void mouseExited(MouseEvent e) {
     // ignore
   }
@@ -285,6 +287,7 @@ public class PeakListTableColumnModel extends DefaultTableColumnModel implements
   /**
    * @see java.awt.event.MouseListener#mousePressed(java.awt.event.MouseEvent)
    */
+  @Override
   public void mousePressed(MouseEvent e) {
     columnBeingResized = header.getResizingColumn();
   }
@@ -292,6 +295,7 @@ public class PeakListTableColumnModel extends DefaultTableColumnModel implements
   /**
    * @see java.awt.event.MouseListener#mouseReleased(java.awt.event.MouseEvent)
    */
+  @Override
   public void mouseReleased(MouseEvent e) {
 
     if (columnBeingResized == null)

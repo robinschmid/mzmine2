@@ -19,6 +19,7 @@
 package net.sf.mzmine.datamodel.impl;
 
 import java.text.Format;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -412,6 +413,58 @@ public class SimplePeakListRow implements PeakListRow {
   @Override
   public void setGroup(RowGroup group) {
     this.group = group;
+  }
+
+  @Override
+  public void addIonIdentity(IonIdentity ion) {
+    addIonIdentity(ion, false);
+  }
+
+  @Override
+  public void addIonIdentity(IonIdentity ion, boolean markAsBest) {
+    if (ionIdentity == null)
+      ionIdentity = new ArrayList<>();
+
+    // remove first
+    if (!ionIdentity.isEmpty())
+      ionIdentity.remove(ion);
+
+    if (markAsBest)
+      ionIdentity.add(0, ion);
+    else
+      ionIdentity.add(ion);
+  }
+
+  @Override
+  public void clearIonIdentites() {
+    if (hasIonIdentity())
+      ionIdentity.clear();
+  }
+
+  @Override
+  public List<IonIdentity> getIonIdentities() {
+    return ionIdentity;
+  }
+
+  @Override
+  public IonIdentity getBestIonIdentity() {
+    return hasIonIdentity() ? ionIdentity.get(0) : null;
+  }
+
+  @Override
+  public boolean hasIonIdentity() {
+    return ionIdentity != null && !ionIdentity.isEmpty();
+  }
+
+  @Override
+  public void setBestIonIdentity(IonIdentity ion) {
+    addIonIdentity(ion, true);
+  }
+
+  @Override
+  public void removeIonIdentity(IonIdentity ion) {
+    if (ionIdentity != null)
+      ionIdentity.remove(ion);
   }
 
 }

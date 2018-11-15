@@ -345,9 +345,20 @@ public class IonIdentity extends SimplePeakIdentity {
   }
 
   public void addMolFormula(MolecularFormulaIdentity formula) {
+    addMolFormula(formula, false);
+  }
+
+  public void addMolFormula(MolecularFormulaIdentity formula, boolean asBest) {
     if (molFormulas == null)
       molFormulas = new ArrayList<>();
-    this.molFormulas.add(formula);
+
+    if (!molFormulas.isEmpty())
+      molFormulas.remove(formula);
+
+    if (asBest)
+      this.molFormulas.add(0, formula);
+    else
+      this.molFormulas.add(formula);
   }
 
   /**
@@ -357,5 +368,15 @@ public class IonIdentity extends SimplePeakIdentity {
    */
   public MolecularFormulaIdentity getBestMolFormula() {
     return molFormulas == null || molFormulas.isEmpty() ? null : molFormulas.get(0);
+  }
+
+
+  public void setBestMolFormula(MolecularFormulaIdentity formula) {
+    addMolFormula(formula, true);
+  }
+
+  public void removeMolFormula(MolecularFormulaIdentity formula) {
+    if (molFormulas != null && !molFormulas.isEmpty())
+      molFormulas.remove(formula);
   }
 }
