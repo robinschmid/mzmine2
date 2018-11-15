@@ -163,11 +163,11 @@ public class IonIdentity extends SimplePeakIdentity {
 
   public String getIDString() {
     StringBuilder b = new StringBuilder();
-    if (getNetID() != -1) {
-      b.append("Net");
-      b.append(getNetIDString());
-      b.append(" ");
-    }
+    // if (getNetID() != -1) {
+    // b.append("Net");
+    // b.append(getNetIDString());
+    // b.append(" ");
+    // }
     b.append(adduct);
     b.append(" identified by ID=");
     b.append(getPartnerRows());
