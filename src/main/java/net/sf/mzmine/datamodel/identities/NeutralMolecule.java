@@ -13,10 +13,6 @@ public class NeutralMolecule {
   protected @Nonnull String name;
   protected @Nonnull double mass;
 
-  public NeutralMolecule() {
-    this("", 0);
-  }
-
   public NeutralMolecule(String name, double mass) {
     this(name, "", mass);
   }

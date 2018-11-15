@@ -33,6 +33,7 @@ import org.openscience.cdk.interfaces.IMolecularFormula;
 import org.openscience.cdk.silent.SilentChemObjectBuilder;
 import org.openscience.cdk.tools.manipulator.MolecularFormulaManipulator;
 import net.sf.mzmine.datamodel.IonizationType;
+import net.sf.mzmine.datamodel.identities.iontype.IonType;
 
 public class FormulaUtils {
 
@@ -145,6 +146,21 @@ public class FormulaUtils {
   /**
    * Modifies the formula according to the ionization type
    */
+  public static String ionizeFormula(String formula, IonType ionType, int charge) {
+    StringBuilder combinedFormula = new StringBuilder();
+    combinedFormula.append(formula);
+    for (int i = 0; i < charge; i++) {
+      combinedFormula.append(ionType.getName());
+    }
+
+    Map<String, Integer> parsedFormula = parseFormula(combinedFormula.toString());
+    return formatFormula(parsedFormula);
+  }
+
+
+  /**
+   * Modifies the formula according to the ionization type
+   */
   public static String ionizeFormula(String formula, IonizationType ionType, int charge) {
 
     // No ionization
@@ -158,11 +174,7 @@ public class FormulaUtils {
     }
 
     Map<String, Integer> parsedFormula = parseFormula(combinedFormula.toString());
-
-    String newFormula = formatFormula(parsedFormula);
-
-    return newFormula;
-
+    return formatFormula(parsedFormula);
   }
 
   /**
@@ -219,4 +231,33 @@ public class FormulaUtils {
       return null;
     }
   }
+
+  /**
+   * 
+   * @param result is going to be changed. is also the returned value
+   * @param sub
+   * @return
+   */
+  public static IMolecularFormula subtractFormula(IMolecularFormula result, IMolecularFormula sub) {
+    for (IIsotope isotope : sub.isotopes()) {
+      int count = result.getIsotopeCount(isotope) - sub.getIsotopeCount(isotope);
+      if (count < 0)
+        count = 0;
+      result.removeIsotope(isotope);
+      result.addIsotope(isotope, count);
+    }
+    return result;
+  }
+
+  /**
+   * 
+   * @param result is going to be changed. is also the returned value
+   * @param add
+   * @return
+   */
+  public static IMolecularFormula addFormula(IMolecularFormula result, IMolecularFormula add) {
+    result.add(add);
+    return result;
+  }
+
 }

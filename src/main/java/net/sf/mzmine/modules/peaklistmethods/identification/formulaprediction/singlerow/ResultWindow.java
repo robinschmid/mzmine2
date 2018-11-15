@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction;
+package net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow;
 
 import java.awt.BorderLayout;
 import java.awt.Color;

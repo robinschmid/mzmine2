@@ -20,83 +20,91 @@ public class IonModification extends NeutralMolecule implements Comparable<IonMo
   public static final IonModification H =
       new IonModification(IonModificationType.ADDUCT, "H", "H", 1.007276, 1);
   //
-  private static final IonModification NA =
+  public static final IonModification NA =
       new IonModification(IonModificationType.ADDUCT, "Na", "Na", 22.989218, 1);
-  private static final IonModification NH4 =
+  public static final IonModification NH4 =
       new IonModification(IonModificationType.ADDUCT, "NH4", "NH4", 18.033823, 1);
-  private static final IonModification K =
+  public static final IonModification K =
       new IonModification(IonModificationType.ADDUCT, "K", "K", 38.963158, 1);
-  private static final IonModification FE =
+  public static final IonModification FE =
       new IonModification(IonModificationType.ADDUCT, "Fe", "Fe", 55.933840, 2);
-  private static final IonModification CA =
+  public static final IonModification CA =
       new IonModification(IonModificationType.ADDUCT, "Ca", "Ca", 39.961493820, 2);
-  private static final IonModification MG =
+  public static final IonModification MG =
       new IonModification(IonModificationType.ADDUCT, "Mg", "Mg", 47.96953482, 2);
   // combined
-  private static final IonModification H2plus = new CombinedIonModification(new IonModification[] {H, H});
-  private static final IonModification NA_H = new CombinedIonModification(new IonModification[] {NA, H});
-  private static final IonModification K_H = new CombinedIonModification(new IonModification[] {K, H});
-  private static final IonModification NH4_H = new CombinedIonModification(new IonModification[] {NH4, H});
-  private static final IonModification Hneg_NA2 =
+  public static final IonModification H2plus =
+      new CombinedIonModification(new IonModification[] {H, H});
+  public static final IonModification NA_H =
+      new CombinedIonModification(new IonModification[] {NA, H});
+  public static final IonModification K_H =
+      new CombinedIonModification(new IonModification[] {K, H});
+  public static final IonModification NH4_H =
+      new CombinedIonModification(new IonModification[] {NH4, H});
+  public static final IonModification Hneg_NA2 =
       new CombinedIonModification(new IonModification[] {NA, NA, H_NEG});
-  private static final IonModification Hneg_CA = new CombinedIonModification(new IonModification[] {CA, H_NEG});
-  private static final IonModification Hneg_FE = new CombinedIonModification(new IonModification[] {FE, H_NEG});
-  private static final IonModification Hneg_MG = new CombinedIonModification(new IonModification[] {MG, H_NEG});
+  public static final IonModification Hneg_CA =
+      new CombinedIonModification(new IonModification[] {CA, H_NEG});
+  public static final IonModification Hneg_FE =
+      new CombinedIonModification(new IonModification[] {FE, H_NEG});
+  public static final IonModification Hneg_MG =
+      new CombinedIonModification(new IonModification[] {MG, H_NEG});
 
   // NEGATIVE
-  private static final IonModification CL =
+  public static final IonModification CL =
       new IonModification(IonModificationType.ADDUCT, "Cl", "Cl", 34.969401, -1);
-  private static final IonModification BR =
+  public static final IonModification BR =
       new IonModification(IonModificationType.ADDUCT, "Br", "Br", 78.918886, -1);
-  private static final IonModification FA =
+  public static final IonModification FA =
       new IonModification(IonModificationType.ADDUCT, "FA", "HCO2", 44.99820285, -1);
   // combined
   // +Na -2H+]-
-  private static final IonModification NA_2H =
+  public static final IonModification NA_2H =
       new CombinedIonModification(new IonModification[] {NA, H_NEG, H_NEG});
 
   // modifications
-  private static final IonModification H2 =
+  public static final IonModification H2 =
       new IonModification(IonModificationType.NEUTRAL_LOSS, "H2", "H2", -2.015650, 0);
-  private static final IonModification C2H4 =
+  public static final IonModification C2H4 =
       new IonModification(IonModificationType.NEUTRAL_LOSS, "C2H4", "C2H4", -28.031301, 0);
-  private static final IonModification H2O =
+  public static final IonModification H2O =
       new IonModification(IonModificationType.NEUTRAL_LOSS, "H2O", "H2O", -18.010565, 0);
-  private static final IonModification H2O_2 = new CombinedIonModification(new IonModification[] {H2O, H2O});
+  public static final IonModification H2O_2 =
+      new CombinedIonModification(new IonModification[] {H2O, H2O});
 
-  private static final IonModification NH3 =
+  public static final IonModification NH3 =
       new IonModification(IonModificationType.NEUTRAL_LOSS, "NH3", "NH3", -17.026549, 0);
-  private static final IonModification CO =
+  public static final IonModification CO =
       new IonModification(IonModificationType.NEUTRAL_LOSS, "CO", "CO", -27.994915, 0);
-  private static final IonModification CO2 =
+  public static final IonModification CO2 =
       new IonModification(IonModificationType.NEUTRAL_LOSS, "CO2", "CO2", -43.989829, 0);
   // cluster
-  private static final IonModification MEOH =
+  public static final IonModification MEOH =
       new IonModification(IonModificationType.CLUSTER, "MeOH", "CH3OH", 32.026215, 0);
-  private static final IonModification HFA =
+  public static final IonModification HFA =
       new IonModification(IonModificationType.CLUSTER, "HFA", "CHOOH", 46.005479, 0);
-  private static final IonModification HAc =
+  public static final IonModification HAc =
       new IonModification(IonModificationType.CLUSTER, "HAc", "CH3COOH", 60.021129, 0);
-  private static final IonModification ACN =
+  public static final IonModification ACN =
       new IonModification(IonModificationType.CLUSTER, "ACN", "CH3CN", 41.026549, 0);
-  private static final IonModification O =
+  public static final IonModification O =
       new IonModification(IonModificationType.CLUSTER, "O", "O", 15.99491462, 0);
-  private static final IonModification ISOPROP =
+  public static final IonModification ISOPROP =
       new IonModification(IonModificationType.CLUSTER, "IsoProp", "C3H8O", 60.058064, 0);
   // isotopes
   public static final IonModification C13 =
       new IonModification(IonModificationType.ISOTOPE, "(13C)", 1.003354838, 0);
 
   // default values
-  private static final IonModification[] DEFAULT_VALUES_POSITIVE = {H_NEG, M_PLUS, H, NA, K, NH4, H2plus,
-      CA, FE, MG, NA_H, NH4_H, K_H, Hneg_NA2, Hneg_CA, Hneg_FE, Hneg_MG};
-  private static final IonModification[] DEFAULT_VALUES_NEGATIVE =
+  public static final IonModification[] DEFAULT_VALUES_POSITIVE = {H_NEG, M_PLUS, H, NA, K, NH4,
+      H2plus, CA, FE, MG, NA_H, NH4_H, K_H, Hneg_NA2, Hneg_CA, Hneg_FE, Hneg_MG};
+  public static final IonModification[] DEFAULT_VALUES_NEGATIVE =
       {M_MINUS, H_NEG, NA_2H, NA, CL, BR, FA};
   // default modifications
-  private static final IonModification[] DEFAULT_VALUES_MODIFICATIONS =
+  public static final IonModification[] DEFAULT_VALUES_MODIFICATIONS =
       {H2O, H2O_2, NH3, O, CO, CO2, C2H4, HFA, HAc, MEOH, ACN, ISOPROP};
   // isotopes
-  private static final IonModification[] DEFAULT_VALUES_ISOTOPES = {C13};
+  public static final IonModification[] DEFAULT_VALUES_ISOTOPES = {C13};
 
   // charge
   protected IonModificationType type;
@@ -129,9 +137,9 @@ public class IonModification extends NeutralMolecule implements Comparable<IonMo
    * @param charge
    * @param molecules
    */
-  public IonModification(IonModificationType type, String name, String molFormula, double massDifference,
-      int charge) {
-    super();
+  public IonModification(IonModificationType type, String name, String molFormula,
+      double massDifference, int charge) {
+    super(name, molFormula, massDifference);
     this.name = name;
     this.mass = massDifference;
     this.charge = charge;

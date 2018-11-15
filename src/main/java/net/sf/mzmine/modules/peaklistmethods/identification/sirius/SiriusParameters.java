@@ -26,7 +26,7 @@ import org.openscience.cdk.config.Isotopes;
 import org.openscience.cdk.formula.MolecularFormulaRange;
 
 import net.sf.mzmine.datamodel.IonizationType;
-import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.elements.ElementsParameter;
+import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.elements.ElementsParameter;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;

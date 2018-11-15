@@ -15,12 +15,12 @@
  * write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
  * USA
  */
-package net.sf.mzmine.modules.peaklistmethods.identification.formulapredictionpeaklist;
+package net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.peaklist;
 
 import net.sf.mzmine.datamodel.IonizationType;
-import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.elements.ElementsParameter;
-import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.restrictions.elements.ElementalHeuristicParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.restrictions.rdbe.RDBERestrictionParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.elements.ElementsParameter;
+import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.restrictions.elements.ElementalHeuristicParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.restrictions.rdbe.RDBERestrictionParameters;
 import net.sf.mzmine.modules.peaklistmethods.isotopes.isotopepatternscore.IsotopePatternScoreParameters;
 import net.sf.mzmine.modules.peaklistmethods.msms.msmsscore.MSMSScoreParameters;
 import net.sf.mzmine.parameters.Parameter;

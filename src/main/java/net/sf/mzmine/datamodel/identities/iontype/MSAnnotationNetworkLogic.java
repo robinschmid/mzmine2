@@ -629,4 +629,21 @@ public class MSAnnotationNetworkLogic {
     return best;
   }
 
+  /**
+   * All annnotaion networks of the peaklist
+   * 
+   * @param peakList
+   * @return
+   */
+  public static List<AnnotationNetwork> getAllNetworks(PeakList peakList) {
+    List<AnnotationNetwork> list = new ArrayList<>();
+    for (PeakListRow r : peakList.getRows()) {
+      AnnotationNetwork[] nets = getAllNetworks(r);
+      for (AnnotationNetwork n : nets)
+        if (!list.contains(n))
+          list.add(n);
+    }
+    return list;
+  }
+
 }

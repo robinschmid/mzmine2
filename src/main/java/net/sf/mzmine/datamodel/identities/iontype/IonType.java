@@ -7,8 +7,13 @@ import java.util.List;
 import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import org.openscience.cdk.interfaces.IAtomContainer;
+import org.openscience.cdk.interfaces.IMolecularFormula;
+import org.openscience.cdk.tools.manipulator.MolecularFormulaManipulator;
+import net.sf.mzmine.datamodel.PolarityType;
 import net.sf.mzmine.datamodel.identities.NeutralMolecule;
 import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.util.FormulaUtils;
 
 public class IonType extends NeutralMolecule implements Comparable<IonType> {
 
@@ -30,6 +35,7 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
   }
 
   public IonType(int molecules, IonModification adduct, IonModification mod) {
+    super("", 0);
     this.adduct = adduct;
     this.mod = mod;
     this.charge = adduct.charge;
@@ -373,5 +379,46 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
    */
   public boolean isUndefinedAdductParent() {
     return adduct.getType().equals(IonModificationType.UNDEFINED_ADDUCT) && getModCount() == 0;
+  }
+
+  public PolarityType getPolarity() {
+    if (getCharge() == 0)
+      return PolarityType.NEUTRAL;
+    if (getCharge() > 0)
+      return PolarityType.POSITIVE;
+    if (getCharge() < 0)
+      return PolarityType.NEGATIVE;
+    return PolarityType.UNKNOWN;
+  }
+
+  /**
+   * Is adding or removing all sub adducts / modifications from the molecular formula
+   * 
+   * @param formula
+   * @return
+   * @throws CloneNotSupportedException
+   */
+  public IMolecularFormula addToFormula(IMolecularFormula formula)
+      throws CloneNotSupportedException {
+    IMolecularFormula result = (IMolecularFormula) formula.clone();
+    // add for n molecules the M formula
+    for (int i = 2; i <= molecules; i++)
+      FormulaUtils.addFormula(result, formula);
+
+    // add
+    Arrays.stream(adduct.getAdducts()).filter(m -> m.getMass() >= 0 && m.getCDKFormula() != null)
+        .forEach(m -> FormulaUtils.addFormula(result, m.getCDKFormula()));
+    if (mod != null)
+      Arrays.stream(mod.getAdducts()).filter(m -> m.getMass() >= 0 && m.getCDKFormula() != null)
+          .forEach(m -> FormulaUtils.addFormula(result, m.getCDKFormula()));
+
+    IAtomContainer atoms = MolecularFormulaManipulator.getAtomContainer(result);
+    // subtract
+    Arrays.stream(adduct.getAdducts()).filter(m -> m.getMass() < 0 && m.getCDKFormula() != null)
+        .forEach(m -> FormulaUtils.subtractFormula(result, m.getCDKFormula()));
+    if (mod != null)
+      Arrays.stream(mod.getAdducts()).filter(m -> m.getMass() < 0 && m.getCDKFormula() != null)
+          .forEach(m -> FormulaUtils.subtractFormula(result, m.getCDKFormula()));
+    return result;
   }
 }

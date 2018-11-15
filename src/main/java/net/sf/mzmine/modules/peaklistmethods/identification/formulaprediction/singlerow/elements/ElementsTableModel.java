@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.elements;
+package net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.elements;
 
 import java.util.ArrayList;
 

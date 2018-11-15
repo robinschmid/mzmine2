@@ -15,24 +15,22 @@
  * write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
  * USA
  */
+package net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.annotationnetwork;
 
-package net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction;
-
-import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.elements.ElementsParameter;
-import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.restrictions.elements.ElementalHeuristicParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.restrictions.rdbe.RDBERestrictionParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.elements.ElementsParameter;
+import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.restrictions.elements.ElementalHeuristicParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.restrictions.rdbe.RDBERestrictionParameters;
 import net.sf.mzmine.modules.peaklistmethods.isotopes.isotopepatternscore.IsotopePatternScoreParameters;
 import net.sf.mzmine.modules.peaklistmethods.msms.msmsscore.MSMSScoreParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
-import net.sf.mzmine.parameters.parametertypes.NeutralMassParameter;
 import net.sf.mzmine.parameters.parametertypes.OptionalModuleParameter;
+import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
 
-public class FormulaPredictionParameters extends SimpleParameterSet {
+public class FormulaPredictionAnnotationNetworkParameters extends SimpleParameterSet {
 
-  public static final NeutralMassParameter neutralMass =
-      new NeutralMassParameter("Neutral mass", "Original neutral mass");
+  public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter();
 
   public static final MZToleranceParameter mzTolerance = new MZToleranceParameter();
 
@@ -56,9 +54,8 @@ public class FormulaPredictionParameters extends SimpleParameterSet {
   public static final OptionalModuleParameter msmsFilter =
       new OptionalModuleParameter("MS/MS filter", "Check MS/MS data", new MSMSScoreParameters());
 
-  public FormulaPredictionParameters() {
-    super(new Parameter[] {neutralMass, mzTolerance, elements, elementalRatios, rdbeRestrictions,
+  public FormulaPredictionAnnotationNetworkParameters() {
+    super(new Parameter[] {PEAK_LISTS, mzTolerance, elements, elementalRatios, rdbeRestrictions,
         isotopeFilter, msmsFilter});
   }
-
 }

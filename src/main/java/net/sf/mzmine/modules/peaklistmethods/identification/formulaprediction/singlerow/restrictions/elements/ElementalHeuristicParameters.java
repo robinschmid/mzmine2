@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.restrictions.elements;
+package net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.restrictions.elements;
 
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
