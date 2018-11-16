@@ -65,13 +65,13 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.MSAnnotationNetworkLogic;
-import net.sf.mzmine.datamodel.impl.PKLRowGroupList;
+import net.sf.mzmine.datamodel.impl.RowGroupList;
 import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData.SimilarityMeasure;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MS2SimilarityProviderGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RFullCorrelationData;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.annotationnetwork.visual.AnnotationNetworkPanel;
@@ -101,7 +101,7 @@ public class MSEcorrGroupWindow extends JFrame {
 
   // data
   private PeakList peakList;
-  private PKLRowGroupList groups;
+  private RowGroupList groups;
   private int currentGroupIndex;
 
   private MZmineProject project;
@@ -151,7 +151,7 @@ public class MSEcorrGroupWindow extends JFrame {
    * @param groups
    * @param peakList
    */
-  public MSEcorrGroupWindow(MZmineProject project, final PeakList peakList, PKLRowGroupList groups,
+  public MSEcorrGroupWindow(MZmineProject project, final PeakList peakList, RowGroupList groups,
       int index) {
     // sub window for more charts
     subWindow = new MSEcorrGroupSubWindow(this);
@@ -168,7 +168,7 @@ public class MSEcorrGroupWindow extends JFrame {
     this.currentGroupIndex = index;
     this.project = project;
     // theme
-    colors = PKLRowGroup.colors;
+    colors = CorrelationRowGroup.colors;
 
     // peak list table parameters
     ParameterSet peakListTableParameters =
@@ -804,8 +804,8 @@ public class MSEcorrGroupWindow extends JFrame {
     try {
       // get group
       RowGroup cg = getTableModel().getGroup();
-      if (cg instanceof PKLRowGroup) {
-        PKLRowGroup g = (PKLRowGroup) cg;
+      if (cg instanceof CorrelationRowGroup) {
+        CorrelationRowGroup g = (CorrelationRowGroup) cg;
         //
         PeakListRow row = g.getLastViewedRow();
         int rowI = g.getLastViewedRowI();
@@ -910,8 +910,8 @@ public class MSEcorrGroupWindow extends JFrame {
     try {
       // get group
       RowGroup cg = getTableModel().getGroup();
-      if (cg instanceof PKLRowGroup) {
-        PKLRowGroup g = (PKLRowGroup) cg;
+      if (cg instanceof CorrelationRowGroup) {
+        CorrelationRowGroup g = (CorrelationRowGroup) cg;
         //
         PeakListRow row = g.getLastViewedRow();
         int rowI = g.getLastViewedRowI();
@@ -983,8 +983,8 @@ public class MSEcorrGroupWindow extends JFrame {
     try {
       // get group
       RowGroup cg = getTableModel().getGroup();
-      if (cg instanceof PKLRowGroup) {
-        PKLRowGroup g = (PKLRowGroup) cg;
+      if (cg instanceof CorrelationRowGroup) {
+        CorrelationRowGroup g = (CorrelationRowGroup) cg;
         //
         PeakListRow row = g.getLastViewedRow();
         int rowI = g.getLastViewedRowI();
@@ -1106,7 +1106,7 @@ public class MSEcorrGroupWindow extends JFrame {
    */
   private void createCorrelationNetwork() {
     RowGroup g = getTableModel().getGroup();
-    if (g instanceof PKLRowGroup) {
+    if (g instanceof CorrelationRowGroup) {
       PeakListRow[] rows = g.toArray(new PeakListRow[g.size()]);
       pnCorrNetwork.setPeakListRows(rows);
       pnCorrNetwork.resetZoom();

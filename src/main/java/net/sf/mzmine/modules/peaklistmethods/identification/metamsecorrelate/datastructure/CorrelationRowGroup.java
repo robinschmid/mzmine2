@@ -9,7 +9,7 @@ import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.similarity.R2RMS2Similarity;
 
-public class PKLRowGroup extends RowGroup implements MS2SimilarityProviderGroup {
+public class CorrelationRowGroup extends RowGroup implements MS2SimilarityProviderGroup {
   // colors
   public static final Paint[] colors = ChartColor.createDefaultPaintArray();
   // correlation data of all rows to this group
@@ -17,7 +17,7 @@ public class PKLRowGroup extends RowGroup implements MS2SimilarityProviderGroup 
   // MS/MS similarity map
   private R2RMap<R2RMS2Similarity> ms2SimilarityMap;
 
-  public PKLRowGroup(final RawDataFile[] raw, int groupID) {
+  public CorrelationRowGroup(final RawDataFile[] raw, int groupID) {
     super(raw, groupID);
   }
 

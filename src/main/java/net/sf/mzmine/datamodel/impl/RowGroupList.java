@@ -3,7 +3,7 @@ package net.sf.mzmine.datamodel.impl;
 import java.util.ArrayList;
 import java.util.Comparator;
 
-public class PKLRowGroupList extends ArrayList<RowGroup> {
+public class RowGroupList extends ArrayList<RowGroup> {
 
   public void setGroupsToAllRows() {
     this.forEach(RowGroup::setGroupToAllRows);

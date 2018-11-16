@@ -10,7 +10,7 @@ import com.google.common.util.concurrent.AtomicDouble;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
-import net.sf.mzmine.datamodel.impl.PKLRowGroupList;
+import net.sf.mzmine.datamodel.impl.RowGroupList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 
@@ -94,13 +94,13 @@ public class R2RCorrMap extends R2RMap<R2RCorrelationData> {
    * 
    * @return
    */
-  public PKLRowGroupList createCorrGroups(PeakList pkl, double minShapeR,
+  public RowGroupList createCorrGroups(PeakList pkl, double minShapeR,
       AtomicDouble stageProgress) {
     LOG.info("Corr: Creating correlation groups");
 
     try {
-      PKLRowGroupList groups = new PKLRowGroupList();
-      HashMap<Integer, PKLRowGroup> used = new HashMap<>();
+      RowGroupList groups = new RowGroupList();
+      HashMap<Integer, CorrelationRowGroup> used = new HashMap<>();
       HashMap<Integer, Integer> usedi = new HashMap<>();
       int current = 0;
 
@@ -118,8 +118,8 @@ public class R2RCorrMap extends R2RMap<R2RCorrelationData> {
 
             int[] ids = toKeyIDs(e.getKey());
             // already added?
-            PKLRowGroup group = used.get(ids[0]);
-            PKLRowGroup group2 = used.get(ids[1]);
+            CorrelationRowGroup group = used.get(ids[0]);
+            CorrelationRowGroup group2 = used.get(ids[1]);
             // merge groups if both present
             if (group != null && group2 != null && group.getGroupID() != group2.getGroupID()) {
               // copy all to group1 and remove g2
@@ -131,7 +131,7 @@ public class R2RCorrMap extends R2RMap<R2RCorrelationData> {
               groups.remove(group2);
             } else if (group == null && group2 == null) {
               // create new group with both rows
-              group = new PKLRowGroup(raw, groups.size());
+              group = new CorrelationRowGroup(raw, groups.size());
               group.add(pkl.findRowByID(ids[0]));
               group.add(pkl.findRowByID(ids[1]));
               groups.add(group);

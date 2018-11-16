@@ -66,8 +66,8 @@ public class R2RCorrelationData {
   public static Stream<R2RFullCorrelationData> streamFrom(PeakList peakList) {
     if (peakList.getGroups() == null)
       return Stream.empty();
-    return peakList.getGroups().stream().filter(g -> g instanceof PKLRowGroup)
-        .map(g -> ((PKLRowGroup) g).getCorr()).flatMap(Arrays::stream) // R2GCorr
+    return peakList.getGroups().stream().filter(g -> g instanceof CorrelationRowGroup)
+        .map(g -> ((CorrelationRowGroup) g).getCorr()).flatMap(Arrays::stream) // R2GCorr
         .flatMap(r2g -> r2g.getCorr() == null ? null
             : r2g.getCorr().stream() //
                 .filter(r2r -> r2r.getIDA() == r2g.getRow().getID())); // a is always the lower id
@@ -75,7 +75,7 @@ public class R2RCorrelationData {
 
   public static Stream<R2RFullCorrelationData> streamFrom(PeakListRow[] rows) {
     return Arrays.stream(rows).map(PeakListRow::getGroup).filter(Objects::nonNull)
-        .filter(g -> g instanceof PKLRowGroup).distinct().map(g -> ((PKLRowGroup) g).getCorr())
+        .filter(g -> g instanceof CorrelationRowGroup).distinct().map(g -> ((CorrelationRowGroup) g).getCorr())
         .flatMap(Arrays::stream) // R2GCorr
         .flatMap(r2g -> r2g.getCorr() == null ? null
             : r2g.getCorr().stream() //

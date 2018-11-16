@@ -44,8 +44,8 @@ public class R2GroupCorrelationData {
   public static Stream<R2GroupCorrelationData> streamFrom(PeakList peakList) {
     if (peakList.getGroups() == null)
       return Stream.empty();
-    return peakList.getGroups().stream().filter(g -> g instanceof PKLRowGroup)
-        .map(g -> ((PKLRowGroup) g).getCorr()).flatMap(Arrays::stream);
+    return peakList.getGroups().stream().filter(g -> g instanceof CorrelationRowGroup)
+        .map(g -> ((CorrelationRowGroup) g).getCorr()).flatMap(Arrays::stream);
 
   }
 

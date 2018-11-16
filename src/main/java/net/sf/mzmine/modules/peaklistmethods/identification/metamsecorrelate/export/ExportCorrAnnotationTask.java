@@ -34,7 +34,7 @@ import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
-import net.sf.mzmine.datamodel.impl.PKLRowGroupList;
+import net.sf.mzmine.datamodel.impl.RowGroupList;
 import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.MetaMSEcorrelateModule;
@@ -225,7 +225,7 @@ public class ExportCorrAnnotationTask extends AbstractTask {
   public static boolean exportMS2SimilarityEdges(PeakList pkl, File filename, RowFilter filter,
       Double progress, AbstractTask task) {
     try {
-      PKLRowGroupList groups = pkl.getGroups();
+      RowGroupList groups = pkl.getGroups();
       if (groups != null && !groups.isEmpty()) {
         LOG.info("Export MS2 similarities edge file");
         NumberFormat corrForm = new DecimalFormat("0.000");
@@ -282,7 +282,7 @@ public class ExportCorrAnnotationTask extends AbstractTask {
   public static boolean exportMS2DiffSimilarityEdges(PeakList pkl, File filename, RowFilter filter,
       Double progress, AbstractTask task) {
     try {
-      PKLRowGroupList groups = pkl.getGroups();
+      RowGroupList groups = pkl.getGroups();
       if (groups != null && !groups.isEmpty()) {
         LOG.info("Export MS2 diff similarities edge file");
         NumberFormat corrForm = new DecimalFormat("0.000");

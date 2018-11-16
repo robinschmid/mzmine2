@@ -42,7 +42,7 @@ import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.datamodel.identities.iontype.MSAnnotationNetworkLogic;
-import net.sf.mzmine.datamodel.impl.PKLRowGroupList;
+import net.sf.mzmine.datamodel.impl.RowGroupList;
 import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.datamodel.impl.SimpleFeature;
 import net.sf.mzmine.datamodel.impl.SimplePeakList;
@@ -55,7 +55,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.cor
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.InterSampleHeightCorrParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData.SimilarityMeasure;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RFullCorrelationData;
@@ -304,7 +304,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
       LOG.info("Corr: Starting to group by correlation");
       setStage(Stage.GROUPING);
-      PKLRowGroupList groups = corrMap.createCorrGroups(groupedPKL, minShapeCorrR, stageProgress);
+      RowGroupList groups = corrMap.createCorrGroups(groupedPKL, minShapeCorrR, stageProgress);
 
       if (isCanceled())
         return;
@@ -313,7 +313,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       // delete single connections between sub networks
       if (groups != null) {
         // set groups to pkl
-        groups.stream().map(g -> (PKLRowGroup) g).forEach(g -> g.recalcGroupCorrelation(corrMap));
+        groups.stream().map(g -> (CorrelationRowGroup) g).forEach(g -> g.recalcGroupCorrelation(corrMap));
         groupedPKL.setGroups(groups);
         groups.setGroupsToAllRows();
 
@@ -447,7 +447,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
 
   public static void doGroupMSMSSimilarityCheck(AbstractTask task, AtomicDouble stageProgress,
-      PKLRowGroupList groups, String massList, double maxMassDiff, int minMatch, int minDP,
+      RowGroupList groups, String massList, double maxMassDiff, int minMatch, int minDP,
       int maxDPForDiff) {
     LOG.info("Calc MS/MS similarity of groups");
     groups.parallelStream().forEach(g -> {
@@ -463,7 +463,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     R2RMap<R2RMS2Similarity> map = MS2SimilarityTask.doCheck(g.toArray(new PeakListRow[g.size()]),
         massList, maxMassDiff, minMatch, minDP, maxDPForDiff);
 
-    ((PKLRowGroup) g).setMS2SimilarityMap(map);
+    ((CorrelationRowGroup) g).setMS2SimilarityMap(map);
   }
 
 

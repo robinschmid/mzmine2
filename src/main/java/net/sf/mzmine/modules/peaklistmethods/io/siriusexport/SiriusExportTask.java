@@ -40,7 +40,7 @@ import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
@@ -580,11 +580,11 @@ public class SiriusExportTask extends AbstractTask {
     RowGroup g = mainRow.getGroup();
     R2GroupCorrelationData corr = null;
 
-    if (g instanceof PKLRowGroup) {
+    if (g instanceof CorrelationRowGroup) {
       // export correlation group
       for (int i = 0; i < g.size(); ++i) {
         PeakListRow row = g.get(i);
-        corr = ((PKLRowGroup) g).getCorr(i);
+        corr = ((CorrelationRowGroup) g).getCorr(i);
         exportCorrelatedRow(writer, row, corr, null);
       }
     } else {
@@ -594,8 +594,8 @@ public class SiriusExportTask extends AbstractTask {
       if (network != null) {
         for (Entry<PeakListRow, IonIdentity> e : network.entrySet()) {
           g = e.getKey().getGroup();
-          if (g instanceof PKLRowGroup)
-            corr = ((PKLRowGroup) g).getCorr(e.getKey());
+          if (g instanceof CorrelationRowGroup)
+            corr = ((CorrelationRowGroup) g).getCorr(e.getKey());
           else
             corr = null;
           exportCorrelatedRow(writer, e.getKey(), null, e.getValue());

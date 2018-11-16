@@ -27,7 +27,7 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.MetaMSEcorrelateTask;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData.SimilarityMeasure;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RFullCorrelationData;
 
@@ -100,7 +100,7 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
           case GROUPID: // feature in group has a groupid
             return row;
           case COLOR:
-            return PKLRowGroup.colors[row % PKLRowGroup.colors.length];
+            return CorrelationRowGroup.colors[row % CorrelationRowGroup.colors.length];
           case AVERAGEMZ:
             return pklRow.getAverageMZ();
           case AVERAGERT:
@@ -117,8 +117,8 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
         R2GroupCorrelationData corr = null;
         R2RFullCorrelationData r2r = null;
 
-        if (group instanceof PKLRowGroup) {
-          corr = ((PKLRowGroup) group).getCorr(row);
+        if (group instanceof CorrelationRowGroup) {
+          corr = ((CorrelationRowGroup) group).getCorr(row);
           r2r = corr.getCorrelationToRow(selectedRow);
         }
 
