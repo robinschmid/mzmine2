@@ -19,9 +19,9 @@ import net.sf.mzmine.datamodel.IsotopePattern.IsotopePatternStatus;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
+import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 
 public class PseudoSpectrum {
 
@@ -87,7 +87,7 @@ public class PseudoSpectrum {
     return null;
   }
 
-  public static EChartPanel createChartPanel(PKLRowGroup group, RawDataFile raw, boolean sum) {
+  public static EChartPanel createChartPanel(RowGroup group, RawDataFile raw, boolean sum) {
     return createChartPanel(group.toArray(new PeakListRow[0]), raw, sum,
         "Pseudo spectrum: G" + group.getGroupID());
   }

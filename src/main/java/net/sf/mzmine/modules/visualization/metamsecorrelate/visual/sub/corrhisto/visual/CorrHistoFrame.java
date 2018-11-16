@@ -11,7 +11,7 @@ import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import net.miginfocom.swing.MigLayout;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
 import net.sf.mzmine.modules.visualization.mzhistogram.chart.HistogramData;
 import net.sf.mzmine.modules.visualization.mzhistogram.chart.MultiHistogramPanel;
 
@@ -93,17 +93,15 @@ public class CorrHistoFrame extends JFrame {
       // total correlation of all data points of two rows
       DoubleArrayList total = new DoubleArrayList();
 
-      R2RCorrMap map = pkl.getCorrelationMap();
-      map.streamCorrData().forEach(r2r -> {
-        if (r2r.hasFeatureShapeCorrelation()) {
-          avg.add(r2r.getAvgShapeR());
-          total.add(r2r.getTotalCorr().getR());
-          // all single features
-          for (CorrelationData f2f : r2r.getCorrPeakShape().values())
-            if (f2f != null)
-              single.add(f2f.getR());
-        }
-      });
+      R2RCorrelationData.streamFrom(pkl).filter(R2RCorrelationData::hasFeatureShapeCorrelation)
+          .forEach(r2r -> {
+            avg.add(r2r.getAvgShapeR());
+            total.add(r2r.getTotalCorr().getR());
+            // all single features
+            for (CorrelationData f2f : r2r.getCorrPeakShape().values())
+              if (f2f != null)
+                single.add(f2f.getR());
+          });
 
       // update data in histograms
       HistogramData[] data = new HistogramData[3];

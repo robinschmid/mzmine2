@@ -4,16 +4,17 @@ import java.text.DecimalFormat;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import org.graphstream.graph.Node;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.framework.networks.NetworkPanel;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 
 public class CorrNetworkPanel extends NetworkPanel {
   private static final Logger LOG = Logger.getLogger(CorrNetworkPanel.class.getName());
@@ -45,8 +46,9 @@ public class CorrNetworkPanel extends NetworkPanel {
    */
   public void setPeakList(PeakList pkl) {
     this.pkl = pkl;
+    this.map = null;
     if (pkl != null) {
-      createNewGraph(pkl);
+      createNewGraph(pkl.getRows());
     } else
       clear();
   }
@@ -94,6 +96,15 @@ public class CorrNetworkPanel extends NetworkPanel {
     LOG.info("Added " + added + " connections");
   }
 
+  public void setPeakListRows(PeakListRow[] rows2) {
+    this.rows = rows2;
+    map = null;
+    if (rows != null) {
+      createNewGraph(rows);
+    } else
+      clear();
+  }
+
   public void setPeakListRows(PeakListRow[] rows2, R2RCorrMap map) {
     this.rows = rows2;
     this.map = map;
@@ -134,6 +145,39 @@ public class CorrNetworkPanel extends NetworkPanel {
     clearSelections();
 
     LOG.info("Added " + added + " connections");
+  }
+
+  /**
+   * Sub set of rows
+   * 
+   * @param rows
+   * @param map
+   */
+  public void createNewGraph(PeakListRow[] rows) {
+    if (map != null)
+      createNewGraph(rows, map);
+    else {
+      LOG.info("Adding all corr >" + minR + " to a network");
+      clear();
+
+      // add all connections
+      AtomicInteger added = new AtomicInteger(0);
+      R2RCorrelationData.streamFrom(pkl).filter(R2RCorrelationData::hasFeatureShapeCorrelation)
+          .filter(r2r -> r2r.getAvgShapeR() >= minR).forEach(r2r -> {
+            PeakListRow a = r2r.getRowA();
+            PeakListRow b = r2r.getRowB();
+            String node1 = toNodeName(a);
+            String node2 = toNodeName(b);
+            addNewEdge(node1, node2, r2r.getAvgShapeR(), r2r.getAvgShapeCosineSim());
+            added.incrementAndGet();
+          });
+
+      // add id name
+      showAllLabels(true);
+      clearSelections();
+
+      LOG.info("Added " + added.get() + " connections");
+    }
   }
 
   private void addNewEdge(String node1, String node2, double corr, double cosine) {

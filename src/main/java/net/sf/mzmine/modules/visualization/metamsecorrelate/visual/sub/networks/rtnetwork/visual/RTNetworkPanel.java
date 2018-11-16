@@ -6,13 +6,12 @@ import java.util.logging.Logger;
 import org.graphstream.graph.Node;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.MZmineProject;
-import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.framework.networks.NetworkPanel;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter.OverlapResult;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
@@ -143,17 +142,13 @@ public class RTNetworkPanel extends NetworkPanel {
   }
 
   private String toNodeName(PeakListRow row) {
-    PeakIdentity pid = row.getPreferredPeakIdentity();
+    IonIdentity esi = row.getBestIonIdentity();
     String id = "";
-    if (pid != null) {
-      id = pid.getName();
-      if (pid instanceof IonIdentity) {
-        IonIdentity esi = (IonIdentity) pid;
-        id = esi.getAdduct() + " by n=" + esi.getPartnerRowsID().length;
+    if (esi != null) {
+      id = esi.getAdduct() + " by n=" + esi.getPartnerRowsID().length;
 
-        if (esi.getNetID() != -1)
-          id += " (Net" + esi.getNetIDString() + ")";
-      }
+      if (esi.getNetID() != -1)
+        id += " (Net" + esi.getNetIDString() + ")";
     }
     return MessageFormat.format("{0} (rt={1}, mz={2}, n={3}) {4}", row.getID(),
         rtForm.format(row.getAverageRT()), mzForm.format(row.getAverageMZ()),

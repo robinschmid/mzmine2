@@ -39,7 +39,7 @@ import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.MetaMSEcorrelateModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MS2SimilarityProviderGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.similarity.R2RMS2Similarity;
 import net.sf.mzmine.modules.peaklistmethods.io.gnpsexport.GNPSExportParameters.RowFilter;
@@ -349,25 +349,24 @@ public class ExportCorrAnnotationTask extends AbstractTask {
 
       AtomicInteger added = new AtomicInteger(0);
       // for all rows
-      map.streamCorrDataEntries().filter(e -> e.getValue().getAvgShapeR() >= minCorr).forEach(e -> {
-        int[] ids = R2RCorrMap.toKeyIDs(e.getKey());
-        //
-        boolean export = true;
-        if (!filter.equals(RowFilter.ALL)) {
-          PeakListRow a = pkl.findRowByID(ids[0]);
-          PeakListRow b = pkl.findRowByID(ids[1]);
-          // only export rows with MSMS
-          export = filter.filter(a) && filter.filter(b);
-        }
+      R2RCorrelationData.streamFrom(pkl).filter(r2r -> r2r.getAvgShapeR() >= minCorr)
+          .forEach(r2r -> {
+            PeakListRow a = r2r.getRowA();
+            PeakListRow b = r2r.getRowB();
+            //
+            boolean export = true;
+            if (!filter.equals(RowFilter.ALL)) {
+              // only export rows with MSMS
+              export = filter.filter(a) && filter.filter(b);
+            }
 
-        //
-        if (export) {
-          exportEdge(ann, "MS1 shape correlation", ids[0], ids[1],
-              corrForm.format(e.getValue().getAvgShapeR()),
-              "r=" + corrForm.format(e.getValue().getAvgShapeR()));
-          added.incrementAndGet();
-        }
-      });
+            //
+            if (export) {
+              exportEdge(ann, "MS1 shape correlation", a.getID(), b.getID(),
+                  corrForm.format(r2r.getAvgShapeR()), "r=" + corrForm.format(r2r.getAvgShapeR()));
+              added.incrementAndGet();
+            }
+          });
 
       LOG.info("Correlation edges exported " + added.get() + "");
 

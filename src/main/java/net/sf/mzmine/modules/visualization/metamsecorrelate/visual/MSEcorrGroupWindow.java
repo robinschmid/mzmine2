@@ -63,16 +63,16 @@ import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
 import net.sf.mzmine.datamodel.impl.PKLRowGroupList;
 import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData.SimilarityMeasure;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MS2SimilarityProviderGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RFullCorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.AnnotationNetwork;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.annotationnetwork.visual.AnnotationNetworkPanel;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.corrnetwork.visual.CorrNetworkPanel;
@@ -84,6 +84,7 @@ import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.table.Gro
 import net.sf.mzmine.modules.visualization.multimsms.MultiMSMSWindow;
 import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableModule;
 import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.parameters.UserParameter;
 import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
 
@@ -140,6 +141,8 @@ public class MSEcorrGroupWindow extends JFrame {
   private JPanel panel_8;
   private JComboBox<SimilarityMeasure> comboSimilarity;
   private JCheckBox cbMS2SimilarityNetwork;
+  // user parameter that is used to group data in plots
+  private UserParameter<?, ?> sampleGroupingUserParam;
 
   /**
    * Create the frame.
@@ -211,11 +214,6 @@ public class MSEcorrGroupWindow extends JFrame {
 
     pnRTNetwork = new RTNetworkPanel(true);
     pnRTNetwork.setTitle("Average retention time network");
-    // crucial need to set up
-    R2RCorrMap map = peakList.getCorrelationMap();
-    if (map != null)
-      pnRTNetwork.setAll(project, peakList, map.getRtTolerance(), false, map.getMinFeatureFilter(),
-          false);
 
     // scroll table
     mainScroll = new JScrollPane();
@@ -743,8 +741,8 @@ public class MSEcorrGroupWindow extends JFrame {
       XYSeriesCollection data = new XYSeriesCollection();
       // add plot
       String sg = "";
-      if (peakList.getSampleGroupsParameter() != null)
-        sg = String.valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), raw));
+      if (getSampleGroupsParameter() != null)
+        sg = String.valueOf(project.getParameterValue(getSampleGroupsParameter(), raw));
 
       String title = sg + "(" + raw.getName() + ")";
       JFreeChart chart = ChartFactory.createXYLineChart(title, "retention time | min", "Intensity",
@@ -793,6 +791,10 @@ public class MSEcorrGroupWindow extends JFrame {
     subWindow.setShapePlot(cp);
   }
 
+  private UserParameter<?, ?> getSampleGroupsParameter() {
+    return sampleGroupingUserParam;
+  }
+
   /**
    * peak shape correlation of selected row to all other rows in selected raw file
    */
@@ -816,8 +818,8 @@ public class MSEcorrGroupWindow extends JFrame {
         XYSeriesCollection data = new XYSeriesCollection();
         // titles
         String sg = "";
-        if (peakList.getSampleGroupsParameter() != null)
-          sg = String.valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), raw));
+        if (getSampleGroupsParameter() != null)
+          sg = String.valueOf(project.getParameterValue(getSampleGroupsParameter(), raw));
 
         String title = totalCorrelation ? "Total correlation of row " + row.getID()
             : MessageFormat.format("Row {0} corr in: {1} ({2})", row.getID(), sg, raw.getName());
@@ -921,8 +923,8 @@ public class MSEcorrGroupWindow extends JFrame {
         // data set
         XYSeriesCollection data = new XYSeriesCollection();
         // title
-        String sg = peakList.getSampleGroupsParameter() == null ? ""
-            : String.valueOf(project.getParameterValue(peakList.getSampleGroupsParameter(), raw));
+        String sg = getSampleGroupsParameter() == null ? ""
+            : String.valueOf(project.getParameterValue(getSampleGroupsParameter(), raw));
         String title = MessageFormat.format("Row {0} Imax corr across all samples", row.getID());
         // create chart
         JFreeChart chart =
@@ -980,8 +982,9 @@ public class MSEcorrGroupWindow extends JFrame {
     ChartPanel cp = null;
     try {
       // get group
-      PKLRowGroup g = getTableModel().getGroup();
-      if (g != null) {
+      RowGroup cg = getTableModel().getGroup();
+      if (cg instanceof PKLRowGroup) {
+        PKLRowGroup g = (PKLRowGroup) cg;
         //
         PeakListRow row = g.getLastViewedRow();
         int rowI = g.getLastViewedRowI();
@@ -1003,9 +1006,8 @@ public class MSEcorrGroupWindow extends JFrame {
               // for all raw data files
               for (int r = 0; r < peakList.getRawDataFiles().length; r++) {
                 RawDataFile raw = peakList.getRawDataFile(r);
-                String rawSG = peakList.getSampleGroupsParameter() == null ? ""
-                    : String.valueOf(
-                        project.getParameterValue(peakList.getSampleGroupsParameter(), raw));
+                String rawSG = getSampleGroupsParameter() == null ? ""
+                    : String.valueOf(project.getParameterValue(getSampleGroupsParameter(), raw));
 
                 // get correlation of feature-feature in selected raw file
                 CorrelationData fCorr = corrRows.getCorrPeakShape(raw);
@@ -1056,7 +1058,7 @@ public class MSEcorrGroupWindow extends JFrame {
    */
   private void plotPseudoSpectrum() {
     pnSpectrum.removeAll();
-    PKLRowGroup g = getTableModel().getGroup();
+    RowGroup g = getTableModel().getGroup();
     if (g != null) {
       EChartPanel chart = PseudoSpectrum.createChartPanel(g, g.getLastViewedRawFile(),
           getCbSumPseudoSpectrum().isSelected());
@@ -1106,7 +1108,7 @@ public class MSEcorrGroupWindow extends JFrame {
     RowGroup g = getTableModel().getGroup();
     if (g instanceof PKLRowGroup) {
       PeakListRow[] rows = g.toArray(new PeakListRow[g.size()]);
-      pnCorrNetwork.setPeakListRows(rows, peakList.getCorrelationMap());
+      pnCorrNetwork.setPeakListRows(rows);
       pnCorrNetwork.resetZoom();
       pnCorrNetwork.revalidate();
       pnCorrNetwork.repaint();
@@ -1121,7 +1123,7 @@ public class MSEcorrGroupWindow extends JFrame {
   private void createMSMSNetwork() {
     RowGroup g = getTableModel().getGroup();
     if (g instanceof MS2SimilarityProviderGroup) {
-      pnMSMSNetwork.setMap((MS2SimilarityProviderGroup) g.getMS2SimilarityMap());
+      pnMSMSNetwork.setMap(((MS2SimilarityProviderGroup) g).getMS2SimilarityMap());
       pnMSMSNetwork.resetZoom();
       pnMSMSNetwork.revalidate();
       pnMSMSNetwork.repaint();
@@ -1186,7 +1188,7 @@ public class MSEcorrGroupWindow extends JFrame {
    */
   private void plotIProfile() {
     // get group
-    PKLRowGroup g = peakList.getLastViewedGroup();
+    RowGroup g = getTableModel().getGroup();
     if (g != null) {
       PeakListRow row = g.getLastViewedRow();
       RawDataFile[] raw = row.getRawDataFiles();
@@ -1194,16 +1196,6 @@ public class MSEcorrGroupWindow extends JFrame {
       boolean noGroups = true;
       String sgName[] = null;
       int sgCount = 0;
-      if (peakList.getSampleGroups() != null) {
-        sgCount = peakList.getSampleGroups().size();
-        sgName = new String[sgCount];
-        int c = 0;
-        for (Object o : peakList.getSampleGroups().keySet()) {
-          sgName[c] = (String) o;
-          c++;
-        }
-        noGroups = false;
-      }
       // row IDs for series name
       int[] rowID = new int[g.size()];
       rowID[0] = row.getID();
@@ -1229,16 +1221,6 @@ public class MSEcorrGroupWindow extends JFrame {
       for (int r = 0; r < raw.length; r++) {
         // find sample group
         c = 0;
-        if (!noGroups) {
-          for (Object o : peakList.getSampleGroups().keySet()) {
-            Object rawSG = project.getParameterValue(peakList.getSampleGroupsParameter(), raw[r]);
-            if (o.equals(rawSG)) {
-              break;
-            }
-            // next sample group
-            c++;
-          }
-        }
         // add
         // height: add to lists
         Feature f1 = row.getPeak(raw[r]);

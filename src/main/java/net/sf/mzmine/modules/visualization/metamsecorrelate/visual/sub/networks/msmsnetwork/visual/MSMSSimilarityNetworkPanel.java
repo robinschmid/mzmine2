@@ -6,12 +6,11 @@ import java.text.NumberFormat;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 import org.graphstream.graph.Node;
-import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.framework.networks.NetworkPanel;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RMap;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.similarity.R2RMS2Similarity;
 
 public class MSMSSimilarityNetworkPanel extends NetworkPanel {
@@ -88,17 +87,13 @@ public class MSMSSimilarityNetworkPanel extends NetworkPanel {
   }
 
   private String toNodeName(PeakListRow row) {
-    PeakIdentity pid = row.getPreferredPeakIdentity();
+    IonIdentity esi = row.getBestIonIdentity();
     String id = "";
-    if (pid != null) {
-      id = pid.getName();
-      if (pid instanceof IonIdentity) {
-        IonIdentity esi = (IonIdentity) pid;
-        id = esi.getAdduct() + " by n=" + esi.getPartnerRowsID().length;
+    if (esi != null) {
+      id = esi.getAdduct() + " by n=" + esi.getPartnerRowsID().length;
 
-        if (esi.getNetID() != -1)
-          id += " (Net" + esi.getNetIDString() + ")";
-      }
+      if (esi.getNetID() != -1)
+        id += " (Net" + esi.getNetIDString() + ")";
     }
     return MessageFormat.format("{0} (mz={1}) {2}", row.getID(), mzForm.format(row.getAverageMZ()),
         id);

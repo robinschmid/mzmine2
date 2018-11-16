@@ -1,6 +1,9 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
+import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData.SimilarityMeasure;
 
@@ -32,6 +35,20 @@ public class R2GroupCorrelationData {
     setCorr(corr);
     this.maxHeight = maxHeight;
   }
+
+  /**
+   * 
+   * @param peakList
+   * @return
+   */
+  public static Stream<R2GroupCorrelationData> streamFrom(PeakList peakList) {
+    if (peakList.getGroups() == null)
+      return Stream.empty();
+    return peakList.getGroups().stream().filter(g -> g instanceof PKLRowGroup)
+        .map(g -> ((PKLRowGroup) g).getCorr()).flatMap(Arrays::stream);
+
+  }
+
 
   public void setCorr(List<R2RFullCorrelationData> corr) {
     this.corr = corr;
@@ -214,6 +231,10 @@ public class R2GroupCorrelationData {
         return c;
     }
     return null;
+  }
+
+  public PeakListRow getRow() {
+    return row;
   }
 
   /**

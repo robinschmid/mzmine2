@@ -1,8 +1,11 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter.OverlapResult;
 
@@ -36,6 +39,7 @@ public class R2RCorrelationData {
   }
 
   // correlation of a to b
+  // id A < id B
   private PeakListRow a, b;
 
   // ANTI CORRELATION MARKERS
@@ -43,8 +47,29 @@ public class R2RCorrelationData {
   private List<NegativeMarker> negativMarkers;
 
   public R2RCorrelationData(PeakListRow a, PeakListRow b) {
-    this.a = a;
-    this.b = b;
+    if (a.getID() < b.getID()) {
+      this.a = a;
+      this.b = b;
+    } else {
+      this.b = a;
+      this.a = b;
+    }
+  }
+
+  /**
+   * Stream all R2RFullCorrelationData found in PKLRowGroups (is distinct)
+   * 
+   * @param peakList
+   * @return
+   */
+  public static Stream<R2RFullCorrelationData> streamFrom(PeakList peakList) {
+    if (peakList.getGroups() == null)
+      return Stream.empty();
+    return peakList.getGroups().stream().filter(g -> g instanceof PKLRowGroup)
+        .map(g -> ((PKLRowGroup) g).getCorr()).flatMap(Arrays::stream) // R2GCorr
+        .flatMap(r2g -> r2g.getCorr() == null ? null
+            : r2g.getCorr().stream() //
+                .filter(r2r -> r2r.getIDA() == r2g.getRow().getID())); // a is always the lower id
   }
 
   /**

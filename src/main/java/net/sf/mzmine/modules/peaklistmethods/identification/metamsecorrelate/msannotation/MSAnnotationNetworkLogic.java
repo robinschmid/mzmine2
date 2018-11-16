@@ -411,8 +411,10 @@ public class MSAnnotationNetworkLogic {
    * @return
    */
   public static AnnotationNetwork[] getAllNetworks(PeakListRow row) {
-    return MSAnnotationNetworkLogic.getAllAnnotations(row).stream().map(IonIdentity::getNetwork)
-        .filter(Objects::nonNull).distinct().toArray(AnnotationNetwork[]::new);
+    if (!row.hasIonIdentity())
+      return new AnnotationNetwork[0];
+    return row.getIonIdentities().stream().map(IonIdentity::getNetwork).filter(Objects::nonNull)
+        .toArray(AnnotationNetwork[]::new);
   }
 
   /**
@@ -421,7 +423,7 @@ public class MSAnnotationNetworkLogic {
    * @param nets
    */
   public static void setNetworksToAllAnnotations(Collection<AnnotationNetwork> nets) {
-    nets.stream().forEach(n -> n.setNetworkToAllRows());
+    nets.stream().forEach(AnnotationNetwork::setNetworkToAllRows);
   }
 
   /**

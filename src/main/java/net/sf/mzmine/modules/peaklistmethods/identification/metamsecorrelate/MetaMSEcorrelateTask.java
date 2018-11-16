@@ -39,6 +39,8 @@ import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
+import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.datamodel.impl.PKLRowGroupList;
 import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.datamodel.impl.SimpleFeature;
@@ -57,11 +59,9 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RFullCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RMap;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.identities.IonIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter.OverlapResult;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeaturesFilterParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.AnnotationNetwork;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary.CheckMode;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
@@ -290,11 +290,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
       // create new PKL for grouping
       groupedPKL = copyPeakList(peakList, suffix);
-      // find groups and size
-      if (useGroups) {
-        groupedPKL.setSampleGroupsParameter(minFFilter.getGroupParam());
-        groupedPKL.setSampleGroups(minFFilter.getGroupSizeMap());
-      }
 
       // MAIN STEP
       // create correlation map
@@ -318,7 +313,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       // delete single connections between sub networks
       if (groups != null) {
         // set groups to pkl
-        groupedPKL.setCorrelationMap(corrMap);
         groupedPKL.setGroups(groups);
 
         // do MSMS comparison of group
