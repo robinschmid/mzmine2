@@ -5,6 +5,10 @@ import java.util.Comparator;
 
 public class PKLRowGroupList extends ArrayList<RowGroup> {
 
+  public void setGroupsToAllRows() {
+    this.forEach(RowGroup::setGroupToAllRows);
+  }
+
   /**
    * Sort by average retention time
    */

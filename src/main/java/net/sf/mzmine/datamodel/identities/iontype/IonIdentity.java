@@ -33,9 +33,8 @@ import net.sf.mzmine.datamodel.identities.ms2.MSMSIonRelationIdentity;
 import net.sf.mzmine.datamodel.identities.ms2.MSMSIonRelationIdentity.Relation;
 import net.sf.mzmine.datamodel.identities.ms2.MSMSMultimerIdentity;
 import net.sf.mzmine.datamodel.identities.ms2.interf.AbstractMSMSIdentity;
-import net.sf.mzmine.datamodel.impl.SimplePeakIdentity;
 
-public class IonIdentity extends SimplePeakIdentity {
+public class IonIdentity {
 
   private NumberFormat netIDForm = new DecimalFormat("#000");
 

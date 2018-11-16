@@ -140,13 +140,13 @@ public class AnnotationRefinementTask extends AbstractTask {
         if (!other.equals(best))
           other.delete(row);
 
-      row.setPreferredPeakIdentity(best);
+      row.setBestIonIdentity(best);
       return true;
     } else {
       // check rest
       for (IonIdentity other : all) {
         if (other.getMSMSMultimerCount() > 0) {
-          row.setPreferredPeakIdentity(other);
+          row.setBestIonIdentity(other);
 
           // delete rest of annotations
           for (IonIdentity e : all)

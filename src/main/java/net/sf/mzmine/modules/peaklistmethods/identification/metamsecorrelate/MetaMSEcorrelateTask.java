@@ -314,6 +314,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       if (groups != null) {
         // set groups to pkl
         groupedPKL.setGroups(groups);
+        groups.setGroupsToAllRows();
 
         // do MSMS comparison of group
         double maxDiff = msmsChecks.getParameter(MSAnnMSMSCheckParameters.MZ_TOLERANCE).getValue()

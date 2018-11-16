@@ -88,6 +88,11 @@ public class MSAnnotationNetworkLogic {
     return best;
   }
 
+  public static IonIdentity sortIonIdentities(PeakListRow row, boolean useGroup) {
+    RowGroup g = row.getGroup();
+
+  }
+
 
   /**
    * 
@@ -388,7 +393,7 @@ public class MSAnnotationNetworkLogic {
                 if (pnet.checkForAnnotation(row, pid)) {
                   // create new
                   realID = new IonIdentity(pid);
-                  row.addPeakIdentity(realID, false);
+                  row.addIonIdentity(realID, true);
                   realID.setNetwork(pnet);
                   // set partners
                   pnet.addAllLinksTo(row, realID);

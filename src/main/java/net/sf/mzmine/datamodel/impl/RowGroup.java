@@ -34,6 +34,9 @@ public class RowGroup extends ArrayList<PeakListRow> {
     this.rtValues = new int[raw.length];
   }
 
+  public void setGroupToAllRows() {
+    this.forEach(r -> r.setGroup(this));
+  }
 
   /**
    * Insert sort by ascending avg mz
