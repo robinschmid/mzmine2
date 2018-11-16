@@ -122,7 +122,8 @@ public class RTNetworkPanel extends NetworkPanel {
   private boolean filter(PeakListRow a, PeakListRow b) {
     return useMinFFilter && minFFilter != null ? //
         minFFilter.filterMinFeaturesOverlap(raw, a, b, rtTolerance).equals(OverlapResult.TRUE)
-        : rtTolerance.checkWithinTolerance(a.getAverageRT(), b.getAverageRT());
+        : (rtTolerance == null ? false
+            : rtTolerance.checkWithinTolerance(a.getAverageRT(), b.getAverageRT()));
   }
 
   private void addNewEdge(String node1, String node2, double drt) {

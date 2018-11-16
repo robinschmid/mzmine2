@@ -117,7 +117,7 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
         parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.elementalRatios)
             .getEmbeddedParameters();
 
-    message = "Formula Prediction";
+    message = "Formula Prediction (MS annotation networks)";
   }
 
   /**
@@ -157,13 +157,15 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
     }
 
     // parallel
-    Arrays.stream(nets).parallel().forEach(net -> {
+    Arrays.stream(nets).forEach(net -> {
       if (!isCanceled()) {
         for (Entry<PeakListRow, IonIdentity> e : net.entrySet()) {
           PeakListRow r = e.getKey();
           IonIdentity ion = e.getValue();
-          List<MolecularFormulaIdentity> list = predictFormulas(r, ion.getIonType());
-          ion.setMolFormulas(list);
+          if (!ion.getIonType().isUndefinedAdduct()) {
+            List<MolecularFormulaIdentity> list = predictFormulas(r, ion.getIonType());
+            ion.setMolFormulas(list);
+          }
         }
         // find best formula for neutral mol of network
       }

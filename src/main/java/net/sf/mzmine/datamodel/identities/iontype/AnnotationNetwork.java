@@ -89,7 +89,7 @@ public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity>
   @Override
   public IonIdentity put(PeakListRow key, IonIdentity value) {
     IonIdentity e = super.put(key, value);
-    if (key.getID() < lowestID)
+    if (key.getID() < lowestID || lowestID == -1)
       lowestID = key.getID();
 
     value.setNetwork(this);
@@ -129,7 +129,7 @@ public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity>
   @Override
   public IonIdentity replace(PeakListRow key, IonIdentity value) {
     IonIdentity e = super.replace(key, value);
-    if (key.getID() < lowestID)
+    if (key.getID() < lowestID || lowestID == -1)
       lowestID = key.getID();
 
     value.setNetwork(this);
