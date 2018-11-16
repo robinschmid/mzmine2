@@ -4,7 +4,7 @@ public enum IonModificationType {
   ADDUCT, UNDEFINED_ADDUCT, NEUTRAL_LOSS, CLUSTER, ISOTOPE, UNKNOWN, MIXED;
   @Override
   public String toString() {
-    return toString().replaceAll("_", " ");
+    return super.toString().replaceAll("_", " ");
   }
 
   /**
