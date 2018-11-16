@@ -128,7 +128,7 @@ public class FilterAnnotationTask extends AbstractTask {
         for (IonIdentity adduct : row.getIonIdentities()) {
           AnnotationNetwork net = adduct.getNetwork();
           if (net == null) {
-            row.removePeakIdentity(adduct);
+            row.removeIonIdentity(adduct);
           } else if (net.size() < minNetSize) {
             // delete network
             net.delete();

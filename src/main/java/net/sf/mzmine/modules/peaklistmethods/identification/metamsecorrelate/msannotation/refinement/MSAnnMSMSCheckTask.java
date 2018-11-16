@@ -31,11 +31,11 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.datamodel.identities.iontype.IonType;
+import net.sf.mzmine.datamodel.identities.iontype.MSAnnotationNetworkLogic;
 import net.sf.mzmine.datamodel.identities.ms2.MSMSIdentityList;
 import net.sf.mzmine.datamodel.identities.ms2.MSMSIonRelationIdentity;
 import net.sf.mzmine.datamodel.identities.ms2.interf.AbstractMSMSIdentity;
 import net.sf.mzmine.datamodel.impl.RowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.MSMSLogic;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
@@ -131,7 +131,7 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
       NeutralLossCheck neutralLossCheck) {
 
     // has annotations?
-    List<IonIdentity> ident = MSAnnotationNetworkLogic.getAllAnnotations(row);
+    List<IonIdentity> ident = row.getIonIdentities();
     if (ident == null || ident.isEmpty())
       return;
 
@@ -220,7 +220,9 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
       }
     }
 
-    IonIdentity best = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, true);
+    // sort and get best
+    MSAnnotationNetworkLogic.sortIonIdentities(row, true);
+    IonIdentity best = row.getBestIonIdentity();
     if (c > 0)
       LOG.info(MessageFormat.format(
           "Found {0} MS/MS fragments for neutral loss identifiers of rowID=[1} m/z={2} RT={3} best:{4}",

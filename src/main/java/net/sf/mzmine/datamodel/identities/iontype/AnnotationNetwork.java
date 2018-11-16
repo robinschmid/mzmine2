@@ -13,7 +13,8 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
  * @author Robin Schmid (robinschmid@uni-muenster.de)
  *
  */
-public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity> {
+public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity>
+    implements Comparable<AnnotationNetwork> {
   // MZtolerance on MS1 to generate this network
   private MZTolerance mzTolerance;
   // network id
@@ -24,6 +25,11 @@ public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity> {
   private Double maxDev = null;
   // average retention time of network
   private double avgRT;
+
+  // can be used to stream all networks only once
+  // lowest row id
+  private int lowestID = -1;
+
 
   // possible formulas for this neutral mass
   private List<MolecularFormulaIdentity> molFormulas;
@@ -83,6 +89,11 @@ public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity> {
   @Override
   public IonIdentity put(PeakListRow key, IonIdentity value) {
     IonIdentity e = super.put(key, value);
+    if (key.getID() < lowestID)
+      lowestID = key.getID();
+
+    value.setNetwork(this);
+
     fireChanged();
     return e;
   }
@@ -90,19 +101,38 @@ public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity> {
   @Override
   public IonIdentity remove(Object key) {
     IonIdentity e = super.remove(key);
-    fireChanged();
+    if (e != null && key instanceof PeakListRow && ((PeakListRow) key).getID() <= lowestID)
+      recalcMinID();
+
+    if (e != null) {
+      e.setNetwork(null);
+      fireChanged();
+    }
     return e;
+  }
+
+  /**
+   * Finds the minimum row id
+   */
+  public int recalcMinID() {
+    lowestID = keySet().stream().mapToInt(PeakListRow::getID).min().orElse(-1);
+    return lowestID;
   }
 
   @Override
   public void clear() {
     super.clear();
+    lowestID = -1;
     fireChanged();
   }
 
   @Override
   public IonIdentity replace(PeakListRow key, IonIdentity value) {
     IonIdentity e = super.replace(key, value);
+    if (key.getID() < lowestID)
+      lowestID = key.getID();
+
+    value.setNetwork(this);
     fireChanged();
     return e;
   }
@@ -253,7 +283,7 @@ public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity> {
 
   public void delete() {
     entrySet().stream().forEach(e -> {
-      e.getKey().removePeakIdentity(e.getValue());
+      e.getKey().removeIonIdentity(e.getValue());
     });
     clear();
   }
@@ -265,22 +295,7 @@ public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity> {
    * @return
    */
   public boolean hasSmallestID(PeakListRow row) {
-    if (!containsKey(row))
-      return false;
-    else {
-      return keySet().stream().noneMatch(r -> r.getID() < row.getID());
-    }
-  }
-
-  /**
-   * row has smallest id?
-   * 
-   * @param id
-   * @return
-   */
-  public boolean hasSmallestID(int id) {
-    return keySet().stream().anyMatch(r -> r.getID() == id)
-        && keySet().stream().noneMatch(r -> r.getID() < id);
+    return row.getID() == lowestID;
   }
 
   /**
@@ -334,5 +349,12 @@ public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity> {
         addAllLinksTo(a.getKey(), adduct);
     }
   }
+
+  @Override
+  public int compareTo(AnnotationNetwork net) {
+    // -1 if this is better
+    return Integer.compare(net.size(), this.size());
+  }
+
 
 }

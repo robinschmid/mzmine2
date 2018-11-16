@@ -64,11 +64,9 @@ public class IonIdentity {
    * @param ionType type of adduct.
    */
   public IonIdentity(IonType ionType) {
-    super("later");
+    super();
     this.ionType = ionType;
     this.adduct = ionType.toString(false);
-    setPropertyValue(PROPERTY_METHOD, "MS annotation");
-    setPropertyValue(PROPERTY_NAME, getIDString());
   }
 
 
@@ -80,17 +78,18 @@ public class IonIdentity {
    */
   public static IonIdentity[] addAdductIdentityToRow(PeakListRow row1, IonType row1ID,
       PeakListRow row2, IonType row2ID) {
+    // already added?
     IonIdentity a = getAdductEqualIdentity(row1, row1ID);
     IonIdentity b = getAdductEqualIdentity(row2, row2ID);
 
     // create new
     if (a == null) {
       a = new IonIdentity(row1ID);
-      row1.addPeakIdentity(a, false);
+      row1.addIonIdentity(a, false);
     }
     if (b == null) {
       b = new IonIdentity(row2ID);
-      row2.addPeakIdentity(b, false);
+      row2.addIonIdentity(b, false);
     }
     a.addPartnerRow(row2, b);
     b.addPartnerRow(row1, a);
@@ -152,12 +151,10 @@ public class IonIdentity {
 
   public void addPartnerRow(PeakListRow row, IonIdentity pid) {
     partner.put(row, pid);
-    setPropertyValue(PROPERTY_NAME, getIDString());
   }
 
   public void resetLinks() {
     partner.clear();
-    setPropertyValue(PROPERTY_NAME, getIDString());
   }
 
   public String getIDString() {
@@ -211,7 +208,6 @@ public class IonIdentity {
    */
   public void setNetwork(AnnotationNetwork net) {
     network = net;
-    setPropertyValue(PROPERTY_NAME, getIDString());
   }
 
   /**
@@ -227,23 +223,6 @@ public class IonIdentity {
     return netIDForm.format(getNetID());
   }
 
-  /**
-   * 
-   * @param row
-   * @param link
-   * @return The identity of row, determined by link or null if there is no connection
-   */
-  public static IonIdentity getIdentityOf(PeakListRow row, PeakListRow link) {
-    for (PeakIdentity pi : row.getPeakIdentities()) {
-      // identity by ms annotation module
-      if (pi instanceof IonIdentity) {
-        IonIdentity adduct = (IonIdentity) pi;
-        if (adduct.hasPartnerID(link.getID()))
-          return adduct;
-      }
-    }
-    return null;
-  }
 
   /**
    * Checks whether partner ids contain a certain id
@@ -257,14 +236,12 @@ public class IonIdentity {
 
   public void setMSMSIdentities(MSMSIdentityList msmsIdent) {
     this.msmsIdent = msmsIdent;
-    setPropertyValue(PROPERTY_NAME, getIDString());
   }
 
   public void addMSMSIdentity(AbstractMSMSIdentity ident) {
     if (this.msmsIdent == null)
       msmsIdent = new MSMSIdentityList();
     msmsIdent.add(ident);
-    setPropertyValue(PROPERTY_NAME, getIDString());
   }
 
   public MSMSIdentityList getMSMSIdentities() {
@@ -305,7 +282,7 @@ public class IonIdentity {
     if (network != null) {
       network.remove(row);
     }
-    row.removePeakIdentity(this);
+    row.removeIonIdentity(this);
     // remove from partners
     partner.entrySet().stream().forEach(e -> e.getValue().delete(e.getKey()));
   }

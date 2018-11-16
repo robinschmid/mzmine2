@@ -18,6 +18,7 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.annotationnetwork;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -146,8 +147,8 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
     setStatus(TaskStatus.PROCESSING);
 
     // get all networks to run in parallel
-    List<AnnotationNetwork> nets = MSAnnotationNetworkLogic.getAllNetworks(peakList);
-    totalRows = nets.size();
+    AnnotationNetwork[] nets = MSAnnotationNetworkLogic.getAllNetworks(peakList);
+    totalRows = nets.length;
     if (totalRows == 0) {
       setStatus(TaskStatus.ERROR);
       setErrorMessage("No annotation networks found in this list. Run MS annotation");
@@ -156,7 +157,7 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
     }
 
     // parallel
-    nets.stream().parallel().forEach(net -> {
+    Arrays.stream(nets).parallel().forEach(net -> {
       if (!isCanceled()) {
         for (Entry<PeakListRow, IonIdentity> e : net.entrySet()) {
           PeakListRow r = e.getKey();

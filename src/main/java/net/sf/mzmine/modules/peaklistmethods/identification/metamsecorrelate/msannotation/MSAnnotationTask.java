@@ -27,6 +27,7 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
+import net.sf.mzmine.datamodel.identities.iontype.MSAnnotationNetworkLogic;
 import net.sf.mzmine.datamodel.impl.SimplePeakListAppliedMethod;
 import net.sf.mzmine.desktop.Desktop;
 import net.sf.mzmine.desktop.impl.HeadLessDesktop;
@@ -184,7 +185,7 @@ public class MSAnnotationTask extends AbstractTask {
       LOG.info("A total of " + net.size() + " networks");
 
       LOG.info("Show most likely annotations");
-      MSAnnotationNetworkLogic.showMostlikelyAnnotations(peakList);
+      MSAnnotationNetworkLogic.sortIonIdentities(peakList, true);
 
 
       // finish

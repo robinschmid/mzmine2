@@ -19,8 +19,10 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate;
 
 import java.text.MessageFormat;
+import java.util.Arrays;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
+import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData.SimilarityMeasure;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary;
@@ -86,7 +88,9 @@ public class SimpleMetaMSEcorrelateTask extends MetaMSEcorrelateTask {
     MSAnnotationParameters annParam = parameterSet
         .getParameter(SimpleMetaMSEcorrelateParameters.ADDUCT_LIBRARY).getEmbeddedParameters();
     // simple parameter setup: provide mzTol and charge
-    library = new MSAnnotationLibrary(annParam, mzTolerance, 100);
+    int maxCharge =
+        Arrays.stream(peakList.getRows()).mapToInt(PeakListRow::getRowCharge).max().orElse(3);
+    library = new MSAnnotationLibrary(annParam, mzTolerance, maxCharge);
 
     adductCheckMode = annParam.getParameter(MSAnnotationParameters.CHECK_MODE).getValue();
 

@@ -14,7 +14,6 @@ package net.sf.mzmine.modules.peaklistmethods.io.gnpsexport;
 
 import java.awt.Window;
 import net.sf.mzmine.datamodel.PeakListRow;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
@@ -50,11 +49,9 @@ public class GNPSExportParameters extends SimpleParameterSet {
         case ONLY_WITH_MS2:
           return row.getBestFragmentation() != null;
         case ONLY_WITH_MS2_OR_ANNOTATION:
-          return row.getBestFragmentation() != null
-              || MSAnnotationNetworkLogic.hasIonAnnotation(row);
+          return row.getBestFragmentation() != null || row.hasIonIdentity();
         case ONLY_WITH_MS2_AND_ANNOTATION:
-          return row.getBestFragmentation() != null
-              && MSAnnotationNetworkLogic.hasIonAnnotation(row);
+          return row.getBestFragmentation() != null && row.hasIonIdentity();
       }
       return false;
     }

@@ -41,6 +41,7 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
+import net.sf.mzmine.datamodel.identities.iontype.MSAnnotationNetworkLogic;
 import net.sf.mzmine.datamodel.impl.PKLRowGroupList;
 import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.datamodel.impl.SimpleFeature;
@@ -64,7 +65,6 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.fil
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary.CheckMode;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.AnnotationRefinementParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.AnnotationRefinementTask;
@@ -313,6 +313,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       // delete single connections between sub networks
       if (groups != null) {
         // set groups to pkl
+        groups.stream().map(g -> (PKLRowGroup) g).forEach(g -> g.recalcGroupCorrelation(corrMap));
         groupedPKL.setGroups(groups);
         groups.setGroupsToAllRows();
 
@@ -380,7 +381,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
           // show all annotations with the highest count of links
           LOG.info("Corr: show most likely annotations");
-          MSAnnotationNetworkLogic.showMostlikelyAnnotations(groupedPKL, true);
+          MSAnnotationNetworkLogic.sortIonIdentities(groupedPKL, true);
         }
 
         if (isCanceled())
@@ -476,8 +477,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   private void annotateGroup(RowGroup g, AtomicInteger compared, AtomicInteger annotPairs) {
     for (int i = 0; i < g.size() - 1; i++) {
       // check against existing networks
-
-
       for (int k = i + 1; k < g.size(); k++) {
         compared.incrementAndGet();
         // check for adducts in library
@@ -790,7 +789,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         CorrelationData data = corrFeatureShape(f1, f2, true, minCorrelatedDataPoints,
             minCorrDPOnFeatureEdge, noiseLevelShapeCorr);
 
-        System.out.println();
         // if correlation is really bad return null
         if (filterNegativeRegression(data, 5, 0.2, 7, 0.5, SimilarityMeasure.PEARSON))
           return null;

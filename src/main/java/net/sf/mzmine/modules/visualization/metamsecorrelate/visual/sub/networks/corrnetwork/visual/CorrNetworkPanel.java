@@ -162,7 +162,7 @@ public class CorrNetworkPanel extends NetworkPanel {
 
       // add all connections
       AtomicInteger added = new AtomicInteger(0);
-      R2RCorrelationData.streamFrom(pkl).filter(R2RCorrelationData::hasFeatureShapeCorrelation)
+      R2RCorrelationData.streamFrom(rows).filter(R2RCorrelationData::hasFeatureShapeCorrelation)
           .filter(r2r -> r2r.getAvgShapeR() >= minR).forEach(r2r -> {
             PeakListRow a = r2r.getRowA();
             PeakListRow b = r2r.getRowB();

@@ -110,10 +110,12 @@ public class PeakListTableModel extends AbstractTableModel {
         case NEUTRAL_MASS:
           return ion != null ? ion.getIonType().getMass(peakListRow.getAverageMZ()) : "";
         case ION_FORMULA:
-          return ion != null ? ion.getBestMolFormula().toString() : "";
+          return ion != null && ion.getBestMolFormula() != null ? ion.getBestMolFormula().toString()
+              : "";
         case NEUTRAL_FORMULA:
-          return ion != null && ion.getNetwork() != null ? //
-              ion.getNetwork().getBestMolFormula().toString() : "";
+          return ion != null && ion.getNetwork() != null
+              && ion.getNetwork().getBestMolFormula() != null ? //
+                  ion.getNetwork().getBestMolFormula().toString() : "";
         default:
           break;
       }

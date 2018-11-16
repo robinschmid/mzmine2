@@ -24,7 +24,7 @@ import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
+import net.sf.mzmine.datamodel.identities.iontype.MSAnnotationNetworkLogic;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 
@@ -88,29 +88,28 @@ public class AnnotationRefinementTask extends AbstractTask {
 
   public static void refine(PeakList pkl, int trueThreshold, boolean deleteXmersOnMSMS) {
     for (PeakListRow row : pkl.getRows()) {
-      IonIdentity best = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, true);
-      if (best == null)
-        continue;
+      if (row.hasIonIdentity()) {
+        List<IonIdentity> all = MSAnnotationNetworkLogic.sortIonIdentities(row, true);
+        IonIdentity best = all.get(0);
 
-      List<IonIdentity> all = MSAnnotationNetworkLogic.getAllAnnotationsSorted(row);
-      if (deleteXmersOnMSMS && all.size() > 1) {
-        // xmers
-        if (deleteXmersOnMSMS(row, best, all, trueThreshold)) {
-          best = MSAnnotationNetworkLogic.getMostLikelyAnnotation(row, true);
-          all = MSAnnotationNetworkLogic.getAllAnnotationsSorted(row);
+        if (deleteXmersOnMSMS && all.size() > 1) {
+          // xmers
+          if (deleteXmersOnMSMS(row, best, all, trueThreshold)) {
+            all = MSAnnotationNetworkLogic.sortIonIdentities(row, true);
+            best = all.get(0);
+          }
         }
-      }
 
-      if (best == null)
-        continue;
+        if (best == null)
+          continue;
 
-      if (trueThreshold > 1) {
-        int links = getLinks(best);
+        if (trueThreshold > 1) {
+          int links = getLinks(best);
 
-        if (links >= trueThreshold) {
-          for (IonIdentity other : all)
-            if (!other.equals(best))
-              other.delete(row);
+          if (links >= trueThreshold) {
+            for (int i = 1; i < row.getIonIdentities().size();)
+              row.getIonIdentities().get(i).delete(row);
+          }
         }
       }
     }
@@ -136,9 +135,8 @@ public class AnnotationRefinementTask extends AbstractTask {
     // check best first
     if (best.getMSMSMultimerCount() > 0) {
       // delete rest of annotations
-      for (IonIdentity other : all)
-        if (!other.equals(best))
-          other.delete(row);
+      for (int i = 1; i < all.size();)
+        row.getIonIdentities().get(i).delete(row);
 
       row.setBestIonIdentity(best);
       return true;
@@ -149,9 +147,11 @@ public class AnnotationRefinementTask extends AbstractTask {
           row.setBestIonIdentity(other);
 
           // delete rest of annotations
-          for (IonIdentity e : all)
+          for (int i = 1; i < row.getIonIdentities().size(); i++) {
+            IonIdentity e = row.getIonIdentities().get(i);
             if (!other.equals(e) && (trueThreshold <= 1 || getLinks(e) < trueThreshold))
               e.delete(row);
+          }
           return true;
         }
       }

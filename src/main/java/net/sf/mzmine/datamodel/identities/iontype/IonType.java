@@ -65,9 +65,6 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
    * @return
    */
   public IonType createModified(final @Nonnull IonModification... newMod) {
-    if (newMod == null)
-      throw new NullPointerException("Parameter cannot be null");
-
     List<IonModification> allMod = new ArrayList<>();
     for (IonModification m : newMod)
       allMod.add(m);
@@ -77,7 +74,7 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
 
     IonModification nm =
         new CombinedIonModification(allMod.toArray(new IonModification[allMod.size()]));
-    return new IonType(this.adduct, nm);
+    return new IonType(this.molecules, this.adduct, nm);
   }
 
   /**

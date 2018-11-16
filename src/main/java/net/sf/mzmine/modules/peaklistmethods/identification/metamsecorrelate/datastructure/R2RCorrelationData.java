@@ -3,6 +3,7 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.da
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import net.sf.mzmine.datamodel.PeakList;
@@ -72,6 +73,15 @@ public class R2RCorrelationData {
                 .filter(r2r -> r2r.getIDA() == r2g.getRow().getID())); // a is always the lower id
   }
 
+  public static Stream<R2RFullCorrelationData> streamFrom(PeakListRow[] rows) {
+    return Arrays.stream(rows).map(PeakListRow::getGroup).filter(Objects::nonNull)
+        .filter(g -> g instanceof PKLRowGroup).distinct().map(g -> ((PKLRowGroup) g).getCorr())
+        .flatMap(Arrays::stream) // R2GCorr
+        .flatMap(r2g -> r2g.getCorr() == null ? null
+            : r2g.getCorr().stream() //
+                .filter(r2r -> r2r.getIDA() == r2g.getRow().getID())); // a is always the lower id
+  }
+
   /**
    * 
    * @return List of negativ markers (non-null)
@@ -122,5 +132,6 @@ public class R2RCorrelationData {
   public double getAvgShapeCosineSim() {
     return 0;
   }
+
 
 }

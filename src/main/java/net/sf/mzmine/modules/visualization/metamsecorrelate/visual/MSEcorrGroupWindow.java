@@ -64,6 +64,7 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
+import net.sf.mzmine.datamodel.identities.iontype.MSAnnotationNetworkLogic;
 import net.sf.mzmine.datamodel.impl.PKLRowGroupList;
 import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.main.MZmineCore;
@@ -73,7 +74,6 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.PKLRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RFullCorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.annotationnetwork.visual.AnnotationNetworkPanel;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.corrnetwork.visual.CorrNetworkPanel;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.msmsnetwork.visual.MSMSSimilarityNetworkPanel;
@@ -341,6 +341,7 @@ public class MSEcorrGroupWindow extends JFrame {
     panel_2.setLayout(new BoxLayout(panel_2, BoxLayout.Y_AXIS));
 
     cbUseSampleGroups = new JCheckBox("Use sample groups");
+    cbUseSampleGroups.setSelected(true);
     cbUseSampleGroups.addItemListener(new ItemListener() {
       @Override
       public void itemStateChanged(ItemEvent e) {
@@ -349,7 +350,6 @@ public class MSEcorrGroupWindow extends JFrame {
     });
     cbUseSampleGroups
         .setToolTipText("Use sample groups or rows as categories for intensity boxplots.");
-    cbUseSampleGroups.setSelected(true);
     panel_2.add(cbUseSampleGroups);
 
     cbAutoRawFile = new JCheckBox("Auto raw file");
