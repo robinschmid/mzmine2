@@ -24,7 +24,6 @@ import java.util.logging.Logger;
 import com.google.common.util.concurrent.AtomicDouble;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
-import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.impl.RowGroupList;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MS2SimilarityProviderGroup;
@@ -46,20 +45,33 @@ public class MS2SimilarityTask extends AbstractTask {
 
   private AtomicDouble stageProgress;
 
-  private final MZmineProject project;
   private String massList;
   private PeakListRow[] rows;
-  private double maxMassDiff;
   private int minMatch;
   private int minDP;
   private int maxDPForDiff = 25;
+  private MZTolerance mzTolerance;
+  private double minHeight;
 
+  // target
   private R2RMap<R2RMS2Similarity> map;
-
   private RowGroupList groups;
-
   private MS2SimilarityProviderGroup group;
 
+
+  /**
+   * 
+   * @param parameterSet
+   */
+  public MS2SimilarityTask(final ParameterSet parameterSet) {
+    massList = parameterSet.getParameter(MS2SimilarityParameters.MASS_LIST).getValue();
+    mzTolerance = parameterSet.getParameter(MS2SimilarityParameters.MZ_TOLERANCE).getValue();
+    minHeight = parameterSet.getParameter(MS2SimilarityParameters.MIN_HEIGHT).getValue();
+    minDP = parameterSet.getParameter(MS2SimilarityParameters.MIN_DP).getValue();
+    minMatch = parameterSet.getParameter(MS2SimilarityParameters.MIN_MATCH).getValue();
+    maxDPForDiff = parameterSet.getParameter(MS2SimilarityParameters.MAX_DP_FOR_DIFF).getValue();
+    stageProgress = new AtomicDouble(0);
+  }
 
   /**
    * Create the task. to run on list of groups
@@ -67,13 +79,10 @@ public class MS2SimilarityTask extends AbstractTask {
    * @param parameterSet the parameters.
    * @param list peak list.
    */
-  public MS2SimilarityTask(final MZmineProject project, final ParameterSet parameterSet,
-      RowGroupList groups) {
-    this.project = project;
+  public MS2SimilarityTask(final ParameterSet parameterSet, RowGroupList groups) {
+    this(parameterSet);
     // performed on groups
     this.groups = groups;
-
-    stageProgress = new AtomicDouble(0);
   }
 
   /**
@@ -82,12 +91,9 @@ public class MS2SimilarityTask extends AbstractTask {
    * @param parameterSet the parameters.
    * @param list peak list.
    */
-  public MS2SimilarityTask(final MZmineProject project, final ParameterSet parameterSet,
-      PeakListRow[] rows) {
-    this.project = project;
+  public MS2SimilarityTask(final ParameterSet parameterSet, PeakListRow[] rows) {
+    this(parameterSet);
     this.rows = rows;
-
-    stageProgress = new AtomicDouble(0);
   }
 
   /**
@@ -96,12 +102,9 @@ public class MS2SimilarityTask extends AbstractTask {
    * @param parameterSet the parameters.
    * @param list peak list.
    */
-  public MS2SimilarityTask(final MZmineProject project, final ParameterSet parameterSet,
-      MS2SimilarityProviderGroup group) {
-    this.project = project;
+  public MS2SimilarityTask(final ParameterSet parameterSet, MS2SimilarityProviderGroup group) {
+    this(parameterSet);
     this.group = group;
-
-    stageProgress = new AtomicDouble(0);
   }
 
   @Override
@@ -121,11 +124,11 @@ public class MS2SimilarityTask extends AbstractTask {
 
   public void doCheck() {
     if (group != null)
-      map = checkGroup(group, massList, maxMassDiff, minMatch, minDP, maxDPForDiff);
+      map = checkGroup(group, massList, mzTolerance, minHeight, minDP, minMatch, maxDPForDiff);
     else if (rows != null)
-      map = checkRows(rows, massList, maxMassDiff, minMatch, minDP, maxDPForDiff);
+      map = checkRows(rows, massList, mzTolerance, minHeight, minDP, minMatch, maxDPForDiff);
     else if (groups != null)
-      checkGroupList(this, stageProgress, groups, massList, maxMassDiff, minMatch, minDP,
+      checkGroupList(this, stageProgress, groups, massList, mzTolerance, minHeight, minDP, minMatch,
           maxDPForDiff);
   }
 
@@ -140,15 +143,15 @@ public class MS2SimilarityTask extends AbstractTask {
 
 
   public static void checkGroupList(AbstractTask task, AtomicDouble stageProgress,
-      RowGroupList groups, String massList, double maxMassDiff, int minMatch, int minDP,
-      int maxDPForDiff) {
+      RowGroupList groups, String massList, MZTolerance mzTolerance, double minHeight, int minDP,
+      int minMatch, int maxDPForDiff) {
     LOG.info("Calc MS/MS similarity of groups");
     final int size = groups.size();
     groups.parallelStream().forEach(g -> {
       if (!task.isCanceled()) {
         if (g instanceof MS2SimilarityProviderGroup)
-          checkGroup((MS2SimilarityProviderGroup) g, massList, maxMassDiff, minMatch, minDP,
-              maxDPForDiff);
+          checkGroup((MS2SimilarityProviderGroup) g, massList, mzTolerance, minHeight, minDP,
+              minMatch, maxDPForDiff);
         stageProgress.addAndGet(1d / size);
       }
     });
@@ -160,6 +163,7 @@ public class MS2SimilarityTask extends AbstractTask {
    * 
    * @param g
    * @param massList
+   * @param mzTolerance
    * @param maxMassDiff
    * @param minMatch
    * @param minDP
@@ -167,21 +171,21 @@ public class MS2SimilarityTask extends AbstractTask {
    * @return
    */
   public static R2RMap<R2RMS2Similarity> checkGroup(MS2SimilarityProviderGroup g, String massList,
-      double maxMassDiff, int minMatch, int minDP, int maxDPForDiff) {
+      MZTolerance mzTolerance, double minHeight, int minDP, int minMatch, int maxDPForDiff) {
     R2RMap<R2RMS2Similarity> map = checkRows(g.toArray(new PeakListRow[g.size()]), massList,
-        maxMassDiff, minMatch, minDP, maxDPForDiff);
+        mzTolerance, minHeight, minMatch, minDP, maxDPForDiff);
 
     g.setMS2SimilarityMap(map);
     return map;
   }
 
   public static R2RMap<R2RMS2Similarity> checkRows(PeakListRow[] rows, String massList,
-      double maxMassDiff, int minMatch, int minDP, int maxDPForDiff) {
+      MZTolerance mzTolerance, double minHeight, int minDP, int minMatch, int maxDPForDiff) {
     R2RMap<R2RMS2Similarity> map = new R2RMap<>();
     for (int i = 0; i < rows.length - 1; i++) {
       for (int j = 1; j < rows.length; j++) {
-        R2RMS2Similarity r2r =
-            checkR2R(rows[i], rows[j], massList, maxMassDiff, minDP, minMatch, maxDPForDiff);
+        R2RMS2Similarity r2r = checkR2R(rows[i], rows[j], massList, mzTolerance, minHeight, minDP,
+            minMatch, maxDPForDiff);
         if (r2r != null)
           map.add(rows[i], rows[j], r2r);
       }
@@ -190,25 +194,26 @@ public class MS2SimilarityTask extends AbstractTask {
   }
 
   public static R2RMS2Similarity checkR2R(PeakListRow a, PeakListRow b, String massList,
-      double maxMassDiff, int minDP, int minMatch, int maxDPForDiff) {
+      MZTolerance mzTolerance, double minHeight, int minDP, int minMatch, int maxDPForDiff) {
     R2RMS2Similarity r2r = new R2RMS2Similarity(a, b);
 
-    MZTolerance mzTol = new MZTolerance(maxMassDiff, 0);
     for (Feature fa : a.getPeaks()) {
       DataPoint[] dpa = getMassList(fa, massList);
       if (dpa != null && dpa.length >= minDP) {
         // create mass diff array
-        DataPoint[] massDiffA = ScanMZDiffConverter.getAllMZDiff(dpa, maxMassDiff, maxDPForDiff);
+        DataPoint[] massDiffA =
+            ScanMZDiffConverter.getAllMZDiff(dpa, mzTolerance, minHeight, maxDPForDiff);
         for (Feature fb : b.getPeaks()) {
           DataPoint[] dpb = getMassList(fb, massList);
           if (dpb != null && dpb.length >= minDP) {
             // align and check spectra
-            MS2Similarity spectralSim = createMS2Sim(mzTol, dpa, dpb, minMatch, SIZE_OVERLAP);
+            MS2Similarity spectralSim = createMS2Sim(mzTolerance, dpa, dpb, minMatch, SIZE_OVERLAP);
 
             // alignment and sim of neutral losses
-            MS2Similarity massDiffSim = createMS2Sim(mzTol, massDiffA,
-                ScanMZDiffConverter.getAllMZDiff(dpb, maxMassDiff, maxDPForDiff), minMatch,
-                DIFF_OVERLAP);
+            DataPoint[] massDiffB =
+                ScanMZDiffConverter.getAllMZDiff(dpb, mzTolerance, maxDPForDiff);
+            MS2Similarity massDiffSim =
+                createMS2Sim(mzTolerance, massDiffA, massDiffB, minMatch, DIFF_OVERLAP);
 
             if (massDiffSim != null)
               r2r.addMassDiffSim(massDiffSim);
@@ -221,6 +226,15 @@ public class MS2SimilarityTask extends AbstractTask {
     return r2r.size() > 0 ? r2r : null;
   }
 
+  /**
+   * 
+   * @param mzTol
+   * @param a
+   * @param b
+   * @param minMatch minimum overlapping signals in the two mass lists a and b
+   * @param overlapFunction different functions to determin the size of overlap
+   * @return
+   */
   private static MS2Similarity createMS2Sim(MZTolerance mzTol, DataPoint[] a, DataPoint[] b,
       double minMatch, Function<List<DataPoint[]>, Integer> overlapFunction) {
     // align

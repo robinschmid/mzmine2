@@ -66,7 +66,7 @@ public class MS2SimilarityModule implements MZmineProcessingModule {
     for (PeakList pkl : peakLists) {
       // run on all group lists
       if (pkl.getGroups() != null && !pkl.getGroups().isEmpty()) {
-        tasks.add(new MS2SimilarityTask(project, parameters, pkl.getGroups()));
+        tasks.add(new MS2SimilarityTask(parameters, pkl.getGroups()));
         started = true;
       }
     }

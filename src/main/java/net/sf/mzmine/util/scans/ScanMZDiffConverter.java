@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
+import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 public class ScanMZDiffConverter {
 
@@ -17,12 +18,13 @@ public class ScanMZDiffConverter {
    * @param maxDiff absolute max difference of neutral loss mass (in Da)
    * @return
    */
-  public static DataPoint[] getAllMZDiff(DataPoint[] scan, double maxDiff, int maxSignals) {
+  public static DataPoint[] getAllMZDiff(DataPoint[] scan, MZTolerance maxDiff, double minHeight,
+      int maxSignals) {
     if (maxSignals <= 0 || scan.length <= maxSignals)
-      return getAllMZDiff(scan, maxDiff);
+      return getAllMZDiff(scan, maxDiff, minHeight);
     else {
       DataPoint[] max = ScanUtils.getMostAbundantSignals(scan, maxSignals);
-      return getAllMZDiff(max, maxDiff);
+      return getAllMZDiff(max, maxDiff, minHeight);
     }
   }
 
@@ -32,27 +34,33 @@ public class ScanMZDiffConverter {
    * 3] would correspond to three losses of H2O)
    * 
    * @param scan
+   * @param maxDiff
    * @param maxDiff absolute max difference of neutral loss mass (in Da)
    * @return
    */
-  public static DataPoint[] getAllMZDiff(DataPoint[] scan, double maxDiff) {
+  public static DataPoint[] getAllMZDiff(DataPoint[] scan, MZTolerance maxDiff, double minHeight) {
     List<SimpleDataPoint> list = new ArrayList<>();
 
     for (int i = 0; i < scan.length - 1; i++) {
-      for (int j = i + 1; j < scan.length; j++) {
-        double delta = Math.abs(scan[i].getMZ() - scan[j].getMZ());
-        // find existing
-        SimpleDataPoint dp = findMatch(list, delta, maxDiff);
-        if (dp != null)
-          dp.setIntensity(dp.getIntensity() + 1);
-        else
-          list.add(new SimpleDataPoint(delta, 1));
+      if (scan[i].getIntensity() >= minHeight) {
+        for (int j = i + 1; j < scan.length; j++) {
+          if (scan[j].getIntensity() >= minHeight) {
+            double delta = Math.abs(scan[i].getMZ() - scan[j].getMZ());
+            // find existing
+            SimpleDataPoint dp = findMatch(list, delta, maxDiff);
+            if (dp != null)
+              dp.setIntensity(dp.getIntensity() + 1);
+            else
+              list.add(new SimpleDataPoint(delta, 1));
+          }
+        }
       }
     }
     return list.toArray(new DataPoint[list.size()]);
   }
 
   /**
+   * Is already in list?
    * 
    * @param mzTol
    * @param list
@@ -61,9 +69,9 @@ public class ScanMZDiffConverter {
    * @return
    */
   public static SimpleDataPoint findMatch(List<SimpleDataPoint> list, double delta,
-      double maxDiff) {
+      MZTolerance maxDiff) {
     for (SimpleDataPoint dp : list) {
-      if (Math.abs(dp.getMZ() - delta) < maxDiff) {
+      if (maxDiff.checkWithinTolerance(dp.getMZ(), delta)) {
         return dp;
       }
     }

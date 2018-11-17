@@ -24,6 +24,7 @@ import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
+import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.MassListParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
@@ -48,11 +49,19 @@ public class MS2SimilarityParameters extends SimpleParameterSet {
   // MZ-tolerance: deisotoping, adducts
   public static final MZToleranceParameter MZ_TOLERANCE = new MZToleranceParameter(
       "m/z tolerance (MS2)",
-      "Tolerance value of the m/z difference between MS2 signals (and the precursor, if selected)");
+      "Tolerance value of the m/z difference between MS2 signals (add absolute tolerance to cover small neutral losses (5 ppm on m=18 is insufficient))");
 
   public static final DoubleParameter MIN_HEIGHT = new DoubleParameter("Min height (in MS2)",
       "Minimum height of signal", MZmineCore.getConfiguration().getIntensityFormat(), 1E3);
 
+  public static final IntegerParameter MIN_DP = new IntegerParameter("Minimum data points (DP)",
+      "Minimum data points in MS2 scan mass list", 3);
+  public static final IntegerParameter MIN_MATCH = new IntegerParameter("Minimum matched signals",
+      "Minimum matched signals or neutral losses (m/z differences)", 3);
+  public static final IntegerParameter MAX_DP_FOR_DIFF = new IntegerParameter(
+      "Maximum DP for differences matching",
+      "Difference (neutral loss) matching is done on a maximum of n MS2 signals per scan. All differences between these signals are calculated and matched between spectra.",
+      25);
 
 
   // Constructor
@@ -62,8 +71,9 @@ public class MS2SimilarityParameters extends SimpleParameterSet {
 
   public MS2SimilarityParameters(boolean isSub) {
     super(isSub ? // no peak list and rt tolerance
-        new Parameter[] {MASS_LIST, MZ_TOLERANCE, MIN_HEIGHT}
-        : new Parameter[] {PEAK_LISTS, MASS_LIST, MZ_TOLERANCE, MIN_HEIGHT});
+        new Parameter[] {MASS_LIST, MZ_TOLERANCE, MIN_HEIGHT, MIN_DP, MIN_MATCH, MAX_DP_FOR_DIFF}
+        : new Parameter[] {PEAK_LISTS, MASS_LIST, MZ_TOLERANCE, MIN_HEIGHT, MIN_DP, MIN_MATCH,
+            MAX_DP_FOR_DIFF});
   }
 
   @Override
