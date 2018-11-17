@@ -23,14 +23,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.openscience.cdk.formula.MolecularFormulaGenerator;
 import org.openscience.cdk.formula.MolecularFormulaRange;
 import org.openscience.cdk.interfaces.IChemObjectBuilder;
 import org.openscience.cdk.interfaces.IMolecularFormula;
 import org.openscience.cdk.silent.SilentChemObjectBuilder;
-import org.openscience.cdk.tools.manipulator.MolecularFormulaManipulator;
 import com.google.common.collect.Range;
+import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.IsotopePattern;
 import net.sf.mzmine.datamodel.MassList;
@@ -55,7 +56,6 @@ import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
-import net.sf.mzmine.util.FormulaUtils;
 
 public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
 
@@ -74,6 +74,10 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
   // correct values by ppm offset to shift correct molecular formulae to the center
   // usefull if all exact masses are shifted by 4 ppm enter -4 ppm
   private double ppmOffset;
+  private double isotopeNoiseLevel;
+  private double minScore;
+  private String massListName;
+  private double minMSMSScore;
 
   /**
    *
@@ -119,6 +123,14 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
     ratiosParameters =
         parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.elementalRatios)
             .getEmbeddedParameters();
+
+
+    isotopeNoiseLevel =
+        isotopeParameters.getParameter(IsotopePatternScoreParameters.isotopeNoiseLevel).getValue();
+    minScore = isotopeParameters
+        .getParameter(IsotopePatternScoreParameters.isotopePatternScoreThreshold).getValue();
+    massListName = msmsParameters.getParameter(MSMSScoreParameters.massList).getValue();
+    minMSMSScore = msmsParameters.getParameter(MSMSScoreParameters.msmsMinScore).getValue();
 
     message = "Formula Prediction (MS annotation networks)";
   }
@@ -195,27 +207,34 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
 
     IMolecularFormula cdkFormula;
     while ((cdkFormula = generator.getNextFormula()) != null) {
-      // Mass is ok, so test other constraints
-      checkConstraints(resultingFormulas, cdkFormula, row, ion);
+      try {
+        // ionized formula
+        IMolecularFormula cdkFormulaIon = ion.addToFormula(cdkFormula);
+        // Mass is ok, so test other constraints
+        checkConstraints(resultingFormulas, cdkFormula, cdkFormulaIon, row, ion);
+      } catch (CloneNotSupportedException e) {
+        logger.log(Level.SEVERE, "Cannot copy cdk formula", e);
+        throw new MSDKRuntimeException(e);
+      }
     }
 
     return resultingFormulas;
   }
 
   private void checkConstraints(List<MolecularFormulaIdentity> resultingFormulas,
-      IMolecularFormula cdkFormula, PeakListRow peakListRow, IonType ionType) {
+      IMolecularFormula cdkFormulaNeutralM, IMolecularFormula cdkFormulaIon,
+      PeakListRow peakListRow, IonType ionType) {
     int charge = ionType.getCharge();
 
     // Check elemental ratios
     if (checkRatios) {
-      boolean check = ElementalHeuristicChecker.checkFormula(cdkFormula, ratiosParameters);
+      boolean check = ElementalHeuristicChecker.checkFormula(cdkFormulaNeutralM, ratiosParameters);
       if (!check) {
         return;
       }
     }
 
-    Double rdbeValue = RDBERestrictionChecker.calculateRDBE(cdkFormula);
-
+    Double rdbeValue = RDBERestrictionChecker.calculateRDBE(cdkFormulaNeutralM);
     // Check RDBE condition
     if (checkRDBE && (rdbeValue != null)) {
       boolean check = RDBERestrictionChecker.checkRDBE(rdbeValue, rdbeParameters);
@@ -229,26 +248,14 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
     IsotopePattern predictedIsotopePattern = null;
     Double isotopeScore = null;
     if ((checkIsotopes) && (detectedPattern != null)) {
-
-      String stringFormula = MolecularFormulaManipulator.getString(cdkFormula);
-      String adjustedFormula = FormulaUtils.ionizeFormula(stringFormula, ionType, charge);
-
-      final double isotopeNoiseLevel = isotopeParameters
-          .getParameter(IsotopePatternScoreParameters.isotopeNoiseLevel).getValue();
-
       final double detectedPatternHeight = detectedPattern.getHighestDataPoint().getIntensity();
-
       final double minPredictedAbundance = isotopeNoiseLevel / detectedPatternHeight;
 
-      predictedIsotopePattern = IsotopePatternCalculator.calculateIsotopePattern(adjustedFormula,
+      predictedIsotopePattern = IsotopePatternCalculator.calculateIsotopePattern(cdkFormulaIon,
           minPredictedAbundance, charge, ionType.getPolarity());
 
       isotopeScore = IsotopePatternScoreCalculator.getSimilarityScore(detectedPattern,
           predictedIsotopePattern, isotopeParameters);
-
-      final double minScore = isotopeParameters
-          .getParameter(IsotopePatternScoreParameters.isotopePatternScoreThreshold).getValue();
-
       if (isotopeScore < minScore) {
         return;
       }
@@ -262,7 +269,6 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
 
     if (checkMSMS && peakListRow.getBestFragmentation() != null) {
       Scan msmsScan = peakListRow.getBestFragmentation();
-      String massListName = msmsParameters.getParameter(MSMSScoreParameters.massList).getValue();
       MassList ms2MassList = msmsScan.getMassList(massListName);
       if (ms2MassList == null) {
         setStatus(TaskStatus.ERROR);
@@ -272,10 +278,7 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
         return;
       }
 
-      MSMSScore score = MSMSScoreCalculator.evaluateMSMS(cdkFormula, msmsScan, msmsParameters);
-
-      double minMSMSScore =
-          msmsParameters.getParameter(MSMSScoreParameters.msmsMinScore).getValue();
+      MSMSScore score = MSMSScoreCalculator.evaluateMSMS(cdkFormulaIon, msmsScan, msmsParameters);
 
       if (score != null) {
         msmsScore = score.getScore();
@@ -290,7 +293,7 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
     }
 
     // Create a new formula entry
-    final ResultFormula resultEntry = new ResultFormula(cdkFormula, predictedIsotopePattern,
+    final ResultFormula resultEntry = new ResultFormula(cdkFormulaNeutralM, predictedIsotopePattern,
         rdbeValue, isotopeScore, msmsScore, msmsAnnotations);
 
     // Add the new formula entry
