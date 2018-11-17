@@ -21,11 +21,13 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.ms
 import java.util.List;
 import java.util.function.Function;
 import java.util.logging.Logger;
+import com.google.common.util.concurrent.AtomicDouble;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.MZmineProject;
-import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.datamodel.impl.RowGroupList;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.MS2SimilarityProviderGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RMap;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
@@ -42,8 +44,7 @@ public class MS2SimilarityTask extends AbstractTask {
       list -> ScanMZDiffConverter.getOverlapOfAlignedDiff(list, 0, 1);
   public static Function<List<DataPoint[]>, Integer> SIZE_OVERLAP = List::size;
 
-  private int finishedRows;
-  private int totalRows;
+  private AtomicDouble stageProgress;
 
   private final MZmineProject project;
   private String massList;
@@ -55,24 +56,57 @@ public class MS2SimilarityTask extends AbstractTask {
 
   private R2RMap<R2RMS2Similarity> map;
 
+  private RowGroupList groups;
+
+  private MS2SimilarityProviderGroup group;
+
 
   /**
-   * Create the task.
+   * Create the task. to run on list of groups
    *
    * @param parameterSet the parameters.
    * @param list peak list.
    */
   public MS2SimilarityTask(final MZmineProject project, final ParameterSet parameterSet,
-      final PeakList peakLists) {
+      RowGroupList groups) {
     this.project = project;
+    // performed on groups
+    this.groups = groups;
 
-    finishedRows = 0;
-    totalRows = 0;
+    stageProgress = new AtomicDouble(0);
+  }
+
+  /**
+   * Create the task on set of rows
+   *
+   * @param parameterSet the parameters.
+   * @param list peak list.
+   */
+  public MS2SimilarityTask(final MZmineProject project, final ParameterSet parameterSet,
+      PeakListRow[] rows) {
+    this.project = project;
+    this.rows = rows;
+
+    stageProgress = new AtomicDouble(0);
+  }
+
+  /**
+   * Create the task on single group (the result is automatically set to the group
+   *
+   * @param parameterSet the parameters.
+   * @param list peak list.
+   */
+  public MS2SimilarityTask(final MZmineProject project, final ParameterSet parameterSet,
+      MS2SimilarityProviderGroup group) {
+    this.project = project;
+    this.group = group;
+
+    stageProgress = new AtomicDouble(0);
   }
 
   @Override
   public double getFinishedPercentage() {
-    return totalRows == 0 ? 0 : finishedRows / totalRows;
+    return stageProgress.get();
   }
 
   @Override
@@ -86,11 +120,17 @@ public class MS2SimilarityTask extends AbstractTask {
   }
 
   public void doCheck() {
-    map = doCheck(rows, massList, maxMassDiff, minMatch, minDP, maxDPForDiff);
+    if (group != null)
+      map = checkGroup(group, massList, maxMassDiff, minMatch, minDP, maxDPForDiff);
+    else if (rows != null)
+      map = checkRows(rows, massList, maxMassDiff, minMatch, minDP, maxDPForDiff);
+    else if (groups != null)
+      checkGroupList(this, stageProgress, groups, massList, maxMassDiff, minMatch, minDP,
+          maxDPForDiff);
   }
 
   /**
-   * Result
+   * Resulting map
    * 
    * @return
    */
@@ -98,7 +138,44 @@ public class MS2SimilarityTask extends AbstractTask {
     return map;
   }
 
-  public static R2RMap<R2RMS2Similarity> doCheck(PeakListRow[] rows, String massList,
+
+  public static void checkGroupList(AbstractTask task, AtomicDouble stageProgress,
+      RowGroupList groups, String massList, double maxMassDiff, int minMatch, int minDP,
+      int maxDPForDiff) {
+    LOG.info("Calc MS/MS similarity of groups");
+    final int size = groups.size();
+    groups.parallelStream().forEach(g -> {
+      if (!task.isCanceled()) {
+        if (g instanceof MS2SimilarityProviderGroup)
+          checkGroup((MS2SimilarityProviderGroup) g, massList, maxMassDiff, minMatch, minDP,
+              maxDPForDiff);
+        stageProgress.addAndGet(1d / size);
+      }
+    });
+  }
+
+  /**
+   * Checks for MS2 similarity of all rows in a group. the resulting map is set to the groups3
+   * 
+   * 
+   * @param g
+   * @param massList
+   * @param maxMassDiff
+   * @param minMatch
+   * @param minDP
+   * @param maxDPForDiff
+   * @return
+   */
+  public static R2RMap<R2RMS2Similarity> checkGroup(MS2SimilarityProviderGroup g, String massList,
+      double maxMassDiff, int minMatch, int minDP, int maxDPForDiff) {
+    R2RMap<R2RMS2Similarity> map = checkRows(g.toArray(new PeakListRow[g.size()]), massList,
+        maxMassDiff, minMatch, minDP, maxDPForDiff);
+
+    g.setMS2SimilarityMap(map);
+    return map;
+  }
+
+  public static R2RMap<R2RMS2Similarity> checkRows(PeakListRow[] rows, String massList,
       double maxMassDiff, int minMatch, int minDP, int maxDPForDiff) {
     R2RMap<R2RMS2Similarity> map = new R2RMap<>();
     for (int i = 0; i < rows.length - 1; i++) {

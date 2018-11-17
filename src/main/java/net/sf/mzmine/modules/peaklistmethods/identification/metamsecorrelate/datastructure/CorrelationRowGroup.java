@@ -6,10 +6,9 @@ import java.util.List;
 import org.jfree.chart.ChartColor;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
-import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.similarity.R2RMS2Similarity;
 
-public class CorrelationRowGroup extends RowGroup implements MS2SimilarityProviderGroup {
+public class CorrelationRowGroup extends MS2SimilarityProviderGroup {
   // colors
   public static final Paint[] colors = ChartColor.createDefaultPaintArray();
   // correlation data of all rows to this group
@@ -79,6 +78,7 @@ public class CorrelationRowGroup extends RowGroup implements MS2SimilarityProvid
     return ms2SimilarityMap;
   }
 
+  @Override
   public void setMS2SimilarityMap(R2RMap<R2RMS2Similarity> map) {
     this.ms2SimilarityMap = map;
   }
