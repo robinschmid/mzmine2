@@ -25,7 +25,7 @@ import net.sf.mzmine.util.FormulaUtils;
 
 public class MolecularFormulaIdentity {
 
-  private @Nonnull final IMolecularFormula cdkFormula;
+  private final @Nonnull IMolecularFormula cdkFormula;
 
   public MolecularFormulaIdentity(IMolecularFormula cdkFormula) {
     this.cdkFormula = cdkFormula;
@@ -73,4 +73,22 @@ public class MolecularFormulaIdentity {
       double fMSMSscore) {
     return getScore(neutralMass, ppmMax);
   }
+
+  /**
+   * 
+   * @return The isotope score or null
+   */
+  public Double getIsotopeScore() {
+    return null;
+  }
+
+  /**
+   * 
+   * @return the msms score or null
+   */
+  public Double getMSMSScore() {
+    return null;
+  }
+
+
 }

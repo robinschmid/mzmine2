@@ -53,10 +53,12 @@ public class ResultFormula extends MolecularFormulaIdentity {
     return predictedIsotopePattern;
   }
 
+  @Override
   public Double getIsotopeScore() {
     return isotopeScore;
   }
 
+  @Override
   public Double getMSMSScore() {
     return msmsScore;
   }

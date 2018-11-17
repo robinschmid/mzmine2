@@ -54,7 +54,8 @@ public class PeakListTableColumnModel extends DefaultTableColumnModel implements
 
   private static final Font editFont = new Font("SansSerif", Font.PLAIN, 10);
 
-  private FormattedCellRenderer mzRenderer, rtRenderer, intensityRenderer;
+  private FormattedCellRenderer mzRenderer, rtRenderer, scoreRenderer, ppmRenderer,
+      intensityRenderer;
   private TableCellRenderer peakShapeRenderer, identityRenderer, peakStatusRenderer,
       datapointsRenderer, qcRenderer;
   private DefaultTableCellRenderer defaultRenderer, defaultRendererLeft;
@@ -79,6 +80,8 @@ public class PeakListTableColumnModel extends DefaultTableColumnModel implements
     header.addMouseListener(this);
 
     // prepare formatters
+    NumberFormat scoreFormat = new DecimalFormat("0.000");
+    NumberFormat ppmFormat = new DecimalFormat("#0.0");
     NumberFormat mzFormat = MZmineCore.getConfiguration().getMZFormat();
     NumberFormat rtFormat = MZmineCore.getConfiguration().getRTFormat();
     NumberFormat intensityFormat = MZmineCore.getConfiguration().getIntensityFormat();
@@ -86,6 +89,8 @@ public class PeakListTableColumnModel extends DefaultTableColumnModel implements
     // prepare cell renderers
     mzRenderer = new FormattedCellRenderer(mzFormat);
     rtRenderer = new FormattedCellRenderer(rtFormat);
+    scoreRenderer = new FormattedCellRenderer(scoreFormat);
+    ppmRenderer = new FormattedCellRenderer(ppmFormat);
     intensityRenderer = new FormattedCellRenderer(intensityFormat);
     peakShapeRenderer = new PeakShapeCellRenderer(peakList, parameters);
     identityRenderer = new CompoundIdentityCellRenderer();
@@ -157,6 +162,7 @@ public class PeakListTableColumnModel extends DefaultTableColumnModel implements
       switch (commonColumn) {
         case AVERAGEMZ:
         case NEUTRAL_MASS:
+        case ION_FORMULA_MASS:
           newColumn.setCellRenderer(mzRenderer);
           break;
         case AVERAGERT:
@@ -171,6 +177,13 @@ public class PeakListTableColumnModel extends DefaultTableColumnModel implements
           break;
         case PEAKSHAPE:
           newColumn.setCellRenderer(peakShapeRenderer);
+          break;
+        case ION_FORMULA_ISOTOPE_SCORE:
+        case ION_FORMULA_MSM_SCORE:
+          newColumn.setCellRenderer(scoreRenderer);
+          break;
+        case ION_FORMULA_PPM:
+          newColumn.setCellRenderer(ppmRenderer);
           break;
         default:
           newColumn.setCellRenderer(defaultRenderer);

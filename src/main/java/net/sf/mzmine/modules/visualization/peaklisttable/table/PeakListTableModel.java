@@ -112,6 +112,23 @@ public class PeakListTableModel extends AbstractTableModel {
         case ION_FORMULA:
           return ion != null && ion.getBestMolFormula() != null ? ion.getBestMolFormula().toString()
               : "";
+        case ION_FORMULA_MASS:
+          return ion != null && ion.getBestMolFormula() != null
+              ? ion.getBestMolFormula().getExactMass()
+              : 0;
+        case ION_FORMULA_PPM:
+          return ion != null && ion.getBestMolFormula() != null ? ion.getBestMolFormula()
+              .getPpmDiff(ion.getIonType().getMass(peakListRow.getAverageMZ())) : 0;
+        case ION_FORMULA_ISOTOPE_SCORE:
+          return ion != null && ion.getBestMolFormula() != null
+              && ion.getBestMolFormula().getIsotopeScore() != null
+                  ? ion.getBestMolFormula().getIsotopeScore()
+                  : -1;
+        case ION_FORMULA_MSM_SCORE:
+          return ion != null && ion.getBestMolFormula() != null
+              && ion.getBestMolFormula().getMSMSScore() != null
+                  ? ion.getBestMolFormula().getMSMSScore()
+                  : -1;
         case NEUTRAL_FORMULA:
           return ion != null && ion.getNetwork() != null
               && ion.getNetwork().getBestMolFormula() != null ? //
