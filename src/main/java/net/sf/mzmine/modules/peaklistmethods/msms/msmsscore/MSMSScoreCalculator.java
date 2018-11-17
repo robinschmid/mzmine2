@@ -20,7 +20,6 @@ package net.sf.mzmine.modules.peaklistmethods.msms.msmsscore;
 
 import java.util.Hashtable;
 import java.util.Map;
-
 import org.openscience.cdk.formula.MolecularFormulaGenerator;
 import org.openscience.cdk.formula.MolecularFormulaRange;
 import org.openscience.cdk.interfaces.IChemObjectBuilder;
@@ -28,9 +27,7 @@ import org.openscience.cdk.interfaces.IIsotope;
 import org.openscience.cdk.interfaces.IMolecularFormula;
 import org.openscience.cdk.silent.SilentChemObjectBuilder;
 import org.openscience.cdk.tools.manipulator.MolecularFormulaManipulator;
-
 import com.google.common.collect.Range;
-
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.MassList;
 import net.sf.mzmine.datamodel.Scan;
@@ -71,6 +68,12 @@ public class MSMSScoreCalculator {
     int totalMSMSpeaks = 0, interpretedMSMSpeaks = 0;
     Map<DataPoint, String> msmsAnnotations = new Hashtable<DataPoint, String>();
 
+    // If getPrecursorCharge() returns 0, it means charge is unknown. In
+    // that case let's assume charge 1
+    int precursorCharge = msmsScan.getPrecursorCharge();
+    if (precursorCharge == 0)
+      precursorCharge = 1;
+
     msmsCycle: for (DataPoint dp : msmsIons) {
 
       // Check if this is an isotope
@@ -85,11 +88,6 @@ public class MSMSScoreCalculator {
         }
       }
 
-      // If getPrecursorCharge() returns 0, it means charge is unknown. In
-      // that case let's assume charge 1
-      int precursorCharge = msmsScan.getPrecursorCharge();
-      if (precursorCharge == 0)
-        precursorCharge = 1;
 
       // We don't know the charge of the fragment, so we will simply
       // assume 1

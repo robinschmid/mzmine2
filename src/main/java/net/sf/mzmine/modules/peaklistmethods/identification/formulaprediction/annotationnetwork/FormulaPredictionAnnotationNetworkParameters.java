@@ -24,6 +24,7 @@ import net.sf.mzmine.modules.peaklistmethods.isotopes.isotopepatternscore.Isotop
 import net.sf.mzmine.modules.peaklistmethods.msms.msmsscore.MSMSScoreParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
+import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
@@ -33,6 +34,9 @@ public class FormulaPredictionAnnotationNetworkParameters extends SimpleParamete
   public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter();
 
   public static final MZToleranceParameter mzTolerance = new MZToleranceParameter();
+
+  public static final DoubleParameter ppmOffset = new DoubleParameter("Center by ppm offset",
+      "Linear correction to mass difference offset. If all correct results are shifted by +4 ppm use -4 ppm to shift these molecular formulae to the center");
 
   public static final ElementsParameter elements =
       new ElementsParameter("Elements", "Elements and ranges");
@@ -60,8 +64,9 @@ public class FormulaPredictionAnnotationNetworkParameters extends SimpleParamete
 
   public FormulaPredictionAnnotationNetworkParameters(boolean isSub) {
     super(isSub ? //
-        new Parameter[] {elements, elementalRatios, rdbeRestrictions, isotopeFilter, msmsFilter}
-        : new Parameter[] {PEAK_LISTS, mzTolerance, elements, elementalRatios, rdbeRestrictions,
-            isotopeFilter, msmsFilter});
+        new Parameter[] {ppmOffset, elements, elementalRatios, rdbeRestrictions, isotopeFilter,
+            msmsFilter}
+        : new Parameter[] {PEAK_LISTS, mzTolerance, ppmOffset, elements, elementalRatios,
+            rdbeRestrictions, isotopeFilter, msmsFilter});
   }
 }

@@ -32,12 +32,10 @@ import org.openscience.cdk.silent.SilentChemObjectBuilder;
 import org.openscience.cdk.tools.manipulator.MolecularFormulaManipulator;
 import com.google.common.collect.Range;
 import net.sf.mzmine.datamodel.DataPoint;
-import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.IsotopePattern;
 import net.sf.mzmine.datamodel.MassList;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
-import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
 import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
@@ -73,6 +71,9 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
   private String message;
   private int totalRows;
   private AtomicInteger finishedNets = new AtomicInteger(0);
+  // correct values by ppm offset to shift correct molecular formulae to the center
+  // usefull if all exact masses are shifted by 4 ppm enter -4 ppm
+  private double ppmOffset;
 
   /**
    *
@@ -93,6 +94,8 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
     elementCounts =
         parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.elements).getValue();
 
+    ppmOffset =
+        parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.ppmOffset).getValue();
     checkIsotopes = parameters
         .getParameter(FormulaPredictionAnnotationNetworkParameters.isotopeFilter).getValue();
     isotopeParameters =
@@ -164,7 +167,8 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
           IonIdentity ion = e.getValue();
           if (!ion.getIonType().isUndefinedAdduct()) {
             List<MolecularFormulaIdentity> list = predictFormulas(r, ion.getIonType());
-            ion.setMolFormulas(list);
+            if (!list.isEmpty())
+              ion.setMolFormulas(list);
           }
         }
         // find best formula for neutral mol of network
@@ -179,6 +183,8 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
   private List<MolecularFormulaIdentity> predictFormulas(PeakListRow row, IonType ion) {
     List<MolecularFormulaIdentity> resultingFormulas = new ArrayList<>();
     this.searchedMass = ion.getMass(row.getAverageMZ());
+    // correct by ppm offset
+    searchedMass += searchedMass * ppmOffset / 1E6;
 
     massRange = mzTolerance.getToleranceRange(searchedMass);
 
@@ -250,19 +256,18 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
 
     // MS/MS evaluation is slowest, so let's do it last
     Double msmsScore = null;
-    Feature bestPeak = peakListRow.getBestPeak();
-    RawDataFile dataFile = bestPeak.getDataFile();
     Map<DataPoint, String> msmsAnnotations = null;
-    int msmsScanNumber = bestPeak.getMostIntenseFragmentScanNumber();
 
-    if ((checkMSMS) && (msmsScanNumber > 0)) {
-      Scan msmsScan = dataFile.getScan(msmsScanNumber);
+
+    if (checkMSMS && peakListRow.getBestFragmentation() != null) {
+      Scan msmsScan = peakListRow.getBestFragmentation();
       String massListName = msmsParameters.getParameter(MSMSScoreParameters.massList).getValue();
       MassList ms2MassList = msmsScan.getMassList(massListName);
       if (ms2MassList == null) {
         setStatus(TaskStatus.ERROR);
-        setErrorMessage("The MS/MS scan #" + msmsScanNumber + " in file " + dataFile.getName()
-            + " does not have a mass list called '" + massListName + "'");
+        setErrorMessage("The MS/MS scan #" + msmsScan.getScanNumber() + " in file "
+            + msmsScan.getDataFile().getName() + " does not have a mass list called '"
+            + massListName + "'");
         return;
       }
 
