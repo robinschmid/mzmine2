@@ -19,7 +19,9 @@
 package net.sf.mzmine.util;
 
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.logging.Logger;
@@ -33,12 +35,38 @@ import org.openscience.cdk.interfaces.IMolecularFormula;
 import org.openscience.cdk.silent.SilentChemObjectBuilder;
 import org.openscience.cdk.tools.manipulator.MolecularFormulaManipulator;
 import net.sf.mzmine.datamodel.IonizationType;
+import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
 import net.sf.mzmine.datamodel.identities.iontype.IonType;
 
 public class FormulaUtils {
 
   private static Logger logger = Logger.getLogger(FormulaUtils.class.getName());
   private static final double electronMass = 0.00054857990946;
+
+  /**
+   * Sort all molecular formulas by score of ppm distance, isotope sccore and msms score (with
+   * weighting). Best will be at first position
+   * 
+   * @param list
+   * @param neutralMass
+   * @param ppmMax
+   * @param weightIsotopeScore
+   * @param weightMSMSscore
+   */
+  public static void sortFormulaList(List<MolecularFormulaIdentity> list, double neutralMass,
+      double ppmMax, double weightIsotopeScore, double weightMSMSscore) {
+    if (list == null)
+      return;
+    list.sort(new Comparator<MolecularFormulaIdentity>() {
+      @Override
+      public int compare(MolecularFormulaIdentity a, MolecularFormulaIdentity b) {
+        double scoreA = a.getScore(neutralMass, ppmMax, weightIsotopeScore, weightMSMSscore);
+        double scoreB = b.getScore(neutralMass, ppmMax, weightIsotopeScore, weightMSMSscore);
+        // best to position 0 (therefore change A B)
+        return Double.compare(scoreB, scoreA);
+      }
+    });
+  }
 
   /**
    * Returns the exact mass of an element. Mass is obtained from the CDK library.

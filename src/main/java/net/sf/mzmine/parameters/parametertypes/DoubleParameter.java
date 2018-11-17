@@ -20,11 +20,8 @@ package net.sf.mzmine.parameters.parametertypes;
 
 import java.text.NumberFormat;
 import java.util.Collection;
-
 import javax.swing.BorderFactory;
-
 import org.w3c.dom.Element;
-
 import net.sf.mzmine.parameters.UserParameter;
 
 /**
@@ -49,6 +46,10 @@ public class DoubleParameter implements UserParameter<Double, DoubleComponent> {
   public DoubleParameter(final String aName, final String aDescription) {
 
     this(aName, aDescription, NumberFormat.getNumberInstance(), null, null, null);
+  }
+
+  public DoubleParameter(final String aName, final String aDescription, Double defaultValue) {
+    this(aName, aDescription, NumberFormat.getNumberInstance(), defaultValue, null, null);
   }
 
   public DoubleParameter(final String aName, final String aDescription,

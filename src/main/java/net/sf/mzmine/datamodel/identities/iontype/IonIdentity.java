@@ -25,7 +25,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
 import net.sf.mzmine.datamodel.identities.ms2.MSMSIdentityList;
@@ -104,14 +103,13 @@ public class IonIdentity {
    * @return equal identity or null
    */
   public static IonIdentity getAdductEqualIdentity(PeakListRow row, IonType adduct) {
+    if (!row.hasIonIdentity())
+      return null;
     // is old?
-    for (PeakIdentity id : row.getPeakIdentities()) {
-      if (IonIdentity.class.isInstance(id)) {
-        IonIdentity a = (IonIdentity) id;
-        // equals? add row2 to partners
-        if (a.equalsAdduct(adduct)) {
-          return a;
-        }
+    for (IonIdentity a : row.getIonIdentities()) {
+      // equals? add row2 to partners
+      if (a.equalsAdduct(adduct)) {
+        return a;
       }
     }
     return null;

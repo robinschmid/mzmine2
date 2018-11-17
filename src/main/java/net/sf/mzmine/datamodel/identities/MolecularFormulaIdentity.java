@@ -18,13 +18,14 @@
 
 package net.sf.mzmine.datamodel.identities;
 
+import javax.annotation.Nonnull;
 import org.openscience.cdk.interfaces.IMolecularFormula;
 import org.openscience.cdk.tools.manipulator.MolecularFormulaManipulator;
 import net.sf.mzmine.util.FormulaUtils;
 
 public class MolecularFormulaIdentity {
 
-  private final IMolecularFormula cdkFormula;
+  private @Nonnull final IMolecularFormula cdkFormula;
 
   public MolecularFormulaIdentity(IMolecularFormula cdkFormula) {
     this.cdkFormula = cdkFormula;
@@ -50,8 +51,26 @@ public class MolecularFormulaIdentity {
     return MolecularFormulaManipulator.getTotalExactMass(cdkFormula);
   }
 
+
+
+  public double getPpmDiff(double neutralMass) {
+    double exact = getExactMass();
+    return (neutralMass - exact) / exact * 1E6;
+  }
+
+  public double getScore(double neutralMass, double ppmMax) {
+    if (ppmMax <= 0)
+      ppmMax = 50;
+    return (ppmMax - getPpmDiff(neutralMass)) / ppmMax;
+  }
+
   @Override
   public String toString() {
     return getFormulaAsString();
+  }
+
+  public double getScore(double neutralMass, double ppmMax, double fIsotopeScore,
+      double fMSMSscore) {
+    return getScore(neutralMass, ppmMax);
   }
 }

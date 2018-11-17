@@ -61,4 +61,28 @@ public class ResultFormula extends MolecularFormulaIdentity {
     return msmsScore;
   }
 
+  @Override
+  public double getScore(double neutralMass, double ppmMax) {
+    return getScore(neutralMass, ppmMax, 1, 1);
+  }
+
+  @Override
+  public double getScore(double neutralMass, double ppmMax, double fIsotopeScore,
+      double fMSMSscore) {
+    double ppmScore = super.getScore(neutralMass, ppmMax);
+    double totalScore = ppmScore;
+    double div = 1;
+    if (isotopeScore != null) {
+      totalScore += isotopeScore * fIsotopeScore;
+      div += fIsotopeScore;
+    }
+    if (msmsScore != null) {
+      totalScore += msmsScore * fMSMSscore;
+      div += fMSMSscore;
+    }
+
+    return totalScore / div;
+  }
+
+
 }

@@ -49,6 +49,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.customdbsearch.Custo
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.annotationnetwork.FormulaPredictionAnnotationNetworkModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.peaklist.FormulaPredictionPeakListModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.FormulaPredictionModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.sort.FormulaSortModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.fragmentsearch.FragmentSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.lipididentification.LipidSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.MetaMSEcorrelateModule;
@@ -192,12 +193,14 @@ public class MZmineModulesList {
       SammonsPlotModule.class, ClusteringModule.class, HeatMapModule.class,
 
       // Identification
-      CustomDBSearchModule.class, FormulaPredictionModule.class, FragmentSearchModule.class,
-      AdductSearchModule.class, ComplexSearchModule.class, OnlineDBSearchModule.class,
-      LipidSearchModule.class, CameraSearchModule.class, NistMsSearchModule.class,
-      FormulaPredictionPeakListModule.class, FormulaPredictionAnnotationNetworkModule.class,
-      Ms2SearchModule.class, SiriusProcessingModule.class, MetaMSEcorrelateModule.class,
-      SimpleMetaMSEcorrelateModule.class, MSAnnotationModule.class, MS2SimilarityModule.class,
+      FormulaPredictionModule.class, FormulaPredictionPeakListModule.class,
+      FormulaPredictionAnnotationNetworkModule.class, FormulaSortModule.class,
+      // annotation
+      MetaMSEcorrelateModule.class, SimpleMetaMSEcorrelateModule.class, MSAnnotationModule.class,
+      CustomDBSearchModule.class, FragmentSearchModule.class, AdductSearchModule.class,
+      ComplexSearchModule.class, OnlineDBSearchModule.class, LipidSearchModule.class,
+      CameraSearchModule.class, NistMsSearchModule.class, Ms2SearchModule.class,
+      SiriusProcessingModule.class, MS2SimilarityModule.class,
 
       // Visualizers
       TICVisualizerModule.class, SpectraVisualizerModule.class, TwoDVisualizerModule.class,

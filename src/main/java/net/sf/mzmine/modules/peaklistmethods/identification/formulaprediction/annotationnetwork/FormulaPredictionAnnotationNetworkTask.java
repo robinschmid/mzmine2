@@ -161,6 +161,7 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
 
     // parallel
     Arrays.stream(nets).forEach(net -> {
+      message = "Formula prediction on network " + net.getID();
       if (!isCanceled()) {
         for (Entry<PeakListRow, IonIdentity> e : net.entrySet()) {
           PeakListRow r = e.getKey();
