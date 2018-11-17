@@ -29,6 +29,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msa
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.AnnotationRefinementParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.MSAnnMSMSCheckParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.similarity.MS2SimilarityParameters;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
@@ -47,6 +48,8 @@ public class SimpleMetaMSEcorrelateTask extends MetaMSEcorrelateTask {
     this.peakList = peakList;
     parameters = parameterSet;
 
+    String massListMS2 =
+        parameterSet.getParameter(SimpleMetaMSEcorrelateParameters.MS2_MASSLISTS).getValue();
     // sample groups parameter
     useGroups =
         parameters.getParameter(SimpleMetaMSEcorrelateParameters.GROUPSPARAMETER).getValue();
@@ -82,6 +85,8 @@ public class SimpleMetaMSEcorrelateTask extends MetaMSEcorrelateTask {
     // ADDUCTS
     MZTolerance mzTolerance =
         parameterSet.getParameter(SimpleMetaMSEcorrelateParameters.MZ_TOLERANCE).getValue();
+    MZTolerance mzTolMS2 =
+        parameterSet.getParameter(SimpleMetaMSEcorrelateParameters.MZ_TOLERANCE_MS2).getValue();
 
     searchAdducts =
         parameterSet.getParameter(SimpleMetaMSEcorrelateParameters.ADDUCT_LIBRARY).getValue();
@@ -96,18 +101,28 @@ public class SimpleMetaMSEcorrelateTask extends MetaMSEcorrelateTask {
 
     annotateOnlyCorrelated = true;
 
+    // MS2 similarity
+    checkMS2Similarity =
+        parameterSet.getParameter(SimpleMetaMSEcorrelateParameters.MS2_SIMILARITY_CHECK).getValue();
+
+    ms2SimilarityCheckParam = new MS2SimilarityParameters();
+    ms2SimilarityCheckParam.getParameter(MS2SimilarityParameters.MASS_LIST).setValue(massListMS2);
+    ms2SimilarityCheckParam.getParameter(MS2SimilarityParameters.MAX_DP_FOR_DIFF).setValue(25);
+    ms2SimilarityCheckParam.getParameter(MS2SimilarityParameters.MIN_DP).setValue(3);
+    ms2SimilarityCheckParam.getParameter(MS2SimilarityParameters.MIN_MATCH).setValue(3);
+    ms2SimilarityCheckParam.getParameter(MS2SimilarityParameters.MIN_HEIGHT).setValue(0d);
+    ms2SimilarityCheckParam.getParameter(MS2SimilarityParameters.MZ_TOLERANCE).setValue(mzTolMS2);
+
     // MSMS refinement
     doMSMSchecks = true;
     msmsChecks = new MSAnnMSMSCheckParameters();
     msmsChecks.getParameter(MSAnnMSMSCheckParameters.CHECK_MULTIMERS).setValue(true);
     msmsChecks.getParameter(MSAnnMSMSCheckParameters.CHECK_NEUTRALLOSSES).setValue(true);
     // set mass list MS2
-    msmsChecks.getParameter(MSAnnMSMSCheckParameters.MASS_LIST).setValue(
-        parameterSet.getParameter(SimpleMetaMSEcorrelateParameters.MS2_MASSLISTS).getValue());
+    msmsChecks.getParameter(MSAnnMSMSCheckParameters.MASS_LIST).setValue(massListMS2);
     msmsChecks.getParameter(MSAnnMSMSCheckParameters.MIN_HEIGHT).setValue(
         parameterSet.getParameter(SimpleMetaMSEcorrelateParameters.NOISE_LEVEL_MS2).getValue());
-    msmsChecks.getParameter(MSAnnMSMSCheckParameters.MZ_TOLERANCE).setValue(
-        parameterSet.getParameter(SimpleMetaMSEcorrelateParameters.MZ_TOLERANCE_MS2).getValue());
+    msmsChecks.getParameter(MSAnnMSMSCheckParameters.MZ_TOLERANCE).setValue(mzTolMS2);
 
 
     performAnnotationRefinement = true;

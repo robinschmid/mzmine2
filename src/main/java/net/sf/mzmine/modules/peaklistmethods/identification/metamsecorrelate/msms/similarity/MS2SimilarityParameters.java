@@ -71,7 +71,7 @@ public class MS2SimilarityParameters extends SimpleParameterSet {
 
   public MS2SimilarityParameters(boolean isSub) {
     super(isSub ? // no peak list and rt tolerance
-        new Parameter[] {MASS_LIST, MZ_TOLERANCE, MIN_HEIGHT, MIN_DP, MIN_MATCH, MAX_DP_FOR_DIFF}
+        new Parameter[] {MIN_HEIGHT, MIN_DP, MIN_MATCH, MAX_DP_FOR_DIFF}
         : new Parameter[] {PEAK_LISTS, MASS_LIST, MZ_TOLERANCE, MIN_HEIGHT, MIN_DP, MIN_MATCH,
             MAX_DP_FOR_DIFF});
   }

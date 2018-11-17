@@ -69,8 +69,10 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msa
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.AnnotationRefinementTask;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.MSAnnMSMSCheckParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.MSAnnMSMSCheckTask;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.similarity.MS2SimilarityParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.similarity.MS2SimilarityTask;
 import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
@@ -120,6 +122,10 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   // MSMS refinement
   protected boolean doMSMSchecks;
   protected MSAnnMSMSCheckParameters msmsChecks;
+
+  // MS2 similarity
+  protected MS2SimilarityParameters ms2SimilarityCheckParam;
+
 
   // GROUP and MIN SAMPLES FILTER
   protected boolean useGroups;
@@ -234,6 +240,10 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         .getEmbeddedParameters();
 
     // END OF ADDUCTS AND REFINEMENT
+    checkMS2Similarity =
+        parameterSet.getParameter(MetaMSEcorrelateParameters.MS2_SIMILARITY).getValue();
+    ms2SimilarityCheckParam = parameterSet.getParameter(MetaMSEcorrelateParameters.MS2_SIMILARITY)
+        .getEmbeddedParameters();
 
     // intensity correlation across samples
     useHeightCorrFilter =
@@ -320,16 +330,16 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         groups.setGroupsToAllRows();
 
         // do MSMS comparison of group
-        double maxDiff = msmsChecks.getParameter(MSAnnMSMSCheckParameters.MZ_TOLERANCE).getValue()
-            .getMzTolerance();
-        maxDiff = Math.min(maxDiff, 0.0015);
+        MZTolerance maxDiff =
+            msmsChecks.getParameter(MSAnnMSMSCheckParameters.MZ_TOLERANCE).getValue();
         setStage(Stage.MS2_SIMILARITY);
 
-        if (checkMS2Similarity)
-          MS2SimilarityTask.checkGroupList(this, stageProgress, groups,
-              msmsChecks.getParameter(MSAnnMSMSCheckParameters.MASS_LIST).getValue(), maxDiff, 3, 3,
-              25);
 
+        if (checkMS2Similarity) {
+          // calc MS2 similarity for later visualisation
+          MS2SimilarityTask ms2Sim = new MS2SimilarityTask(ms2SimilarityCheckParam);
+          ms2Sim.checkGroupList(this, stageProgress, groups);
+        }
 
         // annotation at groups stage
         if (searchAdducts && annotateOnlyCorrelated) {

@@ -142,6 +142,11 @@ public class MS2SimilarityTask extends AbstractTask {
   }
 
 
+  public void checkGroupList(AbstractTask task, AtomicDouble stageProgress, RowGroupList groups) {
+    checkGroupList(task, stageProgress, groups, massList, mzTolerance, minHeight, minDP, minMatch,
+        maxDPForDiff);
+  }
+
   public static void checkGroupList(AbstractTask task, AtomicDouble stageProgress,
       RowGroupList groups, String massList, MZTolerance mzTolerance, double minHeight, int minDP,
       int minMatch, int maxDPForDiff) {
@@ -155,6 +160,13 @@ public class MS2SimilarityTask extends AbstractTask {
         stageProgress.addAndGet(1d / size);
       }
     });
+  }
+
+  /**
+   * Checks for MS2 similarity of all rows in a group. the resulting map is set to the groups3
+   */
+  public R2RMap<R2RMS2Similarity> checkGroup(MS2SimilarityProviderGroup g) {
+    return checkGroup(g, massList, mzTolerance, minHeight, minDP, minMatch, maxDPForDiff);
   }
 
   /**

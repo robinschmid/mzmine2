@@ -112,6 +112,10 @@ public class SimpleMetaMSEcorrelateParameters extends SimpleParameterSet {
           + "different from zero ",
       true);
 
+  public static final BooleanParameter MS2_SIMILARITY_CHECK = new BooleanParameter(
+      "MS2 similarity check", "Checks MS2 similarity of all rows in a group ", false);
+
+
   // #####################################################################################
   // Intensity profile correlation
   // intra group comparison
@@ -139,6 +143,8 @@ public class SimpleMetaMSEcorrelateParameters extends SimpleParameterSet {
         MIN_FSHAPE_CORR,
         // height correlation
         FILTER_FEATURE_HEIGHT_CORR,
+        // check for MS2 similarity
+        MS2_SIMILARITY_CHECK,
         // adducts
         ADDUCT_LIBRARY,
         // suffix or auto suffix

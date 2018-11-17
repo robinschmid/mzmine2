@@ -26,6 +26,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.cor
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationParameters.Setup;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.similarity.MS2SimilarityParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.UserParameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
@@ -111,6 +112,10 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
   public static final OptionalParameter<StringParameter> SUFFIX = new OptionalParameter<>(
       new StringParameter("Suffix (or auto)", "Select suffix or deselect for auto suffix"), false);
 
+  public static final OptionalModuleParameter<MS2SimilarityParameters> MS2_SIMILARITY =
+      new OptionalModuleParameter<>("MS2 similarity check",
+          "MS2 similarity check on all rows of the same group", new MS2SimilarityParameters(true),
+          false);
 
   // Constructor
   public MetaMSEcorrelateParameters() {
