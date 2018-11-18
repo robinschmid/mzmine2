@@ -46,6 +46,8 @@ import net.sf.mzmine.datamodel.identities.iontype.MSAnnotationNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.ResultFormula;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.restrictions.elements.ElementalHeuristicChecker;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.restrictions.rdbe.RDBERestrictionChecker;
+import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.sort.FormulaSortParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.sort.FormulaSortTask;
 import net.sf.mzmine.modules.peaklistmethods.isotopes.isotopepatternscore.IsotopePatternScoreCalculator;
 import net.sf.mzmine.modules.peaklistmethods.isotopes.isotopepatternscore.IsotopePatternScoreParameters;
 import net.sf.mzmine.modules.peaklistmethods.isotopes.isotopeprediction.IsotopePatternCalculator;
@@ -78,6 +80,8 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
   private double minScore;
   private String massListName;
   private double minMSMSScore;
+  private boolean sortResults;
+  private FormulaSortTask sorter;
 
   /**
    *
@@ -132,6 +136,14 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
     massListName = msmsParameters.getParameter(MSMSScoreParameters.massList).getValue();
     minMSMSScore = msmsParameters.getParameter(MSMSScoreParameters.msmsMinScore).getValue();
 
+    sortResults =
+        parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.sorting).getValue();
+    if (sortResults) {
+      FormulaSortParameters sortingParam =
+          parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.sorting)
+              .getEmbeddedParameters();
+      sorter = new FormulaSortTask(sortingParam);
+    }
     message = "Formula Prediction (MS annotation networks)";
   }
 
@@ -180,8 +192,11 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
           IonIdentity ion = e.getValue();
           if (!ion.getIonType().isUndefinedAdduct()) {
             List<MolecularFormulaIdentity> list = predictFormulas(r, ion.getIonType());
-            if (!list.isEmpty())
+            if (!list.isEmpty()) {
+              if (sortResults && sorter != null)
+                sorter.sort(list, ion.getIonType().getMass(r.getAverageMZ()));
               ion.setMolFormulas(list);
+            }
           }
         }
         // find best formula for neutral mol of network

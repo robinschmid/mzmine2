@@ -20,6 +20,7 @@ package net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.a
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.elements.ElementsParameter;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.restrictions.elements.ElementalHeuristicParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.restrictions.rdbe.RDBERestrictionParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.sort.FormulaSortParameters;
 import net.sf.mzmine.modules.peaklistmethods.isotopes.isotopepatternscore.IsotopePatternScoreParameters;
 import net.sf.mzmine.modules.peaklistmethods.msms.msmsscore.MSMSScoreParameters;
 import net.sf.mzmine.parameters.Parameter;
@@ -37,6 +38,10 @@ public class FormulaPredictionAnnotationNetworkParameters extends SimpleParamete
 
   public static final DoubleParameter ppmOffset = new DoubleParameter("Center by ppm offset",
       "Linear correction to mass difference offset. If all correct results are shifted by +4 ppm use -4 ppm to shift these molecular formulae to the center");
+
+  public static final OptionalModuleParameter<FormulaSortParameters> sorting =
+      new OptionalModuleParameter<FormulaSortParameters>("Sorting",
+          "Apply sorting to all resulting lists", new FormulaSortParameters(true));
 
   public static final ElementsParameter elements =
       new ElementsParameter("Elements", "Elements and ranges");
@@ -64,9 +69,9 @@ public class FormulaPredictionAnnotationNetworkParameters extends SimpleParamete
 
   public FormulaPredictionAnnotationNetworkParameters(boolean isSub) {
     super(isSub ? //
-        new Parameter[] {ppmOffset, elements, elementalRatios, rdbeRestrictions, isotopeFilter,
-            msmsFilter}
-        : new Parameter[] {PEAK_LISTS, mzTolerance, ppmOffset, elements, elementalRatios,
+        new Parameter[] {ppmOffset, sorting, elements, elementalRatios, rdbeRestrictions,
+            isotopeFilter, msmsFilter}
+        : new Parameter[] {PEAK_LISTS, mzTolerance, ppmOffset, sorting, elements, elementalRatios,
             rdbeRestrictions, isotopeFilter, msmsFilter});
   }
 }

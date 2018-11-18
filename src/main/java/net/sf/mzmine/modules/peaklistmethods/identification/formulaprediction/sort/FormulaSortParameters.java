@@ -37,6 +37,11 @@ public class FormulaSortParameters extends SimpleParameterSet {
 
 
   public FormulaSortParameters() {
-    super(new Parameter[] {PEAK_LISTS, MAX_PPM_WEIGHT, ISOTOPE_SCORE_WEIGHT, MSMS_SCORE_WEIGHT});
+    this(false);
+  }
+
+  public FormulaSortParameters(boolean isSub) {
+    super(isSub ? new Parameter[] {MAX_PPM_WEIGHT, ISOTOPE_SCORE_WEIGHT, MSMS_SCORE_WEIGHT}
+        : new Parameter[] {PEAK_LISTS, MAX_PPM_WEIGHT, ISOTOPE_SCORE_WEIGHT, MSMS_SCORE_WEIGHT});
   }
 }

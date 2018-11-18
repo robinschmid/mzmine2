@@ -46,18 +46,16 @@ public class FormulaSortTask extends AbstractTask {
    * @param peakListRow
    * @param peak
    */
-  FormulaSortTask(PeakList peakList, ParameterSet parameters) {
-
-    /*
-     * searchedMass = parameters.getParameter(
-     * FormulaPredictionPeakListParameters.neutralMass).getValue();
-     */
-    this.peakList = peakList;
+  public FormulaSortTask(ParameterSet parameters) {
     weightIsotopeScore =
         parameters.getParameter(FormulaSortParameters.ISOTOPE_SCORE_WEIGHT).getValue();
     ppmMaxWeight = parameters.getParameter(FormulaSortParameters.MAX_PPM_WEIGHT).getValue();
     weightMSMSscore = parameters.getParameter(FormulaSortParameters.MSMS_SCORE_WEIGHT).getValue();
+  }
 
+  public FormulaSortTask(PeakList peakList, ParameterSet parameters) {
+    this(parameters);
+    this.peakList = peakList;
     message = "Sorting formula lists of peak list " + peakList.getName();
   }
 
@@ -103,7 +101,7 @@ public class FormulaSortTask extends AbstractTask {
     setStatus(TaskStatus.FINISHED);
   }
 
-  private void sort(List<MolecularFormulaIdentity> list, double neutralMass) {
+  public void sort(List<MolecularFormulaIdentity> list, double neutralMass) {
     FormulaUtils.sortFormulaList(list, neutralMass, ppmMaxWeight, weightIsotopeScore,
         weightMSMSscore);
   }
