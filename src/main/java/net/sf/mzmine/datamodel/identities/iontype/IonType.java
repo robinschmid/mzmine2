@@ -7,9 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import org.openscience.cdk.interfaces.IAtomContainer;
 import org.openscience.cdk.interfaces.IMolecularFormula;
-import org.openscience.cdk.tools.manipulator.MolecularFormulaManipulator;
 import net.sf.mzmine.datamodel.PolarityType;
 import net.sf.mzmine.datamodel.identities.NeutralMolecule;
 import net.sf.mzmine.main.MZmineCore;
@@ -409,7 +407,6 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
       Arrays.stream(mod.getAdducts()).filter(m -> m.getMass() >= 0 && m.getCDKFormula() != null)
           .forEach(m -> FormulaUtils.addFormula(result, m.getCDKFormula()));
 
-    IAtomContainer atoms = MolecularFormulaManipulator.getAtomContainer(result);
     // subtract
     Arrays.stream(adduct.getAdducts()).filter(m -> m.getMass() < 0 && m.getCDKFormula() != null)
         .forEach(m -> FormulaUtils.subtractFormula(result, m.getCDKFormula()));

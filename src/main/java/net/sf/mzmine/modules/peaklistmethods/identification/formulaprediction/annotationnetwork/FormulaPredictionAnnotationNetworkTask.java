@@ -17,6 +17,7 @@
  */
 package net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.annotationnetwork;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -30,6 +31,7 @@ import org.openscience.cdk.formula.MolecularFormulaRange;
 import org.openscience.cdk.interfaces.IChemObjectBuilder;
 import org.openscience.cdk.interfaces.IMolecularFormula;
 import org.openscience.cdk.silent.SilentChemObjectBuilder;
+import org.openscience.cdk.tools.manipulator.MolecularFormulaManipulator;
 import com.google.common.collect.Range;
 import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.DataPoint;
@@ -225,6 +227,14 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
       try {
         // ionized formula
         IMolecularFormula cdkFormulaIon = ion.addToFormula(cdkFormula);
+
+        if (ion.getModCount() > 0)
+          logger.info(MessageFormat.format("Checking type {0} as {1} ({3}) for neutral {2} ({4})",
+              ion.toString(), MolecularFormulaManipulator.getString(cdkFormulaIon),
+              MolecularFormulaManipulator.getString(cdkFormula),
+              MolecularFormulaManipulator.getTotalExactMass(cdkFormulaIon),
+              MolecularFormulaManipulator.getTotalExactMass(cdkFormula)));
+
         // Mass is ok, so test other constraints
         checkConstraints(resultingFormulas, cdkFormula, cdkFormulaIon, row, ion);
       } catch (CloneNotSupportedException e) {

@@ -268,11 +268,24 @@ public class FormulaUtils {
    */
   public static IMolecularFormula subtractFormula(IMolecularFormula result, IMolecularFormula sub) {
     for (IIsotope isotope : sub.isotopes()) {
-      int count = result.getIsotopeCount(isotope) - sub.getIsotopeCount(isotope);
-      if (count < 0)
-        count = 0;
-      result.removeIsotope(isotope);
-      result.addIsotope(isotope, count);
+      int count = sub.getIsotopeCount(isotope);
+      boolean found = false;
+      do {
+        found = false;
+        for (IIsotope realIsotope : result.isotopes()) {
+          // there can be different implementations of IIsotope
+          if (equalIsotopes(isotope, realIsotope)) {
+            found = true;
+            int realCount = result.getIsotopeCount(realIsotope);
+            int remaining = realCount - count;
+            result.removeIsotope(realIsotope);
+            if (remaining > 0)
+              result.addIsotope(realIsotope, remaining);
+            count -= realCount;
+            break;
+          }
+        }
+      } while (count > 0 && found);
     }
     return result;
   }
@@ -288,4 +301,26 @@ public class FormulaUtils {
     return result;
   }
 
+
+  /**
+   * Compare to IIsotope. The method doesn't compare instance but if they have the same symbol,
+   * natural abundance and exact mass. TODO
+   *
+   * @param isotopeOne The first Isotope to compare
+   * @param isotopeTwo The second Isotope to compare
+   * @return True, if both isotope are the same
+   */
+  private static boolean equalIsotopes(IIsotope isotopeOne, IIsotope isotopeTwo) {
+    if (!isotopeOne.getSymbol().equals(isotopeTwo.getSymbol()))
+      return false;
+    // exactMass and naturalAbundance is null when using createMajorIsotopeMolFormula
+    // // XXX: floating point comparision!
+    // if (!Objects.equals(isotopeOne.getNaturalAbundance(), isotopeTwo.getNaturalAbundance()))
+    // return false;
+    // if (!Objects.equals(isotopeOne.getExactMass(), isotopeTwo.getExactMass()))
+    // return false;
+
+
+    return true;
+  }
 }

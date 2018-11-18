@@ -61,7 +61,7 @@ public class MolecularFormulaIdentity {
   public double getScore(double neutralMass, double ppmMax) {
     if (ppmMax <= 0)
       ppmMax = 50;
-    return (ppmMax - getPpmDiff(neutralMass)) / ppmMax;
+    return (ppmMax - Math.abs(getPpmDiff(neutralMass))) / ppmMax;
   }
 
   @Override
