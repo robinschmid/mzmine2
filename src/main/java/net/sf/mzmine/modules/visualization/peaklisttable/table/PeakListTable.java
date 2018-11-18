@@ -33,12 +33,14 @@ import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.UIManager;
 import javax.swing.event.RowSorterEvent;
+import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableRowSorter;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
+import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableParameters;
 import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTablePopupMenu;
@@ -154,13 +156,13 @@ public class PeakListTable extends JTable implements ComponentToolTipProvider {
   }
 
   @Override
-  public TableCellEditor getCellEditor(int row, int column) {
+  public TableCellEditor getCellEditor(int trow, int column) {
     CommonColumnType commonColumn = pkTableModel.getCommonColumn(column);
 
     if (!commonColumn.isEditable())
       return null;
 
-    row = this.convertRowIndexToModel(row);
+    final int row = this.convertRowIndexToModel(trow);
     peakListRow = peakList.getRow(row);
 
     if (commonColumn == CommonColumnType.IDENTITY) {
@@ -261,11 +263,15 @@ public class PeakListTable extends JTable implements ComponentToolTipProvider {
                 peakListRow.removeIonIdentity(identity);
                 DefaultComboBoxModel<?> comboModel = (DefaultComboBoxModel<?>) combo.getModel();
                 comboModel.removeElement(identity);
+                AbstractTableModel model = ((AbstractTableModel) getModel());
+                model.fireTableDataChanged();
               }
               return;
             }
             if (item instanceof IonIdentity) {
               peakListRow.setBestIonIdentity((IonIdentity) item);
+              AbstractTableModel model = ((AbstractTableModel) getModel());
+              model.fireTableRowsUpdated(row, row);
               return;
             }
           }
@@ -309,13 +315,63 @@ public class PeakListTable extends JTable implements ComponentToolTipProvider {
                 bestIon.removeMolFormula((MolecularFormulaIdentity) item);
                 DefaultComboBoxModel<?> comboModel = (DefaultComboBoxModel<?>) combo.getModel();
                 comboModel.removeElement(item);
+
+                AbstractTableModel model = ((AbstractTableModel) getModel());
+                model.fireTableDataChanged();
               }
               return;
             }
             if (item instanceof MolecularFormulaIdentity) {
               IonIdentity bestIon = peakListRow.getBestIonIdentity();
-              if (bestIon != null)
+              if (bestIon != null) {
                 bestIon.setBestMolFormula((MolecularFormulaIdentity) item);
+                AbstractTableModel model = ((AbstractTableModel) getModel());
+                model.fireTableRowsUpdated(row, row);
+              }
+              return;
+            }
+          }
+        }
+      });
+      // Keep the reference to the editor
+      currentEditor = new DefaultCellEditor(combo);
+      return currentEditor;
+    }
+
+
+    //
+    if (commonColumn == CommonColumnType.NEUTRAL_FORMULA) {
+      IonIdentity bestIon = peakListRow.getBestIonIdentity();
+      if (bestIon == null || bestIon.getNetwork() == null)
+        return null;
+
+      AnnotationNetwork net = bestIon.getNetwork();
+      List<MolecularFormulaIdentity> identities = net.getMolFormulas();
+      MolecularFormulaIdentity preferredIdentity = net.getBestMolFormula();
+      JComboBox<Object> combo;
+
+      if ((identities != null) && (identities.size() > 0)) {
+        combo = new JComboBox<>(identities.toArray());
+      } else {
+        combo = new JComboBox<>();
+      }
+      combo.setFont(comboFont);
+      if (preferredIdentity != null)
+        combo.setSelectedItem(preferredIdentity);
+
+      combo.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          JComboBox<?> combo = (JComboBox<?>) e.getSource();
+          Object item = combo.getSelectedItem();
+          if (item != null) {
+            if (item instanceof MolecularFormulaIdentity) {
+              IonIdentity bestIon = peakListRow.getBestIonIdentity();
+              if (bestIon != null && bestIon.getNetwork() != null) {
+                bestIon.getNetwork().setBestMolFormula((MolecularFormulaIdentity) item);
+                AbstractTableModel model = ((AbstractTableModel) getModel());
+                model.fireTableDataChanged();
+              }
               return;
             }
           }
