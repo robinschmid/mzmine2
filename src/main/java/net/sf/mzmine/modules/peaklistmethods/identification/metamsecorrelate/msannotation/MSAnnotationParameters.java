@@ -29,7 +29,7 @@ import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
-import net.sf.mzmine.parameters.parametertypes.esiadducts.ESIAdductsParameter;
+import net.sf.mzmine.parameters.parametertypes.esiadducts.IonModificationParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
@@ -75,7 +75,7 @@ public class MSAnnotationParameters extends SimpleParameterSet {
   public static final IntegerParameter MAX_MOLECULES = new IntegerParameter(
       "Maximum molecules/cluster", "Maximum molecules per cluster (f.e. [2M+Na]+).", 3, 1, 10);
 
-  public static final ESIAdductsParameter ADDUCTS = new ESIAdductsParameter("Adducts",
+  public static final IonModificationParameter ADDUCTS = new IonModificationParameter("Adducts",
       "List of adducts, each one refers a specific distance in m/z axis between related peaks");
 
   // MS MS

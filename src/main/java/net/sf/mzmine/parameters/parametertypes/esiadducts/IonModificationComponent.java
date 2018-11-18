@@ -43,7 +43,7 @@ import net.sf.mzmine.util.components.GridBagPanel;
  * A component for selecting adducts.
  *
  */
-public class ESIAdductsComponent extends GridBagPanel {
+public class IonModificationComponent extends GridBagPanel {
 
   /**
    * 
@@ -57,7 +57,7 @@ public class ESIAdductsComponent extends GridBagPanel {
    *
    * @param choicesAdducts the adduct choices.
    */
-  public ESIAdductsComponent(IonModification[] choicesAdducts, IonModification[] choicesMods) {
+  public IonModificationComponent(IonModification[] choicesAdducts, IonModification[] choicesMods) {
     adducts = new MultiChoiceComponent(choicesAdducts);
     // add top label
     adducts.add(new JLabel("Adducts"), BorderLayout.NORTH);

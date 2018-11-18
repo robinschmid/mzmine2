@@ -46,11 +46,11 @@ import net.sf.mzmine.parameters.parametertypes.MultiChoiceParameter;
  * @author $Author$
  * @version $Revision$
  */
-public class ESIAdductsParameter
-    implements UserParameter<IonModification[][], ESIAdductsComponent> {
+public class IonModificationParameter
+    implements UserParameter<IonModification[][], IonModificationComponent> {
 
   // Logger.
-  private static final Logger LOG = Logger.getLogger(ESIAdductsParameter.class.getName());
+  private static final Logger LOG = Logger.getLogger(IonModificationParameter.class.getName());
 
   // XML tags.
   private static final String MODIFICTAION_TAG = "modification_type";
@@ -65,7 +65,7 @@ public class ESIAdductsParameter
 
   private MultiChoiceParameter<IonModification> adducts, modification;
 
-  private ESIAdductsComponent comp;
+  private IonModificationComponent comp;
 
   /**
    * Create the parameter.
@@ -73,7 +73,7 @@ public class ESIAdductsParameter
    * @param name name of the parameter.
    * @param description description of the parameter.
    */
-  public ESIAdductsParameter(final String name, final String description) {
+  public IonModificationParameter(final String name, final String description) {
     super();
     adducts = new MultiChoiceParameter<IonModification>(name, description, new IonModification[0]);
     modification = new MultiChoiceParameter<IonModification>("Modifications",
@@ -81,8 +81,8 @@ public class ESIAdductsParameter
   }
 
   @Override
-  public ESIAdductsComponent createEditingComponent() {
-    comp = new ESIAdductsComponent(adducts.getChoices(), modification.getChoices());
+  public IonModificationComponent createEditingComponent() {
+    comp = new IonModificationComponent(adducts.getChoices(), modification.getChoices());
     return comp;
   }
 
@@ -226,8 +226,8 @@ public class ESIAdductsParameter
   }
 
   @Override
-  public ESIAdductsParameter cloneParameter() {
-    final ESIAdductsParameter copy = new ESIAdductsParameter(getName(), getDescription());
+  public IonModificationParameter cloneParameter() {
+    final IonModificationParameter copy = new IonModificationParameter(getName(), getDescription());
     copy.setChoices(adducts.getChoices(), modification.getChoices());
     copy.setValue(getValue());
     return copy;
@@ -258,7 +258,7 @@ public class ESIAdductsParameter
   }
 
   @Override
-  public void setValueFromComponent(ESIAdductsComponent component) {
+  public void setValueFromComponent(IonModificationComponent component) {
     adducts.setValueFromComponent(component.getAdducts());
     modification.setValueFromComponent(component.getMods());
     IonModification[][] choices = component.getChoices();
@@ -282,7 +282,7 @@ public class ESIAdductsParameter
   }
 
   @Override
-  public void setValueToComponent(ESIAdductsComponent component, IonModification[][] newValue) {
+  public void setValueToComponent(IonModificationComponent component, IonModification[][] newValue) {
     component.setValue(newValue);
   }
 }
