@@ -47,6 +47,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.camera.CameraSearchM
 import net.sf.mzmine.modules.peaklistmethods.identification.complexsearch.ComplexSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.customdbsearch.CustomDBSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.annotationnetwork.FormulaPredictionAnnotationNetworkModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.createavgformulas.CreateAvgNetworkFormulasModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.peaklist.FormulaPredictionPeakListModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.FormulaPredictionModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.sort.FormulaSortModule;
@@ -195,6 +196,7 @@ public class MZmineModulesList {
       // Identification
       FormulaPredictionModule.class, FormulaPredictionPeakListModule.class,
       FormulaPredictionAnnotationNetworkModule.class, FormulaSortModule.class,
+      CreateAvgNetworkFormulasModule.class,
       // annotation
       MetaMSEcorrelateModule.class, SimpleMetaMSEcorrelateModule.class, MSAnnotationModule.class,
       CustomDBSearchModule.class, FragmentSearchModule.class, AdductSearchModule.class,

@@ -51,17 +51,9 @@ public class MolecularFormulaIdentity {
     return MolecularFormulaManipulator.getTotalExactMass(cdkFormula);
   }
 
-
-
   public double getPpmDiff(double neutralMass) {
     double exact = getExactMass();
     return (neutralMass - exact) / exact * 1E6;
-  }
-
-  public double getScore(double neutralMass, double ppmMax) {
-    if (ppmMax <= 0)
-      ppmMax = 50;
-    return (ppmMax - Math.abs(getPpmDiff(neutralMass))) / ppmMax;
   }
 
   @Override
@@ -69,9 +61,44 @@ public class MolecularFormulaIdentity {
     return getFormulaAsString();
   }
 
+  /**
+   * Merged score
+   * 
+   * @param neutralMass
+   * @param ppmMax
+   * @return
+   */
+  public double getScore(double neutralMass, double ppmMax) {
+    return getScore(neutralMass, ppmMax, 1, 1);
+  }
+
+
+
+  /**
+   * Merged score with weights
+   * 
+   * @param neutralMass
+   * @param ppmMax weight for ppm distance
+   * @param fIsotopeScore
+   * @param fMSMSscore
+   * @return
+   */
   public double getScore(double neutralMass, double ppmMax, double fIsotopeScore,
       double fMSMSscore) {
-    return getScore(neutralMass, ppmMax);
+    return getPPMScore(neutralMass, ppmMax);
+  }
+
+  /**
+   * Score for ppm distance
+   * 
+   * @param neutralMass
+   * @param ppmMax
+   * @return
+   */
+  public double getPPMScore(double neutralMass, double ppmMax) {
+    if (ppmMax <= 0)
+      ppmMax = 50;
+    return (ppmMax - Math.abs(getPpmDiff(neutralMass))) / ppmMax;
   }
 
   /**
@@ -90,5 +117,14 @@ public class MolecularFormulaIdentity {
     return null;
   }
 
+  /**
+   * Only checks molecular formula as with toString method
+   * 
+   * @param f
+   * @return
+   */
+  public boolean equalFormula(MolecularFormulaIdentity f) {
+    return this.toString().equals(f.toString());
+  }
 
 }

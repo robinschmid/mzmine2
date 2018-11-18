@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow;
+package net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.datastructure;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;

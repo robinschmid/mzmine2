@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow;
+package net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.datastructure;
 
 import java.util.Map;
 import org.openscience.cdk.interfaces.IMolecularFormula;
@@ -64,14 +64,9 @@ public class ResultFormula extends MolecularFormulaIdentity {
   }
 
   @Override
-  public double getScore(double neutralMass, double ppmMax) {
-    return getScore(neutralMass, ppmMax, 1, 1);
-  }
-
-  @Override
   public double getScore(double neutralMass, double ppmMax, double fIsotopeScore,
       double fMSMSscore) {
-    double ppmScore = super.getScore(neutralMass, ppmMax);
+    double ppmScore = super.getPPMScore(neutralMass, ppmMax);
     double totalScore = ppmScore;
     double div = 1;
     if (isotopeScore != null) {

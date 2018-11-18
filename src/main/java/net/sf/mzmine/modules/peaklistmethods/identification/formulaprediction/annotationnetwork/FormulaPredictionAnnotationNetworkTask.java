@@ -45,7 +45,8 @@ import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.datamodel.identities.iontype.IonType;
 import net.sf.mzmine.datamodel.identities.iontype.MSAnnotationNetworkLogic;
-import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.ResultFormula;
+import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.createavgformulas.CreateAvgNetworkFormulasTask;
+import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.datastructure.ResultFormula;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.restrictions.elements.ElementalHeuristicChecker;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.restrictions.rdbe.RDBERestrictionChecker;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.sort.FormulaSortParameters;
@@ -84,6 +85,7 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
   private double minMSMSScore;
   private boolean sortResults;
   private FormulaSortTask sorter;
+  private CreateAvgNetworkFormulasTask netFormulaMerger;
 
   /**
    *
@@ -146,6 +148,9 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
               .getEmbeddedParameters();
       sorter = new FormulaSortTask(sortingParam);
     }
+
+    // merger to create avg formulas
+    netFormulaMerger = new CreateAvgNetworkFormulasTask(sorter);
     message = "Formula Prediction (MS annotation networks)";
   }
 
@@ -189,25 +194,34 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
     Arrays.stream(nets).forEach(net -> {
       message = "Formula prediction on network " + net.getID();
       if (!isCanceled()) {
-        for (Entry<PeakListRow, IonIdentity> e : net.entrySet()) {
-          PeakListRow r = e.getKey();
-          IonIdentity ion = e.getValue();
-          if (!ion.getIonType().isUndefinedAdduct()) {
-            List<MolecularFormulaIdentity> list = predictFormulas(r, ion.getIonType());
-            if (!list.isEmpty()) {
-              if (sortResults && sorter != null)
-                sorter.sort(list, ion.getIonType().getMass(r.getAverageMZ()));
-              ion.setMolFormulas(list);
-            }
-          }
-        }
-        // find best formula for neutral mol of network
+        predictFormulasForNetwork(net);
       }
       finishedNets.incrementAndGet();
     });
 
     logger.finest("Finished formula search for all networks");
     setStatus(TaskStatus.FINISHED);
+  }
+
+  public List<MolecularFormulaIdentity> predictFormulasForNetwork(AnnotationNetwork net) {
+    for (Entry<PeakListRow, IonIdentity> e : net.entrySet()) {
+      PeakListRow r = e.getKey();
+      IonIdentity ion = e.getValue();
+      if (!ion.getIonType().isUndefinedAdduct()) {
+        List<MolecularFormulaIdentity> list = predictFormulas(r, ion.getIonType());
+        if (!list.isEmpty()) {
+          if (sortResults && sorter != null)
+            sorter.sort(list, ion.getIonType().getMass(r.getAverageMZ()));
+          ion.setMolFormulas(list);
+        }
+      }
+    }
+    // find best formula for neutral mol of network
+    // add all that have the same mol formula in at least 2 different ions (rows)
+    if (netFormulaMerger != null) {
+      return netFormulaMerger.combineFormulasOfNetwork(net);
+    }
+    return null;
   }
 
   private List<MolecularFormulaIdentity> predictFormulas(PeakListRow row, IonType ion) {
