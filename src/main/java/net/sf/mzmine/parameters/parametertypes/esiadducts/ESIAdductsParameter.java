@@ -53,9 +53,9 @@ public class ESIAdductsParameter
   private static final Logger LOG = Logger.getLogger(ESIAdductsParameter.class.getName());
 
   // XML tags.
-  private static final String MODIFICTAION_TAG = "ESImodification";
-  private static final String ADDUCTS_TAG = "ESIadduct";
-  private static final String ADDUCTS_ITEM_TAG = "ESIadductItem";
+  private static final String MODIFICTAION_TAG = "modification_type";
+  private static final String ADDUCTS_TAG = "adduct_type";
+  private static final String ADDUCTS_ITEM_TAG = "subpart";
   private static final String NAME_ATTRIBUTE = "name";
   private static final String MASS_ATTRIBUTE = "mass_difference";
   private static final String CHARGE_ATTRIBUTE = "charge";
@@ -89,8 +89,7 @@ public class ESIAdductsParameter
   @Override
   public void loadValueFromXML(final Element xmlElement) {
     // Start with current choices and empty selections.
-    final ArrayList<IonModification> newChoices =
-        new ArrayList<IonModification>(Arrays.asList(adducts.getChoices()));
+    final ArrayList<IonModification> newChoices = new ArrayList<IonModification>();
     final ArrayList<IonModification> selections = new ArrayList<>();
     // load all adducts
     loadAdducts(xmlElement, ADDUCTS_TAG, newChoices, selections);
@@ -99,9 +98,8 @@ public class ESIAdductsParameter
     adducts.setValue(selections.toArray(new IonModification[selections.size()]));
 
     // Start with current choices and empty selections.
-    final ArrayList<IonModification> newChoicesMod =
-        new ArrayList<IonModification>(Arrays.asList(modification.getChoices()));
-    final ArrayList<IonModification> selectionsMod = new ArrayList<IonModification>();
+    final ArrayList<IonModification> newChoicesMod = new ArrayList<>();
+    final ArrayList<IonModification> selectionsMod = new ArrayList<>();
     // load all modification
     loadAdducts(xmlElement, MODIFICTAION_TAG, newChoicesMod, selectionsMod);
     // Set choices and selections (value).
@@ -191,7 +189,7 @@ public class ESIAdductsParameter
       final IonModification[] choices = i == 0 ? adducts.getChoices() : modification.getChoices();
       final IonModification[] value = i == 0 ? adducts.getValue() : modification.getValue();
       final List<IonModification> selections =
-          Arrays.asList(value == null ? new IonModification[] {} : value);
+          Arrays.asList(value == null ? new IonModification[0] : value);
 
       if (choices != null) {
         final Document parent = xmlElement.getOwnerDocument();
@@ -222,7 +220,7 @@ public class ESIAdductsParameter
       element.setAttribute(MASS_ATTRIBUTE, Double.toString(item.getMass()));
       element.setAttribute(CHARGE_ATTRIBUTE, Integer.toString(item.getCharge()));
       element.setAttribute(MOL_FORMULA_ATTRIBUTE, item.getMolFormula());
-      element.setAttribute(TYPE_ATTRIBUTE, item.getType().toString());
+      element.setAttribute(TYPE_ATTRIBUTE, item.getType().name());
       parentElement.appendChild(element);
     }
   }

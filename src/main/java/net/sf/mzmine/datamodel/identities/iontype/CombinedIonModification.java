@@ -74,7 +74,7 @@ public class CombinedIonModification extends IonModification {
         if (s == null) {
           s = cs;
           counter = 1;
-        } else if (s == cs)
+        } else if (s.equals(cs))
           counter++;
         else {
           String sign = (adducts[i - 1].getMass() < 0 ? "-" : "+");
