@@ -92,16 +92,14 @@ public class SimpleMetaMSEcorrelateTask extends MetaMSEcorrelateTask {
 
     searchAdducts =
         parameterSet.getParameter(SimpleMetaMSEcorrelateParameters.ADDUCT_LIBRARY).getValue();
-    MSAnnotationParameters annParam = parameterSet
+    annotationParameters = parameterSet
         .getParameter(SimpleMetaMSEcorrelateParameters.ADDUCT_LIBRARY).getEmbeddedParameters();
+    annotationParameters =
+        MSAnnotationParameters.createFullParamSet(annotationParameters, rtTolerance, mzTolerance);
     // simple parameter setup: provide mzTol and charge
     int maxCharge =
         Arrays.stream(peakList.getRows()).mapToInt(PeakListRow::getRowCharge).max().orElse(3);
-    library = new MSAnnotationLibrary(annParam, mzTolerance, maxCharge);
-
-    adductCheckMode = annParam.getParameter(MSAnnotationParameters.CHECK_MODE).getValue();
-
-    annotateOnlyCorrelated = true;
+    library = new MSAnnotationLibrary(annotationParameters, mzTolerance, maxCharge);
 
     // MS2 similarity
     checkMS2Similarity =
@@ -116,8 +114,9 @@ public class SimpleMetaMSEcorrelateTask extends MetaMSEcorrelateTask {
     ms2SimilarityCheckParam.getParameter(MS2SimilarityParameters.MZ_TOLERANCE).setValue(mzTolMS2);
 
     // MSMS refinement
-    doMSMSchecks = true;
-    msmsChecks = new MSAnnMSMSCheckParameters();
+    annotationParameters.getParameter(MSAnnotationParameters.MSMS_CHECK).setValue(true);
+    MSAnnMSMSCheckParameters msmsChecks = annotationParameters
+        .getParameter(MSAnnotationParameters.MSMS_CHECK).getEmbeddedParameters();
     msmsChecks.getParameter(MSAnnMSMSCheckParameters.CHECK_MULTIMERS).setValue(true);
     msmsChecks.getParameter(MSAnnMSMSCheckParameters.CHECK_NEUTRALLOSSES).setValue(true);
     // set mass list MS2
@@ -126,9 +125,10 @@ public class SimpleMetaMSEcorrelateTask extends MetaMSEcorrelateTask {
         parameterSet.getParameter(SimpleMetaMSEcorrelateParameters.NOISE_LEVEL_MS2).getValue());
     msmsChecks.getParameter(MSAnnMSMSCheckParameters.MZ_TOLERANCE).setValue(mzTolMS2);
 
-
-    performAnnotationRefinement = true;
-    refineParam = new AnnotationRefinementParameters();
+    // refinement
+    annotationParameters.getParameter(MSAnnotationParameters.ANNOTATION_REFINEMENTS).setValue(true);
+    AnnotationRefinementParameters refineParam = annotationParameters
+        .getParameter(MSAnnotationParameters.ANNOTATION_REFINEMENTS).getEmbeddedParameters();
     refineParam.getParameter(AnnotationRefinementParameters.DELETE_XMERS_ON_MSMS).setValue(true);
     refineParam.getParameter(AnnotationRefinementParameters.TRUE_THRESHOLD).setValue(4);
 

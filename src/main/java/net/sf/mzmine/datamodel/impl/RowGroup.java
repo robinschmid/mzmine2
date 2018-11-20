@@ -181,4 +181,16 @@ public class RowGroup extends ArrayList<PeakListRow> {
       lastViewedRawFile = raw.length - 1;
     this.lastViewedRawFile = lastViewedRawFile;
   }
+
+  /**
+   * Not all rows in this group need to be really correlated. Override in specialized RowGroup
+   * classes
+   * 
+   * @param i
+   * @param k
+   * @return
+   */
+  public boolean isCorrelated(int i, int k) {
+    return true;
+  }
 }

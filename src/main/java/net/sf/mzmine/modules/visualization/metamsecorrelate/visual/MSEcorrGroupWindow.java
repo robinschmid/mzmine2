@@ -842,7 +842,7 @@ public class MSEcorrGroupWindow extends JFrame {
           PeakListRow trow = g.get(i);
           if (rowI != i) {
             // get correlation data (row to row)
-            R2RFullCorrelationData corrRows = corr.getCorrelationToRowI(trow.getID());
+            R2RFullCorrelationData corrRows = corr.getCorrelationToRowID(trow.getID());
             if (corrRows != null) {
               // get correlation of feature-feature in selected raw file
               CorrelationData fCorr = null;
@@ -945,7 +945,7 @@ public class MSEcorrGroupWindow extends JFrame {
           PeakListRow trow = g.get(i);
           if (rowI != i) {
             // get correlation data (row to row)
-            R2RFullCorrelationData corrRows = corr.getCorrelationToRowI(trow.getID());
+            R2RFullCorrelationData corrRows = corr.getCorrelationToRowID(trow.getID());
             if (corrRows != null) {
               // get correlation of feature-feature in selected raw file
               CorrelationData fCorr = null;
@@ -1001,7 +1001,7 @@ public class MSEcorrGroupWindow extends JFrame {
           PeakListRow trow = g.get(i);
           if (rowI != i) {
             // get correlation data (row to row)
-            R2RFullCorrelationData corrRows = corr.getCorrelationToRowI(trow.getID());
+            R2RFullCorrelationData corrRows = corr.getCorrelationToRowID(trow.getID());
             if (corrRows != null) {
               // for all raw data files
               for (int r = 0; r < peakList.getRawDataFiles().length; r++) {

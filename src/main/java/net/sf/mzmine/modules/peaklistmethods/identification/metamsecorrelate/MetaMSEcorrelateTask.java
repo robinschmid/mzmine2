@@ -20,7 +20,6 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate;
 
 import java.text.MessageFormat;
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,10 +31,6 @@ import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
-import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
-import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
-import net.sf.mzmine.datamodel.identities.iontype.MSAnnotationNetworkLogic;
-import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.datamodel.impl.RowGroupList;
 import net.sf.mzmine.datamodel.impl.SimpleFeature;
 import net.sf.mzmine.datamodel.impl.SimplePeakList;
@@ -56,16 +51,11 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.fil
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeatureFilter.OverlapResult;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary.CheckMode;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.AnnotationRefinementParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.AnnotationRefinementTask;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.MSAnnMSMSCheckParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.MSAnnMSMSCheckTask;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationTask;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.similarity.MS2SimilarityParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.similarity.MS2SimilarityTask;
 import net.sf.mzmine.parameters.ParameterSet;
-import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
@@ -106,14 +96,9 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   protected String suffix;
 
   // ADDUCTS
+  protected MSAnnotationParameters annotationParameters;
   protected MSAnnotationLibrary library;
   protected boolean searchAdducts;
-  // annotate only the ones in corr groups
-  protected boolean annotateOnlyCorrelated;
-  protected CheckMode adductCheckMode;
-  // MSMS refinement
-  protected boolean doMSMSchecks;
-  protected MSAnnMSMSCheckParameters msmsChecks;
 
   // MS2 similarity
   protected MS2SimilarityParameters ms2SimilarityCheckParam;
@@ -155,7 +140,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   // output
   protected PeakList groupedPKL;
   protected boolean performAnnotationRefinement;
-  protected AnnotationRefinementParameters refineParam;
+
 
 
   /**
@@ -214,27 +199,13 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         .getEmbeddedParameter().getValue();
     // ADDUCTS
     searchAdducts = parameterSet.getParameter(MetaMSEcorrelateParameters.ADDUCT_LIBRARY).getValue();
-    MSAnnotationParameters annParam = parameterSet
-        .getParameter(MetaMSEcorrelateParameters.ADDUCT_LIBRARY).getEmbeddedParameters();
-    library = new MSAnnotationLibrary(annParam);
-
-    adductCheckMode = annParam.getParameter(MSAnnotationParameters.CHECK_MODE).getValue();
-
-    annotateOnlyCorrelated =
-        parameterSet.getParameter(MetaMSEcorrelateParameters.ANNOTATE_ONLY_GROUPED).getValue();
-
-
-    // MSMS refinement
-    doMSMSchecks = annParam.getParameter(MSAnnotationParameters.MSMS_CHECK).getValue();
-    msmsChecks = annParam.getParameter(MSAnnotationParameters.MSMS_CHECK).getEmbeddedParameters();
-
-
-    performAnnotationRefinement =
-        annParam.getParameter(MSAnnotationParameters.ANNOTATION_REFINEMENTS).getValue();
-    refineParam = annParam.getParameter(MSAnnotationParameters.ANNOTATION_REFINEMENTS)
+    annotationParameters = parameterSet.getParameter(MetaMSEcorrelateParameters.ADDUCT_LIBRARY)
         .getEmbeddedParameters();
-
+    annotationParameters =
+        MSAnnotationParameters.createFullParamSet(annotationParameters, rtTolerance);
+    library = new MSAnnotationLibrary(annotationParameters);
     // END OF ADDUCTS AND REFINEMENT
+
     checkMS2Similarity =
         parameterSet.getParameter(MetaMSEcorrelateParameters.MS2_SIMILARITY).getValue();
     ms2SimilarityCheckParam = parameterSet.getParameter(MetaMSEcorrelateParameters.MS2_SIMILARITY)
@@ -325,11 +296,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         groups.setGroupsToAllRows();
 
         // do MSMS comparison of group
-        MZTolerance maxDiff =
-            msmsChecks.getParameter(MSAnnMSMSCheckParameters.MZ_TOLERANCE).getValue();
         setStage(Stage.MS2_SIMILARITY);
-
-
         if (checkMS2Similarity) {
           // calc MS2 similarity for later visualisation
           MS2SimilarityTask ms2Sim = new MS2SimilarityTask(ms2SimilarityCheckParam);
@@ -337,64 +304,17 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         }
 
         // annotation at groups stage
-        if (searchAdducts && annotateOnlyCorrelated) {
+        if (searchAdducts) {
           LOG.info("Corr: Annotation of groups only");
           setStage(Stage.ANNOTATION);
-          AtomicInteger compared = new AtomicInteger(0);
-          AtomicInteger annotPairs = new AtomicInteger(0);
-          // for all groups
-          groups.parallelStream().forEach(g -> {
-            if (!this.isCanceled()) {
-              annotateGroup(g, compared, annotPairs);
-              stageProgress.addAndGet(1d / groups.size());
-            }
-          });
-
-          if (isCanceled())
-            return;
-
-          LOG.info("Corr: A total of " + compared.get() + " row2row adduct comparisons with "
-              + annotPairs.get() + " annotation pairs");
-        }
-
-        // refinement and network creation
-        if (searchAdducts) {
-          setStage(Stage.REFINEMENT);
-          // create networks
-          LOG.info("Corr: create annotation network numbers");
-          List<AnnotationNetwork> nets = MSAnnotationNetworkLogic
-              .createAnnotationNetworks(groupedPKL, library.getMzTolerance(), true);
-
-          // refinement of adducts
-          // do MSMS check for multimers
-          if (doMSMSchecks) {
-            LOG.info("Corr: MSMS annotation refinement");
-            MSAnnMSMSCheckTask task = new MSAnnMSMSCheckTask(project, msmsChecks, groupedPKL);
-            task.doCheck();
-          }
-          if (isCanceled())
-            return;
-
-          // refinement
-          if (performAnnotationRefinement) {
-            LOG.info("Corr: Refine annotations");
-            AnnotationRefinementTask ref =
-                new AnnotationRefinementTask(project, refineParam, groupedPKL);
-            ref.refine();
-          }
-          if (isCanceled())
-            return;
-
-          // recalc annotation networks
-          MSAnnotationNetworkLogic.recalcAllAnnotationNetworks(nets, true);
-
-          // show all annotations with the highest count of links
-          LOG.info("Corr: show most likely annotations");
-          MSAnnotationNetworkLogic.sortIonIdentities(groupedPKL, true);
+          MSAnnotationTask annTask =
+              new MSAnnotationTask(project, annotationParameters, groupedPKL);
+          annTask.run();
         }
 
         if (isCanceled())
           return;
+
         // add to project
         project.addPeakList(groupedPKL);
 
@@ -450,27 +370,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     }
 
     return newRow;
-  }
-
-  /**
-   * Annotates all rows in a group
-   * 
-   * @param g
-   * @param compared
-   * @param annotPairs
-   */
-  private void annotateGroup(RowGroup g, AtomicInteger compared, AtomicInteger annotPairs) {
-    for (int i = 0; i < g.size() - 1; i++) {
-      // check against existing networks
-      for (int k = i + 1; k < g.size(); k++) {
-        compared.incrementAndGet();
-        // check for adducts in library
-        List<IonIdentity[]> id =
-            library.findAdducts(peakList, g.get(i), g.get(k), adductCheckMode, minHeight);
-        if (!id.isEmpty())
-          annotPairs.incrementAndGet();
-      }
-    }
   }
 
   private void setStage(Stage grouping) {
@@ -530,16 +429,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
                   // can be because of any combination of
                   // retention time, shape correlation, non-negative height correlation
                   map.add(row, row2, corr);
-                }
-
-                // search directly? or search later in corr group?
-                if (searchAdducts && !annotateOnlyCorrelated) {
-                  compared.incrementAndGet();
-                  // check for adducts in library
-                  List<IonIdentity[]> id =
-                      library.findAdducts(peakList, row, row2, adductCheckMode, minHeight);
-                  if (!id.isEmpty())
-                    annotPairs.incrementAndGet();
                 }
               }
             }

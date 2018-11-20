@@ -26,13 +26,16 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msa
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
+import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.esiadducts.IonModificationParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
+import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
+import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTToleranceParameter;
 import net.sf.mzmine.util.ExitCode;
 
@@ -53,6 +56,10 @@ public class MSAnnotationParameters extends SimpleParameterSet {
   // MZ-tolerance: deisotoping, adducts
   public static final MZToleranceParameter MZ_TOLERANCE = new MZToleranceParameter("m/z tolerance",
       "Tolerance value of the m/z difference between peaks");
+
+  public static final BooleanParameter LIMIT_BY_GROUPS =
+      new BooleanParameter("Limit by feature groups",
+          "Only annotate features which where correlated or grouped otherwise.", true);
 
   public static final ComboParameter<CheckMode> CHECK_MODE =
       new ComboParameter<MSAnnotationLibrary.CheckMode>("Check",
@@ -104,15 +111,45 @@ public class MSAnnotationParameters extends SimpleParameterSet {
   private static Parameter[] createParam(Setup setup) {
     switch (setup) {
       case FULL:
-        return new Parameter[] {PEAK_LISTS, RT_TOLERANCE, MZ_TOLERANCE, CHECK_MODE, MIN_HEIGHT,
-            POSITIVE_MODE, MAX_CHARGE, MAX_MOLECULES, MSMS_CHECK, ANNOTATION_REFINEMENTS, ADDUCTS};
+        return new Parameter[] {PEAK_LISTS, RT_TOLERANCE, MZ_TOLERANCE, LIMIT_BY_GROUPS, CHECK_MODE,
+            MIN_HEIGHT, POSITIVE_MODE, MAX_CHARGE, MAX_MOLECULES, MSMS_CHECK,
+            ANNOTATION_REFINEMENTS, ADDUCTS};
       case SUB:
-        return new Parameter[] {MZ_TOLERANCE, CHECK_MODE, POSITIVE_MODE, MAX_CHARGE, MAX_MOLECULES,
-            MSMS_CHECK, ANNOTATION_REFINEMENTS, ADDUCTS};
+        return new Parameter[] {MZ_TOLERANCE, LIMIT_BY_GROUPS, CHECK_MODE, POSITIVE_MODE,
+            MAX_CHARGE, MAX_MOLECULES, MSMS_CHECK, ANNOTATION_REFINEMENTS, ADDUCTS};
       case SIMPLE:
-        return new Parameter[] {CHECK_MODE, POSITIVE_MODE, MAX_MOLECULES, ADDUCTS};
+        return new Parameter[] {LIMIT_BY_GROUPS, CHECK_MODE, POSITIVE_MODE, MAX_MOLECULES, ADDUCTS};
     }
     return new Parameter[0];
+  }
+
+  /**
+   * Create full set of parameters
+   * 
+   * @param param
+   * @param rtTol
+   * @return
+   */
+  public static MSAnnotationParameters createFullParamSet(MSAnnotationParameters param,
+      RTTolerance rtTol) {
+    return createFullParamSet(param, rtTol, null);
+  }
+
+  /**
+   * Create full set of parameters
+   * 
+   * @param param
+   * @param rtTol
+   * @param mzTol
+   * @return
+   */
+  public static MSAnnotationParameters createFullParamSet(MSAnnotationParameters param,
+      RTTolerance rtTol, MZTolerance mzTol) {
+    MSAnnotationParameters full = new MSAnnotationParameters();
+    full.getParameter(MSAnnotationParameters.RT_TOLERANCE).setValue(rtTol);
+    if (mzTol != null)
+      full.getParameter(MSAnnotationParameters.MZ_TOLERANCE).setValue(mzTol);
+    return full;
   }
 
   /**

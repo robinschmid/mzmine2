@@ -83,4 +83,13 @@ public class CorrelationRowGroup extends MS2SimilarityProviderGroup {
     this.ms2SimilarityMap = map;
   }
 
+  @Override
+  public boolean isCorrelated(int i, int k) {
+    if (corr == null || i >= corr.length || k >= corr.length)
+      return false;
+    // is correlated if corr is available between i and k
+    else
+      return corr[i].getCorrelationToRow(get(k)) != null;
+  }
+
 }

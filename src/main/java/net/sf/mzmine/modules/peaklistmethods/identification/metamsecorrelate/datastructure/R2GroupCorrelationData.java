@@ -223,7 +223,7 @@ public class R2GroupCorrelationData {
    * @param rowI
    * @return the correlation data of this row to row[rowI]
    */
-  public R2RFullCorrelationData getCorrelationToRowI(int rowI) {
+  public R2RFullCorrelationData getCorrelationToRowID(int rowI) {
     if (row.getID() == rowI)
       return null;
     for (R2RFullCorrelationData c : corr) {
@@ -244,7 +244,7 @@ public class R2GroupCorrelationData {
    * @throws Exception
    */
   public R2RFullCorrelationData getCorrelationToRow(PeakListRow row) {
-    return getCorrelationToRowI(row.getID());
+    return getCorrelationToRowID(row.getID());
   }
 
 }
