@@ -128,6 +128,8 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
         FSHAPE_CORRELATION,
         // intensity max correlation
         IMAX_CORRELATION,
+        // MS2 similarity
+        MS2_SIMILARITY,
         // adducts
         ADDUCT_LIBRARY, ANNOTATE_ONLY_GROUPED,
         // suffix or auto suffix
