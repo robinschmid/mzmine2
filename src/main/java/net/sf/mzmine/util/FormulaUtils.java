@@ -24,10 +24,12 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
+import org.openscience.cdk.config.IsotopeFactory;
 import org.openscience.cdk.config.Isotopes;
 import org.openscience.cdk.interfaces.IChemObjectBuilder;
 import org.openscience.cdk.interfaces.IIsotope;
@@ -251,13 +253,38 @@ public class FormulaUtils {
 
 
   public static IMolecularFormula createMajorIsotopeMolFormula(String formula) {
+    IChemObjectBuilder builder = SilentChemObjectBuilder.getInstance();
+    IMolecularFormula f = MolecularFormulaManipulator
+        .getMajorIsotopeMolecularFormula(formula.replace(" ", ""), builder);
+
+    if (f == null)
+      return null;
+    // replace isotopes
+    // needed, as MolecularFormulaManipulator method returns isotopes without exact mass info
     try {
-      IChemObjectBuilder builder = SilentChemObjectBuilder.getInstance();
-      return MolecularFormulaManipulator.getMajorIsotopeMolecularFormula(formula.replace(" ", ""),
-          builder);
+      return replaceAllIsotopesWithoutExactMass(f);
     } catch (Exception e) {
+      logger.log(Level.SEVERE, "Cannot create formula", e);
       return null;
     }
+  }
+
+  public static IMolecularFormula replaceAllIsotopesWithoutExactMass(IMolecularFormula f)
+      throws IOException {
+    for (IIsotope iso : f.isotopes()) {
+      // find isotope without exact mass
+      if (iso.getExactMass() == null || iso.getExactMass() == 0) {
+        int isotopeCount = f.getIsotopeCount(iso);
+        f.removeIsotope(iso);
+
+        // replace
+        IsotopeFactory iFac = Isotopes.getInstance();
+        f.addIsotope(iFac.getMajorIsotope(iso.getAtomicNumber()), isotopeCount);
+        return replaceAllIsotopesWithoutExactMass(f);
+      }
+    }
+    // no isotope found
+    return f;
   }
 
   /**
