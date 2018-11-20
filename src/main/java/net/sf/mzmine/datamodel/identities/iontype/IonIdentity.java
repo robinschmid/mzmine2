@@ -353,4 +353,28 @@ public class IonIdentity {
     if (molFormulas != null && !molFormulas.isEmpty())
       molFormulas.remove(formula);
   }
+
+  /**
+   * Likyhood to be true. the higher the better. Used to compare. MSMS multimer and modification
+   * verification is used.
+   * 
+   * @return
+   */
+  public int getLikelyhood() {
+    // M+?
+    if (ionType.isUndefinedAdductParent())
+      return 0;
+    // M-H2O+?
+    else if (ionType.isUndefinedAdduct())
+      return 1;
+    else {
+      int score = getMSMSMultimerCount() > 0 ? 3 : 0;
+      score += getMSMSModVerify() > 0 ? 1 : 0;
+      if (getNetwork() != null)
+        score += getNetwork().size() - 1;
+      else
+        score += partner.size();
+      return score;
+    }
+  }
 }

@@ -25,67 +25,38 @@ public class MSAnnotationNetworkLogic {
   private static final Logger LOG = Logger.getLogger(MSAnnotationNetworkLogic.class.getName());
 
   /**
+   * Compare for likelyhood comparison and sorting
    * 
-   * @param best
-   * @param esi
-   * @return -1 if esi is better than best 1 if opposite
+   * @param a
+   * @param b
+   * @return same as comparable: -1 0 1 if the first argument is less, equal or better
    */
-  public static int compareRows(IonIdentity best, IonIdentity esi, RowGroup g) {
-    if (best == null || best.getIonType().isUndefinedAdductParent())
+  public static int compareRows(IonIdentity a, IonIdentity b, RowGroup g) {
+    if (a == null && b == null)
+      return 0;
+    // M+?
+    else if (a == null || a.getIonType().isUndefinedAdductParent())
       return -1;
-    else if (esi.getIonType().isUndefinedAdductParent())
+    else if (b == null || b.getIonType().isUndefinedAdductParent())
       return 1;
-    // size of network (ions pointing to the same neutral mass)
-    else if (esi.getNetwork() != null
-        && (best.getNetwork() == null || esi.getNetwork().size() > best.getNetwork().size()))
+    // M-H2O+? (one is?
+    else if (a.getIonType().isUndefinedAdduct() && !b.getIonType().isUndefinedAdduct())
       return -1;
-    // keep if has M>1 and was identified by MSMS
-    else if (compareMSMSMolIdentity(esi, best))
+    else if (!a.getIonType().isUndefinedAdduct() && b.getIonType().isUndefinedAdduct())
       return 1;
-    // always if M>1 backed by MSMS
-    else if (compareMSMSMolIdentity(best, esi))
-      return -1;
-    // keep if insource fragment verified by MSMS
-    else if (compareMSMSNeutralLossIdentity(esi, best))
-      return 1;
-    // keep if insource fragment verified by MSMS
-    else if (compareMSMSNeutralLossIdentity(best, esi))
-      return -1;
 
-    int esiLinks = getLinksTo(esi, g);
-    int bestLinks = getLinksTo(best, g);
-    if (esiLinks == bestLinks && (compareCharge(best, esi))) {
-      return -1;
-    } else if (esiLinks > bestLinks) {
-      return -1;
-    }
-    return 1;
-  }
+    // network size, MSMS modification and multimer (2M) verification
+    int result = Integer.compare(a.getLikelyhood(), b.getLikelyhood());
+    if (result != 0)
+      return result;
 
-  /**
-   * 
-   * @param best
-   * @param esi
-   * @return onyl true if best so far was not verified by MSMS and esi was verified
-   */
-  private static boolean compareMSMSMolIdentity(IonIdentity best, IonIdentity esi) {
-    if (best.getMSMSMultimerCount() == 0 && esi.getMSMSMultimerCount() > 0)
-      return true;
-    else
-      return false;
-  }
+    int bLinks = getLinksTo(b, g);
+    int aLinks = getLinksTo(a, g);
+    result = Integer.compare(aLinks, bLinks);
+    if (result != 0)
+      return result;
 
-  /**
-   * 
-   * @param best
-   * @param esi
-   * @return onyl true if best was not verified by MSMS and and esi is
-   */
-  private static boolean compareMSMSNeutralLossIdentity(IonIdentity best, IonIdentity esi) {
-    if (best.getMSMSModVerify() == 0 && esi.getMSMSModVerify() > 0)
-      return true;
-    else
-      return false;
+    return compareCharge(a, b);
   }
 
   /**
@@ -114,12 +85,10 @@ public class MSAnnotationNetworkLogic {
    * @param b
    * @return True if b is a better choice
    */
-  private static boolean compareCharge(IonIdentity a, IonIdentity b) {
+  private static int compareCharge(IonIdentity a, IonIdentity b) {
     int ca = a.getIonType().getAbsCharge();
     int cb = b.getIonType().getAbsCharge();
-    return cb != 0 // a is better if b is uncharged
-        && ((ca == 0 && cb > 0) // b is better if charged and a uncharged
-            || (ca > cb)); // b is better if charge is lower
+    return Integer.compare(ca, cb);
   }
 
 
@@ -468,10 +437,19 @@ public class MSAnnotationNetworkLogic {
 
     RowGroup group = useGroup ? row.getGroup() : null;
 
+    // best is first
     ident.sort(new Comparator<IonIdentity>() {
       @Override
       public int compare(IonIdentity a, IonIdentity b) {
-        return compareRows(a, b, group);
+        // reversed order
+        switch (compareRows(a, b, group)) {
+          case -1:
+            return 1;
+          case 1:
+            return -1;
+          default:
+            return 0;
+        }
       }
     });
     return ident;
