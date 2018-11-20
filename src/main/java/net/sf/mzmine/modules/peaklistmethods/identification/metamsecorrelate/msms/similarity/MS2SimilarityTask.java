@@ -31,6 +31,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.dat
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
+import net.sf.mzmine.taskcontrol.TaskStatus;
 import net.sf.mzmine.util.maths.similarity.Similarity;
 import net.sf.mzmine.util.scans.ScanAlignment;
 import net.sf.mzmine.util.scans.ScanMZDiffConverter;
@@ -119,7 +120,9 @@ public class MS2SimilarityTask extends AbstractTask {
 
   @Override
   public void run() {
+    setStatus(TaskStatus.PROCESSING);
     doCheck();
+    setStatus(TaskStatus.FINISHED);
   }
 
   public void doCheck() {

@@ -169,7 +169,7 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
     int c = 0;
     for (IonIdentity ad : ident) {
       // do not test the unmodified
-      if (!ad.getIonType().isModifiedUndefinedAdduct())
+      if (ad.getIonType().getModCount() <= 0)
         continue;
 
       IonType mod = ad.getIonType();
