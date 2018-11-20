@@ -40,6 +40,10 @@ public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity>
     this.id = id;
   }
 
+  public void setMzTolerance(MZTolerance mzTolerance) {
+    this.mzTolerance = mzTolerance;
+  }
+
   /**
    * Network ID
    * 

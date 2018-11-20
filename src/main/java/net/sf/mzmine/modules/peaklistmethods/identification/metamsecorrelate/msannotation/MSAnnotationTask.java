@@ -28,7 +28,6 @@ import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
-import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.datamodel.identities.iontype.MSAnnotationNetworkLogic;
 import net.sf.mzmine.datamodel.impl.RowGroup;
@@ -250,11 +249,13 @@ public class MSAnnotationTask extends AbstractTask {
     LOG.info("Corr: A total of " + compared.get() + " row2row adduct comparisons with "
         + annotPairs.get() + " annotation pairs");
 
-
     // create networks
     LOG.info("Corr: create annotation network numbers");
-    List<AnnotationNetwork> nets =
-        MSAnnotationNetworkLogic.createAnnotationNetworks(peakList, library.getMzTolerance(), true);
+    AtomicInteger netID = new AtomicInteger(0);
+    MSAnnotationNetworkLogic.streamNetworks(peakList).forEach(n -> {
+      n.setMzTolerance(library.getMzTolerance());
+      n.setID(netID.getAndIncrement());
+    });
 
     // refinement of adducts
     // do MSMS check for multimers
@@ -276,7 +277,7 @@ public class MSAnnotationTask extends AbstractTask {
       return;
 
     // recalc annotation networks
-    MSAnnotationNetworkLogic.recalcAllAnnotationNetworks(nets, true);
+    MSAnnotationNetworkLogic.recalcAllAnnotationNetworks(peakList, true);
 
     // show all annotations with the highest count of links
     LOG.info("Corr: show most likely annotations");

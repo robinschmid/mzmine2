@@ -102,7 +102,14 @@ public class MSAnnotationNetworkLogic {
    */
   public static List<AnnotationNetwork> createAnnotationNetworks(PeakList pkl,
       MZTolerance mzTolerance, boolean useGrouping) {
-    return createAnnotationNetworks(pkl.getRows(), mzTolerance, useGrouping);
+    if (useGrouping && pkl.getGroups() != null) {
+      List<AnnotationNetwork> nets = new ArrayList<>();
+      for (RowGroup g : pkl.getGroups())
+        nets.addAll(createAnnotationNetworks(g.toArray(new PeakListRow[g.size()]), mzTolerance));
+
+      return nets;
+    } else
+      return createAnnotationNetworks(pkl.getRows(), mzTolerance);
   }
 
   /**
@@ -152,15 +159,9 @@ public class MSAnnotationNetworkLogic {
    * @return
    */
   public static List<AnnotationNetwork> createAnnotationNetworks(PeakListRow[] rows,
-      MZTolerance mzTolerance, boolean useGrouping) {
-
+      MZTolerance mzTolerance) {
     // bin neutral masses to annotation networks
     List<AnnotationNetwork> nets = new ArrayList<>(binNeutralMassToNetworks(rows, mzTolerance));
-
-    // split by groups
-    if (useGrouping) {
-      splitByGroups(nets);
-    }
 
     // add network to all identities
     setNetworksToAllAnnotations(nets);
@@ -466,19 +467,19 @@ public class MSAnnotationNetworkLogic {
       sortIonIdentities(r, useGroup);
   }
 
-
-  public static void recalcAllAnnotationNetworks(List<AnnotationNetwork> nets,
-      boolean removeEmpty) {
-    if (removeEmpty) {
-      for (int i = 0; i < nets.size(); i++) {
-        if (nets.get(i).size() < 2) {
-          nets.remove(i);
-          i--;
-        }
-      }
-    }
-    // recalc
-    nets.stream().forEach(AnnotationNetwork::recalcConnections);
+  /**
+   * Delete empty networks
+   * 
+   * @param peakList
+   * @param removeEmpty
+   */
+  public static void recalcAllAnnotationNetworks(PeakList peakList, boolean removeEmpty) {
+    streamNetworks(peakList).forEach(n -> {
+      if (removeEmpty && n.size() < 2) {
+        n.delete();
+      } else
+        n.recalcConnections();
+    });
   }
 
   /**

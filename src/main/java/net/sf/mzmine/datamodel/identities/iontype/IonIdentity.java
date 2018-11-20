@@ -23,6 +23,7 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import net.sf.mzmine.datamodel.PeakListRow;
@@ -81,15 +82,38 @@ public class IonIdentity {
     IonIdentity a = getAdductEqualIdentity(row1, row1ID);
     IonIdentity b = getAdductEqualIdentity(row2, row2ID);
 
+
+    AnnotationNetwork net = null;
+
     // create new
     if (a == null) {
       a = new IonIdentity(row1ID);
       row1.addIonIdentity(a, false);
+    } else {
+      net = a.getNetwork();
     }
     if (b == null) {
       b = new IonIdentity(row2ID);
       row2.addIonIdentity(b, false);
+    } else {
+      // if both were in networks
+      if (net != null) {
+        // combine networks
+        AnnotationNetwork netB = b.getNetwork();
+        for (Entry<PeakListRow, IonIdentity> e : netB.entrySet()) {
+          net.put(e.getKey(), e.getValue());
+        }
+      } else
+        net = b.getNetwork();
     }
+
+    // no network so far
+    if (net == null) {
+      net = new AnnotationNetwork(null, -1);
+    }
+
+    net.put(row1, a);
+    net.put(row2, b);
     a.addPartnerRow(row2, b);
     b.addPartnerRow(row1, a);
     return new IonIdentity[] {a, b};
