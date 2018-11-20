@@ -100,10 +100,10 @@ public class SimpleMetaMSEcorrelateParameters extends SimpleParameterSet {
           new MinimumFeaturesFilterParameters(true));
 
 
-  public static final PercentParameter MIN_FSHAPE_CORR = new PercentParameter(
-      "Min feature shape correlation",
-      "Minimum average feature shape correlation (Pearson) (min 5 data points and 2 on each peak edge) ",
-      0.85);
+  public static final OptionalParameter<PercentParameter> MIN_FSHAPE_CORR =
+      new OptionalParameter<>(new PercentParameter("Group by min feature shape corr",
+          "Group by feature shape correlation. Minimum average feature shape correlation (Pearson) (min 5 data points and 2 on each peak edge) ",
+          0.85), true);
 
   public static final BooleanParameter FILTER_FEATURE_HEIGHT_CORR = new BooleanParameter(
       "Feature height corr filter",

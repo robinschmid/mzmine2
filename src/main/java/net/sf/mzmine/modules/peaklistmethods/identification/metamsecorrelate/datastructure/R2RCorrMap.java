@@ -94,8 +94,7 @@ public class R2RCorrMap extends R2RMap<R2RCorrelationData> {
    * 
    * @return
    */
-  public RowGroupList createCorrGroups(PeakList pkl, double minShapeR,
-      AtomicDouble stageProgress) {
+  public RowGroupList createCorrGroups(PeakList pkl, AtomicDouble stageProgress) {
     LOG.info("Corr: Creating correlation groups");
 
     try {
@@ -114,37 +113,34 @@ public class R2RCorrMap extends R2RMap<R2RCorrelationData> {
         R2RCorrelationData r2r = e.getValue();
         if (r2r instanceof R2RFullCorrelationData) {
           R2RFullCorrelationData data = (R2RFullCorrelationData) r2r;
-          if (data.hasFeatureShapeCorrelation() && data.getAvgShapeR() >= minShapeR) {
-
-            int[] ids = toKeyIDs(e.getKey());
-            // already added?
-            CorrelationRowGroup group = used.get(ids[0]);
-            CorrelationRowGroup group2 = used.get(ids[1]);
-            // merge groups if both present
-            if (group != null && group2 != null && group.getGroupID() != group2.getGroupID()) {
-              // copy all to group1 and remove g2
-              for (int g2 = 0; g2 < group2.size(); g2++) {
-                PeakListRow r = group2.get(g2);
-                group.add(r);
-                used.put(r.getID(), group);
-              }
-              groups.remove(group2);
-            } else if (group == null && group2 == null) {
-              // create new group with both rows
-              group = new CorrelationRowGroup(raw, groups.size());
-              group.add(pkl.findRowByID(ids[0]));
-              group.add(pkl.findRowByID(ids[1]));
-              groups.add(group);
-              // mark as used
-              used.put(ids[0], group);
-              used.put(ids[1], group);
-            } else if (group2 == null) {
-              group.add(pkl.findRowByID(ids[1]));
-              used.put(ids[1], group);
-            } else if (group == null) {
-              group2.add(pkl.findRowByID(ids[0]));
-              used.put(ids[0], group2);
+          int[] ids = toKeyIDs(e.getKey());
+          // already added?
+          CorrelationRowGroup group = used.get(ids[0]);
+          CorrelationRowGroup group2 = used.get(ids[1]);
+          // merge groups if both present
+          if (group != null && group2 != null && group.getGroupID() != group2.getGroupID()) {
+            // copy all to group1 and remove g2
+            for (int g2 = 0; g2 < group2.size(); g2++) {
+              PeakListRow r = group2.get(g2);
+              group.add(r);
+              used.put(r.getID(), group);
             }
+            groups.remove(group2);
+          } else if (group == null && group2 == null) {
+            // create new group with both rows
+            group = new CorrelationRowGroup(raw, groups.size());
+            group.add(pkl.findRowByID(ids[0]));
+            group.add(pkl.findRowByID(ids[1]));
+            groups.add(group);
+            // mark as used
+            used.put(ids[0], group);
+            used.put(ids[1], group);
+          } else if (group2 == null) {
+            group.add(pkl.findRowByID(ids[1]));
+            used.put(ids[1], group);
+          } else if (group == null) {
+            group2.add(pkl.findRowByID(ids[0]));
+            used.put(ids[0], group2);
           }
         }
         // report back progress

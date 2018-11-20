@@ -73,8 +73,10 @@ public class SimpleMetaMSEcorrelateTask extends MetaMSEcorrelateTask {
         parameterSet.getParameter(SimpleMetaMSEcorrelateParameters.RT_TOLERANCE).getValue();
 
     // FEATURE SHAPE CORRELATION
-    minShapeCorrR =
+    groupByFShapeCorr =
         parameterSet.getParameter(SimpleMetaMSEcorrelateParameters.MIN_FSHAPE_CORR).getValue();
+    minShapeCorrR = parameterSet.getParameter(SimpleMetaMSEcorrelateParameters.MIN_FSHAPE_CORR)
+        .getEmbeddedParameter().getValue();
     shapeSimMeasure = SimilarityMeasure.PEARSON;
     minCorrelatedDataPoints = 5;
     minCorrDPOnFeatureEdge = 2;

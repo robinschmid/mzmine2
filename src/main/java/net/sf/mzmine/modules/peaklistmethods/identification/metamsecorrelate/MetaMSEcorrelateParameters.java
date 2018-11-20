@@ -83,9 +83,10 @@ public class MetaMSEcorrelateParameters extends SimpleParameterSet {
 
 
   // Sub parameters of correlation grouping
-  public static final SubModuleParameter FSHAPE_CORRELATION = new SubModuleParameter(
-      "Correlation grouping", "Grouping based on Pearson correlation of the feature shapes.",
-      new FeatureShapeCorrelationParameters(true));
+  public static final OptionalModuleParameter<FeatureShapeCorrelationParameters> FSHAPE_CORRELATION =
+      new OptionalModuleParameter<>("Correlation grouping",
+          "Grouping based on Pearson correlation of the feature shapes.",
+          new FeatureShapeCorrelationParameters(true), true);
 
   public static final OptionalModuleParameter<InterSampleHeightCorrParameters> IMAX_CORRELATION =
       new OptionalModuleParameter<>("Feature height correlation",

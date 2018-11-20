@@ -19,21 +19,14 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate;
 
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
-import org.apache.commons.math.MathException;
-import org.apache.commons.math.stat.regression.SimpleRegression;
 import com.google.common.util.concurrent.AtomicDouble;
 import io.github.msdk.MSDKRuntimeException;
-import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
@@ -51,9 +44,9 @@ import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
 import net.sf.mzmine.desktop.Desktop;
 import net.sf.mzmine.desktop.impl.HeadLessDesktop;
 import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.FeatureCorrelationUtil;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.FeatureShapeCorrelationParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.correlation.InterSampleHeightCorrParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData.SimilarityMeasure;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
@@ -80,7 +73,6 @@ import net.sf.mzmine.util.PeakListRowSorter;
 import net.sf.mzmine.util.PeakUtils;
 import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
-import net.sf.mzmine.util.maths.similarity.Similarity;
 
 public class MetaMSEcorrelateTask extends AbstractTask {
 
@@ -139,6 +131,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
   // FEATURE SHAPE CORRELATION
   // correlation r to identify negative correlation
+  protected boolean groupByFShapeCorr;
   protected SimilarityMeasure shapeSimMeasure;
   protected boolean useTotalShapeCorrFilter;
   protected double minTotalShapeCorrR;
@@ -198,7 +191,9 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     rtTolerance = parameterSet.getParameter(MetaMSEcorrelateParameters.RT_TOLERANCE).getValue();
 
     // FEATURE SHAPE CORRELATION
-    FeatureShapeCorrelationParameters corrp = (FeatureShapeCorrelationParameters) parameterSet
+    groupByFShapeCorr =
+        parameterSet.getParameter(MetaMSEcorrelateParameters.FSHAPE_CORRELATION).getValue();
+    FeatureShapeCorrelationParameters corrp = parameterSet
         .getParameter(MetaMSEcorrelateParameters.FSHAPE_CORRELATION).getEmbeddedParameters();
     // filter
     // start with high abundant features >= mainPeakIntensity
@@ -305,17 +300,17 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       // MAIN STEP
       // create correlation map
       setStage(Stage.CORRELATION_ANNOTATION);
-      R2RCorrMap corrMap = new R2RCorrMap(rtTolerance, minFFilter);
 
       // do R2R comparison correlation
       // might also do annotation if selected
+      R2RCorrMap corrMap = new R2RCorrMap(rtTolerance, minFFilter);
       doR2RComparison(groupedPKL, corrMap);
       if (isCanceled())
         return;
 
       LOG.info("Corr: Starting to group by correlation");
       setStage(Stage.GROUPING);
-      RowGroupList groups = corrMap.createCorrGroups(groupedPKL, minShapeCorrR, stageProgress);
+      RowGroupList groups = corrMap.createCorrGroups(groupedPKL, stageProgress);
 
       if (isCanceled())
         return;
@@ -403,8 +398,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         // add to project
         project.addPeakList(groupedPKL);
 
-        // do deisotoping
-        deisotopeGroups();
         // do adduct search
         // searchAdducts();
         // Add task description to peakList.
@@ -518,26 +511,25 @@ public class MetaMSEcorrelateTask extends AbstractTask {
 
               // has a minimum number/% of overlapping features in all samples / in at least one
               // groups
-              // or check RTRange
               OverlapResult overlap =
                   minFFilter.filterMinFeaturesOverlap(raw, row, row2, rtTolerance);
               if (overlap.equals(OverlapResult.TRUE)) {
                 // correlate if in rt range
-                R2RFullCorrelationData corr = corrR2R(raw, row, row2, minCorrelatedDataPoints,
-                    minCorrDPOnFeatureEdge, minDPHeightCorr, minHeight, noiseLevelCorr,
-                    useHeightCorrFilter, heightSimMeasure, minHeightCorr);
-                if (corr != null) {
-                  // deletes correlations if criteria is not met
-                  corr.validate(minTotalShapeCorrR, useTotalShapeCorrFilter,
-                      shapeSimMeasure.equals(SimilarityMeasure.PEARSON) ? minShapeCorrR : 0,
-                      shapeSimMeasure.equals(SimilarityMeasure.COSINE_SIM) ? minShapeCorrR : 0);
-                  // check for correlation in min samples
-                  if (corr.hasFeatureShapeCorrelation())
-                    checkMinFCorrelation(minFFilter, corr);
-                  // still valid?
-                  if (corr.isValid()) {
-                    map.add(row, row2, corr);
-                  }
+                R2RFullCorrelationData corr =
+                    FeatureCorrelationUtil.corrR2R(raw, row, row2, groupByFShapeCorr,
+                        minCorrelatedDataPoints, minCorrDPOnFeatureEdge, minDPHeightCorr, minHeight,
+                        noiseLevelCorr, useHeightCorrFilter, heightSimMeasure, minHeightCorr);
+
+                // corr is even present if only grouping by retention time
+                // corr is only null if heightCorrelation was not met
+                if (corr != null && //
+                (!groupByFShapeCorr || FeatureCorrelationUtil.checkFShapeCorr(groupedPKL,
+                    minFFilter, corr, useTotalShapeCorrFilter, minTotalShapeCorrR, minShapeCorrR,
+                    shapeSimMeasure))) {
+                  // add to map
+                  // can be because of any combination of
+                  // retention time, shape correlation, non-negative height correlation
+                  map.add(row, row2, corr);
                 }
 
                 // search directly? or search later in corr group?
@@ -579,24 +571,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
   }
 
   /**
-   * Final check if there are enough F2FCorrelations in samples and groups
-   * 
-   * @param minFFilter
-   * @param corr
-   */
-  private void checkMinFCorrelation(MinimumFeatureFilter minFFilter, R2RFullCorrelationData corr) {
-    List<RawDataFile> raw = new ArrayList<>();
-    for (Entry<RawDataFile, CorrelationData> e : corr.getCorrPeakShape().entrySet())
-      if (e.getValue() != null && e.getValue().isValid())
-        raw.add(e.getKey());
-    boolean hasCorrInSamples = minFFilter.filterMinFeatures(peakList.getRawDataFiles(), raw);
-    if (!hasCorrInSamples) {
-      // delete corr peak shape
-      corr.setCorrPeakShape(null);
-    }
-  }
-
-  /**
    * direct exclusion for high level filtering check rt of all peaks of all raw files
    * 
    * @param row
@@ -616,340 +590,6 @@ public class MetaMSEcorrelateTask extends AbstractTask {
       }
     }
     return false;
-  }
-
-  /**
-   * Correlate all f2f and create row 2 row correlation data
-   * 
-   * @param raw
-   * @param testRow
-   * @param row
-   * @param useHeightCorrFilter
-   * @return R2R correlation or null if invalid/no correlation
-   */
-  public static R2RFullCorrelationData corrR2R(RawDataFile[] raw, PeakListRow testRow,
-      PeakListRow row, int minCorrelatedDataPoints, int minCorrDPOnFeatureEdge,
-      int minDPFHeightCorr, double minHeight, double noiseLevelShapeCorr,
-      boolean useHeightCorrFilter, SimilarityMeasure heightSimilarity, double minHeightCorr)
-      throws Exception {
-    CorrelationData heightCorr =
-        corrR2RFeatureHeight(raw, testRow, row, minHeight, noiseLevelShapeCorr, minDPFHeightCorr);
-
-    // significance is alpha. 0 is perfect
-    double maxSlopeSignificance = 0.3;
-    double minFoldChange = 10;
-    // stop if slope is negative or 0
-    if (useHeightCorrFilter && heightCorr != null && filterNegativeRegression(heightCorr,
-        minFoldChange, maxSlopeSignificance, minDPFHeightCorr, minHeightCorr, heightSimilarity))
-      return null;
-    else {
-      Map<RawDataFile, CorrelationData> fCorr = corrR2RFeatureShapes(raw, testRow, row,
-          minCorrelatedDataPoints, minCorrDPOnFeatureEdge, noiseLevelShapeCorr);
-
-      if (fCorr != null && fCorr.isEmpty())
-        fCorr = null;
-
-      R2RFullCorrelationData rCorr = new R2RFullCorrelationData(testRow, row, heightCorr, fCorr);
-      if (rCorr.isValid())
-        return rCorr;
-      else
-        return null;
-    }
-  }
-
-  /**
-   * correlates the height profile of one row to another NO escape routine
-   * 
-   * @param raw
-   * @param row
-   * @param g
-   * @return Correlation data of i profile of max i (or null if no correlation)
-   */
-  public static CorrelationData corrR2RFeatureHeight(final RawDataFile raw[], PeakListRow row,
-      PeakListRow g, double minHeight, double noiseLevel, int minDPFHeightCorr) {
-    // minimum of two
-    minDPFHeightCorr = Math.min(minDPFHeightCorr, 2);
-
-    List<double[]> data = new ArrayList<>();
-    // calc ratio
-    double ratio = 0;
-    SimpleRegression reg = new SimpleRegression();
-    // go through all raw files
-    for (int r = 0; r < raw.length; r++) {
-      Feature f1 = row.getPeak(raw[r]);
-      Feature f2 = g.getPeak(raw[r]);
-      if (f1 != null && f2 != null) {
-        // I profile correlation
-        double a = f1.getHeight();
-        double b = f2.getHeight();
-        if (a >= minHeight && b >= minHeight) {
-          data.add(new double[] {a, b});
-          ratio += a / b;
-          reg.addData(a, b);
-        }
-      }
-    }
-
-    ratio = ratio / data.size();
-    if (ratio != 0) {
-      // estimate missing values as noise level if > minHeight
-      for (int r = 0; r < raw.length; r++) {
-        Feature f1 = row.getPeak(raw[r]);
-        Feature f2 = g.getPeak(raw[r]);
-
-        boolean amissing = (f1 == null || f1.getHeight() < minHeight);
-        boolean bmissing = (f2 == null || f2.getHeight() < minHeight);
-        // xor
-        if (amissing ^ bmissing) {
-          double a = amissing ? f2.getHeight() * ratio : f1.getHeight();
-          double b = bmissing ? f1.getHeight() / ratio : f2.getHeight();
-
-          // only if both are >= min height
-          if (a >= minHeight && b >= minHeight) {
-            if (amissing)
-              a = Math.max(noiseLevel, f1 == null ? 0 : f1.getHeight());
-            if (bmissing)
-              b = Math.max(noiseLevel, f2 == null ? 0 : f2.getHeight());
-            data.add(new double[] {a, b});
-            reg.addData(a, b);
-          }
-        }
-      }
-    }
-
-    // TODO weighting of intensity corr
-    if (data.size() < 2)
-      return null;
-    else
-      return CorrelationData.create(data);
-  }
-
-  /**
-   * Only true if this should be filtered out. Need to have a minimum fold change to be significant.
-   * 
-   * @param data
-   * @param reg
-   * @param minFoldChange
-   * @param maxSlopeSignificance
-   * @return
-   */
-  private static boolean filterNegativeRegression(CorrelationData corr, double minFoldChange,
-      double maxSlopeSignificance, int minDP, double minSimilarity,
-      SimilarityMeasure heightSimilarity) {
-    if (corr == null || (corr.getDPCount() < 3 || corr.getDPCount() < minDP))
-      return false;
-
-    double maxFC = Math.max(Similarity.maxFoldChange(corr.getData(), 0),
-        Similarity.maxFoldChange(corr.getData(), 1));
-    // do not use as filter if
-    if (maxFC < minFoldChange)
-      return false;
-
-    double significantSlope = 0;
-    try {
-      significantSlope = corr.getReg().getSignificance();
-    } catch (MathException e) {
-      LOG.log(Level.SEVERE, "slope significance cannot be calculated", e);
-    }
-    // if slope is negative
-    // slope significance is low (alpha is high)
-    // similarity is low
-    return (corr.getReg().getSlope() <= 0
-        || (!Double.isNaN(significantSlope) && significantSlope > maxSlopeSignificance)
-        || corr.getSimilarity(heightSimilarity) < minSimilarity);
-  }
-
-  /**
-   * Correlation of feature to feature shapes in all RawDataFiles
-   * 
-   * @param raw
-   * @param row
-   * @param g
-   * @return Map of feature shape correlation data (can be empty NON null)
-   * @throws Exception
-   */
-  public static Map<RawDataFile, CorrelationData> corrR2RFeatureShapes(final RawDataFile raw[],
-      PeakListRow row, PeakListRow g, int minCorrelatedDataPoints, int minCorrDPOnFeatureEdge,
-      double noiseLevelShapeCorr) throws Exception {
-    HashMap<RawDataFile, CorrelationData> corrData = new HashMap<>();
-    // go through all raw files
-    for (int r = 0; r < raw.length; r++) {
-      Feature f1 = row.getPeak(raw[r]);
-      Feature f2 = g.getPeak(raw[r]);
-      if (f1 != null && f2 != null) {
-        // peak shape correlation
-        CorrelationData data = corrFeatureShape(f1, f2, true, minCorrelatedDataPoints,
-            minCorrDPOnFeatureEdge, noiseLevelShapeCorr);
-
-        // if correlation is really bad return null
-        if (filterNegativeRegression(data, 5, 0.2, 7, 0.5, SimilarityMeasure.PEARSON))
-          return null;
-        // enough data points
-        if (data != null && data.getDPCount() >= minCorrelatedDataPoints)
-          corrData.put(raw[r], data);
-      }
-    }
-    return corrData;
-  }
-
-  /**
-   * feature shape correlation
-   * 
-   * @param f1
-   * @param f2
-   * @return feature shape correlation or null if not possible not enough data points for a
-   *         correlation
-   * @throws Exception
-   */
-  public static CorrelationData corrFeatureShape(Feature f1, Feature f2, boolean sameRawFile,
-      int minCorrelatedDataPoints, int minCorrDPOnFeatureEdge, double noiseLevelShapeCorr)
-      throws Exception {
-    // Range<Double> rt1 = f1.getRawDataPointsRTRange();
-    // Range<Double> rt2 = f2.getRawDataPointsRTRange();
-    if (sameRawFile) {
-      // scan numbers (not necessary 1,2,3...)
-      int[] sn1 = f1.getScanNumbers();
-      int[] sn2 = f2.getScanNumbers();
-
-      if (sn1.length < minCorrelatedDataPoints || sn2.length < minCorrelatedDataPoints)
-        return null;
-
-      // find max of sn1
-      int maxI = 0;
-      double max = 0;
-      for (int i = 0; i < sn1.length; i++) {
-        double val = f1.getDataPoint(sn1[i]).getIntensity();
-        if (val > max) {
-          maxI = i;
-          max = val;
-        }
-      }
-
-      int offset2 = 0;
-      // find corresponding scan in sn2
-      for (int i = 0; i < sn2.length; i++) {
-        if (sn1[maxI] == sn2[i]) {
-          offset2 = i;
-          break;
-        }
-      }
-
-      // save max and min of intensity of val1(x)
-      List<double[]> data = new ArrayList<double[]>();
-
-      // add all data points <=max
-      int i1 = maxI;
-      int i2 = offset2;
-      while (i1 >= 0 && i2 >= 0) {
-        int s1 = sn1[i1];
-        int s2 = sn2[i2];
-        // add point, if not break
-        if (s1 == s2) {
-          if (!addDataPointToCorr(data, f1.getDataPoint(s1), f2.getDataPoint(s2),
-              noiseLevelShapeCorr))
-            break;
-        }
-        // end of peak found
-        else
-          break;
-        i1--;
-        i2--;
-      }
-
-      // check min data points left from apex
-      int left = data.size() - 1;
-      if (left < minCorrDPOnFeatureEdge)
-        return null;
-
-      // add all dp>max
-      i1 = maxI + 1;
-      i2 = offset2 + 1;
-      while (i1 < sn1.length && i2 < sn2.length) {
-        int s1 = sn1[i1];
-        int s2 = sn2[i2];
-        if (s1 == s2) {
-          if (!addDataPointToCorr(data, f1.getDataPoint(s1), f2.getDataPoint(s2),
-              noiseLevelShapeCorr))
-            break;
-        }
-        // end of peak found
-        else
-          break;
-        i1++;
-        i2++;
-      }
-      // check right and total dp
-      int right = data.size() - 1 - left;
-      // return pearson r
-      if (data.size() >= minCorrelatedDataPoints && right >= minCorrDPOnFeatureEdge) {
-        return CorrelationData.create(data);
-      }
-    } else {
-      // TODO if different raw file search for same rt
-      // impute rt/I values if between 2 data points
-    }
-    return null;
-  }
-
-  private static boolean addDataPointToCorr(List<double[]> data, DataPoint a, DataPoint b,
-      double noiseLevel) {
-    // add all data points over a given threshold
-    // TODO raw data (not smoothed)
-    if (a != null && b != null) {
-      // raw data
-      double val1 = a.getIntensity();
-      double val2 = b.getIntensity();
-
-      if (val1 >= noiseLevel && val2 >= noiseLevel) {
-        data.add(new double[] {val1, val2});
-        return true;
-      } else
-        return false;
-    } else
-      return false;
-  }
-
-  /**
-   * counts all data points >= noiseLevel
-   * 
-   * @param f2
-   * @return
-   */
-  private double countDPHigherThanNoise(Feature f) {
-    int c = 0;
-    for (int i = 0; i < f.getScanNumbers().length; i++) {
-      double val = f.getDataPoint(f.getScanNumbers()[i]).getIntensity();
-      if (val >= noiseLevelCorr)
-        c++;
-    }
-    return c;
-  }
-
-  /**
-   * 1. Check for specific isotopes: 2. 13C 1. Check group for isotopes 2. Check raw data for
-   * isotopes
-   */
-  private void deisotopeGroups() {
-    // TODO Auto-generated method stub
-
-  }
-
-  /**
-   * Combine groups across different scan events
-   */
-  private void combineGroups() {
-    // TODO Auto-generated method stub
-
-  }
-
-
-  /**
-   * find in source fragments based on intensity profile in MS1 and MSE scans
-   * 
-   */
-  private void findInSourceFragments() {
-    // TODO Auto-generated method stub
-
   }
 
 }
