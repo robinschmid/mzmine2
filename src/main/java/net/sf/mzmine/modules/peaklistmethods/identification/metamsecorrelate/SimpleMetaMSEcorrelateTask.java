@@ -94,8 +94,8 @@ public class SimpleMetaMSEcorrelateTask extends MetaMSEcorrelateTask {
         parameterSet.getParameter(SimpleMetaMSEcorrelateParameters.ADDUCT_LIBRARY).getValue();
     annotationParameters = parameterSet
         .getParameter(SimpleMetaMSEcorrelateParameters.ADDUCT_LIBRARY).getEmbeddedParameters();
-    annotationParameters =
-        MSAnnotationParameters.createFullParamSet(annotationParameters, rtTolerance, mzTolerance);
+    annotationParameters = MSAnnotationParameters.createFullParamSet(annotationParameters,
+        rtTolerance, mzTolerance, minHeight);
     // simple parameter setup: provide mzTol and charge
     int maxCharge =
         Arrays.stream(peakList.getRows()).mapToInt(PeakListRow::getRowCharge).max().orElse(3);

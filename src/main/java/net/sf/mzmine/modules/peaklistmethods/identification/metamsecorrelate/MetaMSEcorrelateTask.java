@@ -202,7 +202,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
     annotationParameters = parameterSet.getParameter(MetaMSEcorrelateParameters.ADDUCT_LIBRARY)
         .getEmbeddedParameters();
     annotationParameters =
-        MSAnnotationParameters.createFullParamSet(annotationParameters, rtTolerance);
+        MSAnnotationParameters.createFullParamSet(annotationParameters, rtTolerance, minHeight);
     library = new MSAnnotationLibrary(annotationParameters);
     // END OF ADDUCTS AND REFINEMENT
 

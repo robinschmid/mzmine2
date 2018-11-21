@@ -138,8 +138,8 @@ public class MSAnnotationParameters extends SimpleParameterSet {
    * @return
    */
   public static MSAnnotationParameters createFullParamSet(MSAnnotationParameters param,
-      RTTolerance rtTol) {
-    return createFullParamSet(param, rtTol, null);
+      RTTolerance rtTol, double minHeight) {
+    return createFullParamSet(param, rtTol, null, minHeight);
   }
 
   /**
@@ -151,11 +151,16 @@ public class MSAnnotationParameters extends SimpleParameterSet {
    * @return
    */
   public static MSAnnotationParameters createFullParamSet(MSAnnotationParameters param,
-      RTTolerance rtTol, MZTolerance mzTol) {
+      RTTolerance rtTol, MZTolerance mzTol, double minHeight) {
     MSAnnotationParameters full = new MSAnnotationParameters();
+    for (Parameter p : param.getParameters()) {
+      full.getParameter(p).setValue(p.getValue());
+    }
     full.getParameter(MSAnnotationParameters.RT_TOLERANCE).setValue(rtTol);
     if (mzTol != null)
       full.getParameter(MSAnnotationParameters.MZ_TOLERANCE).setValue(mzTol);
+
+    full.getParameter(MSAnnotationParameters.MIN_HEIGHT).setValue(minHeight);
     return full;
   }
 
