@@ -259,7 +259,15 @@ public class FormulaPredictionPeakListTask extends AbstractTask {
         return;
       }
 
-      MSMSScore score = MSMSScoreCalculator.evaluateMSMS(cdkFormula, msmsScan, msmsParameters);
+      // limit to top n signals
+      boolean useTopNSignals =
+          msmsParameters.getParameter(MSMSScoreParameters.maxSignals).getValue();
+      int topNSignals = !useTopNSignals ? -1
+          : msmsParameters.getParameter(MSMSScoreParameters.maxSignals).getEmbeddedParameter()
+              .getValue();
+
+      MSMSScore score =
+          MSMSScoreCalculator.evaluateMSMS(cdkFormula, msmsScan, msmsParameters, topNSignals);
 
       double minMSMSScore =
           msmsParameters.getParameter(MSMSScoreParameters.msmsMinScore).getValue();

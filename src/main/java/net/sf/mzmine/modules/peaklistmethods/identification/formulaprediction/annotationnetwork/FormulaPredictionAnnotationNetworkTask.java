@@ -86,6 +86,8 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
   private boolean sortResults;
   private FormulaSortTask sorter;
   private CreateAvgNetworkFormulasTask netFormulaMerger;
+  private int topNSignals;
+  private boolean useTopNSignals;
 
   /**
    *
@@ -147,6 +149,11 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
               .getEmbeddedParameters();
       massListName = msmsParameters.getParameter(MSMSScoreParameters.massList).getValue();
       minMSMSScore = msmsParameters.getParameter(MSMSScoreParameters.msmsMinScore).getValue();
+      // limit to top n signals
+      useTopNSignals = msmsParameters.getParameter(MSMSScoreParameters.maxSignals).getValue();
+      topNSignals = !useTopNSignals ? -1
+          : msmsParameters.getParameter(MSMSScoreParameters.maxSignals).getEmbeddedParameter()
+              .getValue();
     }
 
     sortResults =
@@ -251,13 +258,6 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
         // ionized formula
         IMolecularFormula cdkFormulaIon = ion.addToFormula(cdkFormula);
 
-        if (ion.getModCount() > 0)
-          logger.info(MessageFormat.format("Checking type {0} as {1} ({3}) for neutral {2} ({4})",
-              ion.toString(), MolecularFormulaManipulator.getString(cdkFormulaIon),
-              MolecularFormulaManipulator.getString(cdkFormula),
-              MolecularFormulaManipulator.getTotalExactMass(cdkFormulaIon),
-              MolecularFormulaManipulator.getTotalExactMass(cdkFormula)));
-
         // Mass is ok, so test other constraints
         checkConstraints(resultingFormulas, cdkFormula, cdkFormulaIon, row, ion);
       } catch (CloneNotSupportedException e) {
@@ -327,7 +327,8 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
           return;
         }
 
-        MSMSScore score = MSMSScoreCalculator.evaluateMSMS(cdkFormulaIon, msmsScan, msmsParameters);
+        MSMSScore score =
+            MSMSScoreCalculator.evaluateMSMS(cdkFormulaIon, msmsScan, msmsParameters, topNSignals);
 
         if (score != null) {
           msmsScore = score.getScore();
