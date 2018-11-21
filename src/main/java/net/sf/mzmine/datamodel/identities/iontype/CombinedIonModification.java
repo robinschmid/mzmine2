@@ -119,4 +119,31 @@ public class CombinedIonModification extends IonModification {
   public boolean contains(IonModification mod) {
     return Arrays.stream(getAdducts()).anyMatch(m -> m.equals(mod));
   }
+
+
+  /**
+   * Specifies whether this object limits further modification
+   * 
+   * @return
+   */
+  @Override
+  public boolean hasModificationLimit() {
+    return Arrays.stream(adducts).anyMatch(IonModification::hasModificationLimit);
+  }
+
+  @Override
+  public int getModificationLimit() {
+    return Arrays.stream(adducts).mapToInt(IonModification::getModificationLimit)
+        .filter(limit -> limit == -1).min().orElse(-1);
+  }
+
+  /**
+   * Number of sub IonModifications
+   * 
+   * @return
+   */
+  @Override
+  public int getAdductsCount() {
+    return adducts.length;
+  }
 }

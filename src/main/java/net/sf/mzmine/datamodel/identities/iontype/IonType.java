@@ -298,7 +298,7 @@ public class IonType extends NeutralMolecule implements Comparable<IonType> {
    * @return count of modification
    */
   public int getModCount() {
-    return mod == null ? 0 : mod.getAdducts().length;
+    return mod == null ? 0 : mod.getAdductsCount();
   }
 
   /**

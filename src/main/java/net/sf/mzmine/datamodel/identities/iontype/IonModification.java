@@ -21,17 +21,17 @@ public class IonModification extends NeutralMolecule implements Comparable<IonMo
       new IonModification(IonModificationType.ADDUCT, "H", "H", 1.007276, 1);
   //
   public static final IonModification NA =
-      new IonModification(IonModificationType.ADDUCT, "Na", "Na", 22.989218, 1);
+      new IonModification(IonModificationType.ADDUCT, "Na", "Na", 22.989218, 1, 1);
   public static final IonModification NH4 =
       new IonModification(IonModificationType.ADDUCT, "NH4", "NH4", 18.033823, 1);
   public static final IonModification K =
-      new IonModification(IonModificationType.ADDUCT, "K", "K", 38.963158, 1);
+      new IonModification(IonModificationType.ADDUCT, "K", "K", 38.963158, 1, 1);
   public static final IonModification FE =
-      new IonModification(IonModificationType.ADDUCT, "Fe", "Fe", 55.933840, 2);
+      new IonModification(IonModificationType.ADDUCT, "Fe", "Fe", 55.933840, 2, 1);
   public static final IonModification CA =
-      new IonModification(IonModificationType.ADDUCT, "Ca", "Ca", 39.961493820, 2);
+      new IonModification(IonModificationType.ADDUCT, "Ca", "Ca", 39.961493820, 2, 1);
   public static final IonModification MG =
-      new IonModification(IonModificationType.ADDUCT, "Mg", "Mg", 47.96953482, 2);
+      new IonModification(IonModificationType.ADDUCT, "Mg", "Mg", 47.96953482, 2, 1);
   // combined
   public static final IonModification H2plus =
       new CombinedIonModification(new IonModification[] {H, H});
@@ -110,6 +110,7 @@ public class IonModification extends NeutralMolecule implements Comparable<IonMo
   protected IonModificationType type;
   protected String parsedName = "";
   protected int charge;
+  private int maxModification;
 
 
   /**
@@ -139,11 +140,26 @@ public class IonModification extends NeutralMolecule implements Comparable<IonMo
    */
   public IonModification(IonModificationType type, String name, String molFormula,
       double massDifference, int charge) {
+    this(type, name, molFormula, massDifference, charge, -1);
+  }
+
+  /**
+   * 
+   * @param type
+   * @param name
+   * @param molFormula
+   * @param massDifference
+   * @param charge
+   * @param maxModification -1 if no limit
+   */
+  public IonModification(IonModificationType type, String name, String molFormula,
+      double massDifference, int charge, int maxModification) {
     super(name, molFormula, massDifference);
     this.name = name;
     this.mass = massDifference;
     this.charge = charge;
     this.molFormula = molFormula;
+    this.maxModification = maxModification;
     parsedName = parseName();
     this.type = type;
   }
@@ -156,7 +172,12 @@ public class IonModification extends NeutralMolecule implements Comparable<IonMo
    * @param charge
    */
   public IonModification(IonModificationType type, String name, double massDifference, int charge) {
-    this(type, name, "", massDifference, charge);
+    this(type, name, massDifference, charge, -1);
+  }
+
+  public IonModification(IonModificationType type, String name, double massDifference, int charge,
+      int maxModification) {
+    this(type, name, "", massDifference, charge, maxModification);
   }
 
   public IonModification() {
@@ -165,6 +186,19 @@ public class IonModification extends NeutralMolecule implements Comparable<IonMo
 
   public IonModificationType getType() {
     return type;
+  }
+
+  /**
+   * Specifies whether this object limits further modification
+   * 
+   * @return
+   */
+  public boolean hasModificationLimit() {
+    return maxModification != -1;
+  }
+
+  public int getModificationLimit() {
+    return maxModification;
   }
 
   /**
@@ -415,5 +449,14 @@ public class IonModification extends NeutralMolecule implements Comparable<IonMo
    */
   public boolean contains(IonModification mod) {
     return this.equals(mod);
+  }
+
+  /**
+   * Number of sub IonModifications
+   * 
+   * @return
+   */
+  public int getAdductsCount() {
+    return 1;
   }
 }

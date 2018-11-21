@@ -292,11 +292,19 @@ public class MSAnnotationLibrary {
    * Only true if no filter is negative. Filter out -NH3+NH4
    * 
    * @param ion
-   * @param a
+   * @param mod
    * @return
    */
-  private boolean filter(IonType ion, IonModification a) {
-    return !(ion.getAdduct().contains(IonModification.NH4) && a.contains(IonModification.NH3));
+  private boolean filter(IonType ion, IonModification mod) {
+    IonModification add = ion.getAdduct();
+    IonModification modification = ion.getAdduct();
+    // specific filters
+    return !(add.contains(IonModification.NH4) && mod.contains(IonModification.NH3))
+        // maximum modifications for adducts filter
+        && !(add.hasModificationLimit() && ion.getModCount() + 1 > add.getModificationLimit())
+        // max co modification for modifications
+        && !(modification != null && modification.hasModificationLimit()
+            && ion.getModCount() + 1 > modification.getModificationLimit());
   }
 
   public void setMzTolerance(MZTolerance mzTolerance) {
