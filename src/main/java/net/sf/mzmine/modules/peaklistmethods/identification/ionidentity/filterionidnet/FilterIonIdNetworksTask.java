@@ -28,8 +28,9 @@ import net.sf.mzmine.datamodel.PeakList.PeakListAppliedMethod;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
+import net.sf.mzmine.datamodel.identities.iontype.IonModification;
+import net.sf.mzmine.datamodel.identities.iontype.MSAnnotationNetworkLogic;
 import net.sf.mzmine.datamodel.impl.SimpleFeature;
-import net.sf.mzmine.datamodel.impl.SimplePeakList;
 import net.sf.mzmine.datamodel.impl.SimplePeakListAppliedMethod;
 import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
 import net.sf.mzmine.parameters.ParameterSet;
@@ -54,6 +55,8 @@ public class FilterIonIdNetworksTask extends AbstractTask {
 
   private String suffix;
 
+  private boolean deleteSmallNoMajor;
+
   /**
    * Create the task.
    *
@@ -72,6 +75,8 @@ public class FilterIonIdNetworksTask extends AbstractTask {
     minNetworkSize =
         parameterSet.getParameter(FilterIonIdNetworksParameters.MIN_NETWORK_SIZE).getValue();
     suffix = parameterSet.getParameter(FilterIonIdNetworksParameters.suffix).getValue();
+    deleteSmallNoMajor =
+        parameterSet.getParameter(FilterIonIdNetworksParameters.DELETE_SMALL_NO_MAJOR).getValue();
   }
 
   @Override
@@ -88,26 +93,26 @@ public class FilterIonIdNetworksTask extends AbstractTask {
   public void run() {
     try {
       setStatus(TaskStatus.PROCESSING);
-      LOG.info("Starting adduct filtering on " + peakList.getName());
+      LOG.info("Starting ion identity networks (IINs) filtering on " + peakList.getName());
 
+      // TODO need to copy annotation networks and groups
       // Create a new results peakList which is added at the end
-      resultPeakList = new SimplePeakList(peakList + " " + suffix, peakList.getRawDataFiles());
-      for (PeakListRow row : peakList.getRows())
-        resultPeakList.addRow(copyRow(row));
+      // resultPeakList = new SimplePeakList(peakList + " " + suffix, peakList.getRawDataFiles());
+      // for (PeakListRow row : peakList.getRows())
+      // resultPeakList.addRow(copyRow(row));
 
       // filter
-      doFiltering(resultPeakList, minNetworkSize);
+      doFiltering(peakList, minNetworkSize, deleteSmallNoMajor);
 
-      // finish
-      if (!isCanceled()) {
-        addResultToProject();
-
-        // Done.
-        setStatus(TaskStatus.FINISHED);
-        LOG.info("Finished adducts filtereing in " + peakList);
-      }
+      // // finish
+      // if (!isCanceled()) {
+      // addResultToProject();
+      // }
+      // Done.
+      setStatus(TaskStatus.FINISHED);
+      LOG.info("Finished  ion identity networks (IINs) filtereing in " + peakList);
     } catch (Exception t) {
-      LOG.log(Level.SEVERE, "Adduct filtering error", t);
+      LOG.log(Level.SEVERE, "Ion identity networks (IINs) filtering error", t);
       setStatus(TaskStatus.ERROR);
       setErrorMessage(t.getMessage());
       throw new MSDKRuntimeException(t);
@@ -120,22 +125,23 @@ public class FilterIonIdNetworksTask extends AbstractTask {
    * 
    * @param pkl
    * @param minNetSize
+   * @param deleteSmallNoMajor
    * @throws Exception
    */
-  public static void doFiltering(PeakList pkl, int minNetSize) throws Exception {
-    for (PeakListRow row : pkl.getRows()) {
-      if (row.hasIonIdentity()) {
-        for (IonIdentity adduct : row.getIonIdentities()) {
-          AnnotationNetwork net = adduct.getNetwork();
-          if (net == null) {
-            row.removeIonIdentity(adduct);
-          } else if (net.size() < minNetSize) {
-            // delete network
-            net.delete();
-          }
-        }
-      }
-    }
+  public static void doFiltering(PeakList pkl, int minNetSize, boolean deleteSmallNoMajor)
+      throws Exception {
+    MSAnnotationNetworkLogic.streamNetworks(pkl).forEach(net -> {
+      if (net.size() < minNetSize || !hasMajorIonID(net))
+        net.delete();
+    });
+  }
+
+  private static boolean hasMajorIonID(AnnotationNetwork net) {
+    return net.values().stream().map(IonIdentity::getIonType).anyMatch(ion -> {
+      return ion.getAdduct().equals(IonModification.H) //
+          || (ion.getAdduct().equals(IonModification.NA) && ion.getModCount() == 0)
+          || ion.getAdduct().equals(IonModification.NH4);
+    });
   }
 
   /**

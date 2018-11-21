@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.filterionidnet;
+package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.clearionids;
 
 import java.util.Collection;
 import javax.annotation.Nonnull;
@@ -28,12 +28,11 @@ import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.Task;
 import net.sf.mzmine.util.ExitCode;
 
-public class FilterIonIdNetworksModule implements MZmineProcessingModule {
+public class ClearIonIdentitiesModule implements MZmineProcessingModule {
 
-  private static final String NAME = "Filter MS annotations";
+  private static final String NAME = "Clear ion identites";
 
-  private static final String DESCRIPTION =
-      "This module filters the identity results of MS annotations";
+  private static final String DESCRIPTION = "Deletes all ion identities and networks of all rows";
 
   @Override
   public @Nonnull String getName() {
@@ -55,7 +54,7 @@ public class FilterIonIdNetworksModule implements MZmineProcessingModule {
   @Override
   public @Nonnull Class<? extends ParameterSet> getParameterSetClass() {
 
-    return FilterIonIdNetworksParameters.class;
+    return ClearIonIdentitiesParameters.class;
   }
 
   @Override
@@ -63,10 +62,10 @@ public class FilterIonIdNetworksModule implements MZmineProcessingModule {
   public ExitCode runModule(@Nonnull MZmineProject project, @Nonnull final ParameterSet parameters,
       @Nonnull final Collection<Task> tasks) {
 
-    PeakList[] pkl = parameters.getParameter(FilterIonIdNetworksParameters.PEAK_LISTS).getValue()
+    PeakList[] pkl = parameters.getParameter(ClearIonIdentitiesParameters.PEAK_LISTS).getValue()
         .getMatchingPeakLists();
     for (PeakList p : pkl)
-      tasks.add(new FilterIonIdNetworksTask(project, parameters, p));
+      tasks.add(new ClearIonIdentitiesTask(project, parameters, p));
 
     return ExitCode.OK;
   }

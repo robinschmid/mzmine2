@@ -53,6 +53,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.pe
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.FormulaPredictionModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.sort.FormulaSortModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.fragmentsearch.FragmentSearchModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.clearionids.ClearIonIdentitiesModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.filterionidnet.FilterIonIdNetworksModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.formula.createavgformulas.CreateAvgNetworkFormulasModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.formula.prediction.FormulaPredictionAnnotationNetworkModule;
@@ -183,7 +184,6 @@ public class MZmineModulesList {
       // Peak list filtering
       DuplicateFilterModule.class, RowsFilterModule.class, PeakComparisonRowFilterModule.class,
       PeakFilterModule.class, PeaklistClearAnnotationsModule.class, NeutralLossFilterModule.class,
-      FilterIonIdNetworksModule.class,
 
       // Normalization
       RTNormalizerModule.class, LinearNormalizerModule.class,
@@ -193,12 +193,15 @@ public class MZmineModulesList {
       CVPlotModule.class, LogratioPlotModule.class, PCAPlotModule.class, CDAPlotModule.class,
       SammonsPlotModule.class, ClusteringModule.class, HeatMapModule.class,
 
+      // row grouping
+      MetaCorrelateModule.class, SimpleMetaCorrelateModule.class,
+
+      // ion identity networks
+      MSAnnotationModule.class, FilterIonIdNetworksModule.class, ClearIonIdentitiesModule.class,
+      FormulaPredictionAnnotationNetworkModule.class, CreateAvgNetworkFormulasModule.class,
+
       // Identification
-      FormulaPredictionModule.class, FormulaPredictionPeakListModule.class,
-      FormulaPredictionAnnotationNetworkModule.class, FormulaSortModule.class,
-      CreateAvgNetworkFormulasModule.class,
-      // annotation
-      MetaCorrelateModule.class, SimpleMetaCorrelateModule.class, MSAnnotationModule.class,
+      FormulaPredictionModule.class, FormulaPredictionPeakListModule.class, FormulaSortModule.class,
       CustomDBSearchModule.class, FragmentSearchModule.class, AdductSearchModule.class,
       ComplexSearchModule.class, OnlineDBSearchModule.class, LipidSearchModule.class,
       CameraSearchModule.class, NistMsSearchModule.class, Ms2SearchModule.class,

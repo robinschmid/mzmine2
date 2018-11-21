@@ -20,6 +20,7 @@ package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.filteri
 
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
+import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.StringParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
@@ -33,6 +34,11 @@ public class FilterIonIdNetworksParameters extends SimpleParameterSet {
   public static final StringParameter suffix =
       new StringParameter("Name suffix", "Suffix to be added to peak list name", "filtered");
 
+  public static final BooleanParameter DELETE_SMALL_NO_MAJOR = new BooleanParameter(
+      "Delete small networks without major ion",
+      "Small networks (size=2) are deleted if no M+H (with any modifications) or M+Na (with no modifications) is found.",
+      true);
+
   // sub
   public static final IntegerParameter MIN_NETWORK_SIZE = new IntegerParameter("Min network size",
       "Minimum number of ions that point to the same neutral mass molecule", 3);
@@ -45,8 +51,8 @@ public class FilterIonIdNetworksParameters extends SimpleParameterSet {
 
   public FilterIonIdNetworksParameters(boolean isSub) {
     super(isSub ? // no peak list and rt tolerance
-        new Parameter[] {MIN_NETWORK_SIZE}
-        : new Parameter[] {PEAK_LISTS, MIN_NETWORK_SIZE, suffix});
+        new Parameter[] {MIN_NETWORK_SIZE, DELETE_SMALL_NO_MAJOR}
+        : new Parameter[] {PEAK_LISTS, MIN_NETWORK_SIZE, DELETE_SMALL_NO_MAJOR, suffix});
   }
 
 }
