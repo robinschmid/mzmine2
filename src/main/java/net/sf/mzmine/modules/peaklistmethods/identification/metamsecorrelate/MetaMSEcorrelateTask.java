@@ -307,6 +307,7 @@ public class MetaMSEcorrelateTask extends AbstractTask {
         if (searchAdducts) {
           LOG.info("Corr: Annotation of groups only");
           setStage(Stage.ANNOTATION);
+          annotationParameters.getParameter(MSAnnotationParameters.LIMIT_BY_GROUPS).setValue(true);
           MSAnnotationTask annTask =
               new MSAnnotationTask(project, annotationParameters, groupedPKL);
           annTask.run();

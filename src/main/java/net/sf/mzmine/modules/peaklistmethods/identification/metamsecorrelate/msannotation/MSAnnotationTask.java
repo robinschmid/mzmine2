@@ -136,7 +136,7 @@ public class MSAnnotationTask extends AbstractTask {
 
   @Override
   public double getFinishedPercentage() {
-    return stageProgress.get();
+    return getStatus().equals(TaskStatus.FINISHED) ? 1 : stageProgress.get();
   }
 
   @Override
@@ -157,6 +157,7 @@ public class MSAnnotationTask extends AbstractTask {
       } else {
         annotatePeakList(library);
       }
+      setStatus(TaskStatus.FINISHED);
     } catch (Exception t) {
       LOG.log(Level.SEVERE, "Adduct search error", t);
       setStatus(TaskStatus.ERROR);
