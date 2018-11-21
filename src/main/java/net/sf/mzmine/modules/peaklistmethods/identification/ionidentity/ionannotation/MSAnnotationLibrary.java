@@ -299,12 +299,15 @@ public class MSAnnotationLibrary {
     IonModification add = ion.getAdduct();
     IonModification modification = ion.getAdduct();
     // specific filters
-    return !(add.contains(IonModification.NH4) && mod.contains(IonModification.NH3))
+    boolean bad = (add.contains(IonModification.NH4) && mod.contains(IonModification.NH3))
         // maximum modifications for adducts filter
-        && !(add.hasModificationLimit() && ion.getModCount() + 1 > add.getModificationLimit())
+        || (add.hasModificationLimit()
+            && ion.getModCount() + mod.getAdductsCount() > add.getModificationLimit())
         // max co modification for modifications
-        && !(modification != null && modification.hasModificationLimit()
-            && ion.getModCount() + 1 > modification.getModificationLimit());
+        || (modification != null && modification.hasModificationLimit()
+            && ion.getModCount() + mod.getAdductsCount() > modification.getModificationLimit());
+
+    return !bad;
   }
 
   public void setMzTolerance(MZTolerance mzTolerance) {
