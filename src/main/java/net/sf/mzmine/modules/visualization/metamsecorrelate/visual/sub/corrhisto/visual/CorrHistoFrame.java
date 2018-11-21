@@ -10,8 +10,8 @@ import org.slf4j.LoggerFactory;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import net.miginfocom.swing.MigLayout;
 import net.sf.mzmine.datamodel.PeakList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.CorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.R2RCorrelationData;
 import net.sf.mzmine.modules.visualization.mzhistogram.chart.HistogramData;
 import net.sf.mzmine.modules.visualization.mzhistogram.chart.MultiHistogramPanel;
 

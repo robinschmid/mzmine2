@@ -25,11 +25,11 @@ import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.impl.RowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.MetaMSEcorrelateTask;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationData.SimilarityMeasure;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.CorrelationRowGroup;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2GroupCorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RFullCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.MetaCorrelateTask;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.CorrelationRowGroup;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.R2GroupCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.R2RFullCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.CorrelationData.SimilarityMeasure;
 
 public class GroupedPeakListTableModel extends AbstractTableModel {
   /**
@@ -41,7 +41,7 @@ public class GroupedPeakListTableModel extends AbstractTableModel {
   private SimilarityMeasure type = SimilarityMeasure.COSINE_SIM;
 
   // Logger.
-  private static final Logger LOG = Logger.getLogger(MetaMSEcorrelateTask.class.getName());
+  private static final Logger LOG = Logger.getLogger(MetaCorrelateTask.class.getName());
 
   /**
    * Constructor, assign given dataset to this table

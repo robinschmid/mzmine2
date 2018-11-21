@@ -63,8 +63,8 @@ public class MainMenu extends JMenuBar implements ActionListener {
   private JMenu projectMenu, rawDataMenu, peakListMenu, visualizationMenu, visNetworkMenu, helpMenu,
       rawDataFilteringMenu, peakDetectionMenu, gapFillingMenu, isotopesMenu,
       peakListPeakPickingMenu, peakListFilteringMenu, alignmentMenu, normalizationMenu,
-      identificationMenu, dataAnalysisMenu, peakListExportMenu, peakListSpectralDeconvolutionMenu,
-      toolsMenu;
+      groupingMenu, identificationMenu, ionIdNetworksMenuMenu, dataAnalysisMenu, peakListExportMenu,
+      peakListSpectralDeconvolutionMenu, toolsMenu;
 
   private WindowsMenu windowsMenu;
 
@@ -162,9 +162,16 @@ public class MainMenu extends JMenuBar implements ActionListener {
     normalizationMenu.setMnemonic(KeyEvent.VK_N);
     peakListMenu.add(normalizationMenu);
 
+    groupingMenu = new JMenu("Row grouping");
+    peakListMenu.add(groupingMenu);
+
     identificationMenu = new JMenu("Identification");
     identificationMenu.setMnemonic(KeyEvent.VK_I);
     peakListMenu.add(identificationMenu);
+
+    // sub
+    ionIdNetworksMenuMenu = new JMenu("Ion identity networks");
+    identificationMenu.add(ionIdNetworksMenuMenu);
 
     dataAnalysisMenu = new JMenu("Data analysis");
     dataAnalysisMenu.setMnemonic(KeyEvent.VK_S);
@@ -268,6 +275,12 @@ public class MainMenu extends JMenuBar implements ActionListener {
         break;
       case IDENTIFICATION:
         identificationMenu.add(newItem);
+        break;
+      case ION_IDENTITY_NETWORKS:
+        ionIdNetworksMenuMenu.add(newItem);
+        break;
+      case FEATURE_GROUPING:
+        groupingMenu.add(newItem);
         break;
       case PEAKLISTEXPORT:
         peakListExportMenu.add(newItem, exportMenuIndex);

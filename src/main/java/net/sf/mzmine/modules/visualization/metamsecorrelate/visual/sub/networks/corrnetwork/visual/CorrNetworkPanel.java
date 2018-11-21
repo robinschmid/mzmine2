@@ -13,8 +13,8 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.framework.networks.NetworkPanel;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.R2RCorrMap;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.R2RCorrelationData;
 
 public class CorrNetworkPanel extends NetworkPanel {
   private static final Logger LOG = Logger.getLogger(CorrNetworkPanel.class.getName());

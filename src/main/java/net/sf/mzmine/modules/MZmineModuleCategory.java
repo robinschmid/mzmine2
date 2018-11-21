@@ -33,7 +33,9 @@ public enum MZmineModuleCategory {
   PEAKLISTFILTERING("Peak list filtering"), //
   ALIGNMENT("Alignment"), //
   NORMALIZATION("Normalization"), //
+  FEATURE_GROUPING("Row grouping"), //
   IDENTIFICATION("Identification"), //
+  ION_IDENTITY_NETWORKS("Ion identity networks"), //
   PEAKLISTEXPORT("Peak list export"), //
   PEAKLISTIMPORT("Peak list import"), //
   VISUALIZATIONRAWDATA("Visualization"), //
