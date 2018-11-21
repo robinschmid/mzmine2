@@ -108,37 +108,46 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
 
     ppmOffset =
         parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.ppmOffset).getValue();
-    checkIsotopes = parameters
-        .getParameter(FormulaPredictionAnnotationNetworkParameters.isotopeFilter).getValue();
-    isotopeParameters =
-        parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.isotopeFilter)
-            .getEmbeddedParameters();
 
-    checkMSMS =
-        parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.msmsFilter).getValue();
-    msmsParameters =
-        parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.msmsFilter)
-            .getEmbeddedParameters();
 
     checkRDBE = parameters
         .getParameter(FormulaPredictionAnnotationNetworkParameters.rdbeRestrictions).getValue();
-    rdbeParameters =
-        parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.rdbeRestrictions)
-            .getEmbeddedParameters();
+    if (checkRDBE) {
+      rdbeParameters =
+          parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.rdbeRestrictions)
+              .getEmbeddedParameters();
+    }
 
     checkRatios = parameters
         .getParameter(FormulaPredictionAnnotationNetworkParameters.elementalRatios).getValue();
-    ratiosParameters =
-        parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.elementalRatios)
-            .getEmbeddedParameters();
+    if (checkRatios) {
+      ratiosParameters =
+          parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.elementalRatios)
+              .getEmbeddedParameters();
+    }
 
 
-    isotopeNoiseLevel =
-        isotopeParameters.getParameter(IsotopePatternScoreParameters.isotopeNoiseLevel).getValue();
-    minScore = isotopeParameters
-        .getParameter(IsotopePatternScoreParameters.isotopePatternScoreThreshold).getValue();
-    massListName = msmsParameters.getParameter(MSMSScoreParameters.massList).getValue();
-    minMSMSScore = msmsParameters.getParameter(MSMSScoreParameters.msmsMinScore).getValue();
+    checkIsotopes = parameters
+        .getParameter(FormulaPredictionAnnotationNetworkParameters.isotopeFilter).getValue();
+    if (checkIsotopes) {
+      isotopeParameters =
+          parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.isotopeFilter)
+              .getEmbeddedParameters();
+      isotopeNoiseLevel = isotopeParameters
+          .getParameter(IsotopePatternScoreParameters.isotopeNoiseLevel).getValue();
+      minScore = isotopeParameters
+          .getParameter(IsotopePatternScoreParameters.isotopePatternScoreThreshold).getValue();
+    }
+
+    checkMSMS =
+        parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.msmsFilter).getValue();
+    if (checkMSMS) {
+      msmsParameters =
+          parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.msmsFilter)
+              .getEmbeddedParameters();
+      massListName = msmsParameters.getParameter(MSMSScoreParameters.massList).getValue();
+      minMSMSScore = msmsParameters.getParameter(MSMSScoreParameters.msmsMinScore).getValue();
+    }
 
     sortResults =
         parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.sorting).getValue();
