@@ -314,30 +314,37 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
     Double msmsScore = null;
     Map<DataPoint, String> msmsAnnotations = null;
 
-
-    if (checkMSMS && peakListRow.getBestFragmentation() != null) {
-      Scan msmsScan = peakListRow.getBestFragmentation();
-      MassList ms2MassList = msmsScan.getMassList(massListName);
-      if (ms2MassList == null) {
-        setStatus(TaskStatus.ERROR);
-        setErrorMessage("The MS/MS scan #" + msmsScan.getScanNumber() + " in file "
-            + msmsScan.getDataFile().getName() + " does not have a mass list called '"
-            + massListName + "'");
-        return;
-      }
-
-      MSMSScore score = MSMSScoreCalculator.evaluateMSMS(cdkFormulaIon, msmsScan, msmsParameters);
-
-      if (score != null) {
-        msmsScore = score.getScore();
-        msmsAnnotations = score.getAnnotation();
-
-        // Check the MS/MS condition
-        if (msmsScore < minMSMSScore) {
+    // there was a problem in the RoundRobinMoleculaFormulaGenerator (index out of range
+    try {
+      if (checkMSMS && peakListRow.getBestFragmentation() != null) {
+        Scan msmsScan = peakListRow.getBestFragmentation();
+        MassList ms2MassList = msmsScan.getMassList(massListName);
+        if (ms2MassList == null) {
+          setStatus(TaskStatus.ERROR);
+          setErrorMessage("The MS/MS scan #" + msmsScan.getScanNumber() + " in file "
+              + msmsScan.getDataFile().getName() + " does not have a mass list called '"
+              + massListName + "'");
           return;
         }
-      }
 
+        MSMSScore score = MSMSScoreCalculator.evaluateMSMS(cdkFormulaIon, msmsScan, msmsParameters);
+
+        if (score != null) {
+          msmsScore = score.getScore();
+          msmsAnnotations = score.getAnnotation();
+
+          // Check the MS/MS condition
+          if (msmsScore < minMSMSScore) {
+            return;
+          }
+        }
+      }
+    } catch (Exception e) {
+      logger.log(Level.WARNING,
+          () -> MessageFormat.format(
+              "Error in MS/MS score calculation for ion formula {0} (for neutral M: {1})",
+              MolecularFormulaManipulator.getString(cdkFormulaIon),
+              MolecularFormulaManipulator.getString(cdkFormulaNeutralM)));
     }
 
     // Create a new formula entry
