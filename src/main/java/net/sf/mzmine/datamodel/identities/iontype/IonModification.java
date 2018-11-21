@@ -406,4 +406,14 @@ public class IonModification extends NeutralMolecule implements Comparable<IonMo
     else
       return this;
   }
+
+  /**
+   * this or any sub modification (for combined) equals to mod?
+   * 
+   * @param mod
+   * @return
+   */
+  public boolean contains(IonModification mod) {
+    return this.equals(mod);
+  }
 }

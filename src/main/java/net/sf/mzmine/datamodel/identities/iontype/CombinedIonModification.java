@@ -107,4 +107,16 @@ public class CombinedIonModification extends IonModification {
     else
       return new CombinedIonModification(newList.toArray(new IonModification[newList.size()]));
   }
+
+
+  /**
+   * this or any sub modification (for combined) equals to mod?
+   * 
+   * @param mod
+   * @return
+   */
+  @Override
+  public boolean contains(IonModification mod) {
+    return Arrays.stream(getAdducts()).anyMatch(m -> m.equals(mod));
+  }
 }

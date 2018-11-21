@@ -20,6 +20,7 @@ package net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.ms
 
 import java.awt.Window;
 import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationLibrary.CheckMode;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.AnnotationRefinementParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.refinement.MSAnnMSMSCheckParameters;
@@ -33,6 +34,7 @@ import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.esiadducts.IonModificationParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
+import net.sf.mzmine.parameters.parametertypes.submodules.SubModuleParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
@@ -51,6 +53,11 @@ public class MSAnnotationParameters extends SimpleParameterSet {
   // RT-tolerance: Grouping
   public static final RTToleranceParameter RT_TOLERANCE = new RTToleranceParameter("RT tolerance",
       "Maximum allowed difference of retention time to set a relationship between peaks");
+
+  public static final SubModuleParameter MIN_FEATURE_FILTER = new SubModuleParameter(
+      "Min samples filter",
+      "Only annotate if features are present and within RT range in n smaples (or X% of samples)",
+      new MinimumFeaturesFilterParameters(true));
 
   // INCLUDED in sub
   // MZ-tolerance: deisotoping, adducts
@@ -111,9 +118,9 @@ public class MSAnnotationParameters extends SimpleParameterSet {
   private static Parameter[] createParam(Setup setup) {
     switch (setup) {
       case FULL:
-        return new Parameter[] {PEAK_LISTS, RT_TOLERANCE, MZ_TOLERANCE, LIMIT_BY_GROUPS, CHECK_MODE,
-            MIN_HEIGHT, POSITIVE_MODE, MAX_CHARGE, MAX_MOLECULES, MSMS_CHECK,
-            ANNOTATION_REFINEMENTS, ADDUCTS};
+        return new Parameter[] {PEAK_LISTS, RT_TOLERANCE, MZ_TOLERANCE, MIN_FEATURE_FILTER,
+            LIMIT_BY_GROUPS, CHECK_MODE, MIN_HEIGHT, POSITIVE_MODE, MAX_CHARGE, MAX_MOLECULES,
+            MSMS_CHECK, ANNOTATION_REFINEMENTS, ADDUCTS};
       case SUB:
         return new Parameter[] {MZ_TOLERANCE, LIMIT_BY_GROUPS, CHECK_MODE, POSITIVE_MODE,
             MAX_CHARGE, MAX_MOLECULES, MSMS_CHECK, ANNOTATION_REFINEMENTS, ADDUCTS};

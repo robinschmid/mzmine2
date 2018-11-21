@@ -280,16 +280,23 @@ public class MSAnnotationLibrary {
   private void addModification() {
     int size = allAdducts.size();
     for (int i = 0; i < size; i++)
-      for (IonModification a : selectedMods)
-        allAdducts.add(allAdducts.get(i).createModified(a));
+      for (IonModification a : selectedMods) {
+        IonType ion = allAdducts.get(i);
+        if (filter(ion, a))
+          allAdducts.add(ion.createModified(a));
+      }
   }
 
-  private boolean isContainedIn(List<IonModification> adducts, IonModification na) {
-    for (IonModification a : adducts) {
-      if (a.sameMathDifference(na))
-        return true;
-    }
-    return false;
+
+  /**
+   * Only true if no filter is negative. Filter out -NH3+NH4
+   * 
+   * @param ion
+   * @param a
+   * @return
+   */
+  private boolean filter(IonType ion, IonModification a) {
+    return !(ion.getAdduct().contains(IonModification.NH4) && a.contains(IonModification.NH3));
   }
 
   public void setMzTolerance(MZTolerance mzTolerance) {
