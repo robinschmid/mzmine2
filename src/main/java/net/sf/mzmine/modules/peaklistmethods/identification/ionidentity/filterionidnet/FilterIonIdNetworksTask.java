@@ -18,6 +18,7 @@
 
 package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.filterionidnet;
 
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import io.github.msdk.MSDKRuntimeException;
@@ -128,10 +129,10 @@ public class FilterIonIdNetworksTask extends AbstractTask {
    * @param deleteSmallNoMajor
    * @throws Exception
    */
-  public static void doFiltering(PeakList pkl, int minNetSize, boolean deleteSmallNoMajor)
-      throws Exception {
-    MSAnnotationNetworkLogic.streamNetworks(pkl).forEach(net -> {
-      if (net.size() < minNetSize || !hasMajorIonID(net))
+  public static void doFiltering(PeakList pkl, int minNetSize, boolean deleteSmallNoMajor) {
+    // need to convert to array first to avoid concurren mod exception
+    Arrays.stream(MSAnnotationNetworkLogic.getAllNetworks(pkl)).forEach(net -> {
+      if (net.size() < minNetSize || (deleteSmallNoMajor && !hasMajorIonID(net)))
         net.delete();
     });
   }
