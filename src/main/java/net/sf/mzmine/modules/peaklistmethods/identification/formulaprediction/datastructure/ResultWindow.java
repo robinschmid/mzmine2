@@ -20,7 +20,9 @@ package net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.d
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
@@ -31,6 +33,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.util.Map;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -38,6 +41,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
@@ -52,6 +56,7 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
 import net.sf.mzmine.datamodel.impl.SimplePeakIdentity;
+import net.sf.mzmine.framework.listener.DelayedDocumentListener;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.visualization.spectra.SpectraVisualizerModule;
 import net.sf.mzmine.modules.visualization.spectra.SpectraVisualizerWindow;
@@ -73,8 +78,17 @@ public class ResultWindow extends JFrame implements ActionListener {
   private final PeakListRow peakListRow;
   private final Task searchTask;
   private final String title;
+  private JTextField txtPPMWeight;
+  private JTextField txtIsoWeight;
+  private JTextField txtMSMSWeight;
+  private double ppmWeight;
+  private double isoWeight;
+  private double msmsWeight;
 
 
+  /**
+   * @wbp.parser.constructor
+   */
   public ResultWindow(String title, PeakListRow peakListRow, double searchedMass) {
     this(title, peakListRow, searchedMass, null);
   }
@@ -136,21 +150,88 @@ public class ResultWindow extends JFrame implements ActionListener {
     GUIUtils.addButton(pnlButtons, "View isotope pattern", null, this, "SHOW_ISOTOPES");
     GUIUtils.addButton(pnlButtons, "Show MS/MS", null, this, "SHOW_MSMS");
 
-    setLayout(new BorderLayout());
-    setSize(500, 200);
-    add(pnlLabelsAndList, BorderLayout.CENTER);
-    add(pnlButtons, BorderLayout.SOUTH);
-    pack();
+    getContentPane().setLayout(new BorderLayout());
+    setSize(728, 540);
+    getContentPane().add(pnlLabelsAndList, BorderLayout.CENTER);
+    getContentPane().add(pnlButtons, BorderLayout.SOUTH);
 
+    JPanel pnNorth = new JPanel();
+    FlowLayout flowLayout = (FlowLayout) pnNorth.getLayout();
+    flowLayout.setAlignment(FlowLayout.LEFT);
+    getContentPane().add(pnNorth, BorderLayout.NORTH);
+
+    JLabel lblPpmWeight = new JLabel("ppm weight");
+    pnNorth.add(lblPpmWeight);
+
+    txtPPMWeight = new JTextField();
+    txtPPMWeight.setText("20");
+    pnNorth.add(txtPPMWeight);
+    txtPPMWeight.getDocument().addDocumentListener(new DelayedDocumentListener(e -> {
+      try {
+        if (txtPPMWeight.getText().length() > 0) {
+          ppmWeight = Double.valueOf(txtPPMWeight.getText());
+          txtPPMWeight.setBackground(Color.WHITE);
+          resultsTableModel.setPPMWeight(ppmWeight);
+        }
+      } catch (Exception ex) {
+        txtPPMWeight.setBackground(new Color(200, 50, 50));
+      }
+    }));
+    txtPPMWeight.setColumns(4);
+
+    Component horizontalStrut = Box.createHorizontalStrut(20);
+    pnNorth.add(horizontalStrut);
+
+    JLabel lblIsoScoreWeight = new JLabel("iso score weight");
+    pnNorth.add(lblIsoScoreWeight);
+
+    txtIsoWeight = new JTextField();
+    txtIsoWeight.setText("3");
+    txtIsoWeight.setColumns(4);
+    txtIsoWeight.getDocument().addDocumentListener(new DelayedDocumentListener(e -> {
+      try {
+        if (txtIsoWeight.getText().length() > 0) {
+          isoWeight = Double.valueOf(txtIsoWeight.getText());
+          txtIsoWeight.setBackground(Color.WHITE);
+          // table data changed
+          resultsTableModel.fireTableDataChanged();
+        }
+      } catch (Exception ex) {
+        txtIsoWeight.setBackground(new Color(200, 50, 50));
+      }
+    }));
+    pnNorth.add(txtIsoWeight);
+
+    Component horizontalStrut_1 = Box.createHorizontalStrut(20);
+    pnNorth.add(horizontalStrut_1);
+
+    JLabel lblMsmsScoreWeight = new JLabel("MS/MS score weight");
+    pnNorth.add(lblMsmsScoreWeight);
+
+    txtMSMSWeight = new JTextField();
+    txtMSMSWeight.setText("1");
+    txtMSMSWeight.setColumns(4);
+    txtMSMSWeight.getDocument().addDocumentListener(new DelayedDocumentListener(e -> {
+      try {
+        if (txtMSMSWeight.getText().length() > 0) {
+          msmsWeight = Double.valueOf(txtMSMSWeight.getText());
+          txtMSMSWeight.setBackground(Color.WHITE);
+          // table data changed
+          resultsTableModel.fireTableDataChanged();
+        }
+      } catch (Exception ex) {
+        txtMSMSWeight.setBackground(new Color(200, 50, 50));
+      }
+    }));
+    pnNorth.add(txtMSMSWeight);
+    pack();
   }
 
   @Override
   public void actionPerformed(ActionEvent e) {
-
     String command = e.getActionCommand();
 
     if (command.equals("EXPORT")) {
-
       // Ask for filename
       JFileChooser fileChooser = new JFileChooser();
       fileChooser.setApproveButtonText("Export");
@@ -290,4 +371,15 @@ public class ResultWindow extends JFrame implements ActionListener {
     super.dispose();
   }
 
+  public JTextField getTxtPPMWeight() {
+    return txtPPMWeight;
+  }
+
+  public JTextField getTxtIsoWeight() {
+    return txtIsoWeight;
+  }
+
+  public JTextField getTxtMSMSWeight() {
+    return txtMSMSWeight;
+  }
 }

@@ -37,7 +37,7 @@ public class ResultTableModel extends AbstractTableModel {
   public static final String crossMark = new String(new char[] {'\u2717'});
 
   private static final String[] columnNames = {"Formula", "Mass difference (Da)",
-      "Mass difference (ppm)", "RDBE", "Isotope pattern score", "MS/MS score"};
+      "Mass difference (ppm)", "RDBE", "Isotope pattern score", "MS/MS score", "Score (weighted)"};
 
   private double searchedMass;
 
@@ -45,7 +45,12 @@ public class ResultTableModel extends AbstractTableModel {
 
   private final NumberFormat massFormat = MZmineCore.getConfiguration().getMZFormat();
 
+  private final NumberFormat scoreFormat = new DecimalFormat("#0.000");
   private final NumberFormat ppmFormat = new DecimalFormat("0.0");
+  // weights to calc real score
+  private double isoWeight = 3;
+  private double ppmWeight = 20;
+  private double msmsWeight = 1;
 
   ResultTableModel(double searchedMass) {
     this.searchedMass = searchedMass;
@@ -66,6 +71,7 @@ public class ResultTableModel extends AbstractTableModel {
       case 3:
       case 4:
       case 5:
+      case 6:
         return Double.class;
     }
     return null;
@@ -100,6 +106,8 @@ public class ResultTableModel extends AbstractTableModel {
         return formula.getIsotopeScore();
       case 5:
         return formula.getMSMSScore();
+      case 6:
+        return formula.getScore(searchedMass, ppmWeight, isoWeight, msmsWeight);
     }
     return null;
   }
@@ -116,6 +124,27 @@ public class ResultTableModel extends AbstractTableModel {
   public void addElement(MolecularFormulaIdentity formula) {
     formulas.add(formula);
     fireTableRowsInserted(formulas.size() - 1, formulas.size() - 1);
+  }
+
+  public void setPPMWeight(double ppmWeight) {
+    if (this.ppmWeight != ppmWeight) {
+      this.ppmWeight = ppmWeight;
+      fireTableDataChanged();
+    }
+  }
+
+  public void setIsoWeight(double isoWeight) {
+    if (this.isoWeight != isoWeight) {
+      this.isoWeight = isoWeight;
+      fireTableDataChanged();
+    }
+  }
+
+  public void setMSMSWeight(double msmsWeight) {
+    if (this.msmsWeight != msmsWeight) {
+      this.msmsWeight = msmsWeight;
+      fireTableDataChanged();
+    }
   }
 
 }
