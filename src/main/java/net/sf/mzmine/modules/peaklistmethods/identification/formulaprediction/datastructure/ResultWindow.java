@@ -30,7 +30,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.Map;
-
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JFileChooser;
@@ -45,7 +44,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableRowSorter;
-
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.IsotopePattern;
@@ -74,9 +72,12 @@ public class ResultWindow extends JFrame implements ActionListener {
   private final Task searchTask;
   private final String title;
 
-  public ResultWindow(String title, PeakListRow peakListRow, double searchedMass, int charge,
-      Task searchTask) {
 
+  public ResultWindow(String title, PeakListRow peakListRow, double searchedMass) {
+    this(title, peakListRow, searchedMass, null);
+  }
+
+  public ResultWindow(String title, PeakListRow peakListRow, double searchedMass, Task searchTask) {
     super(title);
 
     this.title = title;
@@ -141,6 +142,7 @@ public class ResultWindow extends JFrame implements ActionListener {
 
   }
 
+  @Override
   public void actionPerformed(ActionEvent e) {
 
     String command = e.getActionCommand();
@@ -266,9 +268,9 @@ public class ResultWindow extends JFrame implements ActionListener {
   }
 
   public void addNewListItem(final ResultFormula formula) {
-
     // Update the model in swing thread to avoid exceptions
     SwingUtilities.invokeLater(new Runnable() {
+      @Override
       public void run() {
         resultsTableModel.addElement(formula);
         setTitle(title + ", " + resultsTableModel.getRowCount() + " formulas found");
@@ -276,15 +278,15 @@ public class ResultWindow extends JFrame implements ActionListener {
     });
   }
 
+  @Override
   public void dispose() {
-
-    // Cancel the search task if it is still running
-    TaskStatus searchStatus = searchTask.getStatus();
-    if ((searchStatus == TaskStatus.WAITING) || (searchStatus == TaskStatus.PROCESSING))
-      searchTask.cancel();
-
+    if (searchTask != null) {
+      // Cancel the search task if it is still running
+      TaskStatus searchStatus = searchTask.getStatus();
+      if ((searchStatus == TaskStatus.WAITING) || (searchStatus == TaskStatus.PROCESSING))
+        searchTask.cancel();
+    }
     super.dispose();
-
   }
 
 }

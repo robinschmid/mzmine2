@@ -6,6 +6,8 @@ import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableWindow;
 
 public class ManualIonIdentityCreationDialog extends JFrame {
 
-  public ManualIonIdentityCreationDialog(PeakListTableWindow window, PeakListRow peakListRow) {}
+  public ManualIonIdentityCreationDialog(PeakListTableWindow window, PeakListRow peakListRow) {
+    setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+  }
 
 }

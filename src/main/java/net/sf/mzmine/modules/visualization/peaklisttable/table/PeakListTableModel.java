@@ -43,6 +43,14 @@ public class PeakListTableModel extends AbstractTableModel {
 
   }
 
+  public PeakList getPeakList() {
+    return peakList;
+  }
+
+  public PeakListRow getPeakListRow(int i) {
+    return peakList.getRow(i);
+  }
+
   @Override
   public int getColumnCount() {
     return CommonColumnType.values().length

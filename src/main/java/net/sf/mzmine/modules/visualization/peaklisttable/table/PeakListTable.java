@@ -364,16 +364,14 @@ public class PeakListTable extends JTable implements ComponentToolTipProvider {
         public void actionPerformed(ActionEvent e) {
           JComboBox<?> combo = (JComboBox<?>) e.getSource();
           Object item = combo.getSelectedItem();
-          if (item != null) {
-            if (item instanceof MolecularFormulaIdentity) {
-              IonIdentity bestIon = peakListRow.getBestIonIdentity();
-              if (bestIon != null && bestIon.getNetwork() != null) {
-                bestIon.getNetwork().setBestMolFormula((MolecularFormulaIdentity) item);
-                AbstractTableModel model = ((AbstractTableModel) getModel());
-                model.fireTableDataChanged();
-              }
-              return;
+          if (item instanceof MolecularFormulaIdentity) {
+            IonIdentity bestIon = peakListRow.getBestIonIdentity();
+            if (bestIon != null && bestIon.getNetwork() != null) {
+              bestIon.getNetwork().setBestMolFormula((MolecularFormulaIdentity) item);
+              AbstractTableModel model = ((AbstractTableModel) getModel());
+              model.fireTableDataChanged();
             }
+            return;
           }
         }
       });

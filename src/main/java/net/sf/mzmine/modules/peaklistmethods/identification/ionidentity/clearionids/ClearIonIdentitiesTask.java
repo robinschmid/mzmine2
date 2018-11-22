@@ -28,6 +28,7 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.impl.SimpleFeature;
 import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
+import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
@@ -100,7 +101,12 @@ public class ClearIonIdentitiesTask extends AbstractTask {
   public static void doFiltering(PeakList pkl, AtomicInteger finishedRows) throws Exception {
     pkl.stream().filter(PeakListRow::hasIonIdentity).forEach(r -> {
       r.clearIonIdentites();
+      // Notify the GUI about the change in the project
+      MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(r, false);
     });
+    // Repaint the window to reflect the change in the peak list
+    if (MZmineCore.getDesktop().getMainWindow() != null)
+      MZmineCore.getDesktop().getMainWindow().repaint();
   }
 
   /**

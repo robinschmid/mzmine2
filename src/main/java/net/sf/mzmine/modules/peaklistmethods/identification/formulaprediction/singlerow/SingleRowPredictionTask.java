@@ -139,7 +139,7 @@ public class SingleRowPredictionTask extends AbstractTask {
 
     resultWindow = new ResultWindow(
         "Searching for " + MZmineCore.getConfiguration().getMZFormat().format(searchedMass),
-        peakListRow, searchedMass, charge, this);
+        peakListRow, searchedMass, this);
     resultWindow.setVisible(true);
 
     logger.finest("Starting search for formulas for " + massRange + " Da");

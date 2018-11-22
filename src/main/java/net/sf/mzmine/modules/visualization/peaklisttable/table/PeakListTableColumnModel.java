@@ -38,6 +38,7 @@ import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.visualization.peaklisttable.ColumnSettingParameter;
 import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableParameters;
+import net.sf.mzmine.modules.visualization.peaklisttable.table.formulas.IonIdNetFormulaCellRenderer;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.util.components.ColumnGroup;
 import net.sf.mzmine.util.components.GroupableTableHeader;
@@ -101,6 +102,9 @@ public class PeakListTableColumnModel extends DefaultTableColumnModel implements
     defaultRendererLeft.setHorizontalAlignment(SwingConstants.LEFT);
     datapointsRenderer = new FormattedCellRenderer(new DecimalFormat());
     qcRenderer = new FormattedCellRenderer(new DecimalFormat());
+
+    // formula renderer
+    formulaRenderer = new IonIdNetFormulaCellRenderer();
 
   }
 

@@ -34,6 +34,7 @@ import net.sf.mzmine.datamodel.identities.iontype.MSAnnotationNetworkLogic;
 import net.sf.mzmine.datamodel.impl.SimpleFeature;
 import net.sf.mzmine.datamodel.impl.SimplePeakListAppliedMethod;
 import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
+import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
@@ -135,6 +136,10 @@ public class FilterIonIdNetworksTask extends AbstractTask {
       if (net.size() < minNetSize || (deleteSmallNoMajor && !hasMajorIonID(net)))
         net.delete();
     });
+
+    // Repaint the window to reflect the change in the peak list
+    if (MZmineCore.getDesktop().getMainWindow() != null)
+      MZmineCore.getDesktop().getMainWindow().repaint();
   }
 
   private static boolean hasMajorIonID(AnnotationNetwork net) {
