@@ -34,6 +34,7 @@ public class AverageResultFormula extends MolecularFormulaIdentity {
       rdbe = ((ResultFormula) f).getRDBE();
   }
 
+  @Override
   public Double getRDBE() {
     return rdbe;
   }

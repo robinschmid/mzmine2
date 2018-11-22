@@ -44,11 +44,13 @@ import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableRowSorter;
+import org.jfree.data.Range;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.IsotopePattern;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
 import net.sf.mzmine.datamodel.impl.SimplePeakIdentity;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.visualization.spectra.SpectraVisualizerModule;
@@ -165,7 +167,7 @@ public class ResultWindow extends JFrame implements ActionListener {
 
         for (int row = 0; row < resultsTable.getRowCount(); row++) {
           int modelRow = resultsTable.convertRowIndexToModel(row);
-          ResultFormula formula = resultsTableModel.getFormula(modelRow);
+          MolecularFormulaIdentity formula = resultsTableModel.getFormula(modelRow);
           writer.write(formula.getFormulaAsString());
           writer.write(",");
           writer.write(String.valueOf(formula.getExactMass()));
@@ -201,10 +203,9 @@ public class ResultWindow extends JFrame implements ActionListener {
       return;
     }
     index = resultsTable.convertRowIndexToModel(index);
-    ResultFormula formula = resultsTableModel.getFormula(index);
+    MolecularFormulaIdentity formula = resultsTableModel.getFormula(index);
 
     if (command.equals("ADD")) {
-
       SimplePeakIdentity newIdentity = new SimplePeakIdentity(formula.getFormulaAsString());
       peakListRow.addPeakIdentity(newIdentity, false);
 
@@ -218,56 +219,56 @@ public class ResultWindow extends JFrame implements ActionListener {
     }
 
     if (command.equals("COPY")) {
-
       String formulaString = formula.getFormulaAsString();
       StringSelection stringSelection = new StringSelection(formulaString);
       Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
       clipboard.setContents(stringSelection, null);
-
     }
 
     if (command.equals("SHOW_ISOTOPES")) {
+      if (formula.getPredictedIsotopes() != null) {
+        IsotopePattern predictedPattern = formula.getPredictedIsotopes();
+        if (predictedPattern == null)
+          return;
 
-      IsotopePattern predictedPattern = formula.getPredictedIsotopes();
+        Feature peak = peakListRow.getBestPeak();
 
-      if (predictedPattern == null)
-        return;
+        RawDataFile dataFile = peak.getDataFile();
+        int scanNumber = peak.getRepresentativeScanNumber();
+        SpectraVisualizerWindow spec = SpectraVisualizerModule.showNewSpectrumWindow(dataFile,
+            scanNumber, null, peak.getIsotopePattern(), predictedPattern);
 
-      Feature peak = peakListRow.getBestPeak();
-
-      RawDataFile dataFile = peak.getDataFile();
-      int scanNumber = peak.getRepresentativeScanNumber();
-      SpectraVisualizerModule.showNewSpectrumWindow(dataFile, scanNumber, null,
-          peak.getIsotopePattern(), predictedPattern);
-
+        double min = predictedPattern.getDataPointMZRange().lowerEndpoint();
+        double max = predictedPattern.getDataPointMZRange().upperEndpoint();
+        spec.setDomainZoom(new Range(min - 2.5, max + 2.5));
+      }
     }
 
     if (command.equals("SHOW_MSMS")) {
+      if (formula.getMSMSannotation() != null) {
+        Feature bestPeak = peakListRow.getBestPeak();
+        RawDataFile dataFile = bestPeak.getDataFile();
+        int msmsScanNumber = bestPeak.getMostIntenseFragmentScanNumber();
 
-      Feature bestPeak = peakListRow.getBestPeak();
+        if (msmsScanNumber < 1)
+          return;
 
-      RawDataFile dataFile = bestPeak.getDataFile();
-      int msmsScanNumber = bestPeak.getMostIntenseFragmentScanNumber();
+        SpectraVisualizerWindow msmsPlot =
+            SpectraVisualizerModule.showNewSpectrumWindow(dataFile, msmsScanNumber);
 
-      if (msmsScanNumber < 1)
-        return;
+        if (msmsPlot == null)
+          return;
+        Map<DataPoint, String> annotation = formula.getMSMSannotation();
 
-      SpectraVisualizerWindow msmsPlot =
-          SpectraVisualizerModule.showNewSpectrumWindow(dataFile, msmsScanNumber);
-
-      if (msmsPlot == null)
-        return;
-      Map<DataPoint, String> annotation = formula.getMSMSannotation();
-
-      if (annotation == null)
-        return;
-      msmsPlot.addAnnotation(annotation);
-
+        if (annotation == null)
+          return;
+        msmsPlot.addAnnotation(annotation);
+      }
     }
 
   }
 
-  public void addNewListItem(final ResultFormula formula) {
+  public void addNewListItem(final MolecularFormulaIdentity formula) {
     // Update the model in swing thread to avoid exceptions
     SwingUtilities.invokeLater(new Runnable() {
       @Override

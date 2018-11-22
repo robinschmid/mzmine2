@@ -18,21 +18,27 @@
 
 package net.sf.mzmine.datamodel.identities;
 
+import java.util.Map;
 import javax.annotation.Nonnull;
 import org.openscience.cdk.interfaces.IMolecularFormula;
 import org.openscience.cdk.tools.manipulator.MolecularFormulaManipulator;
+import net.sf.mzmine.datamodel.DataPoint;
+import net.sf.mzmine.datamodel.IsotopePattern;
+import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.restrictions.rdbe.RDBERestrictionChecker;
 import net.sf.mzmine.util.FormulaUtils;
 
 public class MolecularFormulaIdentity {
 
   private final @Nonnull IMolecularFormula cdkFormula;
+  private Double rdbe;
 
   public MolecularFormulaIdentity(IMolecularFormula cdkFormula) {
     this.cdkFormula = cdkFormula;
+    rdbe = RDBERestrictionChecker.calculateRDBE(cdkFormula);
   }
 
   public MolecularFormulaIdentity(String formula) {
-    this.cdkFormula = FormulaUtils.createMajorIsotopeMolFormula(formula);
+    this(FormulaUtils.createMajorIsotopeMolFormula(formula));
   }
 
   public String getFormulaAsString() {
@@ -71,8 +77,6 @@ public class MolecularFormulaIdentity {
   public double getScore(double neutralMass, double ppmMax) {
     return getScore(neutralMass, ppmMax, 1, 1);
   }
-
-
 
   /**
    * Merged score with weights
@@ -127,4 +131,25 @@ public class MolecularFormulaIdentity {
     return this.toString().equals(f.toString());
   }
 
+  public Double getRDBE() {
+    return rdbe;
+  }
+
+  /**
+   * MSMS annotations of MS/MS scans (sub molecular formulas)
+   * 
+   * @return
+   */
+  public Map<DataPoint, String> getMSMSannotation() {
+    return null;
+  }
+
+  /**
+   * The predicted isotopes pattern
+   * 
+   * @return
+   */
+  public IsotopePattern getPredictedIsotopes() {
+    return null;
+  }
 }

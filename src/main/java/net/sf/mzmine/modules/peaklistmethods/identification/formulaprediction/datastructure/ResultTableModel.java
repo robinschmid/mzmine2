@@ -20,10 +20,10 @@ package net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.d
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.Vector;
-
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.table.AbstractTableModel;
-
+import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
 import net.sf.mzmine.main.MZmineCore;
 
 public class ResultTableModel extends AbstractTableModel {
@@ -41,7 +41,7 @@ public class ResultTableModel extends AbstractTableModel {
 
   private double searchedMass;
 
-  private Vector<ResultFormula> formulas = new Vector<ResultFormula>();
+  private List<MolecularFormulaIdentity> formulas = new ArrayList<>();
 
   private final NumberFormat massFormat = MZmineCore.getConfiguration().getMZFormat();
 
@@ -51,10 +51,12 @@ public class ResultTableModel extends AbstractTableModel {
     this.searchedMass = searchedMass;
   }
 
+  @Override
   public String getColumnName(int col) {
     return columnNames[col].toString();
   }
 
+  @Override
   public Class<?> getColumnClass(int col) {
     switch (col) {
       case 0:
@@ -69,16 +71,19 @@ public class ResultTableModel extends AbstractTableModel {
     return null;
   }
 
+  @Override
   public int getRowCount() {
     return formulas.size();
   }
 
+  @Override
   public int getColumnCount() {
     return columnNames.length;
   }
 
+  @Override
   public Object getValueAt(int row, int col) {
-    ResultFormula formula = formulas.get(row);
+    MolecularFormulaIdentity formula = formulas.get(row);
     double formulaMass = formula.getExactMass();
     double massDifference = searchedMass - formulaMass;
     switch (col) {
@@ -99,15 +104,16 @@ public class ResultTableModel extends AbstractTableModel {
     return null;
   }
 
-  public ResultFormula getFormula(int row) {
+  public MolecularFormulaIdentity getFormula(int row) {
     return formulas.get(row);
   }
 
+  @Override
   public boolean isCellEditable(int row, int col) {
     return false;
   }
 
-  public void addElement(ResultFormula formula) {
+  public void addElement(MolecularFormulaIdentity formula) {
     formulas.add(formula);
     fireTableRowsInserted(formulas.size() - 1, formulas.size() - 1);
   }

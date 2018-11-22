@@ -18,38 +18,53 @@
 
 package net.sf.mzmine.modules.visualization.peaklisttable.table.formulas;
 
+import javax.swing.JTable;
+import javax.swing.table.AbstractTableModel;
+import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
 import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.datastructure.ResultFormula;
 
 /**
  * Table cell renderer
  */
-class IonIdNetFormulaCellRenderer extends FormulaCellRenderer {
+public class IonIdNetFormulaCellRenderer extends FormulaCell {
 
-  public IonIdNetFormulaCellRenderer() {
-    super(
-        // provide list of formulas
-        row -> {
-          IonIdentity best = row.getBestIonIdentity();
-          if (best != null && best.getNetwork() != null
-              && best.getNetwork().getBestMolFormula() != null) {
-            AnnotationNetwork bestNet = best.getNetwork();
-            // add all result formulas
-            return bestNet.getMolFormulas().stream().filter(ResultFormula.class::isInstance)
-                .map(ResultFormula.class::cast).toArray(ResultFormula[]::new);
-          }
-          return new ResultFormula[0];
-        },
-        // provide neutral mass
-        row -> {
-          IonIdentity best = row.getBestIonIdentity();
-          if (best != null && best.getNetwork() != null
-              && best.getNetwork().getBestMolFormula() != null) {
-            return best.getNetwork().getNeutralMass();
-          }
-          return -1d;
-        });
+  public IonIdNetFormulaCellRenderer(JTable table) {
+    super();
   }
 
+  @Override
+  protected double getMass(PeakListRow row) {
+    IonIdentity best = row.getBestIonIdentity();
+    if (best != null && best.getNetwork() != null
+        && best.getNetwork().getBestMolFormula() != null) {
+      return best.getNetwork().getNeutralMass();
+    }
+    return -1d;
+  }
+
+  @Override
+  protected MolecularFormulaIdentity[] getFormulas(PeakListRow row) {
+    IonIdentity best = row.getBestIonIdentity();
+    if (best != null && best.getNetwork() != null
+        && best.getNetwork().getBestMolFormula() != null) {
+      AnnotationNetwork bestNet = best.getNetwork();
+      // add all result formulas
+      return bestNet.getMolFormulas().stream().filter(MolecularFormulaIdentity.class::isInstance)
+          .map(MolecularFormulaIdentity.class::cast).toArray(MolecularFormulaIdentity[]::new);
+    }
+    return new MolecularFormulaIdentity[0];
+  }
+
+  @Override
+  protected void setSelectedFormula(JTable table, int rowi, PeakListRow row,
+      MolecularFormulaIdentity formula) {
+    IonIdentity bestIon = row.getBestIonIdentity();
+    if (bestIon != null && bestIon.getNetwork().getBestMolFormula() != null) {
+      bestIon.getNetwork().setBestMolFormula(formula);
+      AbstractTableModel model = ((AbstractTableModel) table.getModel());
+      model.fireTableRowsUpdated(rowi, rowi);
+    }
+  }
 }
