@@ -194,7 +194,7 @@ public class ResultWindow extends JFrame implements ActionListener {
           isoWeight = Double.valueOf(txtIsoWeight.getText());
           txtIsoWeight.setBackground(Color.WHITE);
           // table data changed
-          resultsTableModel.fireTableDataChanged();
+          resultsTableModel.setIsoWeight(isoWeight);
         }
       } catch (Exception ex) {
         txtIsoWeight.setBackground(new Color(200, 50, 50));
@@ -217,7 +217,7 @@ public class ResultWindow extends JFrame implements ActionListener {
           msmsWeight = Double.valueOf(txtMSMSWeight.getText());
           txtMSMSWeight.setBackground(Color.WHITE);
           // table data changed
-          resultsTableModel.fireTableDataChanged();
+          resultsTableModel.setMSMSWeight(msmsWeight);
         }
       } catch (Exception ex) {
         txtMSMSWeight.setBackground(new Color(200, 50, 50));
