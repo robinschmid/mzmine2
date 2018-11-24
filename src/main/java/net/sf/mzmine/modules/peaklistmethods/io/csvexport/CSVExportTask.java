@@ -356,7 +356,7 @@ public class CSVExportTask extends AbstractTask {
               if (ad.getMSMSModVerify() > 0)
                 msms = "MS/MS verified: nloss";
               if (ad.getMSMSMultimerCount() > 0)
-                msms += msms.isEmpty() ? "MS/MS verified: xmer" : ", xmer";
+                msms += msms.isEmpty() ? "MS/MS verified: xmer" : (idSeparator + " xmer");
               String partners =
                   StringUtils.join(ArrayUtils.toObject(ad.getPartnerRowsID()), idSeparator);
               line.append(ad.getIonType().toString(false) + fieldSeparator //
