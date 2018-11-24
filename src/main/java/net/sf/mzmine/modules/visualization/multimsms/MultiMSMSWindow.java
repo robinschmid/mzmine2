@@ -37,7 +37,6 @@ import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.datamodel.identities.ms2.MSMSIonIdentity;
 import net.sf.mzmine.datamodel.identities.ms2.interf.AbstractMSMSIdentity;
-import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.pseudospectra.PseudoSpectrum;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.pseudospectra.PseudoSpectrumDataSet;
@@ -372,7 +371,6 @@ public class MultiMSMSWindow extends JFrame {
 
     // add all MSMS annotations
     addAllMSMSAnnotations(rows, raw);
-
     renewCharts(group);
   }
 
@@ -425,9 +423,6 @@ public class MultiMSMSWindow extends JFrame {
   public void addAllMSMSAnnotations(PeakListRow[] rows, RawDataFile raw) {
     for (PeakListRow row : rows) {
       // add MS1 annotations
-      // limited by correlation group can be null
-      RowGroup group = row.getGroup();
-
       IonIdentity best = row.getBestIonIdentity();
       if (best == null)
         continue;
