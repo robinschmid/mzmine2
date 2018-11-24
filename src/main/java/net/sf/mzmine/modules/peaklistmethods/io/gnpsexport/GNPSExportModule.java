@@ -25,7 +25,7 @@ import javax.annotation.Nonnull;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.modules.MZmineModuleCategory;
 import net.sf.mzmine.modules.MZmineProcessingModule;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.export.ExportCorrAnnotationTask;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.export.ExportCorrAnnotationTask;
 import net.sf.mzmine.modules.peaklistmethods.io.csvexport.CSVExportTask;
 import net.sf.mzmine.modules.peaklistmethods.io.csvexport.ExportRowCommonElement;
 import net.sf.mzmine.modules.peaklistmethods.io.csvexport.ExportRowDataFileElement;

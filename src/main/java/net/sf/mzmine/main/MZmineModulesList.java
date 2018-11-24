@@ -34,7 +34,6 @@ import net.sf.mzmine.modules.peaklistmethods.dataanalysis.rtmzplots.cvplot.CVPlo
 import net.sf.mzmine.modules.peaklistmethods.dataanalysis.rtmzplots.logratioplot.LogratioPlotModule;
 import net.sf.mzmine.modules.peaklistmethods.filtering.clearannotations.PeaklistClearAnnotationsModule;
 import net.sf.mzmine.modules.peaklistmethods.filtering.duplicatefilter.DuplicateFilterModule;
-import net.sf.mzmine.modules.peaklistmethods.filtering.msannotations.FilterAnnotationModule;
 import net.sf.mzmine.modules.peaklistmethods.filtering.neutralloss.NeutralLossFilterModule;
 import net.sf.mzmine.modules.peaklistmethods.filtering.peakcomparisonrowfilter.PeakComparisonRowFilterModule;
 import net.sf.mzmine.modules.peaklistmethods.filtering.peakfilter.PeakFilterModule;
@@ -42,22 +41,24 @@ import net.sf.mzmine.modules.peaklistmethods.filtering.rowsfilter.RowsFilterModu
 import net.sf.mzmine.modules.peaklistmethods.gapfilling.peakfinder.PeakFinderModule;
 import net.sf.mzmine.modules.peaklistmethods.gapfilling.peakfinder.multithreaded.MultiThreadPeakFinderModule;
 import net.sf.mzmine.modules.peaklistmethods.gapfilling.samerange.SameRangeGapFillerModule;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.MetaCorrelateModule;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.SimpleMetaCorrelateModule;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.export.ExportCorrAnnotationModule;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity.MS2SimilarityModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.adductsearch.AdductSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.camera.CameraSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.complexsearch.ComplexSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.customdbsearch.CustomDBSearchModule;
-import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.annotationnetwork.FormulaPredictionAnnotationNetworkModule;
-import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.createavgformulas.CreateAvgNetworkFormulasModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.peaklist.FormulaPredictionPeakListModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.FormulaPredictionModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.sort.FormulaSortModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.fragmentsearch.FragmentSearchModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.clearionids.ClearIonIdentitiesModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.filterionidnet.FilterIonIdNetworksModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.formula.createavgformulas.CreateAvgNetworkFormulasModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.formula.prediction.FormulaPredictionAnnotationNetworkModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.MSAnnotationModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.lipididentification.LipidSearchModule;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.MetaMSEcorrelateModule;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.SimpleMetaMSEcorrelateModule;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.export.ExportCorrAnnotationModule;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msannotation.MSAnnotationModule;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.similarity.MS2SimilarityModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ms2search.Ms2SearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.nist.NistMsSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.onlinedbsearch.OnlineDBSearchModule;
@@ -183,7 +184,6 @@ public class MZmineModulesList {
       // Peak list filtering
       DuplicateFilterModule.class, RowsFilterModule.class, PeakComparisonRowFilterModule.class,
       PeakFilterModule.class, PeaklistClearAnnotationsModule.class, NeutralLossFilterModule.class,
-      FilterAnnotationModule.class,
 
       // Normalization
       RTNormalizerModule.class, LinearNormalizerModule.class,
@@ -193,12 +193,15 @@ public class MZmineModulesList {
       CVPlotModule.class, LogratioPlotModule.class, PCAPlotModule.class, CDAPlotModule.class,
       SammonsPlotModule.class, ClusteringModule.class, HeatMapModule.class,
 
+      // row grouping
+      MetaCorrelateModule.class, SimpleMetaCorrelateModule.class,
+
+      // ion identity networks
+      MSAnnotationModule.class, FilterIonIdNetworksModule.class, ClearIonIdentitiesModule.class,
+      FormulaPredictionAnnotationNetworkModule.class, CreateAvgNetworkFormulasModule.class,
+
       // Identification
-      FormulaPredictionModule.class, FormulaPredictionPeakListModule.class,
-      FormulaPredictionAnnotationNetworkModule.class, FormulaSortModule.class,
-      CreateAvgNetworkFormulasModule.class,
-      // annotation
-      MetaMSEcorrelateModule.class, SimpleMetaMSEcorrelateModule.class, MSAnnotationModule.class,
+      FormulaPredictionModule.class, FormulaPredictionPeakListModule.class, FormulaSortModule.class,
       CustomDBSearchModule.class, FragmentSearchModule.class, AdductSearchModule.class,
       ComplexSearchModule.class, OnlineDBSearchModule.class, LipidSearchModule.class,
       CameraSearchModule.class, NistMsSearchModule.class, Ms2SearchModule.class,

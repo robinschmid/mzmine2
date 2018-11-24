@@ -38,6 +38,8 @@ import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.visualization.peaklisttable.ColumnSettingParameter;
 import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableParameters;
+import net.sf.mzmine.modules.visualization.peaklisttable.table.formulas.IonIdNetFormulaCellRenderer;
+import net.sf.mzmine.modules.visualization.peaklisttable.table.formulas.RowFormulaCellRenderer;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.util.components.ColumnGroup;
 import net.sf.mzmine.util.components.GroupableTableHeader;
@@ -65,6 +67,9 @@ public class PeakListTableColumnModel extends DefaultTableColumnModel implements
   private GroupableTableHeader header;
 
   private TableColumn columnBeingResized;
+
+  private RowFormulaCellRenderer rowFormulaRenderer;
+  private IonIdNetFormulaCellRenderer netFormulaRenderer;
 
   /**
    * 
@@ -102,10 +107,12 @@ public class PeakListTableColumnModel extends DefaultTableColumnModel implements
     datapointsRenderer = new FormattedCellRenderer(new DecimalFormat());
     qcRenderer = new FormattedCellRenderer(new DecimalFormat());
 
+    // formula renderer
+    netFormulaRenderer = new IonIdNetFormulaCellRenderer(null);
+    rowFormulaRenderer = new RowFormulaCellRenderer(null);
   }
 
   public void createColumns() {
-
     // clear column groups
     ColumnGroup groups[] = header.getColumnGroups();
     if (groups != null) {
@@ -184,6 +191,14 @@ public class PeakListTableColumnModel extends DefaultTableColumnModel implements
           break;
         case ION_FORMULA_PPM:
           newColumn.setCellRenderer(ppmRenderer);
+          break;
+        case ION_FORMULA:
+          newColumn.setCellRenderer(rowFormulaRenderer);
+          newColumn.setCellEditor(rowFormulaRenderer);
+          break;
+        case NEUTRAL_FORMULA:
+          newColumn.setCellRenderer(netFormulaRenderer);
+          newColumn.setCellEditor(netFormulaRenderer);
           break;
         default:
           newColumn.setCellRenderer(defaultRenderer);

@@ -20,7 +20,9 @@ package net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.d
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
@@ -30,8 +32,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.Map;
-
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -39,19 +41,22 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableRowSorter;
-
+import org.jfree.data.Range;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.IsotopePattern;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
 import net.sf.mzmine.datamodel.impl.SimplePeakIdentity;
+import net.sf.mzmine.framework.listener.DelayedDocumentListener;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.visualization.spectra.SpectraVisualizerModule;
 import net.sf.mzmine.modules.visualization.spectra.SpectraVisualizerWindow;
@@ -73,10 +78,22 @@ public class ResultWindow extends JFrame implements ActionListener {
   private final PeakListRow peakListRow;
   private final Task searchTask;
   private final String title;
+  private JTextField txtPPMWeight;
+  private JTextField txtIsoWeight;
+  private JTextField txtMSMSWeight;
+  private double ppmWeight;
+  private double isoWeight;
+  private double msmsWeight;
 
-  public ResultWindow(String title, PeakListRow peakListRow, double searchedMass, int charge,
-      Task searchTask) {
 
+  /**
+   * @wbp.parser.constructor
+   */
+  public ResultWindow(String title, PeakListRow peakListRow, double searchedMass) {
+    this(title, peakListRow, searchedMass, null);
+  }
+
+  public ResultWindow(String title, PeakListRow peakListRow, double searchedMass, Task searchTask) {
     super(title);
 
     this.title = title;
@@ -133,20 +150,88 @@ public class ResultWindow extends JFrame implements ActionListener {
     GUIUtils.addButton(pnlButtons, "View isotope pattern", null, this, "SHOW_ISOTOPES");
     GUIUtils.addButton(pnlButtons, "Show MS/MS", null, this, "SHOW_MSMS");
 
-    setLayout(new BorderLayout());
-    setSize(500, 200);
-    add(pnlLabelsAndList, BorderLayout.CENTER);
-    add(pnlButtons, BorderLayout.SOUTH);
-    pack();
+    getContentPane().setLayout(new BorderLayout());
+    setSize(728, 540);
+    getContentPane().add(pnlLabelsAndList, BorderLayout.CENTER);
+    getContentPane().add(pnlButtons, BorderLayout.SOUTH);
 
+    JPanel pnNorth = new JPanel();
+    FlowLayout flowLayout = (FlowLayout) pnNorth.getLayout();
+    flowLayout.setAlignment(FlowLayout.LEFT);
+    getContentPane().add(pnNorth, BorderLayout.NORTH);
+
+    JLabel lblPpmWeight = new JLabel("ppm weight");
+    pnNorth.add(lblPpmWeight);
+
+    txtPPMWeight = new JTextField();
+    txtPPMWeight.setText("20");
+    pnNorth.add(txtPPMWeight);
+    txtPPMWeight.getDocument().addDocumentListener(new DelayedDocumentListener(e -> {
+      try {
+        if (txtPPMWeight.getText().length() > 0) {
+          ppmWeight = Double.valueOf(txtPPMWeight.getText());
+          txtPPMWeight.setBackground(Color.WHITE);
+          resultsTableModel.setPPMWeight(ppmWeight);
+        }
+      } catch (Exception ex) {
+        txtPPMWeight.setBackground(new Color(200, 50, 50));
+      }
+    }));
+    txtPPMWeight.setColumns(4);
+
+    Component horizontalStrut = Box.createHorizontalStrut(20);
+    pnNorth.add(horizontalStrut);
+
+    JLabel lblIsoScoreWeight = new JLabel("iso score weight");
+    pnNorth.add(lblIsoScoreWeight);
+
+    txtIsoWeight = new JTextField();
+    txtIsoWeight.setText("3");
+    txtIsoWeight.setColumns(4);
+    txtIsoWeight.getDocument().addDocumentListener(new DelayedDocumentListener(e -> {
+      try {
+        if (txtIsoWeight.getText().length() > 0) {
+          isoWeight = Double.valueOf(txtIsoWeight.getText());
+          txtIsoWeight.setBackground(Color.WHITE);
+          // table data changed
+          resultsTableModel.setIsoWeight(isoWeight);
+        }
+      } catch (Exception ex) {
+        txtIsoWeight.setBackground(new Color(200, 50, 50));
+      }
+    }));
+    pnNorth.add(txtIsoWeight);
+
+    Component horizontalStrut_1 = Box.createHorizontalStrut(20);
+    pnNorth.add(horizontalStrut_1);
+
+    JLabel lblMsmsScoreWeight = new JLabel("MS/MS score weight");
+    pnNorth.add(lblMsmsScoreWeight);
+
+    txtMSMSWeight = new JTextField();
+    txtMSMSWeight.setText("1");
+    txtMSMSWeight.setColumns(4);
+    txtMSMSWeight.getDocument().addDocumentListener(new DelayedDocumentListener(e -> {
+      try {
+        if (txtMSMSWeight.getText().length() > 0) {
+          msmsWeight = Double.valueOf(txtMSMSWeight.getText());
+          txtMSMSWeight.setBackground(Color.WHITE);
+          // table data changed
+          resultsTableModel.setMSMSWeight(msmsWeight);
+        }
+      } catch (Exception ex) {
+        txtMSMSWeight.setBackground(new Color(200, 50, 50));
+      }
+    }));
+    pnNorth.add(txtMSMSWeight);
+    pack();
   }
 
+  @Override
   public void actionPerformed(ActionEvent e) {
-
     String command = e.getActionCommand();
 
     if (command.equals("EXPORT")) {
-
       // Ask for filename
       JFileChooser fileChooser = new JFileChooser();
       fileChooser.setApproveButtonText("Export");
@@ -163,7 +248,7 @@ public class ResultWindow extends JFrame implements ActionListener {
 
         for (int row = 0; row < resultsTable.getRowCount(); row++) {
           int modelRow = resultsTable.convertRowIndexToModel(row);
-          ResultFormula formula = resultsTableModel.getFormula(modelRow);
+          MolecularFormulaIdentity formula = resultsTableModel.getFormula(modelRow);
           writer.write(formula.getFormulaAsString());
           writer.write(",");
           writer.write(String.valueOf(formula.getExactMass()));
@@ -199,10 +284,9 @@ public class ResultWindow extends JFrame implements ActionListener {
       return;
     }
     index = resultsTable.convertRowIndexToModel(index);
-    ResultFormula formula = resultsTableModel.getFormula(index);
+    MolecularFormulaIdentity formula = resultsTableModel.getFormula(index);
 
     if (command.equals("ADD")) {
-
       SimplePeakIdentity newIdentity = new SimplePeakIdentity(formula.getFormulaAsString());
       peakListRow.addPeakIdentity(newIdentity, false);
 
@@ -216,59 +300,59 @@ public class ResultWindow extends JFrame implements ActionListener {
     }
 
     if (command.equals("COPY")) {
-
       String formulaString = formula.getFormulaAsString();
       StringSelection stringSelection = new StringSelection(formulaString);
       Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
       clipboard.setContents(stringSelection, null);
-
     }
 
     if (command.equals("SHOW_ISOTOPES")) {
+      if (formula.getPredictedIsotopes() != null) {
+        IsotopePattern predictedPattern = formula.getPredictedIsotopes();
+        if (predictedPattern == null)
+          return;
 
-      IsotopePattern predictedPattern = formula.getPredictedIsotopes();
+        Feature peak = peakListRow.getBestPeak();
 
-      if (predictedPattern == null)
-        return;
+        RawDataFile dataFile = peak.getDataFile();
+        int scanNumber = peak.getRepresentativeScanNumber();
+        SpectraVisualizerWindow spec = SpectraVisualizerModule.showNewSpectrumWindow(dataFile,
+            scanNumber, null, peak.getIsotopePattern(), predictedPattern);
 
-      Feature peak = peakListRow.getBestPeak();
-
-      RawDataFile dataFile = peak.getDataFile();
-      int scanNumber = peak.getRepresentativeScanNumber();
-      SpectraVisualizerModule.showNewSpectrumWindow(dataFile, scanNumber, null,
-          peak.getIsotopePattern(), predictedPattern);
-
+        double min = predictedPattern.getDataPointMZRange().lowerEndpoint();
+        double max = predictedPattern.getDataPointMZRange().upperEndpoint();
+        spec.setDomainZoom(new Range(min - 2.5, max + 2.5));
+      }
     }
 
     if (command.equals("SHOW_MSMS")) {
+      if (formula.getMSMSannotation() != null) {
+        Feature bestPeak = peakListRow.getBestPeak();
+        RawDataFile dataFile = bestPeak.getDataFile();
+        int msmsScanNumber = bestPeak.getMostIntenseFragmentScanNumber();
 
-      Feature bestPeak = peakListRow.getBestPeak();
+        if (msmsScanNumber < 1)
+          return;
 
-      RawDataFile dataFile = bestPeak.getDataFile();
-      int msmsScanNumber = bestPeak.getMostIntenseFragmentScanNumber();
+        SpectraVisualizerWindow msmsPlot =
+            SpectraVisualizerModule.showNewSpectrumWindow(dataFile, msmsScanNumber);
 
-      if (msmsScanNumber < 1)
-        return;
+        if (msmsPlot == null)
+          return;
+        Map<DataPoint, String> annotation = formula.getMSMSannotation();
 
-      SpectraVisualizerWindow msmsPlot =
-          SpectraVisualizerModule.showNewSpectrumWindow(dataFile, msmsScanNumber);
-
-      if (msmsPlot == null)
-        return;
-      Map<DataPoint, String> annotation = formula.getMSMSannotation();
-
-      if (annotation == null)
-        return;
-      msmsPlot.addAnnotation(annotation);
-
+        if (annotation == null)
+          return;
+        msmsPlot.addAnnotation(annotation);
+      }
     }
 
   }
 
-  public void addNewListItem(final ResultFormula formula) {
-
+  public void addNewListItem(final MolecularFormulaIdentity formula) {
     // Update the model in swing thread to avoid exceptions
     SwingUtilities.invokeLater(new Runnable() {
+      @Override
       public void run() {
         resultsTableModel.addElement(formula);
         setTitle(title + ", " + resultsTableModel.getRowCount() + " formulas found");
@@ -276,15 +360,26 @@ public class ResultWindow extends JFrame implements ActionListener {
     });
   }
 
+  @Override
   public void dispose() {
-
-    // Cancel the search task if it is still running
-    TaskStatus searchStatus = searchTask.getStatus();
-    if ((searchStatus == TaskStatus.WAITING) || (searchStatus == TaskStatus.PROCESSING))
-      searchTask.cancel();
-
+    if (searchTask != null) {
+      // Cancel the search task if it is still running
+      TaskStatus searchStatus = searchTask.getStatus();
+      if ((searchStatus == TaskStatus.WAITING) || (searchStatus == TaskStatus.PROCESSING))
+        searchTask.cancel();
+    }
     super.dispose();
-
   }
 
+  public JTextField getTxtPPMWeight() {
+    return txtPPMWeight;
+  }
+
+  public JTextField getTxtIsoWeight() {
+    return txtIsoWeight;
+  }
+
+  public JTextField getTxtMSMSWeight() {
+    return txtMSMSWeight;
+  }
 }

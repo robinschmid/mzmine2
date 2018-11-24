@@ -20,7 +20,9 @@ package net.sf.mzmine.modules.peaklistmethods.msms.msmsscore;
 
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
+import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.MassListParameter;
+import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
 import net.sf.mzmine.parameters.parametertypes.PercentParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
 
@@ -32,10 +34,14 @@ public class MSMSScoreParameters extends SimpleParameterSet {
       "MS/MS m/z tolerance", "Tolerance of the mass value to search (+/- range)");
 
   public static final PercentParameter msmsMinScore = new PercentParameter("MS/MS score threshold",
-      "If the score for MS/MS is lower, discard this match");
+      "If the score for MS/MS is lower, discard this match", 0d);
+
+  public static final OptionalParameter<IntegerParameter> maxSignals =
+      new OptionalParameter<>(new IntegerParameter("Use top N signals",
+          "Limit the MS/MS search on the N most abundant signals in MS/MS", 20), false);
 
   public MSMSScoreParameters() {
-    super(new Parameter[] {massList, msmsTolerance, msmsMinScore});
+    super(new Parameter[] {massList, msmsTolerance, msmsMinScore, maxSignals});
   }
 
 }

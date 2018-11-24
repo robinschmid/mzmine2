@@ -33,6 +33,7 @@ import net.sf.mzmine.datamodel.MassList;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
+import net.sf.mzmine.util.scans.ScanUtils;
 
 public class MSMSScoreCalculator {
 
@@ -41,6 +42,11 @@ public class MSMSScoreCalculator {
    */
   public static MSMSScore evaluateMSMS(IMolecularFormula parentFormula, Scan msmsScan,
       ParameterSet parameters) {
+    return evaluateMSMS(parentFormula, msmsScan, parameters, -1);
+  }
+
+  public static MSMSScore evaluateMSMS(IMolecularFormula parentFormula, Scan msmsScan,
+      ParameterSet parameters, int maxSignals) {
 
     MZTolerance msmsTolerance =
         parameters.getParameter(MSMSScoreParameters.msmsTolerance).getValue();
@@ -59,7 +65,32 @@ public class MSMSScoreCalculator {
       throw new IllegalArgumentException(
           "Mass list " + massList + " does not contain data for scan #" + msmsScan.getScanNumber());
     }
+    double precursorMZ = msmsScan.getPrecursorMZ();
+    int precursorCharge = msmsScan.getPrecursorCharge();
+    return evaluateMSMS(msmsTolerance, parentFormula, msmsIons, precursorMZ, precursorCharge,
+        maxSignals);
+  }
 
+  /**
+   * 
+   * @param parentFormula
+   * @param msmsIons
+   * @param precursorCharge
+   * @param maxSignals if > 0; only use top n signals
+   * @return
+   */
+  public static MSMSScore evaluateMSMS(MZTolerance msmsTolerance, IMolecularFormula parentFormula,
+      DataPoint[] msmsIons, double precursorMZ, int precursorCharge, int maxSignals) {
+    if (maxSignals <= 0)
+      return evaluateMSMS(msmsTolerance, parentFormula, msmsIons, precursorMZ, precursorCharge);
+    else {
+      DataPoint[] dps = ScanUtils.getMostAbundantSignals(msmsIons, maxSignals);
+      return evaluateMSMS(msmsTolerance, parentFormula, dps, precursorMZ, precursorCharge);
+    }
+  }
+
+  public static MSMSScore evaluateMSMS(MZTolerance msmsTolerance, IMolecularFormula parentFormula,
+      DataPoint[] msmsIons, double precursorMZ, int precursorCharge) {
     MolecularFormulaRange msmsElementRange = new MolecularFormulaRange();
     for (IIsotope isotope : parentFormula.isotopes()) {
       msmsElementRange.addIsotope(isotope, 0, parentFormula.getIsotopeCount(isotope));
@@ -70,7 +101,6 @@ public class MSMSScoreCalculator {
 
     // If getPrecursorCharge() returns 0, it means charge is unknown. In
     // that case let's assume charge 1
-    int precursorCharge = msmsScan.getPrecursorCharge();
     if (precursorCharge == 0)
       precursorCharge = 1;
 
@@ -91,7 +121,7 @@ public class MSMSScoreCalculator {
 
       // We don't know the charge of the fragment, so we will simply
       // assume 1
-      double neutralLoss = msmsScan.getPrecursorMZ() * precursorCharge - dp.getMZ();
+      double neutralLoss = precursorMZ * precursorCharge - dp.getMZ();
 
       // Ignore negative neutral losses and parent ion, <5 may be a
       // good threshold
@@ -100,9 +130,7 @@ public class MSMSScoreCalculator {
       }
 
       Range<Double> msmsTargetRange = msmsTolerance.getToleranceRange(neutralLoss);
-
       IChemObjectBuilder builder = SilentChemObjectBuilder.getInstance();
-
       MolecularFormulaGenerator msmsEngine = new MolecularFormulaGenerator(builder,
           msmsTargetRange.lowerEndpoint(), msmsTargetRange.upperEndpoint(), msmsElementRange);
 
@@ -112,9 +140,7 @@ public class MSMSScoreCalculator {
         msmsAnnotations.put(dp, formulaString);
         interpretedMSMSpeaks++;
       }
-
       totalMSMSpeaks++;
-
     }
 
     // If we did not evaluate any MS/MS peaks, we cannot calculate a score
@@ -123,11 +149,8 @@ public class MSMSScoreCalculator {
     }
 
     double msmsScore = (double) interpretedMSMSpeaks / totalMSMSpeaks;
-
     MSMSScore result = new MSMSScore(msmsScore, msmsAnnotations);
-
     return result;
-
   }
 
 }

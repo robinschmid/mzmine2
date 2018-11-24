@@ -20,10 +20,10 @@ package net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.d
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.Vector;
-
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.table.AbstractTableModel;
-
+import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
 import net.sf.mzmine.main.MZmineCore;
 
 public class ResultTableModel extends AbstractTableModel {
@@ -37,24 +37,31 @@ public class ResultTableModel extends AbstractTableModel {
   public static final String crossMark = new String(new char[] {'\u2717'});
 
   private static final String[] columnNames = {"Formula", "Mass difference (Da)",
-      "Mass difference (ppm)", "RDBE", "Isotope pattern score", "MS/MS score"};
+      "Mass difference (ppm)", "RDBE", "Isotope pattern score", "MS/MS score", "Score (weighted)"};
 
   private double searchedMass;
 
-  private Vector<ResultFormula> formulas = new Vector<ResultFormula>();
+  private List<MolecularFormulaIdentity> formulas = new ArrayList<>();
 
   private final NumberFormat massFormat = MZmineCore.getConfiguration().getMZFormat();
 
+  private final NumberFormat scoreFormat = new DecimalFormat("#0.000");
   private final NumberFormat ppmFormat = new DecimalFormat("0.0");
+  // weights to calc real score
+  private double isoWeight = 3;
+  private double ppmWeight = 20;
+  private double msmsWeight = 1;
 
   ResultTableModel(double searchedMass) {
     this.searchedMass = searchedMass;
   }
 
+  @Override
   public String getColumnName(int col) {
     return columnNames[col].toString();
   }
 
+  @Override
   public Class<?> getColumnClass(int col) {
     switch (col) {
       case 0:
@@ -64,21 +71,25 @@ public class ResultTableModel extends AbstractTableModel {
       case 3:
       case 4:
       case 5:
+      case 6:
         return Double.class;
     }
     return null;
   }
 
+  @Override
   public int getRowCount() {
     return formulas.size();
   }
 
+  @Override
   public int getColumnCount() {
     return columnNames.length;
   }
 
+  @Override
   public Object getValueAt(int row, int col) {
-    ResultFormula formula = formulas.get(row);
+    MolecularFormulaIdentity formula = formulas.get(row);
     double formulaMass = formula.getExactMass();
     double massDifference = searchedMass - formulaMass;
     switch (col) {
@@ -95,21 +106,45 @@ public class ResultTableModel extends AbstractTableModel {
         return formula.getIsotopeScore();
       case 5:
         return formula.getMSMSScore();
+      case 6:
+        return formula.getScore(searchedMass, ppmWeight, isoWeight, msmsWeight);
     }
     return null;
   }
 
-  public ResultFormula getFormula(int row) {
+  public MolecularFormulaIdentity getFormula(int row) {
     return formulas.get(row);
   }
 
+  @Override
   public boolean isCellEditable(int row, int col) {
     return false;
   }
 
-  public void addElement(ResultFormula formula) {
+  public void addElement(MolecularFormulaIdentity formula) {
     formulas.add(formula);
     fireTableRowsInserted(formulas.size() - 1, formulas.size() - 1);
+  }
+
+  public void setPPMWeight(double ppmWeight) {
+    if (this.ppmWeight != ppmWeight) {
+      this.ppmWeight = ppmWeight;
+      fireTableDataChanged();
+    }
+  }
+
+  public void setIsoWeight(double isoWeight) {
+    if (this.isoWeight != isoWeight) {
+      this.isoWeight = isoWeight;
+      fireTableDataChanged();
+    }
+  }
+
+  public void setMSMSWeight(double msmsWeight) {
+    if (this.msmsWeight != msmsWeight) {
+      this.msmsWeight = msmsWeight;
+      fireTableDataChanged();
+    }
   }
 
 }

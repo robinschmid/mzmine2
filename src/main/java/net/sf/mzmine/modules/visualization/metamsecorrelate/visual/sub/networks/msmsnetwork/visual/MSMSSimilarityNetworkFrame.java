@@ -2,8 +2,8 @@ package net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks
 
 import java.awt.EventQueue;
 import javax.swing.JFrame;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RMap;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.msms.similarity.R2RMS2Similarity;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.R2RMap;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity.R2RMS2Similarity;
 
 public class MSMSSimilarityNetworkFrame extends JFrame {
 

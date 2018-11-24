@@ -94,7 +94,6 @@ public class SpectraPlot extends EChartPanel {
   private int numOfDataSets = 0;
 
   public SpectraPlot(ActionListener masterPlot) {
-
     super(ChartFactory.createXYLineChart("", // title
         "m/z", // x-axis label
         "Intensity", // y-axis label
@@ -362,6 +361,7 @@ public class SpectraPlot extends EChartPanel {
   /**
    * @see java.awt.event.MouseListener#mouseClicked(java.awt.event.MouseEvent)
    */
+  @Override
   public void mouseClicked(MouseEvent event) {
 
     // let the parent handle the event (selection etc.)

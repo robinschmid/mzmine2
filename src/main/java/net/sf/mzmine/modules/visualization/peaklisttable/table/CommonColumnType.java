@@ -32,8 +32,8 @@ public enum CommonColumnType {
   NETID("NetID", Integer.class), //
   IONTYPE("Ion", String.class, true), //
   NEUTRAL_MASS("Neutral mass", Double.class), //
-  NEUTRAL_FORMULA("Formula (M)", String.class, true), //
-  ION_FORMULA("Formula (ion)", String.class, true), //
+  NEUTRAL_FORMULA("Formula (IIN)", String.class, true), //
+  ION_FORMULA("Formula (row)", String.class, true), //
   ION_FORMULA_MASS("Mass", Double.class), //
   ION_FORMULA_PPM("ppm", Double.class), //
   ION_FORMULA_ISOTOPE_SCORE("isotope score", Double.class), //

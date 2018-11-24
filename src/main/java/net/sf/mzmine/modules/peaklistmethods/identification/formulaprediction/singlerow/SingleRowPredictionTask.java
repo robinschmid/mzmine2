@@ -20,18 +20,14 @@ package net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.s
 
 import java.util.Map;
 import java.util.logging.Logger;
-
 import javax.swing.SwingUtilities;
-
 import org.openscience.cdk.formula.MolecularFormulaGenerator;
 import org.openscience.cdk.formula.MolecularFormulaRange;
 import org.openscience.cdk.interfaces.IChemObjectBuilder;
 import org.openscience.cdk.interfaces.IMolecularFormula;
 import org.openscience.cdk.silent.SilentChemObjectBuilder;
 import org.openscience.cdk.tools.manipulator.MolecularFormulaManipulator;
-
 import com.google.common.collect.Range;
-
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.IonizationType;
@@ -117,6 +113,7 @@ public class SingleRowPredictionTask extends AbstractTask {
   /**
    * @see net.sf.mzmine.taskcontrol.Task#getFinishedPercentage()
    */
+  @Override
   public double getFinishedPercentage() {
     if (generator == null)
       return 0;
@@ -126,6 +123,7 @@ public class SingleRowPredictionTask extends AbstractTask {
   /**
    * @see net.sf.mzmine.taskcontrol.Task#getTaskDescription()
    */
+  @Override
   public String getTaskDescription() {
     return "Formula prediction for "
         + MZmineCore.getConfiguration().getMZFormat().format(searchedMass);
@@ -134,13 +132,14 @@ public class SingleRowPredictionTask extends AbstractTask {
   /**
    * @see java.lang.Runnable#run()
    */
+  @Override
   public void run() {
 
     setStatus(TaskStatus.PROCESSING);
 
     resultWindow = new ResultWindow(
         "Searching for " + MZmineCore.getConfiguration().getMZFormat().format(searchedMass),
-        peakListRow, searchedMass, charge, this);
+        peakListRow, searchedMass, this);
     resultWindow.setVisible(true);
 
     logger.finest("Starting search for formulas for " + massRange + " Da");
@@ -175,6 +174,7 @@ public class SingleRowPredictionTask extends AbstractTask {
         "Finished formula search for " + massRange + " m/z, found " + foundFormulas + " formulas");
 
     SwingUtilities.invokeLater(new Runnable() {
+      @Override
       public void run() {
         resultWindow.setTitle("Finished searching for "
             + MZmineCore.getConfiguration().getMZFormat().format(searchedMass) + " amu, "
@@ -254,7 +254,15 @@ public class SingleRowPredictionTask extends AbstractTask {
         return;
       }
 
-      MSMSScore score = MSMSScoreCalculator.evaluateMSMS(cdkFormula, msmsScan, msmsParameters);
+      // limit to top n signals (<=0 equals no limitation)
+      boolean useTopNSignals =
+          msmsParameters.getParameter(MSMSScoreParameters.maxSignals).getValue();
+      int topNSignals = !useTopNSignals ? -1
+          : msmsParameters.getParameter(MSMSScoreParameters.maxSignals).getEmbeddedParameter()
+              .getValue();
+
+      MSMSScore score =
+          MSMSScoreCalculator.evaluateMSMS(cdkFormula, msmsScan, msmsParameters, topNSignals);
 
       double minMSMSScore =
           msmsParameters.getParameter(MSMSScoreParameters.msmsMinScore).getValue();

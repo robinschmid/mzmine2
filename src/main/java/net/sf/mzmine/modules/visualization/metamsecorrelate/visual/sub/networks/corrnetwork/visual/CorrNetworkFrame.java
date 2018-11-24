@@ -3,7 +3,7 @@ package net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks
 import java.awt.EventQueue;
 import javax.swing.JFrame;
 import net.sf.mzmine.datamodel.PeakList;
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.datastructure.R2RCorrMap;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.R2RCorrMap;
 
 public class CorrNetworkFrame extends JFrame {
 

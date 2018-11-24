@@ -18,7 +18,7 @@
 
 package net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.rtnetwork;
 
-import net.sf.mzmine.modules.peaklistmethods.identification.metamsecorrelate.filter.MinimumFeaturesFilterParameters;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;

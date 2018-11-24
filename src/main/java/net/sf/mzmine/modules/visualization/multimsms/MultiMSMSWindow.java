@@ -7,6 +7,7 @@ import java.awt.event.ItemListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -21,21 +22,26 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.ValueAxis;
+import org.jfree.data.xy.XYDataItem;
+import org.openscience.cdk.interfaces.IMolecularFormula;
+import org.openscience.cdk.tools.manipulator.MolecularFormulaManipulator;
 import net.sf.mzmine.chartbasics.chartgroups.ChartGroup;
 import net.sf.mzmine.chartbasics.gui.swing.EChartPanel;
 import net.sf.mzmine.chartbasics.gui.wrapper.ChartViewWrapper;
+import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
+import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.datamodel.identities.ms2.MSMSIonIdentity;
 import net.sf.mzmine.datamodel.identities.ms2.interf.AbstractMSMSIdentity;
-import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.pseudospectra.PseudoSpectrum;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.pseudospectra.PseudoSpectrumDataSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
+import net.sf.mzmine.util.FormulaUtils;
 import net.sf.mzmine.util.PeakListRowSorter;
 import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
@@ -353,15 +359,59 @@ public class MultiMSMSWindow extends JFrame {
     for (PeakListRow row : rows) {
       EChartPanel c = SpectrumChartFactory.createMSMSChartPanel(row, raw, showTitle, showLegend,
           alwaysShowBest, useBestForMissingRaw);
+
       if (c != null) {
+        // add MSMS annotations of sub formulas
+        addSubFormulaAnnotation(row,
+            (PseudoSpectrumDataSet) c.getChart().getXYPlot().getDataset(0));
+
         group.add(new ChartViewWrapper(c));
       }
     }
 
     // add all MSMS annotations
     addAllMSMSAnnotations(rows, raw);
-
     renewCharts(group);
+  }
+
+  private void addSubFormulaAnnotation(PeakListRow row, PseudoSpectrumDataSet data) {
+    MolecularFormulaIdentity form = null;
+    if (row.getBestIonIdentity() != null && row.getBestIonIdentity().getNetwork() != null
+        && row.getBestIonIdentity().getNetwork().getBestMolFormula() != null) {
+      form = row.getBestIonIdentity().getNetwork().getBestMolFormula();
+
+      if (row.getBestIonIdentity() != null && row.getBestIonIdentity().getBestMolFormula() != null)
+        for (MolecularFormulaIdentity f : row.getBestIonIdentity().getMolFormulas()) {
+          if (f.equalFormula(form)) {
+            form = f;
+            break;
+          }
+        }
+    } else if (row.getBestIonIdentity() != null
+        && row.getBestIonIdentity().getBestMolFormula() != null)
+      form = row.getBestIonIdentity().getBestMolFormula();
+
+    if (form != null && form.getMSMSannotation() != null) {
+      try {
+        IMolecularFormula ionf =
+            row.getBestIonIdentity().getIonType().addToFormula(form.getFormulaAsObject());
+        Map<DataPoint, String> ann = form.getMSMSannotation();
+        ann.entrySet().forEach(e -> {
+          // neutral loss
+          IMolecularFormula loss = FormulaUtils.createMajorIsotopeMolFormula(e.getValue());
+          try {
+            loss = FormulaUtils.subtractFormula((IMolecularFormula) ionf.clone(), loss);
+          } catch (CloneNotSupportedException e2) {
+            loss = null;
+          }
+
+          String id = loss != null ? MolecularFormulaManipulator.getString(loss) + "\n" : "";
+          id += "-" + e.getValue();
+          data.addAnnotation(new XYDataItem(e.getKey().getMZ(), e.getKey().getIntensity()), id);
+        });
+      } catch (CloneNotSupportedException e2) {
+      }
+    }
   }
 
   /**
@@ -373,9 +423,6 @@ public class MultiMSMSWindow extends JFrame {
   public void addAllMSMSAnnotations(PeakListRow[] rows, RawDataFile raw) {
     for (PeakListRow row : rows) {
       // add MS1 annotations
-      // limited by correlation group can be null
-      RowGroup group = row.getGroup();
-
       IonIdentity best = row.getBestIonIdentity();
       if (best == null)
         continue;

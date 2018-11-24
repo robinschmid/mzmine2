@@ -41,14 +41,17 @@ public class ResultFormula extends MolecularFormulaIdentity {
     this.rdbeValue = rdbeValue;
   }
 
+  @Override
   public Double getRDBE() {
     return rdbeValue;
   }
 
+  @Override
   public Map<DataPoint, String> getMSMSannotation() {
     return msmsAnnotation;
   }
 
+  @Override
   public IsotopePattern getPredictedIsotopes() {
     return predictedIsotopePattern;
   }

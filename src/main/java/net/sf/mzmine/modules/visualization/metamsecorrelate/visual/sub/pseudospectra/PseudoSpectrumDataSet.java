@@ -22,10 +22,20 @@ public class PseudoSpectrumDataSet extends XYSeriesCollection {
     XYDataItem dp = new XYDataItem(x, y);
     getSeries(0).add(dp);
     if (ann != null) {
-      if (annotation == null)
-        this.annotation = new HashMap<XYDataItem, String>();
-      annotation.put(dp, ann);
+      addAnnotation(dp, ann);
     }
+  }
+
+  /**
+   * Add annotation
+   * 
+   * @param dp
+   * @param ann
+   */
+  public void addAnnotation(XYDataItem dp, String ann) {
+    if (annotation == null)
+      this.annotation = new HashMap<>();
+    annotation.put(dp, ann);
   }
 
   public String getAnnotation(int item) {
@@ -50,9 +60,7 @@ public class PseudoSpectrumDataSet extends XYSeriesCollection {
     for (int i = 0; i < series.getItemCount(); i++) {
       XYDataItem dp = series.getDataItem(i);
       if (mzTolerance.checkWithinTolerance(dp.getXValue(), ann.getMZ())) {
-        if (annotation == null)
-          this.annotation = new HashMap<XYDataItem, String>();
-        annotation.put(dp, ann.getName());
+        addAnnotation(dp, ann.getName());
       }
     }
   }

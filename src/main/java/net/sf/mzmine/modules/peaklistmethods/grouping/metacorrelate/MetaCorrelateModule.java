@@ -1,0 +1,72 @@
+/*
+ * Copyright 2006-2015 The MZmine 2 Development Team
+ * 
+ * This file is part of MZmine 2.
+ * 
+ * MZmine 2 is free software; you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
+ * 
+ * MZmine 2 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along with MZmine 2; if not,
+ * write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+ * USA
+ */
+
+package net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate;
+
+import java.util.Collection;
+import javax.annotation.Nonnull;
+import net.sf.mzmine.datamodel.MZmineProject;
+import net.sf.mzmine.datamodel.PeakList;
+import net.sf.mzmine.modules.MZmineModuleCategory;
+import net.sf.mzmine.modules.MZmineProcessingModule;
+import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.taskcontrol.Task;
+import net.sf.mzmine.util.ExitCode;
+
+public class MetaCorrelateModule implements MZmineProcessingModule {
+
+  private static final String NAME = "metaMSEcorrelate";
+
+  private static final String DESCRIPTION =
+      "This method searches for the same features in different samples, scan events and MS levels.";
+
+  @Override
+  public @Nonnull String getName() {
+
+    return NAME;
+  }
+
+  @Override
+  public @Nonnull String getDescription() {
+
+    return DESCRIPTION;
+  }
+
+  @Override
+  public @Nonnull MZmineModuleCategory getModuleCategory() {
+    return MZmineModuleCategory.FEATURE_GROUPING;
+  }
+
+  @Override
+  public @Nonnull Class<? extends ParameterSet> getParameterSetClass() {
+    return MetaCorrelateParameters.class;
+  }
+
+  @Override
+  @Nonnull
+  public ExitCode runModule(@Nonnull MZmineProject project, @Nonnull final ParameterSet parameters,
+      @Nonnull final Collection<Task> tasks) {
+
+    PeakList[] peakLists = parameters.getParameter(MetaCorrelateParameters.PEAK_LISTS).getValue()
+        .getMatchingPeakLists();
+    for (PeakList pkl : peakLists)
+      tasks.add(new MetaCorrelateTask(project, parameters, pkl));
+
+    return ExitCode.OK;
+  }
+}
