@@ -51,7 +51,8 @@ public class DeconvolutionParameters extends SimpleParameterSet {
           RESOLVERS);
 
   /**
-   * The function to determin the mz center (median, avg, weighted avg)
+   * The function to determin the mz center (median, avg, weighted avg). MEDIAN as standard, as this
+   * was the original measure of center
    */
   public static final CenterMeasureParameter MZ_CENTER_FUNCTION =
       new CenterMeasureParameter("m/z center calculation", CenterMeasure.MEDIAN);
