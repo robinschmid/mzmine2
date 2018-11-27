@@ -34,6 +34,7 @@ import net.sf.mzmine.parameters.parametertypes.StringParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 import net.sf.mzmine.parameters.parametertypes.submodules.ModuleComboParameter;
 import net.sf.mzmine.util.maths.CenterMeasure;
+import net.sf.mzmine.util.maths.Weighting;
 
 public class DeconvolutionParameters extends SimpleParameterSet {
 
@@ -55,7 +56,9 @@ public class DeconvolutionParameters extends SimpleParameterSet {
    * was the original measure of center
    */
   public static final CenterMeasureParameter MZ_CENTER_FUNCTION =
-      new CenterMeasureParameter("m/z center calculation", CenterMeasure.MEDIAN);
+      new CenterMeasureParameter("m/z center calculation", CenterMeasure.values(),
+          new Weighting[] {Weighting.NONE, Weighting.LOG10, Weighting.SQRT}, CenterMeasure.MEDIAN,
+          Weighting.NONE);
 
   public static final BooleanParameter AUTO_REMOVE = new BooleanParameter(
       "Remove original peak list",
