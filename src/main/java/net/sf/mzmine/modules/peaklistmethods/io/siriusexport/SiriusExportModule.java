@@ -51,7 +51,7 @@ public class SiriusExportModule implements MZmineProcessingModule {
   }
 
 
-  public static void exportSinglePeakList(PeakList peakList, PeakListRow row) {
+  public static void exportSingleRows(PeakList peakList, PeakListRow[] row) {
     try {
       ParameterSet parameters =
           MZmineCore.getConfiguration().getModuleParameters(SiriusExportModule.class);
@@ -61,7 +61,7 @@ public class SiriusExportModule implements MZmineProcessingModule {
         return;
       // Open file
       final SiriusExportTask task = new SiriusExportTask(parameters);
-      task.runSingleRow(peakList, row);
+      task.runSingleRows(peakList, row);
     } catch (Exception e) {
       e.printStackTrace();
       MZmineCore.getDesktop().displayErrorMessage(MZmineCore.getDesktop().getMainWindow(),

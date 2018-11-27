@@ -562,7 +562,8 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
       IsotopePatternExportModule.exportIsotopePattern(clickedPeakListRow);
     }
     if (exportToSirius.equals(src)) {
-      SiriusExportModule.exportSinglePeakList(peakList, clickedPeakListRow);
+      // export all selected rows
+      SiriusExportModule.exportSingleRows(peakList, allClickedPeakListRows);
     }
 
     if (exportMSMSItem.equals(src)) {

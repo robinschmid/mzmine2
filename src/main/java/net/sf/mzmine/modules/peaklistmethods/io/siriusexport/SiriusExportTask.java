@@ -293,11 +293,12 @@ public class SiriusExportTask extends AbstractTask {
     }
   }
 
-  public void runSingleRow(PeakList peakList, PeakListRow row) {
+  public void runSingleRows(PeakList peakList, PeakListRow[] rows) {
     this.progress = 0d;
     setStatus(TaskStatus.PROCESSING);
     try (final BufferedWriter bw = new BufferedWriter(new FileWriter(fileName, true))) {
-      exportPeakListRow(row, bw, getFragmentScans(row.getRawDataFiles()));
+      for (PeakListRow row : rows)
+        exportPeakListRow(row, bw, getFragmentScans(row.getRawDataFiles()));
     } catch (IOException e) {
       setStatus(TaskStatus.ERROR);
       setErrorMessage("Could not open file " + fileName + " for writing.");
