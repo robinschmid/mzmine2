@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Listens for end of all tasks
+ * Listens for end of all tasks in the list
  * 
  * @author Robin Schmid (robinschmid@uni-muenster.de)
  *
@@ -32,9 +32,12 @@ public class AllTasksFinishedListener implements TaskStatusListener {
   private List<AbstractTask> tasks;
   private Consumer<List<AbstractTask>> operation;
   private Consumer<List<AbstractTask>> operationOnError;
+  private Consumer<List<AbstractTask>> operationOnCancel;
   private boolean stopOnError = false;
   // mark when done
   private boolean done = false;
+
+  private double progress = 0;
 
   public AllTasksFinishedListener(List<AbstractTask> tasks,
       Consumer<List<AbstractTask>> operation) {
@@ -55,8 +58,15 @@ public class AllTasksFinishedListener implements TaskStatusListener {
    */
   public AllTasksFinishedListener(List<AbstractTask> tasks, boolean stopOnError,
       Consumer<List<AbstractTask>> operation, Consumer<List<AbstractTask>> operationOnError) {
+    this(tasks, stopOnError, operation, operationOnError, null);
+  }
+
+  public AllTasksFinishedListener(List<AbstractTask> tasks, boolean stopOnError,
+      Consumer<List<AbstractTask>> operation, Consumer<List<AbstractTask>> operationOnError,
+      Consumer<List<AbstractTask>> operationOnCancel) {
     this.tasks = tasks;
     this.stopOnError = stopOnError;
+    this.operationOnCancel = operationOnCancel;
     this.operation = operation;
     this.operationOnError = operationOnError;
     tasks.stream().forEach(t -> t.addTaskStatusListener(this));
@@ -66,6 +76,15 @@ public class AllTasksFinishedListener implements TaskStatusListener {
   public void taskStatusChanged(Task task, TaskStatus newStatus, TaskStatus oldStatus) {
     if (done)
       return;
+    // if one is cancelled cancel all
+    if (tasks.stream().map(Task::getStatus).anyMatch(s -> s.equals(TaskStatus.CANCELED))) {
+      tasks.forEach(AbstractTask::cancel);
+      if (operationOnCancel != null)
+        operationOnCancel.accept(tasks);
+      done = true;
+      return;
+    }
+
     // stop on error
     if (stopOnError
         && tasks.stream().map(Task::getStatus).anyMatch(s -> s.equals(TaskStatus.ERROR))) {
@@ -75,12 +94,18 @@ public class AllTasksFinishedListener implements TaskStatusListener {
       return;
     }
     // is one still running?
-    boolean stillRunning = tasks.stream().map(Task::getStatus)
-        .anyMatch(s -> !(s.equals(TaskStatus.FINISHED) || s.equals(TaskStatus.ERROR)));
-    if (!stillRunning) {
+    long stillRunning = tasks.stream().map(Task::getStatus)
+        .filter(s -> (s.equals(TaskStatus.WAITING) || s.equals(TaskStatus.PROCESSING))).count();
+    progress = (tasks.size() - stillRunning) / (double) tasks.size();
+    if (stillRunning == 0) {
+      // all done
       operation.accept(tasks);
       done = true;
       return;
     }
+  }
+
+  public double getProgress() {
+    return progress;
   }
 }

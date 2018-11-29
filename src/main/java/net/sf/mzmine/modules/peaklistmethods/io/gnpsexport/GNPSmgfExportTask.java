@@ -62,7 +62,7 @@ import net.sf.mzmine.util.files.FileAndPathUtil;
  * @author Robin Schmid (robinschmid@uni-muenster.de)
  *
  */
-public class GNPSExportTask extends AbstractTask {
+public class GNPSmgfExportTask extends AbstractTask {
   // Logger.
   private final Logger LOG = Logger.getLogger(getClass().getName());
 
@@ -83,7 +83,7 @@ public class GNPSExportTask extends AbstractTask {
 
   private RowFilter filter;
 
-  GNPSExportTask(ParameterSet parameters) {
+  GNPSmgfExportTask(ParameterSet parameters) {
     this.peakLists =
         parameters.getParameter(GNPSExportParameters.PEAK_LISTS).getValue().getMatchingPeakLists();
 
