@@ -186,11 +186,23 @@ public class RowGroup extends ArrayList<PeakListRow> {
    * Not all rows in this group need to be really correlated. Override in specialized RowGroup
    * classes
    * 
-   * @param i
-   * @param k
+   * @param i index in group
+   * @param k index in group
    * @return
    */
   public boolean isCorrelated(int i, int k) {
     return true;
+  }
+
+  /**
+   * Not all rows in this group need to be really correlated. Override in specialized RowGroup
+   * classes
+   * 
+   * @param a
+   * @param b
+   * @return
+   */
+  public boolean isCorrelated(PeakListRow a, PeakListRow b) {
+    return isCorrelated(indexOf(a), indexOf(b));
   }
 }

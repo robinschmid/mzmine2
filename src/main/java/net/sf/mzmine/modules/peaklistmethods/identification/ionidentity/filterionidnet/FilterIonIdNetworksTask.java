@@ -21,6 +21,7 @@ package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.filteri
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.SwingUtilities;
 import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.MZmineProject;
@@ -58,6 +59,7 @@ public class FilterIonIdNetworksTask extends AbstractTask {
   private String suffix;
 
   private boolean deleteSmallNoMajor;
+  private boolean deleteRowsWithoutIon;
 
   /**
    * Create the task.
@@ -79,6 +81,8 @@ public class FilterIonIdNetworksTask extends AbstractTask {
     suffix = parameterSet.getParameter(FilterIonIdNetworksParameters.suffix).getValue();
     deleteSmallNoMajor =
         parameterSet.getParameter(FilterIonIdNetworksParameters.DELETE_SMALL_NO_MAJOR).getValue();
+    deleteRowsWithoutIon = parameterSet
+        .getParameter(FilterIonIdNetworksParameters.DELETE_ROWS_WITHOUT_NETWORK).getValue();
   }
 
   @Override
@@ -104,7 +108,7 @@ public class FilterIonIdNetworksTask extends AbstractTask {
       // resultPeakList.addRow(copyRow(row));
 
       // filter
-      doFiltering(peakList, minNetworkSize, deleteSmallNoMajor);
+      doFiltering(peakList, minNetworkSize, deleteSmallNoMajor, deleteRowsWithoutIon);
 
       // // finish
       // if (!isCanceled()) {
@@ -130,12 +134,23 @@ public class FilterIonIdNetworksTask extends AbstractTask {
    * @param deleteSmallNoMajor
    * @throws Exception
    */
-  public static void doFiltering(PeakList pkl, int minNetSize, boolean deleteSmallNoMajor) {
+  public static void doFiltering(PeakList pkl, int minNetSize, boolean deleteSmallNoMajor,
+      boolean deleteRowsWithoutIon) {
     // need to convert to array first to avoid concurren mod exception
     Arrays.stream(MSAnnotationNetworkLogic.getAllNetworks(pkl)).forEach(net -> {
       if (net.size() < minNetSize || (deleteSmallNoMajor && !hasMajorIonID(net)))
         net.delete();
     });
+
+    // remove all rows without ion identity?
+    if (deleteRowsWithoutIon)
+      SwingUtilities.invokeLater(() -> {
+        for (int i = 0; i < pkl.getNumberOfRows();)
+          if (pkl.getRow(i).hasIonIdentity())
+            i++;
+          else
+            pkl.removeRow(i);
+      });
 
     // Repaint the window to reflect the change in the peak list
     if (MZmineCore.getDesktop().getMainWindow() != null)

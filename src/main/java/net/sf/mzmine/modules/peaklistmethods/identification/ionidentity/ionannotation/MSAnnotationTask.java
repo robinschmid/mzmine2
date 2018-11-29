@@ -31,6 +31,7 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.datamodel.identities.iontype.MSAnnotationNetworkLogic;
+import net.sf.mzmine.datamodel.identities.iontype.networks.IonNetworkSorter;
 import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.datamodel.impl.RowGroupList;
 import net.sf.mzmine.datamodel.impl.SimplePeakListAppliedMethod;
@@ -303,10 +304,11 @@ public class MSAnnotationTask extends AbstractTask {
     // create network IDs
     LOG.info("Corr: create annotation network numbers");
     AtomicInteger netID = new AtomicInteger(0);
-    MSAnnotationNetworkLogic.streamNetworks(peakList).forEach(n -> {
-      n.setMzTolerance(library.getMzTolerance());
-      n.setID(netID.getAndIncrement());
-    });
+    MSAnnotationNetworkLogic.streamNetworks(peakList,
+        new IonNetworkSorter(SortingProperty.RT, SortingDirection.Ascending)).forEach(n -> {
+          n.setMzTolerance(library.getMzTolerance());
+          n.setID(netID.getAndIncrement());
+        });
 
     // refinement of adducts
     // do MSMS check for multimers

@@ -178,21 +178,24 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
       RowGroup group = row.getGroup();
       if (group != null && !group.isEmpty()) {
         for (PeakListRow parent : group) {
-          // has MS/MS
-          Scan msmsScan = parent.getBestFragmentation();
-          if (msmsScan == null)
-            continue;
-          MassList masses = msmsScan.getMassList(massList);
-          if (masses == null)
-            continue;
+          // only correlated rows in this group
+          if (group.isCorrelated(row, parent)) {
+            // has MS/MS
+            Scan msmsScan = parent.getBestFragmentation();
+            if (msmsScan == null)
+              continue;
+            MassList masses = msmsScan.getMassList(massList);
+            if (masses == null)
+              continue;
 
-          DataPoint[] dps = masses.getDataPoints();
-          Feature f = parent.getPeak(msmsScan.getDataFile());
-          double precursorMZ = f.getMZ();
-          boolean result = checkParentForNeutralLoss(neutralLossCheck, dps, ad, mod, mzTolerance,
-              minHeight, precursorMZ);
-          if (result)
-            c++;
+            DataPoint[] dps = masses.getDataPoints();
+            Feature f = parent.getPeak(msmsScan.getDataFile());
+            double precursorMZ = f.getMZ();
+            boolean result = checkParentForNeutralLoss(neutralLossCheck, dps, ad, mod, mzTolerance,
+                minHeight, precursorMZ);
+            if (result)
+              c++;
+          }
         }
       } else {
         // find all annotation edges

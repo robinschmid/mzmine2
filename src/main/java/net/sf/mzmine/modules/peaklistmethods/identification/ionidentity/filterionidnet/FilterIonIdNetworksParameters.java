@@ -39,6 +39,9 @@ public class FilterIonIdNetworksParameters extends SimpleParameterSet {
       "Small networks (size=2) are deleted if no M+H (with any modifications) or M+Na (with no modifications) is found.",
       true);
 
+  public static final BooleanParameter DELETE_ROWS_WITHOUT_NETWORK = new BooleanParameter(
+      "Only keep rows with ion identity", "Deletes all rows without any ion identity", false);
+
   // sub
   public static final IntegerParameter MIN_NETWORK_SIZE = new IntegerParameter("Min network size",
       "Minimum number of ions that point to the same neutral mass molecule", 3);
@@ -51,8 +54,9 @@ public class FilterIonIdNetworksParameters extends SimpleParameterSet {
 
   public FilterIonIdNetworksParameters(boolean isSub) {
     super(isSub ? // no peak list and rt tolerance
-        new Parameter[] {MIN_NETWORK_SIZE, DELETE_SMALL_NO_MAJOR}
-        : new Parameter[] {PEAK_LISTS, MIN_NETWORK_SIZE, DELETE_SMALL_NO_MAJOR, suffix});
+        new Parameter[] {MIN_NETWORK_SIZE, DELETE_SMALL_NO_MAJOR, DELETE_ROWS_WITHOUT_NETWORK}
+        : new Parameter[] {PEAK_LISTS, MIN_NETWORK_SIZE, DELETE_SMALL_NO_MAJOR,
+            DELETE_ROWS_WITHOUT_NETWORK, suffix});
   }
 
 }
