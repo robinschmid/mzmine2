@@ -1,4 +1,21 @@
 /*
+ * Copyright 2006-2018 The MZmine 2 Development Team
+ * 
+ * This file is part of MZmine 2.
+ * 
+ * MZmine 2 is free software; you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
+ * 
+ * MZmine 2 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along with MZmine 2; if not,
+ * write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+ * USA
+ */
+/*
  * This module was prepared by Abi Sarvepalli, Christopher Jensen, and Zheng Zhang at the Dorrestein
  * Lab (University of California, San Diego).
  * 
@@ -38,17 +55,24 @@ import net.sf.mzmine.util.DialogLoggerUtil;
 import net.sf.mzmine.util.ExitCode;
 import net.sf.mzmine.util.files.FileAndPathUtil;
 
+/**
+ * Exports all files needed for GNPS feature based molecular networking (quant table (csv export)),
+ * MS2 mgf, additional edges (ion identity networks)
+ * 
+ * @author Robin Schmid (robinschmid@uni-muenster.de)
+ *
+ */
 public class GNPSExportModule implements MZmineProcessingModule {
   private final Logger LOG = Logger.getLogger(getClass().getName());
   /**
-   * The website
+   * This website is still the beta. TODO change later to the final
    */
   public static final String GNPS_WEBSITE =
       "http://mingwangbeta.ucsd.edu:5050/featurebasednetworking";
 
   private static final String MODULE_NAME = "Export for/Submit to GNPS";
   private static final String MODULE_DESCRIPTION =
-      "Exports the MGF file for GNPS (only for MS/MS), the quant table (CSV export) and additional edges (annotation and correlation)";
+      "Exports the MGF file for GNPS (only for MS/MS), the quant table (CSV export) and additional edges (ion identity networks and correlation)";
 
   @Override
   public String getDescription() {
