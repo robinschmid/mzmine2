@@ -99,6 +99,7 @@ public class CSVExportTask extends AbstractTask {
     this.idSeparator = idSeparator;
     this.filter = filter;
 
+
     // if best annotation and best annotation plus support was selected - deselect
     refineCommonElements();
   }

@@ -25,8 +25,7 @@ import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.UserParameter;
 
 /**
- * Parameter represented by check box with additional sub-parameters
- * 
+ * Parameter represented by check box with additional sub-module
  */
 public class OptionalModuleParameter<T extends ParameterSet>
     implements UserParameter<Boolean, OptionalModuleComponent> {
