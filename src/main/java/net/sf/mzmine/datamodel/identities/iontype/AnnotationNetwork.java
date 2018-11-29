@@ -15,6 +15,8 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
  */
 public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity>
     implements Comparable<AnnotationNetwork> {
+  private static final long serialVersionUID = 1L;
+
   // MZtolerance on MS1 to generate this network
   private MZTolerance mzTolerance;
   // network id
@@ -25,6 +27,8 @@ public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity>
   private Double maxDev = null;
   // average retention time of network
   private double avgRT;
+  // summed height
+  private double heightSum = 0;
 
   // can be used to stream all networks only once
   // lowest row id
@@ -178,7 +182,7 @@ public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity>
   }
 
   /**
-   * Calculates and sets the neutral mass average
+   * Calculates and sets the neutral mass average and average rt
    * 
    * @return
    */
@@ -188,33 +192,29 @@ public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity>
       return 0;
 
     double mass = 0;
+    avgRT = 0;
+    heightSum = 0;
     for (Entry<PeakListRow, IonIdentity> e : entrySet()) {
       mass += e.getValue().getIonType().getMass(e.getKey().getAverageMZ());
+      avgRT += e.getKey().getAverageRT();
+      // sum of heighest peaks heights
+      heightSum += e.getKey().getBestPeak().getHeight();
     }
+    avgRT = avgRT / size();
     neutralMass = mass / size();
     return neutralMass;
   }
 
-  /**
-   * Calculates and sets the avg RT
-   * 
-   * @return
-   */
-  public double calcAvgRT() {
-    neutralMass = null;
-    if (size() == 0)
-      return 0;
-
-    double rt = 0;
-    for (Entry<PeakListRow, IonIdentity> e : entrySet()) {
-      rt += e.getKey().getAverageRT();
-    }
-    avgRT = rt / size();
+  public double getAvgRT() {
+    if (neutralMass == null)
+      calcNeutralMass();
     return avgRT;
   }
 
-  public double getAvgRT() {
-    return avgRT;
+  public double getHeightSum() {
+    if (neutralMass == null)
+      calcNeutralMass();
+    return heightSum;
   }
 
   /**

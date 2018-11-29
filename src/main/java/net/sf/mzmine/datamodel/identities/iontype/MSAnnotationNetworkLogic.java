@@ -13,8 +13,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+import javax.annotation.Nullable;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.datamodel.identities.iontype.networks.IonNetworkSorter;
 import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.util.PeakListRowSorter;
@@ -499,9 +501,25 @@ public class MSAnnotationNetworkLogic {
    * @return
    */
   public static Stream<AnnotationNetwork> streamNetworks(PeakList peakList) {
-    return Arrays.stream(peakList.getRows()).filter(PeakListRow::hasIonIdentity) //
-        .flatMap(r -> r.getIonIdentities().stream().map(IonIdentity::getNetwork)
-            .filter(Objects::nonNull).filter(net -> net.hasSmallestID(r)));
+    return MSAnnotationNetworkLogic.streamNetworks(peakList, null);
+  }
+
+  /**
+   * Stream all AnnotationNetworks of this peakList
+   * 
+   * @param peakList
+   * @param sorter
+   * @return
+   */
+  public static Stream<AnnotationNetwork> streamNetworks(PeakList peakList,
+      @Nullable IonNetworkSorter sorter) {
+    Stream<AnnotationNetwork> stream =
+        Arrays.stream(peakList.getRows()).filter(PeakListRow::hasIonIdentity) //
+            .flatMap(r -> r.getIonIdentities().stream().map(IonIdentity::getNetwork)
+                .filter(Objects::nonNull).filter(net -> net.hasSmallestID(r)));
+    if (sorter != null)
+      stream = stream.sorted(sorter);
+    return stream;
   }
 
   /**

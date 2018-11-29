@@ -45,7 +45,7 @@ public class MoleculeIdentity extends SimplePeakIdentity {
   public MoleculeIdentity(AnnotationNetwork network) {
     super("later");
     neutralMass = network.calcNeutralMass();
-    avgRT = network.calcAvgRT();
+    avgRT = network.getAvgRT();
     setPropertyValue(PROPERTY_METHOD, "MS annotation");
     setPropertyValue(PROPERTY_NAME, getIDString());
   }
