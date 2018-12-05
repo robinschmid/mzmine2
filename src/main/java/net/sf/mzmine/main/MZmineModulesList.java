@@ -43,6 +43,7 @@ import net.sf.mzmine.modules.peaklistmethods.gapfilling.peakfinder.multithreaded
 import net.sf.mzmine.modules.peaklistmethods.gapfilling.samerange.SameRangeGapFillerModule;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.MetaCorrelateModule;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.SimpleMetaCorrelateModule;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.corrgrouping.CorrelateGroupingModule;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.export.ExportCorrAnnotationModule;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity.MS2SimilarityModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.adductsearch.AdductSearchModule;
@@ -194,7 +195,7 @@ public class MZmineModulesList {
       SammonsPlotModule.class, ClusteringModule.class, HeatMapModule.class,
 
       // row grouping
-      MetaCorrelateModule.class, SimpleMetaCorrelateModule.class,
+      CorrelateGroupingModule.class, MetaCorrelateModule.class, SimpleMetaCorrelateModule.class,
 
       // ion identity networks
       IonNetworkingModule.class, FilterIonIdNetworksModule.class, ClearIonIdentitiesModule.class,

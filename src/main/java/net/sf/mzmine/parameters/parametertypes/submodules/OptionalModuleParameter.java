@@ -50,6 +50,10 @@ public class OptionalModuleParameter<T extends ParameterSet>
     return embeddedParameters;
   }
 
+  public void setEmbeddedParameters(T embeddedParameters) {
+    this.embeddedParameters = embeddedParameters;
+  }
+
   /**
    * @see net.sf.mzmine.data.Parameter#getName()
    */

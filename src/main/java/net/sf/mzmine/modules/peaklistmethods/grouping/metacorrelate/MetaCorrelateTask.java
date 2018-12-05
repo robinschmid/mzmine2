@@ -19,7 +19,10 @@
 package net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate;
 
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,7 +37,6 @@ import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.impl.RowGroupList;
 import net.sf.mzmine.datamodel.impl.SimpleFeature;
 import net.sf.mzmine.datamodel.impl.SimplePeakList;
-import net.sf.mzmine.datamodel.impl.SimplePeakListAppliedMethod;
 import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
 import net.sf.mzmine.desktop.Desktop;
 import net.sf.mzmine.desktop.impl.HeadLessDesktop;
@@ -42,14 +44,15 @@ import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.correlation.FeatureCorrelationUtil;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.correlation.FeatureShapeCorrelationParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.correlation.InterSampleHeightCorrParameters;
-import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.CorrelationRowGroup;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.corrgrouping.CorrelateGroupingParameters;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.corrgrouping.CorrelateGroupingTask;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.CorrelationData.SimilarityMeasure;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.R2RCorrMap;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.R2RCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.R2RFullCorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.CorrelationData.SimilarityMeasure;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeatureFilter;
-import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeatureFilter.OverlapResult;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity.MS2SimilarityParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity.MS2SimilarityTask;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkLibrary;
@@ -58,7 +61,9 @@ import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannot
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
+import net.sf.mzmine.taskcontrol.Task;
 import net.sf.mzmine.taskcontrol.TaskStatus;
+import net.sf.mzmine.taskcontrol.TaskStatusListener;
 import net.sf.mzmine.util.PeakListRowSorter;
 import net.sf.mzmine.util.PeakUtils;
 import net.sf.mzmine.util.SortingDirection;
@@ -140,6 +145,10 @@ public class MetaCorrelateTask extends AbstractTask {
   // output
   protected PeakList groupedPKL;
   protected boolean performAnnotationRefinement;
+  protected CorrelateGroupingParameters groupParam;
+  protected MinimumFeaturesFilterParameters minFeatureFilter;
+  protected FeatureShapeCorrelationParameters corrParam;
+  protected InterSampleHeightCorrParameters heightCorrParam;
 
 
 
@@ -166,11 +175,10 @@ public class MetaCorrelateTask extends AbstractTask {
     noiseLevelCorr = parameters.getParameter(MetaCorrelateParameters.NOISE_LEVEL).getValue();
     minHeight = parameters.getParameter(MetaCorrelateParameters.MIN_HEIGHT).getValue();
 
-    // by min percentage of samples in a sample set that contain this feature MIN_SAMPLES
-    MinimumFeaturesFilterParameters minS = (MinimumFeaturesFilterParameters) parameterSet
+    minFeatureFilter = (MinimumFeaturesFilterParameters) parameterSet
         .getParameter(MetaCorrelateParameters.MIN_SAMPLES_FILTER).getEmbeddedParameters();
-    minFFilter = minS.createFilterWithGroups(project, peakList.getRawDataFiles(), groupingParameter,
-        minHeight);
+    minFFilter = minFeatureFilter.createFilterWithGroups(project, peakList.getRawDataFiles(),
+        groupingParameter, minHeight);
 
     // tolerances
     rtTolerance = parameterSet.getParameter(MetaCorrelateParameters.RT_TOLERANCE).getValue();
@@ -178,29 +186,29 @@ public class MetaCorrelateTask extends AbstractTask {
     // FEATURE SHAPE CORRELATION
     groupByFShapeCorr =
         parameterSet.getParameter(MetaCorrelateParameters.FSHAPE_CORRELATION).getValue();
-    FeatureShapeCorrelationParameters corrp = parameterSet
-        .getParameter(MetaCorrelateParameters.FSHAPE_CORRELATION).getEmbeddedParameters();
+    corrParam = parameterSet.getParameter(MetaCorrelateParameters.FSHAPE_CORRELATION)
+        .getEmbeddedParameters();
     // filter
     // start with high abundant features >= mainPeakIntensity
     // In this way we directly filter out groups with no abundant features
     // fill in smaller features after
     minShapeCorrR =
-        corrp.getParameter(FeatureShapeCorrelationParameters.MIN_R_SHAPE_INTRA).getValue();
-    shapeSimMeasure = corrp.getParameter(FeatureShapeCorrelationParameters.MEASURE).getValue();
+        corrParam.getParameter(FeatureShapeCorrelationParameters.MIN_R_SHAPE_INTRA).getValue();
+    shapeSimMeasure = corrParam.getParameter(FeatureShapeCorrelationParameters.MEASURE).getValue();
     minCorrelatedDataPoints =
-        corrp.getParameter(FeatureShapeCorrelationParameters.MIN_DP_CORR_PEAK_SHAPE).getValue();
+        corrParam.getParameter(FeatureShapeCorrelationParameters.MIN_DP_CORR_PEAK_SHAPE).getValue();
     minCorrDPOnFeatureEdge =
-        corrp.getParameter(FeatureShapeCorrelationParameters.MIN_DP_FEATURE_EDGE).getValue();
+        corrParam.getParameter(FeatureShapeCorrelationParameters.MIN_DP_FEATURE_EDGE).getValue();
 
     // total corr
     useTotalShapeCorrFilter =
-        corrp.getParameter(FeatureShapeCorrelationParameters.MIN_TOTAL_CORR).getValue();
-    minTotalShapeCorrR = corrp.getParameter(FeatureShapeCorrelationParameters.MIN_TOTAL_CORR)
+        corrParam.getParameter(FeatureShapeCorrelationParameters.MIN_TOTAL_CORR).getValue();
+    minTotalShapeCorrR = corrParam.getParameter(FeatureShapeCorrelationParameters.MIN_TOTAL_CORR)
         .getEmbeddedParameter().getValue();
     // ADDUCTS
     searchAdducts = parameterSet.getParameter(MetaCorrelateParameters.ADDUCT_LIBRARY).getValue();
-    annotationParameters = parameterSet.getParameter(MetaCorrelateParameters.ADDUCT_LIBRARY)
-        .getEmbeddedParameters();
+    annotationParameters =
+        parameterSet.getParameter(MetaCorrelateParameters.ADDUCT_LIBRARY).getEmbeddedParameters();
     annotationParameters =
         IonNetworkingParameters.createFullParamSet(annotationParameters, rtTolerance, minHeight);
     library = new IonNetworkLibrary(annotationParameters);
@@ -208,15 +216,17 @@ public class MetaCorrelateTask extends AbstractTask {
 
     checkMS2Similarity =
         parameterSet.getParameter(MetaCorrelateParameters.MS2_SIMILARITY).getValue();
-    ms2SimilarityCheckParam = parameterSet.getParameter(MetaCorrelateParameters.MS2_SIMILARITY)
-        .getEmbeddedParameters();
+    ms2SimilarityCheckParam =
+        parameterSet.getParameter(MetaCorrelateParameters.MS2_SIMILARITY).getEmbeddedParameters();
 
     // intensity correlation across samples
     useHeightCorrFilter =
         parameterSet.getParameter(MetaCorrelateParameters.IMAX_CORRELATION).getValue();
-    minHeightCorr = parameterSet.getParameter(MetaCorrelateParameters.IMAX_CORRELATION)
-        .getEmbeddedParameters().getParameter(InterSampleHeightCorrParameters.MIN_CORRELATION)
-        .getValue();
+    heightCorrParam =
+        parameterSet.getParameter(MetaCorrelateParameters.IMAX_CORRELATION).getEmbeddedParameters();
+    minHeightCorr =
+        parameterSet.getParameter(MetaCorrelateParameters.IMAX_CORRELATION).getEmbeddedParameters()
+            .getParameter(InterSampleHeightCorrParameters.MIN_CORRELATION).getValue();
     minDPHeightCorr = parameterSet.getParameter(MetaCorrelateParameters.IMAX_CORRELATION)
         .getEmbeddedParameters().getParameter(InterSampleHeightCorrParameters.MIN_DP).getValue();
 
@@ -231,14 +241,17 @@ public class MetaCorrelateTask extends AbstractTask {
       suffix = MessageFormat.format("corr {2} r>={0} dp>={1}, {3}", minShapeCorrR,
           minCorrelatedDataPoints, shapeSimMeasure, searchAdducts ? "MS annot" : "");
     else
-      suffix = parameters.getParameter(MetaCorrelateParameters.SUFFIX).getEmbeddedParameter()
-          .getValue();
+      suffix =
+          parameters.getParameter(MetaCorrelateParameters.SUFFIX).getEmbeddedParameter().getValue();
+
+    // create grouping param
+    groupParam = new CorrelateGroupingParameters(rtTolerance, useGroups, groupingParameter,
+        minHeight, noiseLevelCorr, autoSuffix, suffix, minFeatureFilter, groupByFShapeCorr,
+        useHeightCorrFilter, corrParam, heightCorrParam);
+
   }
 
-
-
   public MetaCorrelateTask() {}
-
 
 
   @Override
@@ -261,82 +274,136 @@ public class MetaCorrelateTask extends AbstractTask {
   public void run() {
     setStatus(TaskStatus.PROCESSING);
     LOG.info("Starting MSE correlation search in " + peakList.getName() + " peaklists");
-    try {
-      if (isCanceled())
-        return;
 
-      // create new PKL for grouping
-      groupedPKL = copyPeakList(peakList, suffix);
+    if (isCanceled())
+      return;
 
-      // MAIN STEP
-      // create correlation map
-      setStage(Stage.CORRELATION_ANNOTATION);
-
-      // do R2R comparison correlation
-      // might also do annotation if selected
-      R2RCorrMap corrMap = new R2RCorrMap(rtTolerance, minFFilter);
-      doR2RComparison(groupedPKL, corrMap);
-      if (isCanceled())
-        return;
-
-      LOG.info("Corr: Starting to group by correlation");
-      setStage(Stage.GROUPING);
-      RowGroupList groups = corrMap.createCorrGroups(groupedPKL, stageProgress);
-
-      if (isCanceled())
-        return;
-      // refinement:
-      // filter by avg correlation in group
-      // delete single connections between sub networks
-      if (groups != null) {
-        // set groups to pkl
-        groups.stream().map(g -> (CorrelationRowGroup) g)
-            .forEach(g -> g.recalcGroupCorrelation(corrMap));
-        groupedPKL.setGroups(groups);
-        groups.setGroupsToAllRows();
-
-        // do MSMS comparison of group
-        setStage(Stage.MS2_SIMILARITY);
-        if (checkMS2Similarity) {
-          // calc MS2 similarity for later visualisation
-          MS2SimilarityTask ms2Sim = new MS2SimilarityTask(ms2SimilarityCheckParam);
-          ms2Sim.checkGroupList(this, stageProgress, groups);
+    // grouping
+    CorrelateGroupingTask groupTask = new CorrelateGroupingTask(project, groupParam, peakList);
+    groupTask.addTaskStatusListener(new TaskStatusListener() {
+      @Override
+      public void taskStatusChanged(Task task, TaskStatus newStatus, TaskStatus oldStatus) {
+        switch (newStatus) {
+          case CANCELED:
+            cancel();
+            break;
+          case ERROR:
+            cancel();
+            break;
+          case FINISHED:
+            groupedPKL = groupTask.getGroupedPKL();
+            RowGroupList groups = groupTask.getGroups();
+            analyseGroups(groupedPKL, groups);
+            break;
         }
-
-        // annotation at groups stage
-        if (searchAdducts) {
-          LOG.info("Corr: Annotation of groups only");
-          setStage(Stage.ANNOTATION);
-          annotationParameters.getParameter(IonNetworkingParameters.LIMIT_BY_GROUPS).setValue(true);
-          IonNetworkingTask annTask =
-              new IonNetworkingTask(project, annotationParameters, groupedPKL);
-          annTask.run();
-        }
-
-        if (isCanceled())
-          return;
-
-        // add to project
-        project.addPeakList(groupedPKL);
-
-        // do adduct search
-        // searchAdducts();
-        // Add task description to peakList.
-        groupedPKL.addDescriptionOfAppliedTask(new SimplePeakListAppliedMethod(
-            "Correlation grouping and identification of adducts", parameters));
-
-        // Repaint the window to reflect the change in the peak list
-        Desktop desktop = MZmineCore.getDesktop();
-        if (!(desktop instanceof HeadLessDesktop))
-          desktop.getMainWindow().repaint();
-
-        // Done.
-        setStatus(TaskStatus.FINISHED);
-        LOG.info("Finished correlation grouping and adducts search in " + peakList);
       }
-    } catch (
+    });
+    MZmineCore.getTaskController().addTask(groupTask);
 
-    Exception t) {
+    while (getStatus().equals(TaskStatus.PROCESSING)) {
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+      }
+    }
+
+    // // create new PKL for grouping
+    // groupedPKL = copyPeakList(peakList, suffix);
+    //
+    // // MAIN STEP
+    // // create correlation map
+    // setStage(Stage.CORRELATION_ANNOTATION);
+    //
+    // // do R2R comparison correlation
+    // // might also do annotation if selected
+    // R2RCorrMap corrMap = new R2RCorrMap(rtTolerance, minFFilter);
+    // doR2RComparison(groupedPKL, corrMap);
+    // if (isCanceled())
+    // return;
+    //
+    // LOG.info("Corr: Starting to group by correlation");
+    // setStage(Stage.GROUPING);
+    // RowGroupList groups = corrMap.createCorrGroups(groupedPKL, stageProgress);
+    //
+    // if (isCanceled())
+    // return;
+    // // refinement:
+    // // filter by avg correlation in group
+    // // delete single connections between sub networks
+    // if (groups != null) {
+    // // set groups to pkl
+    // groups.stream().map(g -> (CorrelationRowGroup) g)
+    // .forEach(g -> g.recalcGroupCorrelation(corrMap));
+    // groupedPKL.setGroups(groups);
+    // groups.setGroupsToAllRows();
+    //
+    // // do MSMS comparison of group
+    // setStage(Stage.MS2_SIMILARITY);
+  }
+
+  public void analyseGroups(PeakList groupedPKL, RowGroupList groups) {
+    try {
+      List<AbstractTask> steps = new ArrayList<>();
+
+      if (checkMS2Similarity) {
+        // calc MS2 similarity for later visualisation
+        MS2SimilarityTask ms2Sim = new MS2SimilarityTask(ms2SimilarityCheckParam, groups);
+        steps.add(ms2Sim);
+      }
+
+      // annotation at groups stage
+      if (searchAdducts) {
+        LOG.info("Corr: Annotation of groups only");
+        setStage(Stage.ANNOTATION);
+        annotationParameters.getParameter(IonNetworkingParameters.LIMIT_BY_GROUPS).setValue(true);
+        IonNetworkingTask annTask =
+            new IonNetworkingTask(project, annotationParameters, groupedPKL);
+        steps.add(annTask);
+      }
+
+      for (AbstractTask task : steps) {
+        AtomicBoolean state = new AtomicBoolean(true);
+        task.addTaskStatusListener(new TaskStatusListener() {
+          @Override
+          public void taskStatusChanged(Task task, TaskStatus newStatus, TaskStatus oldStatus) {
+            switch (newStatus) {
+              case FINISHED:
+                state.set(false);
+                break;
+              case CANCELED:
+              case ERROR:
+                cancel();
+                break;
+            }
+          }
+        });
+        MZmineCore.getTaskController().addTask(task);
+        while (state.get() && getStatus().equals(TaskStatus.PROCESSING)) {
+          try {
+            Thread.sleep(300);
+          } catch (Exception e) {
+          }
+        }
+      }
+
+      // // add to project
+      // project.addPeakList(groupedPKL);
+      //
+      // // do adduct search
+      // // searchAdducts();
+      // // Add task description to peakList.
+      // groupedPKL.addDescriptionOfAppliedTask(new SimplePeakListAppliedMethod(
+      // "Correlation grouping and identification of adducts", parameters));
+
+      // Repaint the window to reflect the change in the peak list
+      Desktop desktop = MZmineCore.getDesktop();
+      if (!(desktop instanceof HeadLessDesktop))
+        desktop.getMainWindow().repaint();
+
+      // Done.
+      setStatus(TaskStatus.FINISHED);
+      LOG.info("Finished correlation grouping and adducts search in " + peakList);
+    } catch (Exception t) {
       LOG.log(Level.SEVERE, "Correlation and adduct search error", t);
       setStatus(TaskStatus.ERROR);
       setErrorMessage(t.getMessage());

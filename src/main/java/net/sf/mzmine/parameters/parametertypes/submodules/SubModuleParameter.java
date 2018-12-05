@@ -28,19 +28,24 @@ import net.sf.mzmine.parameters.UserParameter;
  * Parameter represented by check box with additional sub-parameters
  * 
  */
-public class SubModuleParameter implements UserParameter<Boolean, SubModuleComponent> {
+public class SubModuleParameter<SUB extends ParameterSet>
+    implements UserParameter<Boolean, SubModuleComponent> {
 
   private String name, description;
-  private ParameterSet embeddedParameters;
+  private SUB embeddedParameters;
 
-  public SubModuleParameter(String name, String description, ParameterSet embeddedParameters) {
+  public SubModuleParameter(String name, String description, SUB embeddedParameters) {
     this.name = name;
     this.description = description;
     this.embeddedParameters = embeddedParameters;
   }
 
-  public ParameterSet getEmbeddedParameters() {
+  public SUB getEmbeddedParameters() {
     return embeddedParameters;
+  }
+
+  public void setEmbeddedParameters(SUB param) {
+    embeddedParameters = param;
   }
 
   /**
@@ -83,10 +88,10 @@ public class SubModuleParameter implements UserParameter<Boolean, SubModuleCompo
   public void setValue(Boolean value) {}
 
   @Override
-  public SubModuleParameter cloneParameter() {
-    final ParameterSet embeddedParametersClone = embeddedParameters.cloneParameterSet();
-    final SubModuleParameter copy =
-        new SubModuleParameter(name, description, embeddedParametersClone);
+  public SubModuleParameter<SUB> cloneParameter() {
+    final SUB embeddedParametersClone = (SUB) embeddedParameters.cloneParameterSet();
+    final SubModuleParameter<SUB> copy =
+        new SubModuleParameter<SUB>(name, description, embeddedParametersClone);
     copy.setValue(this.getValue());
     return copy;
   }
@@ -100,7 +105,6 @@ public class SubModuleParameter implements UserParameter<Boolean, SubModuleCompo
   @Override
   public void loadValueFromXML(Element xmlElement) {
     embeddedParameters.loadValuesFromXML(xmlElement);
-    String selectedAttr = xmlElement.getAttribute("selected");
   }
 
   @Override

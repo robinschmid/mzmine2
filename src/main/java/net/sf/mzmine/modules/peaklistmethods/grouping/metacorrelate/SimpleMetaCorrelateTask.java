@@ -23,13 +23,14 @@ import java.util.Arrays;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.corrgrouping.CorrelateGroupingParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.CorrelationData.SimilarityMeasure;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity.MS2SimilarityParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkLibrary;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkingParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkRefinementParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkMSMSCheckParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkRefinementParameters;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
@@ -51,26 +52,23 @@ public class SimpleMetaCorrelateTask extends MetaCorrelateTask {
     String massListMS2 =
         parameterSet.getParameter(SimpleMetaCorrelateParameters.MS2_MASSLISTS).getValue();
     // sample groups parameter
-    useGroups =
-        parameters.getParameter(SimpleMetaCorrelateParameters.GROUPSPARAMETER).getValue();
+    useGroups = parameters.getParameter(SimpleMetaCorrelateParameters.GROUPSPARAMETER).getValue();
     groupingParameter =
         (String) parameters.getParameter(SimpleMetaCorrelateParameters.GROUPSPARAMETER)
             .getEmbeddedParameter().getValue();
 
     // height and noise
-    noiseLevelCorr =
-        parameters.getParameter(SimpleMetaCorrelateParameters.NOISE_LEVEL).getValue();
+    noiseLevelCorr = parameters.getParameter(SimpleMetaCorrelateParameters.NOISE_LEVEL).getValue();
     minHeight = parameters.getParameter(SimpleMetaCorrelateParameters.MIN_HEIGHT).getValue();
 
     // by min percentage of samples in a sample set that contain this feature MIN_SAMPLES
-    MinimumFeaturesFilterParameters minS = (MinimumFeaturesFilterParameters) parameterSet
+    minFeatureFilter = (MinimumFeaturesFilterParameters) parameterSet
         .getParameter(SimpleMetaCorrelateParameters.MIN_SAMPLES_FILTER).getEmbeddedParameters();
-    minFFilter = minS.createFilterWithGroups(project, peakList.getRawDataFiles(), groupingParameter,
-        minHeight);
+    minFFilter = minFeatureFilter.createFilterWithGroups(project, peakList.getRawDataFiles(),
+        groupingParameter, minHeight);
 
     // tolerances
-    rtTolerance =
-        parameterSet.getParameter(SimpleMetaCorrelateParameters.RT_TOLERANCE).getValue();
+    rtTolerance = parameterSet.getParameter(SimpleMetaCorrelateParameters.RT_TOLERANCE).getValue();
 
     // FEATURE SHAPE CORRELATION
     groupByFShapeCorr =
@@ -92,8 +90,8 @@ public class SimpleMetaCorrelateTask extends MetaCorrelateTask {
 
     searchAdducts =
         parameterSet.getParameter(SimpleMetaCorrelateParameters.ADDUCT_LIBRARY).getValue();
-    annotationParameters = parameterSet
-        .getParameter(SimpleMetaCorrelateParameters.ADDUCT_LIBRARY).getEmbeddedParameters();
+    annotationParameters = parameterSet.getParameter(SimpleMetaCorrelateParameters.ADDUCT_LIBRARY)
+        .getEmbeddedParameters();
     annotationParameters = IonNetworkingParameters.createFullParamSet(annotationParameters,
         rtTolerance, mzTolerance, minHeight);
     // simple parameter setup: provide mzTol and charge
@@ -126,7 +124,8 @@ public class SimpleMetaCorrelateTask extends MetaCorrelateTask {
     msmsChecks.getParameter(IonNetworkMSMSCheckParameters.MZ_TOLERANCE).setValue(mzTolMS2);
 
     // refinement
-    annotationParameters.getParameter(IonNetworkingParameters.ANNOTATION_REFINEMENTS).setValue(true);
+    annotationParameters.getParameter(IonNetworkingParameters.ANNOTATION_REFINEMENTS)
+        .setValue(true);
     IonNetworkRefinementParameters refineParam = annotationParameters
         .getParameter(IonNetworkingParameters.ANNOTATION_REFINEMENTS).getEmbeddedParameters();
     refineParam.getParameter(IonNetworkRefinementParameters.DELETE_XMERS_ON_MSMS).setValue(true);
@@ -148,8 +147,14 @@ public class SimpleMetaCorrelateTask extends MetaCorrelateTask {
       suffix = MessageFormat.format("corr {2} r>={0} dp>={1}, {3}", minShapeCorrR,
           minCorrelatedDataPoints, shapeSimMeasure, searchAdducts ? "MS annot" : "");
     else
-      suffix = parameters.getParameter(SimpleMetaCorrelateParameters.SUFFIX)
-          .getEmbeddedParameter().getValue();
+      suffix = parameters.getParameter(SimpleMetaCorrelateParameters.SUFFIX).getEmbeddedParameter()
+          .getValue();
+
+
+    // create grouping param
+    groupParam = new CorrelateGroupingParameters(rtTolerance, useGroups, groupingParameter,
+        minHeight, noiseLevelCorr, autoSuffix, suffix, minFeatureFilter, groupByFShapeCorr,
+        useHeightCorrFilter, corrParam, heightCorrParam);
   }
 
 }
