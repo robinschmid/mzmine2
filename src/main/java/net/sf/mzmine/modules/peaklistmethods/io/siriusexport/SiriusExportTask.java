@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -572,50 +573,59 @@ public class SiriusExportTask extends AbstractTask {
    * @param feature
    * @throws IOException
    */
-  private void writeCorrelationSpectrum(BufferedWriter writer, PeakListRow mainRow)
+  private void writeCorrelationSpectrum(final BufferedWriter writer, PeakListRow mainRow)
       throws IOException {
     /*
      * Grouped by metaMSEcorrelate Annotations by MS annotations in module
      */
     // get all rows in corr group
-    RowGroup g = mainRow.getGroup();
-    R2GroupCorrelationData corr = null;
+    final RowGroup g = mainRow.getGroup();
+    Map<PeakListRow, IonIdentity> rows = new HashMap<PeakListRow, IonIdentity>();
 
-    if (g instanceof CorrelationRowGroup) {
-      // export correlation group
-      for (int i = 0; i < g.size(); ++i) {
-        PeakListRow row = g.get(i);
-        corr = ((CorrelationRowGroup) g).getCorr(i);
-        exportCorrelatedRow(writer, row, corr, null);
+    // add all from network
+    IonIdentity id = mainRow.getBestIonIdentity();
+    AnnotationNetwork network = id == null ? null : id.getNetwork();
+    if (network != null) {
+      for (Entry<PeakListRow, IonIdentity> e : network.entrySet()) {
+        rows.put(e.getKey(), e.getValue());
       }
     } else {
-      // export annotation network
-      IonIdentity id = mainRow.getBestIonIdentity();
-      AnnotationNetwork network = id == null ? null : id.getNetwork();
-      if (network != null) {
-        for (Entry<PeakListRow, IonIdentity> e : network.entrySet()) {
-          g = e.getKey().getGroup();
-          if (g instanceof CorrelationRowGroup)
-            corr = ((CorrelationRowGroup) g).getCorr(e.getKey());
-          else
-            corr = null;
-          exportCorrelatedRow(writer, e.getKey(), null, e.getValue());
+      rows.put(mainRow, mainRow.getBestIonIdentity());
+    }
+
+    // add all group rows that are correlated to main
+    if (g != null) {
+      for (int i = 0; i < g.size(); ++i) {
+        PeakListRow row = g.get(i);
+        if (g.isCorrelated(mainRow, row) && !rows.containsKey(row)) {
+          rows.put(row, null);
         }
-      } else {
-        // just export mainRow
-        exportCorrelatedRow(writer, mainRow, null, null);
       }
     }
+
+    // export all rows
+    rows.entrySet().stream()
+        .sorted((a, b) -> Double.compare(a.getKey().getAverageMZ(), b.getKey().getAverageMZ()))
+        .forEach(e -> {
+          PeakListRow r = e.getKey();
+          R2GroupCorrelationData corrb = null;
+          if (g instanceof CorrelationRowGroup)
+            corrb = ((CorrelationRowGroup) g).getCorr(r);
+          try {
+            exportCorrelatedRow(writer, r, corrb, e.getValue());
+          } catch (IOException e1) {
+            e1.printStackTrace();
+          }
+        });
     writer.write("END IONS");
     writer.newLine();
     writer.newLine();
   }
 
-  private void exportCorrelatedRow(BufferedWriter writer, PeakListRow row,
-      R2GroupCorrelationData corr, IonIdentity adduct) throws IOException {
+  protected void exportCorrelatedRow(BufferedWriter writer, PeakListRow row,
+      R2GroupCorrelationData corr, IonIdentity id) throws IOException {
     double r = corr == null ? 0 : corr.getAvgPeakShapeR();
     Feature best = row.getBestPeak();
-    IonIdentity id = adduct;
     if (id == null)
       id = row.getBestIonIdentity();
     AnnotationNetwork network = id == null ? null : id.getNetwork();
