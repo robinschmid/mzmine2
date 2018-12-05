@@ -87,7 +87,23 @@ public class FormulaUtils {
       e.printStackTrace();
       return 0;
     }
+  }
 
+  public static boolean containsElement(IMolecularFormula f, String element) {
+    for (IIsotope iso : f.isotopes()) {
+      if (iso.getSymbol().equals(element))
+        return true;
+    }
+    return false;
+  }
+
+  public static int countElement(IMolecularFormula f, String element) {
+    int count = 0;
+    for (IIsotope iso : f.isotopes()) {
+      if (iso.getSymbol().equals(element))
+        count += f.getIsotopeCount(iso);
+    }
+    return count;
   }
 
   @Nonnull
@@ -253,20 +269,28 @@ public class FormulaUtils {
 
 
   public static IMolecularFormula createMajorIsotopeMolFormula(String formula) {
-    IChemObjectBuilder builder = SilentChemObjectBuilder.getInstance();
-    IMolecularFormula f = MolecularFormulaManipulator
-        .getMajorIsotopeMolecularFormula(formula.replace(" ", ""), builder);
-
-    if (f == null)
-      return null;
-    // replace isotopes
-    // needed, as MolecularFormulaManipulator method returns isotopes without exact mass info
     try {
-      return replaceAllIsotopesWithoutExactMass(f);
+      if (formula.endsWith("-"))
+        System.out.println();
+      IChemObjectBuilder builder = SilentChemObjectBuilder.getInstance();
+      IMolecularFormula f = MolecularFormulaManipulator
+          .getMajorIsotopeMolecularFormula(formula.replace(" ", ""), builder);
+
+      if (f == null)
+        return null;
+      // replace isotopes
+      // needed, as MolecularFormulaManipulator method returns isotopes without exact mass info
+      try {
+        return replaceAllIsotopesWithoutExactMass(f);
+      } catch (Exception e) {
+        logger.log(Level.SEVERE, "Cannot create formula for: " + formula, e);
+        return null;
+      }
     } catch (Exception e) {
-      logger.log(Level.SEVERE, "Cannot create formula", e);
+      logger.log(Level.SEVERE, "Cannot create formula for: " + formula, e);
       return null;
     }
+
   }
 
   public static IMolecularFormula replaceAllIsotopesWithoutExactMass(IMolecularFormula f)
@@ -279,7 +303,9 @@ public class FormulaUtils {
 
         // replace
         IsotopeFactory iFac = Isotopes.getInstance();
-        f.addIsotope(iFac.getMajorIsotope(iso.getAtomicNumber()), isotopeCount);
+        IIsotope major = iFac.getMajorIsotope(iso.getAtomicNumber());
+        if (major != null)
+          f.addIsotope(major, isotopeCount);
         return replaceAllIsotopesWithoutExactMass(f);
       }
     }

@@ -295,14 +295,14 @@ public class HistogramChartFactory {
           }
         }
       }
-      return createHistogram(series, barwidth, yAxisLabel);
+      return createHistogram(new XYSeriesCollection(series), barwidth, yAxisLabel);
     } else
       return null;
   }
 
 
-  public static JFreeChart createHistogram(XYSeries series, double barwidth, String yAxisLabel) {
-    XYSeriesCollection xydata = new XYSeriesCollection(series);
+  public static JFreeChart createHistogram(XYSeriesCollection xydata, double barwidth,
+      String yAxisLabel) {
     XYBarDataset dataset = new XYBarDataset(xydata, barwidth);
     JFreeChart chart = ChartFactory.createXYBarChart("", yAxisLabel, false, "n", dataset,
         PlotOrientation.VERTICAL, true, true, false);

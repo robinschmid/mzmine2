@@ -309,7 +309,7 @@ public class HistogramPanel extends JPanel {
         // set bin width
         int bin = (int) Math.sqrt(data.size());
         double l = data.getRange().getLength();
-        double bw = l / (double) bin;
+        double bw = l / bin;
         String bws = String.valueOf(bw);
         // round
         try {
@@ -586,6 +586,12 @@ public class HistogramPanel extends JPanel {
   public void setBinWidth(double binWidth) {
     txtBinWidth.setText(String.valueOf(binWidth));
   }
+
+  public void setBinShift(double binShift) {
+    txtBinShift.setText(String.valueOf(binShift));
+  }
+
+
 
   public boolean isGaussianFitEnabled() {
     return cbGaussianFit.isSelected();
