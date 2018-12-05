@@ -30,7 +30,7 @@ import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
  * @author Robin Schmid (robinschmid@uni-muenster.de)
  *
  */
-public class AnnotationRefinementParameters extends SimpleParameterSet {
+public class IonNetworkRefinementParameters extends SimpleParameterSet {
 
   // NOT INCLUDED in sub
   // General parameters
@@ -48,11 +48,11 @@ public class AnnotationRefinementParameters extends SimpleParameterSet {
 
 
   // Constructor
-  public AnnotationRefinementParameters() {
+  public IonNetworkRefinementParameters() {
     this(false);
   }
 
-  public AnnotationRefinementParameters(boolean isSub) {
+  public IonNetworkRefinementParameters(boolean isSub) {
     super(isSub ? // no peak list and rt tolerance
         new Parameter[] {TRUE_THRESHOLD, DELETE_XMERS_ON_MSMS}
         : new Parameter[] {PEAK_LISTS, TRUE_THRESHOLD, DELETE_XMERS_ON_MSMS});

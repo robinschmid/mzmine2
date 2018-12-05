@@ -20,7 +20,7 @@ package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionanno
 
 import java.awt.Window;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.MSAnnMSMSCheckTask.NeutralLossCheck;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkMSMSCheckTask.NeutralLossCheck;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
@@ -39,7 +39,7 @@ import net.sf.mzmine.util.ExitCode;
  * @author Robin Schmid (robinschmid@uni-muenster.de)
  *
  */
-public class MSAnnMSMSCheckParameters extends SimpleParameterSet {
+public class IonNetworkMSMSCheckParameters extends SimpleParameterSet {
 
   // NOT INCLUDED in sub
   // General parameters
@@ -69,11 +69,11 @@ public class MSAnnMSMSCheckParameters extends SimpleParameterSet {
           NeutralLossCheck.values(), NeutralLossCheck.PRECURSOR), true);
 
   // Constructor
-  public MSAnnMSMSCheckParameters() {
+  public IonNetworkMSMSCheckParameters() {
     this(false);
   }
 
-  public MSAnnMSMSCheckParameters(boolean isSub) {
+  public IonNetworkMSMSCheckParameters(boolean isSub) {
     super(isSub ? // no peak list and rt tolerance
         new Parameter[] {MASS_LIST, MZ_TOLERANCE, MIN_HEIGHT, CHECK_MULTIMERS, CHECK_NEUTRALLOSSES}
         : new Parameter[] {PEAK_LISTS, MASS_LIST, MZ_TOLERANCE, MIN_HEIGHT, CHECK_MULTIMERS,

@@ -26,9 +26,9 @@ import java.util.logging.Logger;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
-import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
-import net.sf.mzmine.datamodel.identities.iontype.MSAnnotationNetworkLogic;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.datastructure.AverageResultFormula;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.sort.FormulaSortParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.sort.FormulaSortTask;
@@ -115,7 +115,7 @@ public class CreateAvgNetworkFormulasTask extends AbstractTask {
     setStatus(TaskStatus.PROCESSING);
 
     // get all networks to run in parallel
-    AnnotationNetwork[] nets = MSAnnotationNetworkLogic.getAllNetworks(peakList);
+    IonNetwork[] nets = IonNetworkLogic.getAllNetworks(peakList);
     totalRows = nets.length;
     if (totalRows == 0) {
       setStatus(TaskStatus.ERROR);
@@ -137,7 +137,7 @@ public class CreateAvgNetworkFormulasTask extends AbstractTask {
     setStatus(TaskStatus.FINISHED);
   }
 
-  public List<MolecularFormulaIdentity> combineFormulasOfNetwork(AnnotationNetwork net) {
+  public List<MolecularFormulaIdentity> combineFormulasOfNetwork(IonNetwork net) {
     // find all formula lists of ions in network
     List<List<MolecularFormulaIdentity>> allLists = new ArrayList<>();
     for (Entry<PeakListRow, IonIdentity> e : net.entrySet()) {

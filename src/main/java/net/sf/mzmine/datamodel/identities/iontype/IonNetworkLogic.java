@@ -23,8 +23,8 @@ import net.sf.mzmine.util.PeakListRowSorter;
 import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
 
-public class MSAnnotationNetworkLogic {
-  private static final Logger LOG = Logger.getLogger(MSAnnotationNetworkLogic.class.getName());
+public class IonNetworkLogic {
+  private static final Logger LOG = Logger.getLogger(IonNetworkLogic.class.getName());
 
   /**
    * Compare for likelyhood comparison and sorting
@@ -102,10 +102,10 @@ public class MSAnnotationNetworkLogic {
    * @param rows
    * @return
    */
-  public static List<AnnotationNetwork> createAnnotationNetworks(PeakList pkl,
+  public static List<IonNetwork> createAnnotationNetworks(PeakList pkl,
       MZTolerance mzTolerance, boolean useGrouping) {
     if (useGrouping && pkl.getGroups() != null) {
-      List<AnnotationNetwork> nets = new ArrayList<>();
+      List<IonNetwork> nets = new ArrayList<>();
       for (RowGroup g : pkl.getGroups())
         nets.addAll(createAnnotationNetworks(g.toArray(new PeakListRow[g.size()]), mzTolerance));
 
@@ -120,15 +120,15 @@ public class MSAnnotationNetworkLogic {
    * @param rows
    * @return
    */
-  public static List<AnnotationNetwork> createAnnotationNetworksOld(PeakListRow[] rows,
+  public static List<IonNetwork> createAnnotationNetworksOld(PeakListRow[] rows,
       boolean addNetworkNumber, MZTolerance mzTolerance) {
-    List<AnnotationNetwork> nets = new ArrayList<>();
+    List<IonNetwork> nets = new ArrayList<>();
 
     if (rows != null) {
       // sort by rt
       Arrays.sort(rows, new PeakListRowSorter(SortingProperty.ID, SortingDirection.Ascending));
 
-      AnnotationNetwork current = new AnnotationNetwork(mzTolerance, nets.size());
+      IonNetwork current = new IonNetwork(mzTolerance, nets.size());
       // add all connections
       for (PeakListRow row : rows) {
         current.clear();
@@ -146,7 +146,7 @@ public class MSAnnotationNetworkLogic {
             }
           }
           // new
-          current = new AnnotationNetwork(mzTolerance, nets.size());
+          current = new IonNetwork(mzTolerance, nets.size());
         }
       }
     }
@@ -160,10 +160,10 @@ public class MSAnnotationNetworkLogic {
    * @param rows
    * @return
    */
-  public static List<AnnotationNetwork> createAnnotationNetworks(PeakListRow[] rows,
+  public static List<IonNetwork> createAnnotationNetworks(PeakListRow[] rows,
       MZTolerance mzTolerance) {
     // bin neutral masses to annotation networks
-    List<AnnotationNetwork> nets = new ArrayList<>(binNeutralMassToNetworks(rows, mzTolerance));
+    List<IonNetwork> nets = new ArrayList<>(binNeutralMassToNetworks(rows, mzTolerance));
 
     // add network to all identities
     setNetworksToAllAnnotations(nets);
@@ -177,7 +177,7 @@ public class MSAnnotationNetworkLogic {
   }
 
 
-  public static void resetNetworkIDs(List<AnnotationNetwork> nets) {
+  public static void resetNetworkIDs(List<IonNetwork> nets) {
     for (int i = 0; i < nets.size(); i++) {
       nets.get(i).setID(i);
     }
@@ -188,10 +188,10 @@ public class MSAnnotationNetworkLogic {
    * 
    * @param nets
    */
-  private static void splitByGroups(List<AnnotationNetwork> nets) {
+  private static void splitByGroups(List<IonNetwork> nets) {
     int size = nets.size();
     for (int i = 0; i < size; i++) {
-      AnnotationNetwork net = nets.get(i);
+      IonNetwork net = nets.get(i);
       if (!net.allSameCorrGroup()) {
         nets.addAll(splitByGroup(net));
         nets.remove(i);
@@ -207,15 +207,15 @@ public class MSAnnotationNetworkLogic {
    * @param net
    * @return
    */
-  private static Collection<AnnotationNetwork> splitByGroup(AnnotationNetwork net) {
-    Map<Integer, AnnotationNetwork> map = new HashMap<>();
+  private static Collection<IonNetwork> splitByGroup(IonNetwork net) {
+    Map<Integer, IonNetwork> map = new HashMap<>();
     for (Entry<PeakListRow, IonIdentity> e : net.entrySet()) {
       Integer id = e.getKey().getGroupID();
       if (id != -1) {
-        AnnotationNetwork nnet = map.get(id);
+        IonNetwork nnet = map.get(id);
         if (nnet == null) {
           // new network for group
-          nnet = new AnnotationNetwork(net.getMZTolerance(), -1);
+          nnet = new IonNetwork(net.getMZTolerance(), -1);
           map.put(id, nnet);
         }
         nnet.put(e.getKey(), e.getValue());
@@ -234,7 +234,7 @@ public class MSAnnotationNetworkLogic {
    * @param rows
    * @param nets
    */
-  private static void fillInNeutralLosses(PeakListRow[] rows, Collection<AnnotationNetwork> nets,
+  private static void fillInNeutralLosses(PeakListRow[] rows, Collection<IonNetwork> nets,
       MZTolerance mzTolerance) {
     for (PeakListRow row : rows) {
       if (row.hasIonIdentity()) {
@@ -252,11 +252,11 @@ public class MSAnnotationNetworkLogic {
             if (partner == null)
               continue;
 
-            AnnotationNetwork[] partnerNets = MSAnnotationNetworkLogic.getAllNetworks(partner);
+            IonNetwork[] partnerNets = IonNetworkLogic.getAllNetworks(partner);
             // create new net if partner was in no network
             if (partnerNets == null || partnerNets.length == 0) {
               // create new and put both
-              AnnotationNetwork newNet = new AnnotationNetwork(mzTolerance, nets.size());
+              IonNetwork newNet = new IonNetwork(mzTolerance, nets.size());
               nets.add(newNet);
               newNet.put(row, neutral);
               newNet.put(partner, p.getValue());
@@ -297,11 +297,11 @@ public class MSAnnotationNetworkLogic {
    * @param row
    * @return
    */
-  public static AnnotationNetwork[] getAllNetworks(PeakListRow row) {
+  public static IonNetwork[] getAllNetworks(PeakListRow row) {
     if (!row.hasIonIdentity())
-      return new AnnotationNetwork[0];
+      return new IonNetwork[0];
     return row.getIonIdentities().stream().map(IonIdentity::getNetwork).filter(Objects::nonNull)
-        .distinct().toArray(AnnotationNetwork[]::new);
+        .distinct().toArray(IonNetwork[]::new);
   }
 
   /**
@@ -309,7 +309,7 @@ public class MSAnnotationNetworkLogic {
    * 
    * @param nets
    */
-  public static void setNetworksToAllAnnotations(Collection<AnnotationNetwork> nets) {
+  public static void setNetworksToAllAnnotations(Collection<IonNetwork> nets) {
     nets.stream().forEach(n -> n.setNetworkToAllRows());
   }
 
@@ -320,9 +320,9 @@ public class MSAnnotationNetworkLogic {
    * @param rows
    * @return AnnotationNetworks
    */
-  private static Collection<AnnotationNetwork> binNeutralMassToNetworks(PeakListRow[] rows,
+  private static Collection<IonNetwork> binNeutralMassToNetworks(PeakListRow[] rows,
       MZTolerance mzTolerance) {
-    Map<Integer, AnnotationNetwork> map = new HashMap<>();
+    Map<Integer, IonNetwork> map = new HashMap<>();
     for (PeakListRow row : rows) {
       if (!row.hasIonIdentity())
         continue;
@@ -336,10 +336,10 @@ public class MSAnnotationNetworkLogic {
         // bin to 0.1
         Integer nmass = (int) Math.round(mass * 10.0);
 
-        AnnotationNetwork net = map.get(nmass);
+        IonNetwork net = map.get(nmass);
         if (net == null) {
           // create new
-          net = new AnnotationNetwork(mzTolerance, map.size());
+          net = new IonNetwork(mzTolerance, map.size());
           map.put(nmass, net);
         }
         // add row and id to network
@@ -367,7 +367,7 @@ public class MSAnnotationNetworkLogic {
    * @param rows
    * @return false if this network has already been created
    */
-  private static boolean addRow(AnnotationNetwork current, PeakListRow row, PeakListRow[] rows,
+  private static boolean addRow(IonNetwork current, PeakListRow row, PeakListRow[] rows,
       int masterID) {
     if (row.hasIonIdentity()) {
       for (IonIdentity adduct : row.getIonIdentities()) {
@@ -490,8 +490,8 @@ public class MSAnnotationNetworkLogic {
    * @param peakList
    * @return
    */
-  public static AnnotationNetwork[] getAllNetworks(PeakList peakList) {
-    return streamNetworks(peakList).toArray(AnnotationNetwork[]::new);
+  public static IonNetwork[] getAllNetworks(PeakList peakList) {
+    return streamNetworks(peakList).toArray(IonNetwork[]::new);
   }
 
   /**
@@ -500,8 +500,8 @@ public class MSAnnotationNetworkLogic {
    * @param peakList
    * @return
    */
-  public static Stream<AnnotationNetwork> streamNetworks(PeakList peakList) {
-    return MSAnnotationNetworkLogic.streamNetworks(peakList, null);
+  public static Stream<IonNetwork> streamNetworks(PeakList peakList) {
+    return IonNetworkLogic.streamNetworks(peakList, null);
   }
 
   /**
@@ -511,9 +511,9 @@ public class MSAnnotationNetworkLogic {
    * @param sorter
    * @return
    */
-  public static Stream<AnnotationNetwork> streamNetworks(PeakList peakList,
+  public static Stream<IonNetwork> streamNetworks(PeakList peakList,
       @Nullable IonNetworkSorter sorter) {
-    Stream<AnnotationNetwork> stream =
+    Stream<IonNetwork> stream =
         Arrays.stream(peakList.getRows()).filter(PeakListRow::hasIonIdentity) //
             .flatMap(r -> r.getIonIdentities().stream().map(IonIdentity::getNetwork)
                 .filter(Objects::nonNull).filter(net -> net.hasSmallestID(r)));
@@ -528,7 +528,7 @@ public class MSAnnotationNetworkLogic {
    * @param group
    * @return
    */
-  public static AnnotationNetwork getBestNetwork(RowGroup group) {
+  public static IonNetwork getBestNetwork(RowGroup group) {
     return group.stream().filter(PeakListRow::hasIonIdentity).flatMap(
         r -> r.getIonIdentities().stream().map(IonIdentity::getNetwork).filter(Objects::nonNull))
         .max(Comparator.reverseOrder()).orElse(null);

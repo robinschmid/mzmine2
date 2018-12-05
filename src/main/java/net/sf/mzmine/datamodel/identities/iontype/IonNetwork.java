@@ -13,8 +13,8 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
  * @author Robin Schmid (robinschmid@uni-muenster.de)
  *
  */
-public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity>
-    implements Comparable<AnnotationNetwork> {
+public class IonNetwork extends HashMap<PeakListRow, IonIdentity>
+    implements Comparable<IonNetwork> {
   private static final long serialVersionUID = 1L;
 
   // MZtolerance on MS1 to generate this network
@@ -38,7 +38,7 @@ public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity>
   // possible formulas for this neutral mass
   private List<MolecularFormulaIdentity> molFormulas;
 
-  public AnnotationNetwork(MZTolerance mzTolerance, int id) {
+  public IonNetwork(MZTolerance mzTolerance, int id) {
     super();
     this.mzTolerance = mzTolerance;
     this.id = id;
@@ -375,7 +375,7 @@ public class AnnotationNetwork extends HashMap<PeakListRow, IonIdentity>
   }
 
   @Override
-  public int compareTo(AnnotationNetwork net) {
+  public int compareTo(IonNetwork net) {
     // -1 if this is better
     return Integer.compare(net.size(), this.size());
   }

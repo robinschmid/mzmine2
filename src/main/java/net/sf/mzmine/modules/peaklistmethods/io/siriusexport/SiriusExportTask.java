@@ -36,7 +36,7 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
-import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
@@ -459,7 +459,7 @@ public class SiriusExportTask extends AbstractTask {
     // run MS annotations module or better metaMSEcorrelate
     RowGroup group = row.getGroup();
     IonIdentity adduct = row.getBestIonIdentity();
-    AnnotationNetwork net = adduct != null ? adduct.getNetwork() : null;
+    IonNetwork net = adduct != null ? adduct.getNetwork() : null;
 
     // find ion species by annotation (can be null)
     String corrGroupID = group != null ? "" + group.getGroupID() : "";
@@ -584,7 +584,7 @@ public class SiriusExportTask extends AbstractTask {
 
     // add all from network
     IonIdentity id = mainRow.getBestIonIdentity();
-    AnnotationNetwork network = id == null ? null : id.getNetwork();
+    IonNetwork network = id == null ? null : id.getNetwork();
     if (network != null) {
       for (Entry<PeakListRow, IonIdentity> e : network.entrySet()) {
         rows.put(e.getKey(), e.getValue());
@@ -628,7 +628,7 @@ public class SiriusExportTask extends AbstractTask {
     Feature best = row.getBestPeak();
     if (id == null)
       id = row.getBestIonIdentity();
-    AnnotationNetwork network = id == null ? null : id.getNetwork();
+    IonNetwork network = id == null ? null : id.getNetwork();
 
     // TODO : best feature mz or avg?
     // intensity?

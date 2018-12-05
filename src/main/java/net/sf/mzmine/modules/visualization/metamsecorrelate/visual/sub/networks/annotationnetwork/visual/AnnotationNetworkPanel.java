@@ -9,9 +9,9 @@ import org.graphstream.graph.Node;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
-import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
-import net.sf.mzmine.datamodel.identities.iontype.MSAnnotationNetworkLogic;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
 import net.sf.mzmine.framework.networks.NetworkPanel;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.util.PeakListRowSorter;
@@ -78,7 +78,7 @@ public class AnnotationNetworkPanel extends NetworkPanel {
       AtomicInteger added = new AtomicInteger(0);
       // add all connections
       for (PeakListRow row : rows) {
-        for (AnnotationNetwork net : MSAnnotationNetworkLogic.getAllNetworks(row)) {
+        for (IonNetwork net : IonNetworkLogic.getAllNetworks(row)) {
           if (net.hasSmallestID(row)) {
             addNetworkToGraph(rows, net, added);
           }
@@ -100,7 +100,7 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     }
   }
 
-  private void addNetworkToGraph(PeakListRow[] rows, AnnotationNetwork net, AtomicInteger added) {
+  private void addNetworkToGraph(PeakListRow[] rows, IonNetwork net, AtomicInteger added) {
     String mnode = MessageFormat.format("M (m={0} Da) Net{1} corrID={2}",
         mzForm.format(net.getNeutralMass()), net.getID(), net.getCorrID());
 

@@ -52,9 +52,9 @@ import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefi
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeatureFilter.OverlapResult;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity.MS2SimilarityParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity.MS2SimilarityTask;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.MSAnnotationLibrary;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.MSAnnotationParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.MSAnnotationTask;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkLibrary;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkingParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkingTask;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
@@ -96,8 +96,8 @@ public class MetaCorrelateTask extends AbstractTask {
   protected String suffix;
 
   // ADDUCTS
-  protected MSAnnotationParameters annotationParameters;
-  protected MSAnnotationLibrary library;
+  protected IonNetworkingParameters annotationParameters;
+  protected IonNetworkLibrary library;
   protected boolean searchAdducts;
 
   // MS2 similarity
@@ -202,8 +202,8 @@ public class MetaCorrelateTask extends AbstractTask {
     annotationParameters = parameterSet.getParameter(MetaCorrelateParameters.ADDUCT_LIBRARY)
         .getEmbeddedParameters();
     annotationParameters =
-        MSAnnotationParameters.createFullParamSet(annotationParameters, rtTolerance, minHeight);
-    library = new MSAnnotationLibrary(annotationParameters);
+        IonNetworkingParameters.createFullParamSet(annotationParameters, rtTolerance, minHeight);
+    library = new IonNetworkLibrary(annotationParameters);
     // END OF ADDUCTS AND REFINEMENT
 
     checkMS2Similarity =
@@ -307,9 +307,9 @@ public class MetaCorrelateTask extends AbstractTask {
         if (searchAdducts) {
           LOG.info("Corr: Annotation of groups only");
           setStage(Stage.ANNOTATION);
-          annotationParameters.getParameter(MSAnnotationParameters.LIMIT_BY_GROUPS).setValue(true);
-          MSAnnotationTask annTask =
-              new MSAnnotationTask(project, annotationParameters, groupedPKL);
+          annotationParameters.getParameter(IonNetworkingParameters.LIMIT_BY_GROUPS).setValue(true);
+          IonNetworkingTask annTask =
+              new IonNetworkingTask(project, annotationParameters, groupedPKL);
           annTask.run();
         }
 

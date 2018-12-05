@@ -41,10 +41,10 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
-import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.datamodel.identities.iontype.IonType;
-import net.sf.mzmine.datamodel.identities.iontype.MSAnnotationNetworkLogic;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.datastructure.ResultFormula;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.restrictions.elements.ElementalHeuristicChecker;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.restrictions.rdbe.RDBERestrictionChecker;
@@ -62,7 +62,7 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
 
-public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
+public class FormulaPredictionIonNetworkTask extends AbstractTask {
 
   private Logger logger = Logger.getLogger(this.getClass().getName());
   private Range<Double> massRange;
@@ -96,44 +96,44 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
    * @param peakListRow
    * @param peak
    */
-  FormulaPredictionAnnotationNetworkTask(PeakList peakList, ParameterSet parameters) {
+  FormulaPredictionIonNetworkTask(PeakList peakList, ParameterSet parameters) {
 
     /*
      * searchedMass = parameters.getParameter(
      * FormulaPredictionPeakListParameters.neutralMass).getValue();
      */
     this.peakList = peakList;
-    mzTolerance = parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.mzTolerance)
+    mzTolerance = parameters.getParameter(FormulaPredictionIonNetworkParameters.mzTolerance)
         .getValue();
     elementCounts =
-        parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.elements).getValue();
+        parameters.getParameter(FormulaPredictionIonNetworkParameters.elements).getValue();
 
     ppmOffset =
-        parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.ppmOffset).getValue();
+        parameters.getParameter(FormulaPredictionIonNetworkParameters.ppmOffset).getValue();
 
 
     checkRDBE = parameters
-        .getParameter(FormulaPredictionAnnotationNetworkParameters.rdbeRestrictions).getValue();
+        .getParameter(FormulaPredictionIonNetworkParameters.rdbeRestrictions).getValue();
     if (checkRDBE) {
       rdbeParameters =
-          parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.rdbeRestrictions)
+          parameters.getParameter(FormulaPredictionIonNetworkParameters.rdbeRestrictions)
               .getEmbeddedParameters();
     }
 
     checkRatios = parameters
-        .getParameter(FormulaPredictionAnnotationNetworkParameters.elementalRatios).getValue();
+        .getParameter(FormulaPredictionIonNetworkParameters.elementalRatios).getValue();
     if (checkRatios) {
       ratiosParameters =
-          parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.elementalRatios)
+          parameters.getParameter(FormulaPredictionIonNetworkParameters.elementalRatios)
               .getEmbeddedParameters();
     }
 
 
     checkIsotopes = parameters
-        .getParameter(FormulaPredictionAnnotationNetworkParameters.isotopeFilter).getValue();
+        .getParameter(FormulaPredictionIonNetworkParameters.isotopeFilter).getValue();
     if (checkIsotopes) {
       isotopeParameters =
-          parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.isotopeFilter)
+          parameters.getParameter(FormulaPredictionIonNetworkParameters.isotopeFilter)
               .getEmbeddedParameters();
       isotopeNoiseLevel = isotopeParameters
           .getParameter(IsotopePatternScoreParameters.isotopeNoiseLevel).getValue();
@@ -142,10 +142,10 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
     }
 
     checkMSMS =
-        parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.msmsFilter).getValue();
+        parameters.getParameter(FormulaPredictionIonNetworkParameters.msmsFilter).getValue();
     if (checkMSMS) {
       msmsParameters =
-          parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.msmsFilter)
+          parameters.getParameter(FormulaPredictionIonNetworkParameters.msmsFilter)
               .getEmbeddedParameters();
       massListName = msmsParameters.getParameter(MSMSScoreParameters.massList).getValue();
       minMSMSScore = msmsParameters.getParameter(MSMSScoreParameters.msmsMinScore).getValue();
@@ -157,10 +157,10 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
     }
 
     sortResults =
-        parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.sorting).getValue();
+        parameters.getParameter(FormulaPredictionIonNetworkParameters.sorting).getValue();
     if (sortResults) {
       FormulaSortParameters sortingParam =
-          parameters.getParameter(FormulaPredictionAnnotationNetworkParameters.sorting)
+          parameters.getParameter(FormulaPredictionIonNetworkParameters.sorting)
               .getEmbeddedParameters();
       sorter = new FormulaSortTask(sortingParam);
     }
@@ -197,7 +197,7 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
     setStatus(TaskStatus.PROCESSING);
 
     // get all networks to run in parallel
-    AnnotationNetwork[] nets = MSAnnotationNetworkLogic.getAllNetworks(peakList);
+    IonNetwork[] nets = IonNetworkLogic.getAllNetworks(peakList);
     totalRows = nets.length;
     if (totalRows == 0) {
       setStatus(TaskStatus.ERROR);
@@ -219,7 +219,7 @@ public class FormulaPredictionAnnotationNetworkTask extends AbstractTask {
     setStatus(TaskStatus.FINISHED);
   }
 
-  public List<MolecularFormulaIdentity> predictFormulasForNetwork(AnnotationNetwork net) {
+  public List<MolecularFormulaIdentity> predictFormulasForNetwork(IonNetwork net) {
     for (Entry<PeakListRow, IonIdentity> e : net.entrySet()) {
       PeakListRow r = e.getKey();
       IonIdentity ion = e.getValue();

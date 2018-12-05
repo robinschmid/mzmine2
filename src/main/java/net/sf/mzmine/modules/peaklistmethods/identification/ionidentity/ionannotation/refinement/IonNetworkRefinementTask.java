@@ -24,13 +24,13 @@ import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
-import net.sf.mzmine.datamodel.identities.iontype.MSAnnotationNetworkLogic;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 
-public class AnnotationRefinementTask extends AbstractTask {
+public class IonNetworkRefinementTask extends AbstractTask {
   // Logger.
-  private static final Logger LOG = Logger.getLogger(AnnotationRefinementTask.class.getName());
+  private static final Logger LOG = Logger.getLogger(IonNetworkRefinementTask.class.getName());
 
   private int finishedRows;
   private int totalRows;
@@ -50,7 +50,7 @@ public class AnnotationRefinementTask extends AbstractTask {
    * @param parameterSet the parameters.
    * @param list peak list.
    */
-  public AnnotationRefinementTask(final MZmineProject project, final ParameterSet parameterSet,
+  public IonNetworkRefinementTask(final MZmineProject project, final ParameterSet parameterSet,
       final PeakList peakLists) {
     this.project = project;
     this.peakList = peakLists;
@@ -61,9 +61,9 @@ public class AnnotationRefinementTask extends AbstractTask {
 
     // tolerances
     deleteXmersOnMSMS =
-        parameterSet.getParameter(AnnotationRefinementParameters.DELETE_XMERS_ON_MSMS).getValue();
+        parameterSet.getParameter(IonNetworkRefinementParameters.DELETE_XMERS_ON_MSMS).getValue();
     trueThreshold =
-        parameterSet.getParameter(AnnotationRefinementParameters.TRUE_THRESHOLD).getValue();
+        parameterSet.getParameter(IonNetworkRefinementParameters.TRUE_THRESHOLD).getValue();
   }
 
   @Override
@@ -89,13 +89,13 @@ public class AnnotationRefinementTask extends AbstractTask {
   public static void refine(PeakList pkl, int trueThreshold, boolean deleteXmersOnMSMS) {
     for (PeakListRow row : pkl.getRows()) {
       if (row.hasIonIdentity()) {
-        List<IonIdentity> all = MSAnnotationNetworkLogic.sortIonIdentities(row, true);
+        List<IonIdentity> all = IonNetworkLogic.sortIonIdentities(row, true);
         IonIdentity best = all.get(0);
 
         if (deleteXmersOnMSMS && all.size() > 1) {
           // xmers
           if (deleteXmersOnMSMS(row, best, all, trueThreshold)) {
-            all = MSAnnotationNetworkLogic.sortIonIdentities(row, true);
+            all = IonNetworkLogic.sortIonIdentities(row, true);
             best = all.get(0);
           }
         }

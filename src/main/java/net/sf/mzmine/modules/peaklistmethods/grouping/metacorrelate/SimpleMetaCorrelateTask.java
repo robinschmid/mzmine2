@@ -26,10 +26,10 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.CorrelationData.SimilarityMeasure;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity.MS2SimilarityParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.MSAnnotationLibrary;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.MSAnnotationParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.AnnotationRefinementParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.MSAnnMSMSCheckParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkLibrary;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkingParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkRefinementParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkMSMSCheckParameters;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
@@ -94,12 +94,12 @@ public class SimpleMetaCorrelateTask extends MetaCorrelateTask {
         parameterSet.getParameter(SimpleMetaCorrelateParameters.ADDUCT_LIBRARY).getValue();
     annotationParameters = parameterSet
         .getParameter(SimpleMetaCorrelateParameters.ADDUCT_LIBRARY).getEmbeddedParameters();
-    annotationParameters = MSAnnotationParameters.createFullParamSet(annotationParameters,
+    annotationParameters = IonNetworkingParameters.createFullParamSet(annotationParameters,
         rtTolerance, mzTolerance, minHeight);
     // simple parameter setup: provide mzTol and charge
     int maxCharge =
         Arrays.stream(peakList.getRows()).mapToInt(PeakListRow::getRowCharge).max().orElse(3);
-    library = new MSAnnotationLibrary(annotationParameters, mzTolerance, maxCharge);
+    library = new IonNetworkLibrary(annotationParameters, mzTolerance, maxCharge);
 
     // MS2 similarity
     checkMS2Similarity =
@@ -114,23 +114,23 @@ public class SimpleMetaCorrelateTask extends MetaCorrelateTask {
     ms2SimilarityCheckParam.getParameter(MS2SimilarityParameters.MZ_TOLERANCE).setValue(mzTolMS2);
 
     // MSMS refinement
-    annotationParameters.getParameter(MSAnnotationParameters.MSMS_CHECK).setValue(true);
-    MSAnnMSMSCheckParameters msmsChecks = annotationParameters
-        .getParameter(MSAnnotationParameters.MSMS_CHECK).getEmbeddedParameters();
-    msmsChecks.getParameter(MSAnnMSMSCheckParameters.CHECK_MULTIMERS).setValue(true);
-    msmsChecks.getParameter(MSAnnMSMSCheckParameters.CHECK_NEUTRALLOSSES).setValue(true);
+    annotationParameters.getParameter(IonNetworkingParameters.MSMS_CHECK).setValue(true);
+    IonNetworkMSMSCheckParameters msmsChecks = annotationParameters
+        .getParameter(IonNetworkingParameters.MSMS_CHECK).getEmbeddedParameters();
+    msmsChecks.getParameter(IonNetworkMSMSCheckParameters.CHECK_MULTIMERS).setValue(true);
+    msmsChecks.getParameter(IonNetworkMSMSCheckParameters.CHECK_NEUTRALLOSSES).setValue(true);
     // set mass list MS2
-    msmsChecks.getParameter(MSAnnMSMSCheckParameters.MASS_LIST).setValue(massListMS2);
-    msmsChecks.getParameter(MSAnnMSMSCheckParameters.MIN_HEIGHT).setValue(
+    msmsChecks.getParameter(IonNetworkMSMSCheckParameters.MASS_LIST).setValue(massListMS2);
+    msmsChecks.getParameter(IonNetworkMSMSCheckParameters.MIN_HEIGHT).setValue(
         parameterSet.getParameter(SimpleMetaCorrelateParameters.NOISE_LEVEL_MS2).getValue());
-    msmsChecks.getParameter(MSAnnMSMSCheckParameters.MZ_TOLERANCE).setValue(mzTolMS2);
+    msmsChecks.getParameter(IonNetworkMSMSCheckParameters.MZ_TOLERANCE).setValue(mzTolMS2);
 
     // refinement
-    annotationParameters.getParameter(MSAnnotationParameters.ANNOTATION_REFINEMENTS).setValue(true);
-    AnnotationRefinementParameters refineParam = annotationParameters
-        .getParameter(MSAnnotationParameters.ANNOTATION_REFINEMENTS).getEmbeddedParameters();
-    refineParam.getParameter(AnnotationRefinementParameters.DELETE_XMERS_ON_MSMS).setValue(true);
-    refineParam.getParameter(AnnotationRefinementParameters.TRUE_THRESHOLD).setValue(4);
+    annotationParameters.getParameter(IonNetworkingParameters.ANNOTATION_REFINEMENTS).setValue(true);
+    IonNetworkRefinementParameters refineParam = annotationParameters
+        .getParameter(IonNetworkingParameters.ANNOTATION_REFINEMENTS).getEmbeddedParameters();
+    refineParam.getParameter(IonNetworkRefinementParameters.DELETE_XMERS_ON_MSMS).setValue(true);
+    refineParam.getParameter(IonNetworkRefinementParameters.TRUE_THRESHOLD).setValue(4);
 
     // END OF ADDUCTS AND REFINEMENT
     // intensity correlation across samples

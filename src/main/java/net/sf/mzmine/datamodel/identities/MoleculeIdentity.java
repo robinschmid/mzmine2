@@ -21,7 +21,7 @@ package net.sf.mzmine.datamodel.identities;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import org.apache.commons.lang3.StringUtils;
-import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.impl.SimplePeakIdentity;
 import net.sf.mzmine.main.MZmineCore;
 
@@ -31,7 +31,7 @@ public class MoleculeIdentity extends SimplePeakIdentity {
   private NumberFormat rtForm = MZmineCore.getConfiguration().getRTFormat();
   private NumberFormat netIDForm = new DecimalFormat("000");
 
-  private AnnotationNetwork network;
+  private IonNetwork network;
 
   private double neutralMass;
   private double avgRT;
@@ -42,7 +42,7 @@ public class MoleculeIdentity extends SimplePeakIdentity {
    * @param originalPeakListRow adduct of this peak list row.
    * @param adduct type of adduct.
    */
-  public MoleculeIdentity(AnnotationNetwork network) {
+  public MoleculeIdentity(IonNetwork network) {
     super("later");
     neutralMass = network.calcNeutralMass();
     avgRT = network.getAvgRT();
@@ -76,7 +76,7 @@ public class MoleculeIdentity extends SimplePeakIdentity {
    * 
    * @param id
    */
-  public void setNetwork(AnnotationNetwork net) {
+  public void setNetwork(IonNetwork net) {
     network = net;
     setPropertyValue(PROPERTY_NAME, getIDString());
   }
@@ -94,7 +94,7 @@ public class MoleculeIdentity extends SimplePeakIdentity {
     return netIDForm.format(getNetID());
   }
 
-  public AnnotationNetwork getNetwork() {
+  public IonNetwork getNetwork() {
     return network;
   }
 

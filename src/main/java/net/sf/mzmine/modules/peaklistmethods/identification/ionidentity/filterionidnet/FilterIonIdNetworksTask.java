@@ -28,10 +28,10 @@ import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakList.PeakListAppliedMethod;
 import net.sf.mzmine.datamodel.PeakListRow;
-import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.datamodel.identities.iontype.IonModification;
-import net.sf.mzmine.datamodel.identities.iontype.MSAnnotationNetworkLogic;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
 import net.sf.mzmine.datamodel.impl.SimpleFeature;
 import net.sf.mzmine.datamodel.impl.SimplePeakListAppliedMethod;
 import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
@@ -137,7 +137,7 @@ public class FilterIonIdNetworksTask extends AbstractTask {
   public static void doFiltering(PeakList pkl, int minNetSize, boolean deleteSmallNoMajor,
       boolean deleteRowsWithoutIon) {
     // need to convert to array first to avoid concurren mod exception
-    Arrays.stream(MSAnnotationNetworkLogic.getAllNetworks(pkl)).forEach(net -> {
+    Arrays.stream(IonNetworkLogic.getAllNetworks(pkl)).forEach(net -> {
       if (net.size() < minNetSize || (deleteSmallNoMajor && !hasMajorIonID(net)))
         net.delete();
     });
@@ -157,7 +157,7 @@ public class FilterIonIdNetworksTask extends AbstractTask {
       MZmineCore.getDesktop().getMainWindow().repaint();
   }
 
-  private static boolean hasMajorIonID(AnnotationNetwork net) {
+  private static boolean hasMajorIonID(IonNetwork net) {
     return net.values().stream().map(IonIdentity::getIonType).anyMatch(ion -> {
       return ion.getAdduct().equals(IonModification.H) //
           || (ion.getAdduct().equals(IonModification.NA) && ion.getModCount() == 0)

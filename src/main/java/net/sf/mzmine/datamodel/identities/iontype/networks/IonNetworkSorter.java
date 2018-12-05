@@ -1,7 +1,7 @@
 package net.sf.mzmine.datamodel.identities.iontype.networks;
 
 import java.util.Comparator;
-import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
 
@@ -11,7 +11,7 @@ import net.sf.mzmine.util.SortingProperty;
  * @author Robin Schmid (robinschmid@uni-muenster.de)
  *
  */
-public class IonNetworkSorter implements Comparator<AnnotationNetwork> {
+public class IonNetworkSorter implements Comparator<IonNetwork> {
   private SortingProperty property;
   private SortingDirection direction;
 
@@ -21,7 +21,7 @@ public class IonNetworkSorter implements Comparator<AnnotationNetwork> {
   }
 
   @Override
-  public int compare(AnnotationNetwork a, AnnotationNetwork b) {
+  public int compare(IonNetwork a, IonNetwork b) {
     Double va = getValue(a);
     Double vb = getValue(b);
 
@@ -31,7 +31,7 @@ public class IonNetworkSorter implements Comparator<AnnotationNetwork> {
       return vb.compareTo(va);
   }
 
-  private Double getValue(AnnotationNetwork net) {
+  private Double getValue(IonNetwork net) {
     switch (property) {
       case Height:
         return net.getHeightSum();

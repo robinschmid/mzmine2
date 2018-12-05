@@ -56,8 +56,8 @@ import net.sf.mzmine.modules.peaklistmethods.identification.fragmentsearch.Fragm
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.clearionids.ClearIonIdentitiesModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.filterionidnet.FilterIonIdNetworksModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.formula.createavgformulas.CreateAvgNetworkFormulasModule;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.formula.prediction.FormulaPredictionAnnotationNetworkModule;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.MSAnnotationModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.formula.prediction.FormulaPredictionIonNetworkModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkingModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.lipididentification.LipidSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ms2search.Ms2SearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.nist.NistMsSearchModule;
@@ -197,8 +197,8 @@ public class MZmineModulesList {
       MetaCorrelateModule.class, SimpleMetaCorrelateModule.class,
 
       // ion identity networks
-      MSAnnotationModule.class, FilterIonIdNetworksModule.class, ClearIonIdentitiesModule.class,
-      FormulaPredictionAnnotationNetworkModule.class, CreateAvgNetworkFormulasModule.class,
+      IonNetworkingModule.class, FilterIonIdNetworksModule.class, ClearIonIdentitiesModule.class,
+      FormulaPredictionIonNetworkModule.class, CreateAvgNetworkFormulasModule.class,
 
       // Identification
       FormulaPredictionModule.class, FormulaPredictionPeakListModule.class, FormulaSortModule.class,

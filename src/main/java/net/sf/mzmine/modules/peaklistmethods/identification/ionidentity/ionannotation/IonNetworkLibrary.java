@@ -15,8 +15,8 @@ import net.sf.mzmine.datamodel.identities.iontype.IonType;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
-public class MSAnnotationLibrary {
-  private static final Logger LOG = Logger.getLogger(MSAnnotationLibrary.class.getName());
+public class IonNetworkLibrary {
+  private static final Logger LOG = Logger.getLogger(IonNetworkLibrary.class.getName());
 
   public enum CheckMode {
     AVGERAGE, ONE_FEATURE, ALL_FEATURES;
@@ -35,9 +35,9 @@ public class MSAnnotationLibrary {
   private final boolean isPositive;
   private final int maxMolecules, maxCharge;
 
-  public MSAnnotationLibrary(MSAnnotationParameters parameterSet) {
-    this(parameterSet, parameterSet.getParameter(MSAnnotationParameters.MZ_TOLERANCE).getValue(),
-        parameterSet.getParameter(MSAnnotationParameters.MAX_CHARGE).getValue());
+  public IonNetworkLibrary(IonNetworkingParameters parameterSet) {
+    this(parameterSet, parameterSet.getParameter(IonNetworkingParameters.MZ_TOLERANCE).getValue(),
+        parameterSet.getParameter(IonNetworkingParameters.MAX_CHARGE).getValue());
   }
 
   /**
@@ -45,17 +45,17 @@ public class MSAnnotationLibrary {
    * 
    * @param parameterSet
    */
-  public MSAnnotationLibrary(MSAnnotationParameters parameterSet, MZTolerance mzTolerance,
+  public IonNetworkLibrary(IonNetworkingParameters parameterSet, MZTolerance mzTolerance,
       int maxCharge) {
     this.mzTolerance = mzTolerance;
     this.maxCharge = maxCharge;
     // adducts stuff
-    isPositive = parameterSet.getParameter(MSAnnotationParameters.POSITIVE_MODE).getValue()
+    isPositive = parameterSet.getParameter(IonNetworkingParameters.POSITIVE_MODE).getValue()
         .equals("POSITIVE");
-    maxMolecules = parameterSet.getParameter(MSAnnotationParameters.MAX_MOLECULES).getValue();
+    maxMolecules = parameterSet.getParameter(IonNetworkingParameters.MAX_MOLECULES).getValue();
 
-    selectedAdducts = parameterSet.getParameter(MSAnnotationParameters.ADDUCTS).getValue()[0];
-    selectedMods = parameterSet.getParameter(MSAnnotationParameters.ADDUCTS).getValue()[1];
+    selectedAdducts = parameterSet.getParameter(IonNetworkingParameters.ADDUCTS).getValue()[0];
+    selectedMods = parameterSet.getParameter(IonNetworkingParameters.ADDUCTS).getValue()[1];
 
     createAllAdducts(isPositive, maxMolecules, maxCharge);
   }

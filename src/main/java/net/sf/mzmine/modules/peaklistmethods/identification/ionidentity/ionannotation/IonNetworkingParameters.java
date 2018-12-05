@@ -21,9 +21,9 @@ package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionanno
 import java.awt.Window;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeaturesFilterParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.MSAnnotationLibrary.CheckMode;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.AnnotationRefinementParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.MSAnnMSMSCheckParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkLibrary.CheckMode;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkRefinementParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkMSMSCheckParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
@@ -41,7 +41,7 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTToleranceParameter;
 import net.sf.mzmine.util.ExitCode;
 
-public class MSAnnotationParameters extends SimpleParameterSet {
+public class IonNetworkingParameters extends SimpleParameterSet {
   // different depth of settings
   public enum Setup {
     FULL, SUB, SIMPLE;
@@ -69,7 +69,7 @@ public class MSAnnotationParameters extends SimpleParameterSet {
           "Only annotate features which where correlated or grouped otherwise.", true);
 
   public static final ComboParameter<CheckMode> CHECK_MODE =
-      new ComboParameter<MSAnnotationLibrary.CheckMode>("Check",
+      new ComboParameter<IonNetworkLibrary.CheckMode>("Check",
           "The modes to check for adduct identities. Average compares only the average m/z values (without min. height).\n "
               + "ALL features and SINGLE feature compares the m/z values of features with height>minHeight in raw data files",
           CheckMode.values(), CheckMode.ALL_FEATURES);
@@ -94,23 +94,23 @@ public class MSAnnotationParameters extends SimpleParameterSet {
 
   // MS MS
   // check for truth MS/MS
-  public static final OptionalModuleParameter<MSAnnMSMSCheckParameters> MSMS_CHECK =
-      new OptionalModuleParameter<MSAnnMSMSCheckParameters>("Check MS/MS",
-          "Check MS/MS for truth of multimers", new MSAnnMSMSCheckParameters(true));
+  public static final OptionalModuleParameter<IonNetworkMSMSCheckParameters> MSMS_CHECK =
+      new OptionalModuleParameter<IonNetworkMSMSCheckParameters>("Check MS/MS",
+          "Check MS/MS for truth of multimers", new IonNetworkMSMSCheckParameters(true));
 
-  public static final OptionalModuleParameter<AnnotationRefinementParameters> ANNOTATION_REFINEMENTS =
-      new OptionalModuleParameter<AnnotationRefinementParameters>("Annotation refinement", "",
-          new AnnotationRefinementParameters(true), true);
+  public static final OptionalModuleParameter<IonNetworkRefinementParameters> ANNOTATION_REFINEMENTS =
+      new OptionalModuleParameter<IonNetworkRefinementParameters>("Annotation refinement", "",
+          new IonNetworkRefinementParameters(true), true);
 
   // setup
   private Setup setup;
 
   // Constructor
-  public MSAnnotationParameters() {
+  public IonNetworkingParameters() {
     this(Setup.FULL);
   }
 
-  public MSAnnotationParameters(Setup setup) {
+  public IonNetworkingParameters(Setup setup) {
     super(createParam(setup));
     this.setup = setup;
   }
@@ -137,7 +137,7 @@ public class MSAnnotationParameters extends SimpleParameterSet {
    * @param rtTol
    * @return
    */
-  public static MSAnnotationParameters createFullParamSet(MSAnnotationParameters param,
+  public static IonNetworkingParameters createFullParamSet(IonNetworkingParameters param,
       RTTolerance rtTol, double minHeight) {
     return createFullParamSet(param, rtTol, null, minHeight);
   }
@@ -150,17 +150,17 @@ public class MSAnnotationParameters extends SimpleParameterSet {
    * @param mzTol
    * @return
    */
-  public static MSAnnotationParameters createFullParamSet(MSAnnotationParameters param,
+  public static IonNetworkingParameters createFullParamSet(IonNetworkingParameters param,
       RTTolerance rtTol, MZTolerance mzTol, double minHeight) {
-    MSAnnotationParameters full = new MSAnnotationParameters();
+    IonNetworkingParameters full = new IonNetworkingParameters();
     for (Parameter p : param.getParameters()) {
       full.getParameter(p).setValue(p.getValue());
     }
-    full.getParameter(MSAnnotationParameters.RT_TOLERANCE).setValue(rtTol);
+    full.getParameter(IonNetworkingParameters.RT_TOLERANCE).setValue(rtTol);
     if (mzTol != null)
-      full.getParameter(MSAnnotationParameters.MZ_TOLERANCE).setValue(mzTol);
+      full.getParameter(IonNetworkingParameters.MZ_TOLERANCE).setValue(mzTol);
 
-    full.getParameter(MSAnnotationParameters.MIN_HEIGHT).setValue(minHeight);
+    full.getParameter(IonNetworkingParameters.MIN_HEIGHT).setValue(minHeight);
     return full;
   }
 

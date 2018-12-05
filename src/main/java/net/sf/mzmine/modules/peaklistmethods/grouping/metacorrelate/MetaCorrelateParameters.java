@@ -25,8 +25,8 @@ import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.correlation.
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.correlation.InterSampleHeightCorrParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity.MS2SimilarityParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.MSAnnotationParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.MSAnnotationParameters.Setup;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkingParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkingParameters.Setup;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.UserParameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
@@ -101,10 +101,10 @@ public class MetaCorrelateParameters extends SimpleParameterSet {
 
   // adduct finder parameter - taken from the adduct finder
   // search for adducts? Bonus for correlation?
-  public static final OptionalModuleParameter<MSAnnotationParameters> ADDUCT_LIBRARY =
+  public static final OptionalModuleParameter<IonNetworkingParameters> ADDUCT_LIBRARY =
       new OptionalModuleParameter<>("MS annotations",
           "Build adduct, in-source fragment, cluster,.. library and match all features",
-          new MSAnnotationParameters(Setup.SUB), true);
+          new IonNetworkingParameters(Setup.SUB), true);
 
   public static final BooleanParameter ANNOTATE_ONLY_GROUPED =
       new BooleanParameter("Annotate only corr grouped",

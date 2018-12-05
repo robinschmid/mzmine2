@@ -63,8 +63,8 @@ import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
-import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
-import net.sf.mzmine.datamodel.identities.iontype.MSAnnotationNetworkLogic;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
 import net.sf.mzmine.datamodel.impl.RowGroupList;
 import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.main.MZmineCore;
@@ -592,7 +592,7 @@ public class MSEcorrGroupWindow extends JFrame {
         int min = Integer.valueOf(getTxtMinGroupSize().getText());
         int minNet = Integer.valueOf(getTxtSkipSmallNetwork().getText());
         while (!(groups.get(index).size() >= min
-            && checkNetSize(MSAnnotationNetworkLogic.getBestNetwork(groups.get(index)), minNet))
+            && checkNetSize(IonNetworkLogic.getBestNetwork(groups.get(index)), minNet))
             && index + 1 < groups.size() && index - 1 >= 0)
           index += index < lastIndex ? -1 : +1;
       } catch (Exception ex) {
@@ -617,7 +617,7 @@ public class MSEcorrGroupWindow extends JFrame {
     renewAllPlots(true, true, true, true);
   }
 
-  private boolean checkNetSize(AnnotationNetwork bestNetwork, int minNet) {
+  private boolean checkNetSize(IonNetwork bestNetwork, int minNet) {
     return bestNetwork != null && bestNetwork.size() >= minNet;
   }
 

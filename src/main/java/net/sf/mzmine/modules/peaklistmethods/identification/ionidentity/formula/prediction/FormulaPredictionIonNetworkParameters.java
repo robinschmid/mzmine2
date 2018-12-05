@@ -30,7 +30,7 @@ import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
 
-public class FormulaPredictionAnnotationNetworkParameters extends SimpleParameterSet {
+public class FormulaPredictionIonNetworkParameters extends SimpleParameterSet {
 
   public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter();
 
@@ -63,11 +63,11 @@ public class FormulaPredictionAnnotationNetworkParameters extends SimpleParamete
   public static final OptionalModuleParameter msmsFilter =
       new OptionalModuleParameter("MS/MS filter", "Check MS/MS data", new MSMSScoreParameters());
 
-  public FormulaPredictionAnnotationNetworkParameters() {
+  public FormulaPredictionIonNetworkParameters() {
     this(false);
   }
 
-  public FormulaPredictionAnnotationNetworkParameters(boolean isSub) {
+  public FormulaPredictionIonNetworkParameters(boolean isSub) {
     super(isSub ? //
         new Parameter[] {ppmOffset, sorting, elements, elementalRatios, rdbeRestrictions,
             isotopeFilter, msmsFilter}

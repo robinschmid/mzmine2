@@ -44,7 +44,7 @@ public class IonIdentity {
   // partner rowIDs
   private ConcurrentHashMap<PeakListRow, IonIdentity> partner = new ConcurrentHashMap<>();
   // network id (number)
-  private AnnotationNetwork network;
+  private IonNetwork network;
 
   /**
    * List of MSMS identities. e.g., multimers/monomers that were found in MS/MS data
@@ -83,7 +83,7 @@ public class IonIdentity {
     IonIdentity b = getAdductEqualIdentity(row2, row2ID);
 
 
-    AnnotationNetwork net = null;
+    IonNetwork net = null;
 
     // create new
     if (a == null) {
@@ -99,7 +99,7 @@ public class IonIdentity {
       // if both were in networks
       if (net != null) {
         // combine networks
-        AnnotationNetwork netB = b.getNetwork();
+        IonNetwork netB = b.getNetwork();
         for (Entry<PeakListRow, IonIdentity> e : netB.entrySet()) {
           net.put(e.getKey(), e.getValue());
         }
@@ -109,7 +109,7 @@ public class IonIdentity {
 
     // no network so far
     if (net == null) {
-      net = new AnnotationNetwork(null, -1);
+      net = new IonNetwork(null, -1);
     }
 
     net.put(row1, a);
@@ -228,7 +228,7 @@ public class IonIdentity {
    * 
    * @param id
    */
-  public void setNetwork(AnnotationNetwork net) {
+  public void setNetwork(IonNetwork net) {
     network = net;
   }
 
@@ -290,7 +290,7 @@ public class IonIdentity {
         && ((MSMSIonRelationIdentity) id).getRelation().equals(Relation.NEUTRAL_LOSS)).count();
   }
 
-  public AnnotationNetwork getNetwork() {
+  public IonNetwork getNetwork() {
     return network;
   }
 

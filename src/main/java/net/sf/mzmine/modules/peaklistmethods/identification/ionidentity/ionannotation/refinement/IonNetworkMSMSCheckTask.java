@@ -31,7 +31,7 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.datamodel.identities.iontype.IonType;
-import net.sf.mzmine.datamodel.identities.iontype.MSAnnotationNetworkLogic;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
 import net.sf.mzmine.datamodel.identities.ms2.MSMSIdentityList;
 import net.sf.mzmine.datamodel.identities.ms2.MSMSIonRelationIdentity;
 import net.sf.mzmine.datamodel.identities.ms2.interf.AbstractMSMSIdentity;
@@ -41,9 +41,9 @@ import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 
-public class MSAnnMSMSCheckTask extends AbstractTask {
+public class IonNetworkMSMSCheckTask extends AbstractTask {
   // Logger.
-  private static final Logger LOG = Logger.getLogger(MSAnnMSMSCheckTask.class.getName());
+  private static final Logger LOG = Logger.getLogger(IonNetworkMSMSCheckTask.class.getName());
 
   // mode
   public enum NeutralLossCheck {
@@ -76,7 +76,7 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
    * @param parameterSet the parameters.
    * @param list peak list.
    */
-  public MSAnnMSMSCheckTask(final MZmineProject project, final ParameterSet parameterSet,
+  public IonNetworkMSMSCheckTask(final MZmineProject project, final ParameterSet parameterSet,
       final PeakList peakLists) {
     this.project = project;
     this.peakList = peakLists;
@@ -86,13 +86,13 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
     totalRows = 0;
 
     // tolerances
-    massList = parameterSet.getParameter(MSAnnMSMSCheckParameters.MASS_LIST).getValue();
-    mzTolerance = parameterSet.getParameter(MSAnnMSMSCheckParameters.MZ_TOLERANCE).getValue();
-    minHeight = parameterSet.getParameter(MSAnnMSMSCheckParameters.MIN_HEIGHT).getValue();
-    checkMultimers = parameterSet.getParameter(MSAnnMSMSCheckParameters.CHECK_MULTIMERS).getValue();
+    massList = parameterSet.getParameter(IonNetworkMSMSCheckParameters.MASS_LIST).getValue();
+    mzTolerance = parameterSet.getParameter(IonNetworkMSMSCheckParameters.MZ_TOLERANCE).getValue();
+    minHeight = parameterSet.getParameter(IonNetworkMSMSCheckParameters.MIN_HEIGHT).getValue();
+    checkMultimers = parameterSet.getParameter(IonNetworkMSMSCheckParameters.CHECK_MULTIMERS).getValue();
     checkNeutralLosses =
-        parameterSet.getParameter(MSAnnMSMSCheckParameters.CHECK_NEUTRALLOSSES).getValue();
-    neutralLossCheck = parameterSet.getParameter(MSAnnMSMSCheckParameters.CHECK_NEUTRALLOSSES)
+        parameterSet.getParameter(IonNetworkMSMSCheckParameters.CHECK_NEUTRALLOSSES).getValue();
+    neutralLossCheck = parameterSet.getParameter(IonNetworkMSMSCheckParameters.CHECK_NEUTRALLOSSES)
         .getEmbeddedParameter().getValue();
   }
 
@@ -224,7 +224,7 @@ public class MSAnnMSMSCheckTask extends AbstractTask {
     }
 
     // sort and get best
-    MSAnnotationNetworkLogic.sortIonIdentities(row, true);
+    IonNetworkLogic.sortIonIdentities(row, true);
     IonIdentity best = row.getBestIonIdentity();
     if (c > 0)
       LOG.info(MessageFormat.format(

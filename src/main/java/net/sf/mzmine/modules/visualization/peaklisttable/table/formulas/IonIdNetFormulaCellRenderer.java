@@ -22,7 +22,7 @@ import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
-import net.sf.mzmine.datamodel.identities.iontype.AnnotationNetwork;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 
 /**
@@ -49,7 +49,7 @@ public class IonIdNetFormulaCellRenderer extends FormulaCell {
     IonIdentity best = row.getBestIonIdentity();
     if (best != null && best.getNetwork() != null
         && best.getNetwork().getBestMolFormula() != null) {
-      AnnotationNetwork bestNet = best.getNetwork();
+      IonNetwork bestNet = best.getNetwork();
       // add all result formulas
       return bestNet.getMolFormulas().stream().filter(MolecularFormulaIdentity.class::isInstance)
           .map(MolecularFormulaIdentity.class::cast).toArray(MolecularFormulaIdentity[]::new);

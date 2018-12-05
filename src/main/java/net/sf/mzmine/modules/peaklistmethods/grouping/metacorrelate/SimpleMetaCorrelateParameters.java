@@ -21,8 +21,8 @@ package net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate;
 import java.awt.Window;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeaturesFilterParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.MSAnnotationParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.MSAnnotationParameters.Setup;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkingParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkingParameters.Setup;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.UserParameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
@@ -122,10 +122,10 @@ public class SimpleMetaCorrelateParameters extends SimpleParameterSet {
 
   // adduct finder parameter - taken from the adduct finder
   // search for adducts? Bonus for correlation?
-  public static final OptionalModuleParameter<MSAnnotationParameters> ADDUCT_LIBRARY =
+  public static final OptionalModuleParameter<IonNetworkingParameters> ADDUCT_LIBRARY =
       new OptionalModuleParameter<>("MS annotations",
           "Build adduct, in-source fragment, cluster,.. library and match all features",
-          new MSAnnotationParameters(Setup.SIMPLE), true);
+          new IonNetworkingParameters(Setup.SIMPLE), true);
 
   public static final OptionalParameter<StringParameter> SUFFIX = new OptionalParameter<>(
       new StringParameter("Suffix (or auto)", "Select suffix or deselect for auto suffix"), false);

@@ -30,10 +30,10 @@ import net.sf.mzmine.util.ExitCode;
 
 public class FilterIonIdNetworksModule implements MZmineProcessingModule {
 
-  private static final String NAME = "Filter MS annotations";
+  private static final String NAME = "Filter ion identity networks";
 
   private static final String DESCRIPTION =
-      "This module filters the identity results of MS annotations";
+      "This module filters the identity results of ion identity networking";
 
   @Override
   public @Nonnull String getName() {
