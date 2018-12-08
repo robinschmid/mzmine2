@@ -59,6 +59,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.filterio
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.formula.createavgformulas.CreateAvgNetworkFormulasModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.formula.prediction.FormulaPredictionIonNetworkModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkingModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.relations.IonNetRelationsModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.lipididentification.LipidSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ms2search.Ms2SearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.nist.NistMsSearchModule;
@@ -198,8 +199,9 @@ public class MZmineModulesList {
       CorrelateGroupingModule.class, MetaCorrelateModule.class, SimpleMetaCorrelateModule.class,
 
       // ion identity networks
-      IonNetworkingModule.class, FilterIonIdNetworksModule.class, ClearIonIdentitiesModule.class,
-      FormulaPredictionIonNetworkModule.class, CreateAvgNetworkFormulasModule.class,
+      IonNetworkingModule.class, FilterIonIdNetworksModule.class, IonNetRelationsModule.class,
+      ClearIonIdentitiesModule.class, FormulaPredictionIonNetworkModule.class,
+      CreateAvgNetworkFormulasModule.class,
 
       // Identification
       FormulaPredictionModule.class, FormulaPredictionPeakListModule.class, FormulaSortModule.class,
@@ -220,7 +222,5 @@ public class MZmineModulesList {
 
       // Tools
       MzRangeMassCalculatorModule.class, MzRangeFormulaCalculatorModule.class,
-      IsotopePatternPreviewModule.class
-
-  };
+      IsotopePatternPreviewModule.class};
 }

@@ -8,6 +8,7 @@ public class CombinedIonModification extends IonModification {
 
   private IonModification[] adducts;
 
+
   /**
    * fast creation of combined adducts
    * 
@@ -47,6 +48,13 @@ public class CombinedIonModification extends IonModification {
   @Override
   public int getNumberOfAdducts() {
     return adducts == null ? 0 : adducts.length;
+  }
+
+  @Override
+  public IonModification createOpposite() {
+    IonModification[] mod =
+        Arrays.stream(adducts).map(IonModification::createOpposite).toArray(IonModification[]::new);
+    return new CombinedIonModification(mod);
   }
 
   /**

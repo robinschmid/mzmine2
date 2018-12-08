@@ -354,6 +354,15 @@ public class IonModification extends NeutralMolecule implements Comparable<IonMo
     return true;
   }
 
+  /**
+   * Creates the opposite modification: -H2O --> +H2O
+   * 
+   * @return
+   */
+  public IonModification createOpposite() {
+    return new IonModification(getType(), name, molFormula, -mass, charge, maxModification);
+  }
+
 
   /**
    * 
@@ -459,4 +468,5 @@ public class IonModification extends NeutralMolecule implements Comparable<IonMo
   public int getAdductsCount() {
     return 1;
   }
+
 }

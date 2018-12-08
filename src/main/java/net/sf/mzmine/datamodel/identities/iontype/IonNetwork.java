@@ -3,8 +3,13 @@ package net.sf.mzmine.datamodel.identities.iontype;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
+import net.sf.mzmine.datamodel.identities.iontype.networks.IonNetRelationPeakIdentity;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 /**
@@ -34,6 +39,9 @@ public class IonNetwork extends HashMap<PeakListRow, IonIdentity>
   // lowest row id
   private int lowestID = -1;
 
+  // relationship to other IonNetworks (neutral molecules)
+  // marks as modification of:
+  private Map<IonNetwork, IonNetworkRelation> relations;
 
   // possible formulas for this neutral mass
   private List<MolecularFormulaIdentity> molFormulas;
@@ -59,6 +67,56 @@ public class IonNetwork extends HashMap<PeakListRow, IonIdentity>
 
   public List<MolecularFormulaIdentity> getMolFormulas() {
     return molFormulas;
+  }
+
+  public Map<IonNetwork, IonNetworkRelation> getRelations() {
+    return relations;
+  }
+
+  /**
+   * Add a relation to another ion network. This relation could be a modification
+   * 
+   * @param net
+   * @param rel
+   */
+  public void addRelation(IonNetwork net, IonNetworkRelation rel) {
+    if (relations == null)
+      relations = new HashMap<>();
+    relations.put(net, rel);
+    createRelationIdentity();
+  }
+
+  /**
+   * Remove a relation to another ion network. This relation could be a modification
+   * 
+   * @param net
+   * @param rel
+   */
+  public void removeRelation(IonNetwork net) {
+    if (relations == null)
+      return;
+    relations.remove(net);
+    createRelationIdentity();
+  }
+
+  /**
+   * Clear
+   */
+  public void clearRelation() {
+    relations = null;
+    createRelationIdentity();
+  }
+
+  /**
+   * Create relations identity
+   */
+  private IonNetRelationPeakIdentity createRelationIdentity() {
+    String name = "";
+    if (relations != null)
+      name = relations.values().stream().filter(Objects::nonNull).map(rel -> rel.getName(this))
+          .collect(Collectors.joining(", "));
+
+    return new IonNetRelationPeakIdentity(this, name);
   }
 
   /**
@@ -380,5 +438,23 @@ public class IonNetwork extends HashMap<PeakListRow, IonIdentity>
     return Integer.compare(net.size(), this.size());
   }
 
+  /**
+   * Add identity of all relations to rows
+   */
+  public void addRelationsIdentityToRows() {
+    for (PeakListRow r : keySet()) {
+      // delete old relation identity
+      for (int i = 0; i < r.getPeakIdentities().length;) {
+        PeakIdentity id = r.getPeakIdentities()[i];
+        if (id instanceof IonNetRelationPeakIdentity
+            && ((IonNetRelationPeakIdentity) id).getNetwork() == this)
+          r.removePeakIdentity(id);
+        else
+          i++;
+      }
+
+      r.addPeakIdentity(createRelationIdentity(), true);
+    }
+  }
 
 }

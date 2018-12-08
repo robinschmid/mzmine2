@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation;
+package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.relations;
 
 import java.util.Collection;
 import javax.annotation.Nonnull;
@@ -28,22 +28,20 @@ import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.Task;
 import net.sf.mzmine.util.ExitCode;
 
-public class IonNetworkingModule implements MZmineProcessingModule {
+public class IonNetRelationsModule implements MZmineProcessingModule {
 
-  private static final String NAME = "Ion identity networking";
+  private static final String NAME = "Relations between ion networks";
 
   private static final String DESCRIPTION =
-      "This method searches for adducts, in-source fragments and clusters";
+      "This method searches for relations between ion networks";
 
   @Override
   public @Nonnull String getName() {
-
     return NAME;
   }
 
   @Override
   public @Nonnull String getDescription() {
-
     return DESCRIPTION;
   }
 
@@ -54,19 +52,17 @@ public class IonNetworkingModule implements MZmineProcessingModule {
 
   @Override
   public @Nonnull Class<? extends ParameterSet> getParameterSetClass() {
-
-    return IonNetworkingParameters.class;
+    return IonNetRelationsParameters.class;
   }
 
   @Override
   @Nonnull
   public ExitCode runModule(@Nonnull MZmineProject project, @Nonnull final ParameterSet parameters,
       @Nonnull final Collection<Task> tasks) {
-
-    PeakList[] pkl = parameters.getParameter(IonNetworkingParameters.PEAK_LISTS).getValue()
+    PeakList[] pkl = parameters.getParameter(IonNetRelationsParameters.PEAK_LISTS).getValue()
         .getMatchingPeakLists();
     for (PeakList p : pkl)
-      tasks.add(new IonNetworkingTask(project, parameters, p));
+      tasks.add(new IonNetRelationsTask(project, parameters, p));
 
     return ExitCode.OK;
   }

@@ -1,0 +1,248 @@
+/*
+ * Copyright 2006-2015 The MZmine 2 Development Team
+ * 
+ * This file is part of MZmine 2.
+ * 
+ * MZmine 2 is free software; you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
+ * 
+ * MZmine 2 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along with MZmine 2; if not,
+ * write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+ * USA
+ */
+
+package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.relations;
+
+import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import com.google.common.util.concurrent.AtomicDouble;
+import io.github.msdk.MSDKRuntimeException;
+import net.sf.mzmine.datamodel.MZmineProject;
+import net.sf.mzmine.datamodel.PeakList;
+import net.sf.mzmine.datamodel.identities.iontype.IonModification;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetworkRelation;
+import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
+import net.sf.mzmine.taskcontrol.AbstractTask;
+import net.sf.mzmine.taskcontrol.TaskStatus;
+
+public class IonNetRelationsTask extends AbstractTask {
+
+  // Logger.
+  private static final Logger LOG = Logger.getLogger(IonNetRelationsTask.class.getName());
+
+  private AtomicDouble stageProgress = new AtomicDouble(0);
+  private final PeakList peakList;
+
+  private final ParameterSet parameters;
+  private final MZmineProject project;
+
+  private IonModification[] mods;
+  private MZTolerance mzTol;
+  private boolean searchCondensed;
+
+  /**
+   * Create the task.
+   *
+   * @param parameterSet the parameters.
+   * @param list peak list.
+   */
+  public IonNetRelationsTask(final MZmineProject project, final ParameterSet parameterSet,
+      final PeakList peakLists) {
+    this.project = project;
+    this.peakList = peakLists;
+    parameters = parameterSet;
+
+    mods = parameterSet.getParameter(IonNetRelationsParameters.ADDUCTS).getValue()[1];
+    mzTol = parameterSet.getParameter(IonNetRelationsParameters.MZ_TOL).getValue();
+    // tolerances
+    searchCondensed =
+        parameterSet.getParameter(IonNetRelationsParameters.SEARCH_CONDENSED_MOL).getValue();
+  }
+
+  @Override
+  public double getFinishedPercentage() {
+    return getStatus().equals(TaskStatus.FINISHED) ? 1 : stageProgress.get();
+  }
+
+  @Override
+  public String getTaskDescription() {
+    return "Identification of relationships between ion identity networks in " + peakList.getName()
+        + " ";
+  }
+
+  @Override
+  public void run() {
+    try {
+      setStatus(TaskStatus.PROCESSING);
+      LOG.info("Starting to search for relations (modifications) between ion identity networks ");
+
+      // get all ion identity networks
+      IonNetwork[] nets = IonNetworkLogic.getAllNetworks(peakList);
+
+      if (nets.length == 0) {
+        setErrorMessage("No ion identity networks found. Run ion networking");
+        setStatus(TaskStatus.ERROR);
+        return;
+      }
+
+      // clear all
+      Arrays.stream(nets).forEach(IonNetwork::clearRelation);
+
+      // check for modifications
+      int counter = checkForModifications(mzTol, mods, nets);
+      LOG.info("Found " + counter + " modifications");
+
+      // check for condensed formulas
+      // mass*2 - H2O and - modifications
+      int counter2 = checkForCondensedModifications(mzTol, mods, nets);
+      LOG.info("Found " + counter2 + " condensed molecules");
+
+      // show all as identity
+      showAllIdentities(nets);
+
+      setStatus(TaskStatus.FINISHED);
+    } catch (Exception t) {
+      LOG.log(Level.SEVERE, "Adduct search error", t);
+      setStatus(TaskStatus.ERROR);
+      setErrorMessage(t.getMessage());
+      throw new MSDKRuntimeException(t);
+    }
+  }
+
+  private void showAllIdentities(IonNetwork[] nets) {
+    for (IonNetwork net : nets) {
+      net.addRelationsIdentityToRows();
+    }
+  }
+
+  public static int checkForModifications(MZTolerance mzTol, IonModification[] mods,
+      IonNetwork[] nets) {
+    int counter = 0;
+    for (int i = 0; i < nets.length - 1; i++) {
+      for (int j = i + 1; j < nets.length; j++) {
+        if (checkForModifications(mzTol, mods, nets[i], nets[j]))
+          counter++;
+      }
+    }
+    return counter;
+  }
+
+  private static boolean checkForModifications(MZTolerance mzTol, IonModification[] mods,
+      IonNetwork a, IonNetwork b) {
+    // ensure a.mass < b.mass
+    if (a.getNeutralMass() > b.getNeutralMass()) {
+      IonNetwork tmp = a;
+      a = b;
+      b = tmp;
+    }
+
+    IonModification mod =
+        checkForModifications(mzTol, mods, a.getNeutralMass(), b.getNeutralMass());
+    if (mod != null) {
+      IonNetworkRelation rel = new IonNetworkRelation(a, b, false, true, mod);
+      a.addRelation(b, rel);
+      b.addRelation(a, rel);
+      return true;
+    } else
+      return false;
+  }
+
+  public static IonModification checkForModifications(MZTolerance mzTol, IonModification[] mods,
+      double a, double b) {
+    // ensure a.mass < b.mass
+    if (a > b) {
+      double tmp = a;
+      a = b;
+      b = tmp;
+    }
+    double diff = Math.abs(b - a);
+
+    for (int i = 0; i < mods.length; i++) {
+      // e.g. -H2O ~ -18
+      IonModification mod = mods[i];
+      if (mzTol.checkWithinTolerance(diff, mod.getAbsMass())) {
+        return mod;
+      }
+    }
+    return null;
+  }
+
+  public static int checkForCondensedModifications(MZTolerance mzTol, IonModification[] mods,
+      IonNetwork[] nets) {
+    int counter = 0;
+    for (int i = 0; i < nets.length - 1; i++) {
+      for (int j = i + 1; j < nets.length; j++) {
+        if (checkForCondensedModifications(mzTol, mods, nets[i], nets[j]))
+          counter++;
+      }
+    }
+    return counter;
+  }
+
+  /**
+   * Search for condensed molecules: e.g., two sugars 2 C6H12O6 --> C12H22O11 + H2O (modifications
+   * possible, e.g., when molecules where different (deoxycholic acid + cholic acid: mod= -O)
+   * 
+   * @param mzTol
+   * @param mods
+   * @param a
+   * @param b
+   * @return
+   */
+  public static boolean checkForCondensedModifications(MZTolerance mzTol, IonModification[] mods,
+      IonNetwork a, IonNetwork b) {
+    // ensure a.mass < b.mass
+    if (a.getNeutralMass() > b.getNeutralMass()) {
+      IonNetwork tmp = a;
+      a = b;
+      b = tmp;
+    }
+
+    IonModification[] mod =
+        checkForCondensedModifications(mzTol, mods, a.getNeutralMass(), b.getNeutralMass());
+    if (mod != null) {
+      IonNetworkRelation rel = new IonNetworkRelation(a, b, true, true, mod);
+      a.addRelation(b, rel);
+      b.addRelation(a, rel);
+      return true;
+    }
+    return false;
+  }
+
+  public static IonModification[] checkForCondensedModifications(MZTolerance mzTol,
+      IonModification[] mods, double massA, double massB) {
+    // ensure a.mass < b.mass
+    if (massA > massB) {
+      double tmp = massA;
+      massA = massB;
+      massB = tmp;
+    }
+
+    IonModification water = IonModification.H2O;
+    // condense a and subtract water
+    double diff = Math.abs(massB - (massA * 2 - water.getAbsMass()));
+    // check -H2O -> diff = 0
+    if (mzTol.checkWithinTolerance(diff, 0d)) {
+      return new IonModification[] {water};
+    }
+
+    for (int i = 0; i < mods.length; i++) {
+      // e.g. -H2O ~ -18
+      IonModification mod = mods[i];
+      if (mzTol.checkWithinTolerance(diff, mod.getAbsMass())) {
+        return new IonModification[] {water, mod};
+      }
+    }
+    return null;
+  }
+
+}
