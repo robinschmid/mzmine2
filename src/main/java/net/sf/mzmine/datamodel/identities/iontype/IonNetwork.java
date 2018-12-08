@@ -10,6 +10,7 @@ import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
 import net.sf.mzmine.datamodel.identities.iontype.networks.IonNetRelationPeakIdentity;
+import net.sf.mzmine.datamodel.identities.iontype.networks.IonNetworkRelationInterf;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 /**
@@ -41,7 +42,7 @@ public class IonNetwork extends HashMap<PeakListRow, IonIdentity>
 
   // relationship to other IonNetworks (neutral molecules)
   // marks as modification of:
-  private Map<IonNetwork, IonNetworkRelation> relations;
+  private Map<IonNetwork, IonNetworkRelationInterf> relations;
 
   // possible formulas for this neutral mass
   private List<MolecularFormulaIdentity> molFormulas;
@@ -69,7 +70,7 @@ public class IonNetwork extends HashMap<PeakListRow, IonIdentity>
     return molFormulas;
   }
 
-  public Map<IonNetwork, IonNetworkRelation> getRelations() {
+  public Map<IonNetwork, IonNetworkRelationInterf> getRelations() {
     return relations;
   }
 
@@ -79,7 +80,7 @@ public class IonNetwork extends HashMap<PeakListRow, IonIdentity>
    * @param net
    * @param rel
    */
-  public void addRelation(IonNetwork net, IonNetworkRelation rel) {
+  public void addRelation(IonNetwork net, IonNetworkRelationInterf rel) {
     if (relations == null)
       relations = new HashMap<>();
     relations.put(net, rel);

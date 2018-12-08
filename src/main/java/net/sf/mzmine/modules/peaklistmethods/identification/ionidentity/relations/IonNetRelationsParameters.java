@@ -30,16 +30,21 @@ public class IonNetRelationsParameters extends SimpleParameterSet {
 
   public static final MZToleranceParameter MZ_TOL = new MZToleranceParameter();
 
-  public static final IonModificationParameter ADDUCTS = new IonModificationParameter("Adducts",
-      "List of adducts, each one refers a specific distance in m/z axis between related peaks");
+  public static final IonModificationParameter ADDUCTS =
+      new IonModificationParameter("Adducts", "List of modifications");
 
   public static final BooleanParameter SEARCH_CONDENSED_MOL = new BooleanParameter(
       "Search condensed",
       "Searches for condensed structures (loss of water) with regards to possible structure modifications",
       true);
+  public static final BooleanParameter SEARCH_CONDENSED_HETERO_MOL = new BooleanParameter(
+      "Search hetero condensed",
+      "Searches for condensed structures (loss of water) of two different neutral modifications",
+      true);
 
   public IonNetRelationsParameters() {
-    super(new Parameter[] {PEAK_LISTS, MZ_TOL, SEARCH_CONDENSED_MOL, ADDUCTS});
+    super(new Parameter[] {PEAK_LISTS, MZ_TOL, SEARCH_CONDENSED_MOL, SEARCH_CONDENSED_HETERO_MOL,
+        ADDUCTS});
   }
 
 }

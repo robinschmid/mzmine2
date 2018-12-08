@@ -28,7 +28,8 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.identities.iontype.IonModification;
 import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
-import net.sf.mzmine.datamodel.identities.iontype.IonNetworkRelation;
+import net.sf.mzmine.datamodel.identities.iontype.networks.IonNetworkHeteroCondensedRelation;
+import net.sf.mzmine.datamodel.identities.iontype.networks.IonNetworkRelation;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
@@ -48,6 +49,7 @@ public class IonNetRelationsTask extends AbstractTask {
   private IonModification[] mods;
   private MZTolerance mzTol;
   private boolean searchCondensed;
+  private boolean searchHeteroCondensed;
 
   /**
    * Create the task.
@@ -66,6 +68,8 @@ public class IonNetRelationsTask extends AbstractTask {
     // tolerances
     searchCondensed =
         parameterSet.getParameter(IonNetRelationsParameters.SEARCH_CONDENSED_MOL).getValue();
+    searchHeteroCondensed =
+        parameterSet.getParameter(IonNetRelationsParameters.SEARCH_CONDENSED_HETERO_MOL).getValue();
   }
 
   @Override
@@ -103,8 +107,16 @@ public class IonNetRelationsTask extends AbstractTask {
 
       // check for condensed formulas
       // mass*2 - H2O and - modifications
-      int counter2 = checkForCondensedModifications(mzTol, mods, nets);
-      LOG.info("Found " + counter2 + " condensed molecules");
+      if (searchCondensed) {
+        int counter2 = checkForCondensedModifications(mzTol, mods, nets);
+        LOG.info("Found " + counter2 + " condensed molecules");
+      }
+
+      if (searchHeteroCondensed) {
+        int counter2 = checkForHeteroCondensed(mzTol, mods, nets);
+        LOG.info("Found " + counter2
+            + " condensed molecules (hetero - two different neutral molecules)");
+      }
 
       // show all as identity
       showAllIdentities(nets);
@@ -245,4 +257,92 @@ public class IonNetRelationsTask extends AbstractTask {
     return null;
   }
 
+  /**
+   * Checks for any modification of the type X+Y --> XY -H2O (condensation)
+   * 
+   * @param mzTol
+   * @param mods
+   * @param nets
+   * @return
+   */
+  public static int checkForHeteroCondensed(MZTolerance mzTol, IonModification[] mods,
+      IonNetwork[] nets) {
+    int counter = 0;
+    for (int i = 0; i < nets.length - 2; i++) {
+      for (int j = i + 1; j < nets.length - 1; j++) {
+        for (int k = j + 1; k < nets.length; k++) {
+          if (checkForHeteroCondensed(mzTol, mods, nets[i], nets[j], nets[k]))
+            counter++;
+        }
+      }
+    }
+    return counter;
+  }
+
+  /**
+   * Checks for any modification of the type X+Y --> XY -H2O (condensation)
+   * 
+   * @param mzTol
+   * @param mods
+   * @param a
+   * @param b
+   * @param c
+   * @return
+   */
+  public static boolean checkForHeteroCondensed(MZTolerance mzTol, IonModification[] mods,
+      IonNetwork a, IonNetwork b, IonNetwork c) {
+    // ensure c has the highest mass and is the multimer
+    if (b.getNeutralMass() > c.getNeutralMass()) {
+      IonNetwork tmp = c;
+      c = b;
+      b = tmp;
+    }
+    if (a.getNeutralMass() > c.getNeutralMass()) {
+      IonNetwork tmp = a;
+      a = c;
+      c = tmp;
+    }
+
+    IonModification[] mod =
+        checkForCondensedModifications(mzTol, mods, a.getNeutralMass(), b.getNeutralMass());
+    if (mod != null) {
+      IonNetworkHeteroCondensedRelation rel = new IonNetworkHeteroCondensedRelation(a, b, c);
+      a.addRelation(b, rel);
+      b.addRelation(a, rel);
+      return true;
+    }
+    return false;
+  }
+
+  public static IonModification[] checkForHeteroCondensed(MZTolerance mzTol, IonModification[] mods,
+      double massA, double massB, double massC) {
+    // ensure c.mass is heighest
+    if (massB > massC) {
+      double tmp = massC;
+      massC = massB;
+      massB = tmp;
+    }
+    if (massA > massC) {
+      double tmp = massC;
+      massC = massA;
+      massA = tmp;
+    }
+
+    // skip if mass a and b are the same
+    // to limit the number of isomers grouped to condensed structures
+    // massA and massB are going to be represented by a condensed homo-structure
+    if (mzTol.checkWithinTolerance(massA, massB)) {
+      return null;
+    }
+
+    IonModification water = IonModification.H2O;
+    // condense a and subtract water
+    double diff = Math.abs(massC - (massA + massB - water.getAbsMass()));
+    // check -H2O -> diff = 0
+    if (mzTol.checkWithinTolerance(diff, 0d)) {
+      return new IonModification[] {water};
+    }
+
+    return null;
+  }
 }

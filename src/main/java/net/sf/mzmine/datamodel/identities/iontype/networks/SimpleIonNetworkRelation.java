@@ -1,8 +1,11 @@
-package net.sf.mzmine.datamodel.identities.iontype;
+package net.sf.mzmine.datamodel.identities.iontype.networks;
 
 import java.util.List;
+import net.sf.mzmine.datamodel.identities.iontype.CombinedIonModification;
+import net.sf.mzmine.datamodel.identities.iontype.IonModification;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 
-public class IonNetworkRelation {
+public class SimpleIonNetworkRelation {
 
   // the linked network
   private IonNetwork a;
@@ -13,18 +16,18 @@ public class IonNetworkRelation {
   private IonModification modA;
   private IonModification modB;
 
-  public IonNetworkRelation(IonNetwork a, IonNetwork link, boolean isCondensed, boolean isModified,
+  public SimpleIonNetworkRelation(IonNetwork a, IonNetwork link, boolean isCondensed, boolean isModified,
       List<IonModification> mods) {
     this(a, link, isCondensed, isModified,
         new CombinedIonModification(mods.toArray(new IonModification[0])));
   }
 
-  public IonNetworkRelation(IonNetwork a, IonNetwork link, boolean isCondensed, boolean isModified,
+  public SimpleIonNetworkRelation(IonNetwork a, IonNetwork link, boolean isCondensed, boolean isModified,
       IonModification[] mods) {
     this(a, link, isCondensed, isModified, new CombinedIonModification(mods));
   }
 
-  public IonNetworkRelation(IonNetwork a, IonNetwork link, boolean isCondensed, boolean isModified,
+  public SimpleIonNetworkRelation(IonNetwork a, IonNetwork link, boolean isCondensed, boolean isModified,
       IonModification mod) {
     this.a = a;
     this.b = link;
