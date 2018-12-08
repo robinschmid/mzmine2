@@ -307,8 +307,9 @@ public class IonNetRelationsTask extends AbstractTask {
         checkForCondensedModifications(mzTol, mods, a.getNeutralMass(), b.getNeutralMass());
     if (mod != null) {
       IonNetworkHeteroCondensedRelation rel = new IonNetworkHeteroCondensedRelation(a, b, c);
-      a.addRelation(b, rel);
-      b.addRelation(a, rel);
+      a.addRelation(c, rel);
+      b.addRelation(c, rel);
+      c.addRelation(a, rel);
       return true;
     }
     return false;
