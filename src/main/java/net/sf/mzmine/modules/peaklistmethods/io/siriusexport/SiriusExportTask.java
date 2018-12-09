@@ -36,8 +36,8 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
-import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 import net.sf.mzmine.main.MZmineCore;
@@ -161,7 +161,7 @@ public class SiriusExportTask extends AbstractTask {
       }
 
       // Open file
-      try (final BufferedWriter bw = new BufferedWriter(new FileWriter(curFile, true))) {
+      try (final BufferedWriter bw = new BufferedWriter(new FileWriter(curFile, false))) {
         exportPeakList(peakList, bw);
       } catch (IOException e) {
         setStatus(TaskStatus.ERROR);
@@ -381,53 +381,59 @@ public class SiriusExportTask extends AbstractTask {
     // run MS annotations module or better metaMSEcorrelate
     String msAnnotationsFlags = createMSAnnotationFlags(row, mzForm);
 
-    // write correlation spectrum
-    writeHeader(writer, row, row.getBestPeak().getDataFile(), polarity, MsType.CORRELATED, -1,
-        msAnnotationsFlags);
-    writeCorrelationSpectrum(writer, row);
-
     List<DataPoint[]> toMerge = new ArrayList<>();
     List<String> sources = new ArrayList<>();
 
+    int countMSMS = 0;
+
     // for each MS/MS write corresponding MS1 and MSMS spectrum
     for (Feature f : row.getPeaks()) {
-      if (mergeMsMs == SiriusExportParameters.MERGE_MODE.MERGE_CONSECUTIVE_SCANS)
-        toMerge.clear();
-      if (f.getFeatureStatus() == Feature.FeatureStatus.DETECTED
-          && f.getMostIntenseFragmentScanNumber() >= 0) {
+      if (f.getMostIntenseFragmentScanNumber() >= 0) {
         final int[] scanNumbers = f.getScanNumbers().clone();
         Arrays.sort(scanNumbers);
-        int[] fs = fragmentScans.get(f.getDataFile().getName());
-        int startWith = scanNumbers[0];
-        int j = Arrays.binarySearch(fs, startWith);
-        if (j < 0)
-          j = (-j - 1);
-        for (int k = j; k < fs.length; ++k) {
-          final Scan scan = f.getDataFile().getScan(fs[k]);
-          if (scan.getMSLevel() > 1 && Math.abs(scan.getPrecursorMZ() - f.getMZ()) < 0.1) {
-            // TODO check if to include MS1 precursor scan
-            /*
-             * if (includeMs1) { // find precursor scan int prec = Arrays.binarySearch(scanNumbers,
-             * fs[k]); if (prec < 0) prec = -prec - 1; prec = Math.max(0, prec - 1); for (; prec <
-             * scanNumbers.length && scanNumbers[prec] < fs[k]; ++prec) { final Scan precursorScan =
-             * f.getDataFile().getScan(scanNumbers[prec]); if (precursorScan.getMSLevel() == 1) {
-             * writeHeader(writer, row, f.getDataFile(), polarity, MsType.MS,
-             * precursorScan.getScanNumber()); writeSpectrum(writer, massListName != null ?
-             * precursorScan.getMassList(massListName).getDataPoints() :
-             * precursorScan.getDataPoints()); } } }
-             */ // Do not include MS1 scans (except for isotope pattern)
-            if (mergeMsMs == SiriusExportParameters.MERGE_MODE.NO_MERGE) {
-              writeHeader(writer, row, f.getDataFile(), polarity, MsType.MSMS, scan.getScanNumber(),
-                  msAnnotationsFlags);
+        final int fscan = f.getMostIntenseFragmentScanNumber();
+        final Scan scan = f.getDataFile().getScan(fscan);
+        if (scan.getMSLevel() > 1 && Math.abs(scan.getPrecursorMZ() - f.getMZ()) < 0.1) {
+          // export correlated MS1 scan once
+          if (countMSMS == 0) {
+            writeHeader(writer, row, row.getBestPeak().getDataFile(), polarity, MsType.CORRELATED,
+                -1, msAnnotationsFlags);
+            writeCorrelationSpectrum(writer, row);
+          }
+          countMSMS++;
+          // find precursor scan
+          int prec = Arrays.binarySearch(scanNumbers, fscan);
+          if (prec < 0)
+            prec = -prec - 1;
+          prec = Math.max(0, prec - 1);
+          for (; prec < scanNumbers.length && scanNumbers[prec] < fscan; ++prec) {
+            final Scan precursorScan = f.getDataFile().getScan(scanNumbers[prec]);
+            if (precursorScan.getMSLevel() == 1) {
+              writeHeader(writer, row, f.getDataFile(), polarity, MsType.MS,
+                  precursorScan.getScanNumber(), msAnnotationsFlags);
               writeSpectrum(writer,
-                  massListName != null ? scan.getMassList(massListName).getDataPoints()
-                      : scan.getDataPoints());
-            } else {
-              if (mergeMsMs == SiriusExportParameters.MERGE_MODE.MERGE_OVER_SAMPLES)
-                sources.add(f.getDataFile().getName());
-              toMerge.add(massListName != null ? scan.getMassList(massListName).getDataPoints()
-                  : scan.getDataPoints());
+                  massListName != null ? precursorScan.getMassList(massListName).getDataPoints()
+                      : precursorScan.getDataPoints());
             }
+          }
+          //
+          // writeHeader(writer, row, f.getDataFile(), polarity, MsType.MSMS, scan.getScanNumber(),
+          // msAnnotationsFlags);
+          // writeSpectrum(writer,
+          // massListName != null ? scan.getMassList(massListName).getDataPoints()
+          // : scan.getDataPoints());
+
+          if (mergeMsMs == SiriusExportParameters.MERGE_MODE.NO_MERGE) {
+            writeHeader(writer, row, f.getDataFile(), polarity, MsType.MSMS, scan.getScanNumber(),
+                msAnnotationsFlags);
+            writeSpectrum(writer,
+                massListName != null ? scan.getMassList(massListName).getDataPoints()
+                    : scan.getDataPoints());
+          } else {
+            if (mergeMsMs == SiriusExportParameters.MERGE_MODE.MERGE_OVER_SAMPLES)
+              sources.add(f.getDataFile().getName());
+            toMerge.add(massListName != null ? scan.getMassList(massListName).getDataPoints()
+                : scan.getDataPoints());
           }
         }
         if (mergeMsMs == SiriusExportParameters.MERGE_MODE.MERGE_CONSECUTIVE_SCANS
@@ -634,8 +640,7 @@ public class SiriusExportTask extends AbstractTask {
     // intensity?
     writer.write(mzForm.format(row.getAverageMZ()));
     writer.write(" " + intensityForm.format(best.getHeight()));
-    writer.write(" " + (corr == null ? "" : corrForm.format(r))); // correlation
-    writer.write(" FEATURE_ID=" + row.getID());
+    writer.write(" " + (corr == null || Double.isNaN(r) ? "" : corrForm.format(r))); // correlation
     if (id != null) {
       writer.write(" " + id.getAdduct());
       // TODO added by Robin
@@ -647,6 +652,7 @@ public class SiriusExportTask extends AbstractTask {
         writer.write(" ");
     } else
       writer.write("   ");
+    writer.write(" FEATURE_ID=" + row.getID());
     writer.newLine();
     // export isotope pattern
     writeCorrelationIsotopes(writer, row);
@@ -671,16 +677,12 @@ public class SiriusExportTask extends AbstractTask {
           // TODO : best feature mz or avg?
           // intensity?
           writer.write(mzForm.format(dp.getMZ()));
-          writer.write(' ');
-          writer.write(intensityForm.format(dp.getIntensity()));
+          writer.write(" " + intensityForm.format(dp.getIntensity()));
 
           // isotope
-          writer.write(' ');
           writer.write(' '); // skip correlation
-          writer.write(' ');
-          writer.write(' '); // skip rowID
-          writer.write(' ');
-          writer.write("+" + Math.round((float) (dp.getMZ() - mz0)));
+          writer.write(" +" + Math.round((float) (dp.getMZ() - mz0)));
+          writer.write("    "); // skip rowID
           writer.newLine();
         }
       }
