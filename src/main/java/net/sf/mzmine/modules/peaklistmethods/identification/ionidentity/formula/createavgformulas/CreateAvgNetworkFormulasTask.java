@@ -26,8 +26,8 @@ import java.util.logging.Logger;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
-import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.datastructure.AverageResultFormula;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.sort.FormulaSortParameters;
@@ -115,7 +115,7 @@ public class CreateAvgNetworkFormulasTask extends AbstractTask {
     setStatus(TaskStatus.PROCESSING);
 
     // get all networks to run in parallel
-    IonNetwork[] nets = IonNetworkLogic.getAllNetworks(peakList);
+    IonNetwork[] nets = IonNetworkLogic.getAllNetworks(peakList, false);
     totalRows = nets.length;
     if (totalRows == 0) {
       setStatus(TaskStatus.ERROR);

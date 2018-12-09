@@ -102,8 +102,8 @@ public class IonNetworkLogic {
    * @param rows
    * @return
    */
-  public static List<IonNetwork> createAnnotationNetworks(PeakList pkl,
-      MZTolerance mzTolerance, boolean useGrouping) {
+  public static List<IonNetwork> createAnnotationNetworks(PeakList pkl, MZTolerance mzTolerance,
+      boolean useGrouping) {
     if (useGrouping && pkl.getGroups() != null) {
       List<IonNetwork> nets = new ArrayList<>();
       for (RowGroup g : pkl.getGroups())
@@ -476,7 +476,7 @@ public class IonNetworkLogic {
    * @param removeEmpty
    */
   public static void recalcAllAnnotationNetworks(PeakList peakList, boolean removeEmpty) {
-    streamNetworks(peakList).forEach(n -> {
+    streamNetworks(peakList, false).forEach(n -> {
       if (removeEmpty && n.size() < 2) {
         n.delete();
       } else
@@ -490,8 +490,13 @@ public class IonNetworkLogic {
    * @param peakList
    * @return
    */
-  public static IonNetwork[] getAllNetworks(PeakList peakList) {
-    return streamNetworks(peakList).toArray(IonNetwork[]::new);
+  public static IonNetwork[] getAllNetworks(PeakList peakList, boolean onlyBest) {
+    return streamNetworks(peakList, onlyBest).toArray(IonNetwork[]::new);
+  }
+
+  public static IonNetwork[] getAllNetworks(PeakList peakList, @Nullable IonNetworkSorter sorter,
+      boolean onlyBest) {
+    return streamNetworks(peakList, sorter, onlyBest).toArray(IonNetwork[]::new);
   }
 
   /**
@@ -500,8 +505,18 @@ public class IonNetworkLogic {
    * @param peakList
    * @return
    */
+  public static Stream<IonNetwork> streamNetworks(PeakList peakList, boolean onlyBest) {
+    return IonNetworkLogic.streamNetworks(peakList, null, onlyBest);
+  }
+
+  /**
+   * Stream all networks
+   * 
+   * @param peakList
+   * @return
+   */
   public static Stream<IonNetwork> streamNetworks(PeakList peakList) {
-    return IonNetworkLogic.streamNetworks(peakList, null);
+    return IonNetworkLogic.streamNetworks(peakList, null, false);
   }
 
   /**
@@ -512,11 +527,27 @@ public class IonNetworkLogic {
    * @return
    */
   public static Stream<IonNetwork> streamNetworks(PeakList peakList,
-      @Nullable IonNetworkSorter sorter) {
-    Stream<IonNetwork> stream =
-        Arrays.stream(peakList.getRows()).filter(PeakListRow::hasIonIdentity) //
-            .flatMap(r -> r.getIonIdentities().stream().map(IonIdentity::getNetwork)
-                .filter(Objects::nonNull).filter(net -> net.hasSmallestID(r)));
+      @Nullable IonNetworkSorter sorter, boolean onlyBest) {
+    Stream<IonNetwork> stream = null;
+    if (onlyBest)
+      stream = Arrays.stream(peakList.getRows()).filter(PeakListRow::hasIonIdentity)
+          // map to IonNetwork of best ion identity
+          .map(r -> {
+            IonNetwork net = r.getBestIonIdentity().getNetwork();
+            if (net.hasSmallestID(r))
+              return net;
+            else
+              return null;
+          }).filter(Objects::nonNull)
+          // filter that all PeakListRows have this set to best Ion identity
+          .filter(net -> net.keySet().stream()
+              .allMatch(r -> r.hasIonIdentity() && r.getBestIonIdentity().getNetwork() != null
+                  && r.getBestIonIdentity().getNetwork().getID() == net.getID()));
+    // get all IOnNetworks
+    else
+      stream = Arrays.stream(peakList.getRows()).filter(PeakListRow::hasIonIdentity) //
+          .flatMap(r -> r.getIonIdentities().stream().map(IonIdentity::getNetwork)
+              .filter(Objects::nonNull).filter(net -> net.hasSmallestID(r)));
     if (sorter != null)
       stream = stream.sorted(sorter);
     return stream;

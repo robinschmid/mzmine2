@@ -42,10 +42,10 @@ import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefi
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeatureFilter.OverlapResult;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkLibrary.CheckMode;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkRefinementParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkRefinementTask;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkMSMSCheckParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkMSMSCheckTask;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkRefinementParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkRefinementTask;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
@@ -304,8 +304,10 @@ public class IonNetworkingTask extends AbstractTask {
     // create network IDs
     LOG.info("Corr: create annotation network numbers");
     AtomicInteger netID = new AtomicInteger(0);
-    IonNetworkLogic.streamNetworks(peakList,
-        new IonNetworkSorter(SortingProperty.RT, SortingDirection.Ascending)).forEach(n -> {
+    IonNetworkLogic
+        .streamNetworks(peakList,
+            new IonNetworkSorter(SortingProperty.RT, SortingDirection.Ascending), false)
+        .forEach(n -> {
           n.setMzTolerance(library.getMzTolerance());
           n.setID(netID.getAndIncrement());
         });

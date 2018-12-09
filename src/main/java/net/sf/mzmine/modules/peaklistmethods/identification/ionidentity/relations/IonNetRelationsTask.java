@@ -90,7 +90,10 @@ public class IonNetRelationsTask extends AbstractTask {
       LOG.info("Starting to search for relations (modifications) between ion identity networks ");
 
       // get all ion identity networks
-      IonNetwork[] nets = IonNetworkLogic.getAllNetworks(peakList);
+      IonNetwork[] nets = IonNetworkLogic.getAllNetworks(peakList, true);
+
+      // filter out ? networks with unknown adducttypes
+      nets = Arrays.stream(nets).filter(net -> !net.isUndefined()).toArray(IonNetwork[]::new);
 
       if (nets.length == 0) {
         setErrorMessage("No ion identity networks found. Run ion networking");

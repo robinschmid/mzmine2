@@ -41,10 +41,10 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
-import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
-import net.sf.mzmine.datamodel.identities.iontype.IonType;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
+import net.sf.mzmine.datamodel.identities.iontype.IonType;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.datastructure.ResultFormula;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.restrictions.elements.ElementalHeuristicChecker;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.restrictions.rdbe.RDBERestrictionChecker;
@@ -103,25 +103,24 @@ public class FormulaPredictionIonNetworkTask extends AbstractTask {
      * FormulaPredictionPeakListParameters.neutralMass).getValue();
      */
     this.peakList = peakList;
-    mzTolerance = parameters.getParameter(FormulaPredictionIonNetworkParameters.mzTolerance)
-        .getValue();
+    mzTolerance =
+        parameters.getParameter(FormulaPredictionIonNetworkParameters.mzTolerance).getValue();
     elementCounts =
         parameters.getParameter(FormulaPredictionIonNetworkParameters.elements).getValue();
 
-    ppmOffset =
-        parameters.getParameter(FormulaPredictionIonNetworkParameters.ppmOffset).getValue();
+    ppmOffset = parameters.getParameter(FormulaPredictionIonNetworkParameters.ppmOffset).getValue();
 
 
-    checkRDBE = parameters
-        .getParameter(FormulaPredictionIonNetworkParameters.rdbeRestrictions).getValue();
+    checkRDBE =
+        parameters.getParameter(FormulaPredictionIonNetworkParameters.rdbeRestrictions).getValue();
     if (checkRDBE) {
       rdbeParameters =
           parameters.getParameter(FormulaPredictionIonNetworkParameters.rdbeRestrictions)
               .getEmbeddedParameters();
     }
 
-    checkRatios = parameters
-        .getParameter(FormulaPredictionIonNetworkParameters.elementalRatios).getValue();
+    checkRatios =
+        parameters.getParameter(FormulaPredictionIonNetworkParameters.elementalRatios).getValue();
     if (checkRatios) {
       ratiosParameters =
           parameters.getParameter(FormulaPredictionIonNetworkParameters.elementalRatios)
@@ -129,8 +128,8 @@ public class FormulaPredictionIonNetworkTask extends AbstractTask {
     }
 
 
-    checkIsotopes = parameters
-        .getParameter(FormulaPredictionIonNetworkParameters.isotopeFilter).getValue();
+    checkIsotopes =
+        parameters.getParameter(FormulaPredictionIonNetworkParameters.isotopeFilter).getValue();
     if (checkIsotopes) {
       isotopeParameters =
           parameters.getParameter(FormulaPredictionIonNetworkParameters.isotopeFilter)
@@ -144,9 +143,8 @@ public class FormulaPredictionIonNetworkTask extends AbstractTask {
     checkMSMS =
         parameters.getParameter(FormulaPredictionIonNetworkParameters.msmsFilter).getValue();
     if (checkMSMS) {
-      msmsParameters =
-          parameters.getParameter(FormulaPredictionIonNetworkParameters.msmsFilter)
-              .getEmbeddedParameters();
+      msmsParameters = parameters.getParameter(FormulaPredictionIonNetworkParameters.msmsFilter)
+          .getEmbeddedParameters();
       massListName = msmsParameters.getParameter(MSMSScoreParameters.massList).getValue();
       minMSMSScore = msmsParameters.getParameter(MSMSScoreParameters.msmsMinScore).getValue();
       // limit to top n signals
@@ -156,12 +154,10 @@ public class FormulaPredictionIonNetworkTask extends AbstractTask {
               .getValue();
     }
 
-    sortResults =
-        parameters.getParameter(FormulaPredictionIonNetworkParameters.sorting).getValue();
+    sortResults = parameters.getParameter(FormulaPredictionIonNetworkParameters.sorting).getValue();
     if (sortResults) {
-      FormulaSortParameters sortingParam =
-          parameters.getParameter(FormulaPredictionIonNetworkParameters.sorting)
-              .getEmbeddedParameters();
+      FormulaSortParameters sortingParam = parameters
+          .getParameter(FormulaPredictionIonNetworkParameters.sorting).getEmbeddedParameters();
       sorter = new FormulaSortTask(sortingParam);
     }
 
@@ -196,8 +192,9 @@ public class FormulaPredictionIonNetworkTask extends AbstractTask {
 
     setStatus(TaskStatus.PROCESSING);
 
-    // get all networks to run in parallel
-    IonNetwork[] nets = IonNetworkLogic.getAllNetworks(peakList);
+    // get all networks (filter out undefined ion types)
+    IonNetwork[] nets = IonNetworkLogic.streamNetworks(peakList, false)
+        .filter(net -> !net.isUndefined()).toArray(IonNetwork[]::new);
     totalRows = nets.length;
     if (totalRows == 0) {
       setStatus(TaskStatus.ERROR);

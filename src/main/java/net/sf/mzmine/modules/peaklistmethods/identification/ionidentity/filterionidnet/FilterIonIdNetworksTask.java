@@ -28,9 +28,9 @@ import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakList.PeakListAppliedMethod;
 import net.sf.mzmine.datamodel.PeakListRow;
-import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.datamodel.identities.iontype.IonModification;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
 import net.sf.mzmine.datamodel.impl.SimpleFeature;
 import net.sf.mzmine.datamodel.impl.SimplePeakListAppliedMethod;
@@ -137,7 +137,7 @@ public class FilterIonIdNetworksTask extends AbstractTask {
   public static void doFiltering(PeakList pkl, int minNetSize, boolean deleteSmallNoMajor,
       boolean deleteRowsWithoutIon) {
     // need to convert to array first to avoid concurren mod exception
-    Arrays.stream(IonNetworkLogic.getAllNetworks(pkl)).forEach(net -> {
+    Arrays.stream(IonNetworkLogic.getAllNetworks(pkl, false)).forEach(net -> {
       if (net.size() < minNetSize || (deleteSmallNoMajor && !hasMajorIonID(net)))
         net.delete();
     });

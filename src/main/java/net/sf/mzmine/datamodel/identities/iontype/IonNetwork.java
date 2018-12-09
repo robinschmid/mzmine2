@@ -58,6 +58,15 @@ public class IonNetwork extends HashMap<PeakListRow, IonIdentity>
   }
 
   /**
+   * The ion types are undefined M+?
+   * 
+   * @return
+   */
+  public boolean isUndefined() {
+    return values().stream().map(IonIdentity::getIonType).anyMatch(IonType::isUndefinedAdduct);
+  }
+
+  /**
    * Network ID
    * 
    * @return
