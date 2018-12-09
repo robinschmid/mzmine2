@@ -27,7 +27,7 @@ import net.sf.mzmine.util.ExitCode;
 public class SiriusExportParameters extends SimpleParameterSet {
 
   public SiriusExportParameters() {
-    super(new Parameter[] {PEAK_LISTS, FILENAME, MERGE, MASS_LIST,
+    super(new Parameter[] {PEAK_LISTS, FILENAME, MERGE, MASS_LIST, RENUMBER_ID,
         // metaMSEcorrelate or MS annotate parameters
         NEED_ANNOTATION, EXCLUDE_MULTICHARGE, EXCLUDE_MULTIMERS, EXCLUDE_INSOURCE_FRAGMENTS,
         // TODO experimental
@@ -49,6 +49,9 @@ public class SiriusExportParameters extends SimpleParameterSet {
       "mgf");
 
   public static final MassListParameter MASS_LIST = new MassListParameter();
+
+  public static final BooleanParameter RENUMBER_ID =
+      new BooleanParameter("Renumber IDs", "Resets the IDs (uses the row ID otherwise)", false);
 
   public static final BooleanParameter NEED_ANNOTATION =
       new BooleanParameter("Only rows with annotation",

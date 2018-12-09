@@ -63,6 +63,9 @@ public class SiriusExportTask extends AbstractTask {
   // ION
   public static String ION = "ION=";
 
+  // next id for renumbering
+  private int nextID = 1;
+  private boolean renumberID;
 
 
   private final static String plNamePattern = "{}";
@@ -131,6 +134,7 @@ public class SiriusExportTask extends AbstractTask {
     // experimental
     exportCorrMSOnce =
         parameters.getParameter(SiriusExportParameters.EXPORT_CORRMS1_ONLY_ONCE).getValue();
+    renumberID = parameters.getParameter(SiriusExportParameters.RENUMBER_ID).getValue();
   }
 
   @Override
@@ -449,6 +453,10 @@ public class SiriusExportTask extends AbstractTask {
           sources, msAnnotationsFlags);
       writeSpectrum(writer, merge(row.getAverageMZ(), toMerge));
     }
+
+    if (countMSMS > 0 && renumberID) {
+      nextID++;
+    }
     // exported
     return true;
   }
@@ -517,7 +525,8 @@ public class SiriusExportTask extends AbstractTask {
     writer.write("BEGIN IONS");
     writer.newLine();
     writer.write("FEATURE_ID=");
-    writer.write(String.valueOf(row.getID()));
+    int id = renumberID ? nextID : row.getID();
+    writer.write(String.valueOf(id));
     writer.newLine();
     writer.write("PEPMASS=");
     writer.write(mzForm.format(row.getBestPeak().getMZ()));
