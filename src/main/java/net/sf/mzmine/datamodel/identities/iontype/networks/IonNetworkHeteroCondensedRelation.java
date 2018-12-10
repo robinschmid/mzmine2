@@ -2,7 +2,7 @@ package net.sf.mzmine.datamodel.identities.iontype.networks;
 
 import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 
-public class IonNetworkHeteroCondensedRelation implements IonNetworkRelationInterf {
+public class IonNetworkHeteroCondensedRelation extends IonNetworkRelationInterf {
 
   // the linked network
   private IonNetwork a;
@@ -37,4 +37,13 @@ public class IonNetworkHeteroCondensedRelation implements IonNetworkRelationInte
     return "";
   }
 
+  @Override
+  public IonNetwork[] getAllNetworks() {
+    return new IonNetwork[] {a, b, condensed};
+  }
+
+  @Override
+  public String getDescription() {
+    return "condensation (X+Y-->XY+H2O)";
+  }
 }

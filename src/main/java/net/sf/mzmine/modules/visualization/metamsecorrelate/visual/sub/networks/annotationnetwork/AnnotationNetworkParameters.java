@@ -20,6 +20,7 @@ package net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks
 
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
+import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 
 public class AnnotationNetworkParameters extends SimpleParameterSet {
@@ -29,10 +30,16 @@ public class AnnotationNetworkParameters extends SimpleParameterSet {
    */
   public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter();
 
+  public static final BooleanParameter CONNECT_BY_NET_RELATIONS = new BooleanParameter(
+      "Connect by relations", "Connect neutral molecule nodes by network relations", true);
+  public static final BooleanParameter ONLY_BEST_NETWORKS =
+      new BooleanParameter("Only best networks",
+          "Only the networks that only contain first ranked ion identities for all rows", true);
+
   /**
    * Create the parameter set.
    */
   public AnnotationNetworkParameters() {
-    super(new Parameter[] {PEAK_LISTS});
+    super(new Parameter[] {PEAK_LISTS, CONNECT_BY_NET_RELATIONS, ONLY_BEST_NETWORKS});
   }
 }

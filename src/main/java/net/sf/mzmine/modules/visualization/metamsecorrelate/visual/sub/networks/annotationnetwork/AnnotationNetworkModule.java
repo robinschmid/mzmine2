@@ -55,8 +55,13 @@ public class AnnotationNetworkModule implements MZmineRunnableModule {
 
     PeakList[] pkls = parameters.getParameter(AnnotationNetworkParameters.PEAK_LISTS).getValue()
         .getMatchingPeakLists();
+    boolean connectByNetRelations =
+        parameters.getParameter(AnnotationNetworkParameters.CONNECT_BY_NET_RELATIONS).getValue();
+    boolean onlyBest =
+        parameters.getParameter(AnnotationNetworkParameters.ONLY_BEST_NETWORKS).getValue();
     if (pkls != null && pkls.length > 0) {
-      AnnotationNetworkFrame f = new AnnotationNetworkFrame(pkls[0]);
+      AnnotationNetworkFrame f =
+          new AnnotationNetworkFrame(pkls[0], connectByNetRelations, onlyBest);
       f.setVisible(true);
       return ExitCode.OK;
     }

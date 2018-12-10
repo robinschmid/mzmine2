@@ -1,31 +1,54 @@
 package net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.annotationnetwork.visual;
 
+import java.awt.FlowLayout;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
-import java.util.Arrays;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JToggleButton;
+import org.graphstream.graph.Edge;
 import org.graphstream.graph.Node;
-import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
-import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
+import net.sf.mzmine.datamodel.identities.iontype.networks.IonNetworkRelationInterf;
 import net.sf.mzmine.framework.networks.NetworkPanel;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.util.PeakListRowSorter;
-import net.sf.mzmine.util.SortingDirection;
-import net.sf.mzmine.util.SortingProperty;
 
 public class AnnotationNetworkPanel extends NetworkPanel {
   private static final Logger LOG = Logger.getLogger(AnnotationNetworkPanel.class.getName());
 
   private NumberFormat mzForm = MZmineCore.getConfiguration().getMZFormat();
 
+  public enum ATT {
+    TYPE, RT, MZ, ID, INTENSITY, NEUTRAL_MASS, CHARGE, ION_TYPE, MS2_VERIFICATION, LABEL, NET_ID, GROUP_ID;
+    @Override
+    public String toString() {
+      return super.toString().replaceAll("_", " ");
+    }
+  }
+
+  public enum EdgeType {
+    ION_IDENTITY, NETWORK_RELATIONS, MS2_SIMILARITY;
+  }
+
+  public enum NodeType {
+    NEUTRAL_M, FEATURE, NEUTRAL_LOSS_CENTER;
+  }
+
   // data
   private PeakList pkl;
   private PeakListRow[] rows;
+
+  private boolean connectByNetRelations;
+
+  private boolean onlyBest;
 
 
   /**
@@ -36,7 +59,57 @@ public class AnnotationNetworkPanel extends NetworkPanel {
   }
 
   public AnnotationNetworkPanel(boolean showTitle) {
-    super("Annotation networks", showTitle);
+    super("Ion identity networks (IINs)", showTitle);
+    addMenu();
+  }
+
+  private void addMenu() {
+    JPanel menu = getPnSettings();
+    menu.setVisible(true);
+    menu.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+    menu.add(new JLabel("Menu"));
+
+    JToggleButton toggleCollapseIons = new JToggleButton("Collapse ions", false);
+    menu.add(toggleCollapseIons);
+    toggleCollapseIons.addItemListener(il -> collapseIonNodes(toggleCollapseIons.isSelected()));
+    this.revalidate();
+  }
+
+  public void collapseIonNodes(boolean collapse) {
+    for (Node node : graph.getNodeSet()) {
+      NodeType type = node.getAttribute(ATT.TYPE.toString());
+      if (type != null) {
+        switch (type) {
+          case NEUTRAL_LOSS_CENTER:
+          case FEATURE:
+            if (collapse)
+              node.addAttribute("ui.hide");
+            else
+              node.removeAttribute("ui.hide");
+            break;
+          case NEUTRAL_M:
+            break;
+          default:
+            break;
+        }
+      }
+    }
+
+    for (Edge edge : graph.getEdgeSet()) {
+      EdgeType type = edge.getAttribute(ATT.TYPE.toString());
+      if (type != null) {
+        switch (type) {
+          case ION_IDENTITY:
+            if (collapse)
+              edge.addAttribute("ui.hide");
+            else
+              edge.removeAttribute("ui.hide");
+            break;
+          default:
+            break;
+        }
+      }
+    }
   }
 
   /**
@@ -72,27 +145,27 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     clear();
 
     if (rows != null) {
-      // sort by ID
-      Arrays.sort(rows, new PeakListRowSorter(SortingProperty.ID, SortingDirection.Ascending));
+      IonNetwork[] nets = IonNetworkLogic.getAllNetworks(rows, onlyBest);
 
       AtomicInteger added = new AtomicInteger(0);
-      // add all connections
-      for (PeakListRow row : rows) {
-        for (IonNetwork net : IonNetworkLogic.getAllNetworks(row)) {
-          if (net.hasSmallestID(row)) {
-            addNetworkToGraph(rows, net, added);
-          }
-        }
-      }
+      for (IonNetwork net : nets)
+        addNetworkToGraph(rows, net, added);
+
+      // add relations
+      if (connectByNetRelations)
+        addNetworkRelationsEdges(nets);
+
       // add id name
       for (Node node : graph) {
-        if (node.getId().startsWith("M ("))
+        if (node.getId().startsWith("Net"))
           node.addAttribute("ui.class", "MOL");
         if (node.getId().equals("NEUTRAL LOSSES"))
           node.addAttribute("ui.class", "NEUTRAL");
 
 
-        node.addAttribute("ui.label", node.getId());
+        String l = node.getAttribute(ATT.LABEL.toString());
+        if (l != null)
+          node.addAttribute("ui.label", l);
       }
       clearSelections();
 
@@ -100,42 +173,106 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     }
   }
 
-  private void addNetworkToGraph(PeakListRow[] rows, IonNetwork net, AtomicInteger added) {
-    String mnode = MessageFormat.format("M (m={0} Da) Net{1} corrID={2}",
-        mzForm.format(net.getNeutralMass()), net.getID(), net.getCorrID());
+  /**
+   * Adds all relational edges between networks
+   * 
+   * @param nets
+   */
+  private void addNetworkRelationsEdges(IonNetwork[] nets) {
+    for (IonNetwork net : nets) {
+      if (net.getRelations() != null) {
 
-    String neutralNode = "NEUTRAL LOSSES";
+        net.getRelations().entrySet().stream().map(Map.Entry::getValue)
+            // only do it once
+            .filter(rel -> rel.isLowestIDNetwork(net)).forEach(rel -> addRelationEdges(rel));
+      }
+    }
+  }
+
+  /**
+   * Adds all the edges of an relation between the networks
+   * 
+   * @param rel
+   */
+  private void addRelationEdges(IonNetworkRelationInterf rel) {
+    IonNetwork[] nets = rel.getAllNetworks();
+    for (int i = 0; i < nets.length - 1; i++) {
+      for (int j = i + 1; j < nets.length; j++) {
+        Node a = getNeutralMolNode(nets[i], false);
+        Node b = getNeutralMolNode(nets[j], false);
+        if (a != null && b != null) {
+          String edgeLabel = rel.getDescription();
+          String edgeName = addNewEdge(a, b, "relations", edgeLabel);
+          graph.getEdge(edgeName).addAttribute("ui.class", "medium");
+          graph.getEdge(edgeName).addAttribute(ATT.TYPE.toString(), EdgeType.NETWORK_RELATIONS);
+        }
+      }
+    }
+  }
+
+  private void addNetworkToGraph(PeakListRow[] rows, IonNetwork net, AtomicInteger added) {
+    Node mnode = getNeutralMolNode(net, true);
+    // bundle all neutral losses together
+    Node neutralNode = graph.addNode("NEUTRAL LOSSES");
+    neutralNode.setAttribute("ui.class", "NEUTRAL");
+    neutralNode.addAttribute(ATT.TYPE.toString(), NodeType.NEUTRAL_LOSS_CENTER);
 
     // add center neutral M
     net.entrySet().stream().forEach(e -> {
-      String node = toNodeName(e.getKey(), e.getValue());
+      Node node = getRowNode(e.getKey(), e.getValue());
 
       if (e.getValue().getIonType().isModifiedUndefinedAdduct()) {
         // neutral
-        addNewEdge(neutralNode, node);
-        graph.getNode(node).setAttribute("ui.class", "NEUTRAL");
+        addNewEdge(neutralNode, node, "ions");
       } else if (!e.getValue().getIonType().isUndefinedAdduct()) {
-        addNewEdge(mnode, node, Math.abs(net.getNeutralMass() - e.getKey().getAverageMZ()));
+        addNewDeltaMZEdge(mnode, node, Math.abs(net.getNeutralMass() - e.getKey().getAverageMZ()));
       }
       added.incrementAndGet();
     });
     // add all edges between ions
     net.entrySet().stream().forEach(e -> {
-      String node1 = toNodeName(e.getKey(), e.getValue());
+      PeakListRow row = e.getKey();
+      Node node1 = getRowNode(row, e.getValue());
 
-      int[] partnerID = e.getValue().getPartnerRowsID();
-      for (int id : partnerID) {
-        PeakListRow prow = findRowByID(id, rows);
-        if (prow != null) {
-          IonIdentity link = net.get(prow);
-          if (link != null) {
-            String node2 = toNodeName(prow, link);
-            addNewEdge(node1, node2, Math.abs(e.getKey().getAverageMZ() - prow.getAverageMZ()));
-            added.incrementAndGet();
-          }
+      e.getValue().getPartner().entrySet().stream().filter(Objects::nonNull).forEach(partner -> {
+        PeakListRow prow = partner.getKey();
+        IonIdentity link = partner.getValue();
+        // do only once (for row with smaller index)
+        if (prow != null && link != null && row.getID() < prow.getID()) {
+          Node node2 = getRowNode(prow, link);
+          addNewDeltaMZEdge(node1, node2,
+              Math.abs(e.getKey().getAverageMZ() - prow.getAverageMZ()));
+          added.incrementAndGet();
         }
-      }
+      });
     });
+  }
+
+  /**
+   * Creates or gets the neutral mol node of this net
+   * 
+   * @param net
+   * @return
+   */
+  private Node getNeutralMolNode(IonNetwork net, boolean createNew) {
+    String name = MessageFormat.format("M (m={0} Da) Net{1} corrID={2}",
+        mzForm.format(net.getNeutralMass()), net.getID(), net.getCorrID());
+
+    Node node = graph.getNode("Net" + net.getID());
+    if (node == null && createNew) {
+      node = graph.addNode("Net" + net.getID());
+      node.addAttribute(ATT.TYPE.toString(), NodeType.NEUTRAL_M);
+      node.addAttribute(ATT.LABEL.toString(), name);
+      node.addAttribute("ui.label", name);
+      node.addAttribute(ATT.NET_ID.toString(), net.getID());
+      node.addAttribute(ATT.RT.toString(), net.getAvgRT());
+      node.addAttribute(ATT.NEUTRAL_MASS.toString(), net.getNeutralMass());
+      node.addAttribute(ATT.INTENSITY.toString(), net.getHeightSum());
+      node.addAttribute(ATT.ION_TYPE.toString(),
+          net.values().stream().map(IonIdentity::getIonType).toArray());
+    }
+
+    return node;
   }
 
   public void setSelectedRow(PeakListRow row) {
@@ -145,8 +282,9 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     setSelectedNode(n);
   }
 
-  private void addNewEdge(String node1, String node2, double dmz) {
-    super.addNewEdge(node1, node2, "\u0394 " + mzForm.format(dmz));
+  private void addNewDeltaMZEdge(Node node1, Node node2, double dmz) {
+    String edgeName = super.addNewEdge(node1, node2, "ions", "\u0394 " + mzForm.format(dmz));
+    graph.getEdge(edgeName).addAttribute(ATT.TYPE.toString(), EdgeType.ION_IDENTITY);
   }
 
   private PeakListRow findRowByID(int id, PeakListRow[] rows) {
@@ -162,23 +300,10 @@ public class AnnotationNetworkPanel extends NetworkPanel {
   }
 
   private String toNodeName(PeakListRow row) {
-    PeakIdentity pid = row.getPreferredPeakIdentity();
-    String id = "";
-    if (pid != null) {
-      id = pid.getName();
-      if (pid instanceof IonIdentity) {
-        IonIdentity esi = (IonIdentity) pid;
-        id = esi.getAdduct() + " by n=" + esi.getPartnerRowsID().length;
-
-        if (esi.getNetID() != -1)
-          id += " (Net" + esi.getNetIDString() + ")";
-      }
-    }
-    return MessageFormat.format("{0} (mz={1}) {2}", row.getID(), mzForm.format(row.getAverageMZ()),
-        id);
+    return "Row" + row.getID();
   }
 
-  private String toNodeName(PeakListRow row, IonIdentity esi) {
+  private Node getRowNode(PeakListRow row, IonIdentity esi) {
     String id = "";
     if (esi != null) {
       id = esi.getAdduct() + " by n=" + esi.getPartnerRowsID().length;
@@ -186,7 +311,44 @@ public class AnnotationNetworkPanel extends NetworkPanel {
       if (esi.getNetID() != -1)
         id += " (Net" + esi.getNetIDString() + ")";
     }
-    return MessageFormat.format("{0} (mz={1}) {2}", row.getID(), mzForm.format(row.getAverageMZ()),
-        id);
+    String label = MessageFormat.format("{0} (mz={1}) {2}", row.getID(),
+        mzForm.format(row.getAverageMZ()), id);
+
+    Node node = graph.getNode(toNodeName(row));
+    if (node == null) {
+      node = graph.addNode(toNodeName(row));
+      node.addAttribute(ATT.LABEL.toString(), label);
+      node.addAttribute("ui.label", label);
+      node.addAttribute(ATT.TYPE.toString(), NodeType.FEATURE);
+      node.addAttribute(ATT.ID.toString(), row.getID());
+      node.addAttribute(ATT.RT.toString(), row.getAverageRT());
+      node.addAttribute(ATT.MZ.toString(), row.getAverageMZ());
+      node.addAttribute(ATT.INTENSITY.toString(), row.getBestPeak().getHeight());
+      node.addAttribute(ATT.CHARGE.toString(), row.getRowCharge());
+      node.addAttribute(ATT.GROUP_ID.toString(), row.getGroupID());
+      if (esi != null) {
+        node.addAttribute(ATT.ION_TYPE.toString(), esi.getIonType());
+        node.addAttribute(ATT.NEUTRAL_MASS.toString(),
+            esi.getIonType().getMass(row.getAverageMZ()));
+        node.addAttribute(ATT.NET_ID.toString(), esi.getNetID());
+        String ms2Veri = (esi.getMSMSMultimerCount() > 0 ? "xmer_verified" : "")
+            + (esi.getMSMSModVerify() > 0 ? " modification_verified" : "");
+        node.addAttribute(ATT.MS2_VERIFICATION.toString(), ms2Veri);
+      }
+    }
+
+    return node;
+  }
+
+  public void setConnectByNetRelations(boolean connectByNetRelations) {
+    this.connectByNetRelations = connectByNetRelations;
+  }
+
+  public void setOnlyBest(boolean onlyBest) {
+    this.onlyBest = onlyBest;
+  }
+
+  public void dispose() {
+    graph.clear();
   }
 }

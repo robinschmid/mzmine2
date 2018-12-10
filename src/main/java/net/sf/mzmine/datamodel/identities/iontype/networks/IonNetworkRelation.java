@@ -5,7 +5,7 @@ import net.sf.mzmine.datamodel.identities.iontype.CombinedIonModification;
 import net.sf.mzmine.datamodel.identities.iontype.IonModification;
 import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 
-public class IonNetworkRelation implements IonNetworkRelationInterf {
+public class IonNetworkRelation extends IonNetworkRelationInterf {
 
   // the linked network
   private IonNetwork a;
@@ -106,5 +106,19 @@ public class IonNetworkRelation implements IonNetworkRelationInterf {
     if (modB != null)
       name += modB.parseName();
     return name;
+  }
+
+  @Override
+  public String getDescription() {
+    String desc = "";
+    if (isCondensed)
+      desc = "condensation (2X-->XX+H2O) ";
+    desc += modB.parseName();
+    return desc;
+  }
+
+  @Override
+  public IonNetwork[] getAllNetworks() {
+    return new IonNetwork[] {a, b};
   }
 }

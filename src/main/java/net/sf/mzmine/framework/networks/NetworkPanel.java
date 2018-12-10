@@ -33,12 +33,14 @@ public class NetworkPanel extends JPanel {
   private static final Logger LOG = Logger.getLogger(NetworkPanel.class.getName());
 
   public static final String STYLE_SHEET =
-      "edge {fill-color: rgb(25,85,25); stroke-color: rgb(50,100,50); stroke-width: 1px;}  node {text-size: 11; fill-color: black; size: 10px; stroke-mode: plain; stroke-color: rgb(50,100,50); stroke-width: 1px;} "
-          + "node.important{fill-color: red;} node.big{size: 15px;} node.MOL{fill-color: cyan; size: 15px;}  node.NEUTRAL{fill-color: violet; }";
+      "edge {fill-color: rgb(50,100,50); stroke-color: rgb(50,100,50); stroke-width: 1px;}  node {text-size: 11; fill-color: black; size: 10px; stroke-mode: plain; stroke-color: rgb(50,100,50); stroke-width: 1px;} "
+          + "node.important{fill-color: red;} node.big{size: 15px;} node.MOL{fill-color: cyan; size: 15px;}  node.NEUTRAL{fill-color: violet;} "
+          + "edge.medium{fill-color: rgb(50,100,200); stroke-color: rgb(50,100,200); stroke-width: 2.5px;}";
 
   public static final String EXPORT_STYLE_SHEET =
       "edge {fill-color: rgb(25,85,25); stroke-color: rgb(50,100,50); stroke-width: 2px;}  node {text-size: 16; fill-color: black; size: 16px; stroke-mode: plain; stroke-color: rgb(50,100,50); stroke-width: 2px;} "
-          + "node.important{fill-color: red;} node.big{size: 20px;} node.MOL{fill-color: cyan; size: 20px;}  node.NEUTRAL{fill-color: violet; }";
+          + "node.important{fill-color: red;} node.big{size: 20px;} node.MOL{fill-color: cyan; size: 20px;}  node.NEUTRAL{fill-color: violet; }"
+          + "edge.medium{fill-color: rgb(50,100,200); stroke-color: rgb(50,100,200); stroke-width: 5px;}";
 
   protected String styleSheet;
 
@@ -62,6 +64,8 @@ public class NetworkPanel extends JPanel {
   private FileTypeFilter svgFilter;
   private FileTypeFilter graphMLFilter;
 
+  private JPanel pnSettings;
+
   /**
    * Create the panel.
    */
@@ -72,6 +76,11 @@ public class NetworkPanel extends JPanel {
   }
 
   public NetworkPanel(String title, String styleSheet, boolean showTitle) {
+    pnSettings = new JPanel();
+    pnSettings.setVisible(true);
+    this.add(pnSettings, BorderLayout.SOUTH);
+
+
     savePNG.setLayoutPolicy(LayoutPolicy.COMPUTED_FULLY_AT_NEW_IMAGE);
     savePNG.setStyleSheet(EXPORT_STYLE_SHEET);
     savePNG.setQuality(Quality.HIGH);
@@ -240,14 +249,27 @@ public class NetworkPanel extends JPanel {
     selectedNodes.clear();
   }
 
-  public String addNewEdge(String node1, String node2) {
-    String edge = node1 + node2;
+  public String addNewEdge(Node node1, Node node2, String edgeNameSuffix) {
+    String edge = node1.getId() + node2.getId() + edgeNameSuffix;
     graph.addEdge(edge, node1, node2);
     return edge;
   }
 
-  public String addNewEdge(String node1, String node2, Object edgeLabel) {
-    String edge = node1 + node2;
+  public String addNewEdge(String node1, String node2, String edgeNameSuffix) {
+    String edge = node1 + node2 + edgeNameSuffix;
+    graph.addEdge(edge, node1, node2);
+    return edge;
+  }
+
+  public String addNewEdge(Node node1, Node node2, String edgeNameSuffix, Object edgeLabel) {
+    String edge = node1.getId() + node2.getId() + edgeNameSuffix;
+    graph.addEdge(edge, node1, node2);
+    graph.getEdge(edge).addAttribute("ui.label", edgeLabel);
+    return edge;
+  }
+
+  public String addNewEdge(String node1, String node2, String edgeNameSuffix, Object edgeLabel) {
+    String edge = node1 + node2 + edgeNameSuffix;
     graph.addEdge(edge, node1, node2);
     graph.getEdge(edge).addAttribute("ui.label", edgeLabel);
     return edge;
@@ -275,6 +297,10 @@ public class NetworkPanel extends JPanel {
   public void resetZoom() {
     viewPercent = 1;
     view.getCamera().resetView();
+  }
+
+  public JPanel getPnSettings() {
+    return pnSettings;
   }
 
 }

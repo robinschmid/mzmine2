@@ -1,8 +1,17 @@
 package net.sf.mzmine.datamodel.identities.iontype.networks;
 
+import java.util.Arrays;
 import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 
-public interface IonNetworkRelationInterf {
+public abstract class IonNetworkRelationInterf {
 
-  public String getName(IonNetwork ionNetwork);
+  public abstract String getName(IonNetwork net);
+
+  public abstract String getDescription();
+
+  public abstract IonNetwork[] getAllNetworks();
+
+  public boolean isLowestIDNetwork(IonNetwork net) {
+    return Arrays.stream(getAllNetworks()).noneMatch(n -> n.getID() < net.getID());
+  }
 }
