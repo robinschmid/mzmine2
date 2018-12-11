@@ -312,10 +312,13 @@ public class IonNetworkingTask extends AbstractTask {
           n.setID(netID.getAndIncrement());
         });
 
+    // recalc annotation networks
+    IonNetworkLogic.recalcAllAnnotationNetworks(peakList, true);
+
     // refinement of adducts
     // do MSMS check for multimers
     if (doMSMSchecks) {
-      LOG.info("Corr: MSMS annotation refinement");
+      LOG.info("Corr: MSMS annotation checks");
       IonNetworkMSMSCheckTask task = new IonNetworkMSMSCheckTask(project, msmsChecks, peakList);
       task.doCheck();
     }

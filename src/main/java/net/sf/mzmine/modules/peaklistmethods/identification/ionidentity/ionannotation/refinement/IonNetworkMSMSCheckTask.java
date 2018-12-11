@@ -30,8 +30,9 @@ import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
-import net.sf.mzmine.datamodel.identities.iontype.IonType;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
+import net.sf.mzmine.datamodel.identities.iontype.IonType;
 import net.sf.mzmine.datamodel.identities.ms2.MSMSIdentityList;
 import net.sf.mzmine.datamodel.identities.ms2.MSMSIonRelationIdentity;
 import net.sf.mzmine.datamodel.identities.ms2.interf.AbstractMSMSIdentity;
@@ -89,7 +90,8 @@ public class IonNetworkMSMSCheckTask extends AbstractTask {
     massList = parameterSet.getParameter(IonNetworkMSMSCheckParameters.MASS_LIST).getValue();
     mzTolerance = parameterSet.getParameter(IonNetworkMSMSCheckParameters.MZ_TOLERANCE).getValue();
     minHeight = parameterSet.getParameter(IonNetworkMSMSCheckParameters.MIN_HEIGHT).getValue();
-    checkMultimers = parameterSet.getParameter(IonNetworkMSMSCheckParameters.CHECK_MULTIMERS).getValue();
+    checkMultimers =
+        parameterSet.getParameter(IonNetworkMSMSCheckParameters.CHECK_MULTIMERS).getValue();
     checkNeutralLosses =
         parameterSet.getParameter(IonNetworkMSMSCheckParameters.CHECK_NEUTRALLOSSES).getValue();
     neutralLossCheck = parameterSet.getParameter(IonNetworkMSMSCheckParameters.CHECK_NEUTRALLOSSES)
@@ -137,10 +139,12 @@ public class IonNetworkMSMSCheckTask extends AbstractTask {
 
     // has MS/MS
     try {
+      // check for 2M+X-->1M+X in MS2 of this row
       if (checkMultimers) {
         checkMultimers(row, massList, ident, mzTolerance, minHeight);
       }
 
+      // check for neutral loss in all rows of this IonNetwork
       if (checkNeutralLosses) {
         checkNeutralLosses(pkl, neutralLossCheck, row, massList, ident, mzTolerance, minHeight);
       }
@@ -172,14 +176,27 @@ public class IonNetworkMSMSCheckTask extends AbstractTask {
       if (ad.getIonType().getModCount() <= 0)
         continue;
 
+      IonNetwork net = ad.getNetwork();
       IonType mod = ad.getIonType();
 
-      // is in group?
+      // for all rows in network
+      PeakListRow[] rows = null;
+      if (net != null) {
+        rows = net.keySet().toArray(new PeakListRow[0]);
+      } else {
+        rows = ad.getPartner().keySet().toArray(new PeakListRow[0]);
+      }
+
+      // check group for correlation
       RowGroup group = row.getGroup();
-      if (group != null && !group.isEmpty()) {
-        for (PeakListRow parent : group) {
+
+      if (rows != null) {
+        for (PeakListRow parent : rows) {
+          if (parent == null || parent.getID() == row.getID())
+            continue;
+
           // only correlated rows in this group
-          if (group.isCorrelated(row, parent)) {
+          if (group == null || group.isCorrelated(row, parent)) {
             // has MS/MS
             Scan msmsScan = parent.getBestFragmentation();
             if (msmsScan == null)
@@ -197,39 +214,17 @@ public class IonNetworkMSMSCheckTask extends AbstractTask {
               c++;
           }
         }
-      } else {
-        // find all annotation edges
-        int[] rows = ad.getPartnerRowsID();
-        for (int parentid : rows) {
-          PeakListRow parent = pkl.findRowByID(parentid);
-          if (parent == null)
-            continue;
-          // has MS/MS
-          Scan msmsScan = parent.getBestFragmentation();
-          if (msmsScan == null)
-            continue;
-          MassList masses = msmsScan.getMassList(massList);
-          if (masses == null)
-            continue;
-
-          DataPoint[] dps = masses.getDataPoints();
-          Feature f = parent.getPeak(msmsScan.getDataFile());
-          double precursorMZ = f.getMZ();
-          boolean result = checkParentForNeutralLoss(neutralLossCheck, dps, ad, mod, mzTolerance,
-              minHeight, precursorMZ);
-          if (result)
-            c++;
-        }
       }
     }
 
     // sort and get best
     IonNetworkLogic.sortIonIdentities(row, true);
     IonIdentity best = row.getBestIonIdentity();
+    final int counter = c;
     if (c > 0)
-      LOG.info(MessageFormat.format(
+      LOG.info(() -> MessageFormat.format(
           "Found {0} MS/MS fragments for neutral loss identifiers of rowID=[1} m/z={2} RT={3} best:{4}",
-          c, row.getID(), row.getAverageMZ(), row.getAverageRT(),
+          counter, row.getID(), row.getAverageMZ(), row.getAverageRT(),
           best == null ? "" : best.toString()));
   }
 

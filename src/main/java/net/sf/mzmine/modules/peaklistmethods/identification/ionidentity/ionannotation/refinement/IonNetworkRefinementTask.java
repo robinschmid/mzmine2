@@ -87,7 +87,11 @@ public class IonNetworkRefinementTask extends AbstractTask {
   }
 
   public static void refine(PeakList pkl, int trueThreshold, boolean deleteXmersOnMSMS) {
+    long count = IonNetworkLogic.streamNetworks(pkl).count();
+    LOG.info("Ion identity networks before refinement: " + count);
+
     for (PeakListRow row : pkl.getRows()) {
+
       if (row.hasIonIdentity()) {
         List<IonIdentity> all = IonNetworkLogic.sortIonIdentities(row, true);
         IonIdentity best = all.get(0);
@@ -113,11 +117,13 @@ public class IonNetworkRefinementTask extends AbstractTask {
         }
       }
     }
+    count = IonNetworkLogic.streamNetworks(pkl).count();
+    LOG.info("Ion identity networks after refinement: " + count);
   }
 
   private static int getLinks(IonIdentity best) {
     int links = best.getPartnerRowsID().length;
-    if (best.getMSMSModVerify() > 0)
+    if (best.getMSMSMultimerCount() > 0)
       links++;
     return links;
   }
