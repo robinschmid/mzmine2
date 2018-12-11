@@ -90,7 +90,7 @@ public class RTNetworkPanel extends NetworkPanel {
     }
 
     // add id name
-    showAllLabels(true);
+    showNodeLabels(true);
     clearSelections();
 
     LOG.info("Added " + added + " connections");

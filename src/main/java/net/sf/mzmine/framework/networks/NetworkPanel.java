@@ -76,10 +76,11 @@ public class NetworkPanel extends JPanel {
         "org.graphstream.ui.j2dviewer.J2DGraphRenderer");
   }
 
+  /**
+   * @wbp.parser.constructor
+   */
   public NetworkPanel(String title, String styleSheet, boolean showTitle) {
-    pnSettings = new JPanel();
-    pnSettings.setVisible(true);
-    this.add(pnSettings, BorderLayout.SOUTH);
+    this.setLayout(new BorderLayout());
 
 
     savePNG.setLayoutPolicy(LayoutPolicy.COMPUTED_FULLY_AT_NEW_IMAGE);
@@ -93,7 +94,11 @@ public class NetworkPanel extends JPanel {
     saveDialog.setFileFilter(pngFilter);
 
     this.styleSheet = styleSheet;
-    this.setLayout(new BorderLayout());
+
+    // add settings
+    pnSettings = new JPanel();
+    pnSettings.setVisible(false);
+    this.add(pnSettings, BorderLayout.SOUTH);
     // add title
     lbTitle = new JLabel(title);
     JPanel pn = new JPanel();
@@ -190,12 +195,27 @@ public class NetworkPanel extends JPanel {
     lbTitle.setText(title);
   }
 
-  public void showAllLabels(boolean show) {
+  public void showNodeLabels(boolean show) {
     for (Node node : graph) {
-      if (show)
-        node.addAttribute("ui.label", node.getId());
-      else
+      if (show) {
+        Object label = node.getAttribute("LABEL");
+        if (label == null)
+          label = node.getId();
+        node.addAttribute("ui.label", label);
+      } else
         node.removeAttribute("ui.label");
+    }
+  }
+
+  public void showEdgeLabels(boolean show) {
+    for (Edge edge : graph.getEdgeSet()) {
+      if (show) {
+        Object label = edge.getAttribute("LABEL");
+        if (label == null)
+          label = edge.getId();
+        edge.addAttribute("ui.label", label);
+      } else
+        edge.removeAttribute("ui.label");
     }
   }
 
@@ -280,6 +300,7 @@ public class NetworkPanel extends JPanel {
     String edge = node1.getId() + node2.getId() + edgeNameSuffix;
     graph.addEdge(edge, node1, node2);
     graph.getEdge(edge).addAttribute("ui.label", edgeLabel);
+    graph.getEdge(edge).addAttribute("LABEL", edgeLabel);
     return edge;
   }
 
@@ -287,6 +308,7 @@ public class NetworkPanel extends JPanel {
     String edge = node1 + node2 + edgeNameSuffix;
     graph.addEdge(edge, node1, node2);
     graph.getEdge(edge).addAttribute("ui.label", edgeLabel);
+    graph.getEdge(edge).addAttribute("LABEL", edgeLabel);
     return edge;
   }
 

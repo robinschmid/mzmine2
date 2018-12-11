@@ -23,6 +23,7 @@ import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
+import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
@@ -62,6 +63,9 @@ public class MS2SimilarityParameters extends SimpleParameterSet {
   public static final DoubleParameter MIN_HEIGHT = new DoubleParameter("Min height (in MS2)",
       "Minimum height of signal", MZmineCore.getConfiguration().getIntensityFormat(), 1E3);
 
+  public static final BooleanParameter ONLY_BEST_MS2_SCAN = new BooleanParameter(
+      "Only best MS2 scan", "Compares only the best MS2 scan (or all MS2 scans)", true);
+
   public static final IntegerParameter MIN_DP = new IntegerParameter("Minimum data points (DP)",
       "Minimum data points in MS2 scan mass list", 3);
   public static final IntegerParameter MIN_MATCH = new IntegerParameter("Minimum matched signals",
@@ -79,9 +83,9 @@ public class MS2SimilarityParameters extends SimpleParameterSet {
 
   public MS2SimilarityParameters(boolean isSub) {
     super(isSub ? // no peak list and rt tolerance
-        new Parameter[] {MIN_HEIGHT, MIN_DP, MIN_MATCH, MAX_DP_FOR_DIFF}
-        : new Parameter[] {PEAK_LISTS, MASS_LIST, MODE, MZ_TOLERANCE, MIN_HEIGHT, MIN_DP, MIN_MATCH,
-            MAX_DP_FOR_DIFF});
+        new Parameter[] {ONLY_BEST_MS2_SCAN, MIN_HEIGHT, MIN_DP, MIN_MATCH, MAX_DP_FOR_DIFF}
+        : new Parameter[] {PEAK_LISTS, MASS_LIST, MODE, MZ_TOLERANCE, ONLY_BEST_MS2_SCAN,
+            MIN_HEIGHT, MIN_DP, MIN_MATCH, MAX_DP_FOR_DIFF});
   }
 
   @Override

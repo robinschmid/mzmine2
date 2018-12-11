@@ -74,7 +74,7 @@ public class MSMSSimilarityNetworkPanel extends NetworkPanel {
     }
 
     // add id name
-    showAllLabels(true);
+    showNodeLabels(true);
     clearSelections();
   }
 

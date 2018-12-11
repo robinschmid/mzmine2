@@ -90,7 +90,7 @@ public class CorrNetworkPanel extends NetworkPanel {
     }
 
     // add id name
-    showAllLabels(true);
+    showNodeLabels(true);
     clearSelections();
 
     LOG.info("Added " + added + " connections");
@@ -141,7 +141,7 @@ public class CorrNetworkPanel extends NetworkPanel {
     }
 
     // add id name
-    showAllLabels(true);
+    showNodeLabels(true);
     clearSelections();
 
     LOG.info("Added " + added + " connections");
@@ -173,7 +173,7 @@ public class CorrNetworkPanel extends NetworkPanel {
           });
 
       // add id name
-      showAllLabels(true);
+      showNodeLabels(true);
       clearSelections();
 
       LOG.info("Added " + added.get() + " connections");

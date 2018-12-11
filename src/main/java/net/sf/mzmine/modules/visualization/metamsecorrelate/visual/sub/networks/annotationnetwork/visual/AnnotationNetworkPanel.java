@@ -82,6 +82,25 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     JToggleButton toggleCollapseIons = new JToggleButton("Collapse ions", false);
     menu.add(toggleCollapseIons);
     toggleCollapseIons.addItemListener(il -> collapseIonNodes(toggleCollapseIons.isSelected()));
+
+    JToggleButton toggleShowMS2SimEdges = new JToggleButton("Show MS2 sim", true);
+    menu.add(toggleShowMS2SimEdges);
+    toggleShowMS2SimEdges
+        .addItemListener(il -> setShowMs2SimEdges(toggleShowMS2SimEdges.isSelected()));
+
+    JToggleButton toggleShowRelations = new JToggleButton("Show relational edges", true);
+    menu.add(toggleShowRelations);
+    toggleShowRelations
+        .addItemListener(il -> setConnectByNetRelations(toggleShowRelations.isSelected()));
+
+    JToggleButton toggleShowEdgeLabel = new JToggleButton("Show edge label", true);
+    menu.add(toggleShowEdgeLabel);
+    toggleShowEdgeLabel.addItemListener(il -> showEdgeLabels(toggleShowEdgeLabel.isSelected()));
+
+    JToggleButton toggleShowNodeLabel = new JToggleButton("Show node label", true);
+    menu.add(toggleShowNodeLabel);
+    toggleShowNodeLabel.addItemListener(il -> showNodeLabels(toggleShowNodeLabel.isSelected()));
+
     this.revalidate();
   }
 
@@ -272,8 +291,10 @@ public class AnnotationNetworkPanel extends NetworkPanel {
         if (a != null && b != null) {
           String edgeLabel = rel.getDescription();
           String edgeName = addNewEdge(a, b, "relations", edgeLabel);
-          graph.getEdge(edgeName).addAttribute("ui.class", "medium");
-          graph.getEdge(edgeName).addAttribute(ATT.TYPE.toString(), EdgeType.NETWORK_RELATIONS);
+          Edge edge = graph.getEdge(edgeName);
+          edge.addAttribute("ui.class", "medium");
+          edge.addAttribute(ATT.TYPE.toString(), EdgeType.NETWORK_RELATIONS);
+          edge.addAttribute(ATT.LABEL.toString(), edgeLabel);
         }
       }
     }
@@ -418,6 +439,7 @@ public class AnnotationNetworkPanel extends NetworkPanel {
 
   public void setConnectByNetRelations(boolean connectByNetRelations) {
     this.connectByNetRelations = connectByNetRelations;
+    collapseIonNodes(collapse);
   }
 
   public void setOnlyBest(boolean onlyBest) {
@@ -430,5 +452,6 @@ public class AnnotationNetworkPanel extends NetworkPanel {
 
   public void setShowMs2SimEdges(boolean ms2SimEdges) {
     this.ms2SimEdges = ms2SimEdges;
+    collapseIonNodes(collapse);
   }
 }
