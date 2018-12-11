@@ -33,6 +33,8 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.desktop.impl.projecttree.PeakListTreeModel;
 import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.R2RMap;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity.R2RMS2Similarity;
 import net.sf.mzmine.project.impl.MZmineProjectImpl;
 
 /**
@@ -50,6 +52,7 @@ public class SimplePeakList implements PeakList {
 
   public static DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
   private RowGroupList groups;
+  private R2RMap<R2RMS2Similarity> ms2SimilarityMap;
 
   public SimplePeakList(String name, RawDataFile dataFile) {
     this(name, new RawDataFile[] {dataFile});
@@ -394,4 +397,25 @@ public class SimplePeakList implements PeakList {
   public RowGroupList getGroups() {
     return groups;
   }
+
+  @Override
+  public void addR2RSimilarity(PeakListRow a, PeakListRow b, R2RMS2Similarity similarity) {
+    if (ms2SimilarityMap == null)
+      ms2SimilarityMap = new R2RMap<>();
+    ms2SimilarityMap.add(a, b, similarity);
+  }
+
+  @Override
+  public void addR2RSimilarity(R2RMap<R2RMS2Similarity> map) {
+    if (ms2SimilarityMap == null)
+      this.ms2SimilarityMap = map;
+    else
+      this.ms2SimilarityMap.putAll(map);
+  }
+
+  @Override
+  public R2RMap<R2RMS2Similarity> getR2RSimilarityMap() {
+    return ms2SimilarityMap;
+  }
+
 }

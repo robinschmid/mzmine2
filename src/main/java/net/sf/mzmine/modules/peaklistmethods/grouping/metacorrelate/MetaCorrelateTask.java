@@ -347,7 +347,8 @@ public class MetaCorrelateTask extends AbstractTask {
 
       if (checkMS2Similarity) {
         // calc MS2 similarity for later visualisation
-        MS2SimilarityTask ms2Sim = new MS2SimilarityTask(ms2SimilarityCheckParam, groups);
+        MS2SimilarityTask ms2Sim =
+            new MS2SimilarityTask(ms2SimilarityCheckParam, groupedPKL, groups);
         steps.add(ms2Sim);
       }
 

@@ -18,13 +18,19 @@
 
 package net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.logging.Logger;
+import java.util.stream.IntStream;
 import com.google.common.util.concurrent.AtomicDouble;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
+import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.impl.RowGroupList;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.MS2SimilarityProviderGroup;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.R2RMap;
@@ -47,24 +53,30 @@ public class MS2SimilarityTask extends AbstractTask {
   private AtomicDouble stageProgress;
 
   private String massList;
-  private PeakListRow[] rows;
   private int minMatch;
   private int minDP;
   private int maxDPForDiff = 25;
   private MZTolerance mzTolerance;
   private double minHeight;
 
-  // target
-  private R2RMap<R2RMS2Similarity> map;
+  private PeakListRow[] rows;
   private RowGroupList groups;
   private MS2SimilarityProviderGroup group;
+  private IonNetwork[] nets;
+
+  // target
+  private R2RMap<R2RMS2Similarity> map;
+
+  private PeakList peakList;
+
 
 
   /**
    * 
    * @param parameterSet
    */
-  public MS2SimilarityTask(final ParameterSet parameterSet) {
+  public MS2SimilarityTask(final ParameterSet parameterSet, PeakList peakList) {
+    this.peakList = peakList;
     massList = parameterSet.getParameter(MS2SimilarityParameters.MASS_LIST).getValue();
     mzTolerance = parameterSet.getParameter(MS2SimilarityParameters.MZ_TOLERANCE).getValue();
     minHeight = parameterSet.getParameter(MS2SimilarityParameters.MIN_HEIGHT).getValue();
@@ -80,8 +92,9 @@ public class MS2SimilarityTask extends AbstractTask {
    * @param parameterSet the parameters.
    * @param list peak list.
    */
-  public MS2SimilarityTask(final ParameterSet parameterSet, RowGroupList groups) {
-    this(parameterSet);
+  public MS2SimilarityTask(final ParameterSet parameterSet, PeakList peakList,
+      RowGroupList groups) {
+    this(parameterSet, peakList);
     // performed on groups
     this.groups = groups;
   }
@@ -92,8 +105,8 @@ public class MS2SimilarityTask extends AbstractTask {
    * @param parameterSet the parameters.
    * @param list peak list.
    */
-  public MS2SimilarityTask(final ParameterSet parameterSet, PeakListRow[] rows) {
-    this(parameterSet);
+  public MS2SimilarityTask(final ParameterSet parameterSet, PeakList peakList, PeakListRow[] rows) {
+    this(parameterSet, peakList);
     this.rows = rows;
   }
 
@@ -103,9 +116,15 @@ public class MS2SimilarityTask extends AbstractTask {
    * @param parameterSet the parameters.
    * @param list peak list.
    */
-  public MS2SimilarityTask(final ParameterSet parameterSet, MS2SimilarityProviderGroup group) {
-    this(parameterSet);
+  public MS2SimilarityTask(final ParameterSet parameterSet, PeakList peakList,
+      MS2SimilarityProviderGroup group) {
+    this(parameterSet, peakList);
     this.group = group;
+  }
+
+  public MS2SimilarityTask(ParameterSet parameters, PeakList peakList, IonNetwork[] nets) {
+    this(parameters, peakList);
+    this.nets = nets;
   }
 
   @Override
@@ -126,7 +145,10 @@ public class MS2SimilarityTask extends AbstractTask {
   }
 
   public void doCheck() {
-    if (group != null)
+    if (nets != null)
+      map = checkNetworks(peakList, nets, massList, mzTolerance, minHeight, minDP, minMatch,
+          maxDPForDiff);
+    else if (group != null)
       map = checkGroup(group, massList, mzTolerance, minHeight, minDP, minMatch, maxDPForDiff);
     else if (rows != null)
       map = checkRows(rows, massList, mzTolerance, minHeight, minDP, minMatch, maxDPForDiff);
@@ -134,6 +156,7 @@ public class MS2SimilarityTask extends AbstractTask {
       checkGroupList(this, stageProgress, groups, massList, mzTolerance, minHeight, minDP, minMatch,
           maxDPForDiff);
   }
+
 
   /**
    * Resulting map
@@ -172,6 +195,23 @@ public class MS2SimilarityTask extends AbstractTask {
     return checkGroup(g, massList, mzTolerance, minHeight, minDP, minMatch, maxDPForDiff);
   }
 
+
+  public static R2RMap<R2RMS2Similarity> checkNetworks(PeakList peakList, IonNetwork[] nets,
+      String massList, MZTolerance mzTolerance, double minHeight, int minDP, int minMatch,
+      int maxDPForDiff) {
+    // get all rows of all networks
+    Map<Integer, PeakListRow> rows = new HashMap<>();
+    Arrays.stream(nets).flatMap(n -> n.keySet().stream()).forEach(r -> rows.put(r.getID(), r));
+    PeakListRow[] allRows = rows.values().toArray(new PeakListRow[0]);
+
+    // add all to this map
+    R2RMap<R2RMS2Similarity> map =
+        checkRows(allRows, massList, mzTolerance, minHeight, minMatch, minDP, maxDPForDiff);
+
+    peakList.addR2RSimilarity(map);
+    return map;
+  }
+
   /**
    * Checks for MS2 similarity of all rows in a group. the resulting map is set to the groups3
    * 
@@ -194,17 +234,30 @@ public class MS2SimilarityTask extends AbstractTask {
     return map;
   }
 
+  /**
+   * Parallel check of all r2r similarities
+   * 
+   * @param rows
+   * @param massList
+   * @param mzTolerance
+   * @param minHeight
+   * @param minDP
+   * @param minMatch
+   * @param maxDPForDiff
+   * @return
+   */
   public static R2RMap<R2RMS2Similarity> checkRows(PeakListRow[] rows, String massList,
       MZTolerance mzTolerance, double minHeight, int minDP, int minMatch, int maxDPForDiff) {
     R2RMap<R2RMS2Similarity> map = new R2RMap<>();
-    for (int i = 0; i < rows.length - 1; i++) {
-      for (int j = 1; j < rows.length; j++) {
+
+    IntStream.range(0, rows.length - 1).parallel().forEach(i -> {
+      for (int j = i + 1; j < rows.length; j++) {
         R2RMS2Similarity r2r = checkR2R(rows[i], rows[j], massList, mzTolerance, minHeight, minDP,
             minMatch, maxDPForDiff);
         if (r2r != null)
           map.add(rows[i], rows[j], r2r);
       }
-    }
+    });
     return map;
   }
 

@@ -23,6 +23,7 @@ import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
+import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.MassListParameter;
@@ -38,12 +39,19 @@ import net.sf.mzmine.util.ExitCode;
  */
 public class MS2SimilarityParameters extends SimpleParameterSet {
 
+  public enum Mode {
+    GROUPS, ION_NETWORKS;
+  }
+
   // NOT INCLUDED in sub
   // General parameters
   public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter();
 
   public static final MassListParameter MASS_LIST =
       new MassListParameter("Mass lists (MS2)", "MS2 mass lists");
+
+  public static final ComboParameter<Mode> MODE = new ComboParameter<>("Run check on",
+      "Run check on row groups or ion identity networks (IINs)", Mode.values(), Mode.ION_NETWORKS);
 
   // INCLUDED in sub
   // MZ-tolerance: deisotoping, adducts
@@ -72,7 +80,7 @@ public class MS2SimilarityParameters extends SimpleParameterSet {
   public MS2SimilarityParameters(boolean isSub) {
     super(isSub ? // no peak list and rt tolerance
         new Parameter[] {MIN_HEIGHT, MIN_DP, MIN_MATCH, MAX_DP_FOR_DIFF}
-        : new Parameter[] {PEAK_LISTS, MASS_LIST, MZ_TOLERANCE, MIN_HEIGHT, MIN_DP, MIN_MATCH,
+        : new Parameter[] {PEAK_LISTS, MASS_LIST, MODE, MZ_TOLERANCE, MIN_HEIGHT, MIN_DP, MIN_MATCH,
             MAX_DP_FOR_DIFF});
   }
 

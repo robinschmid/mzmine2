@@ -22,6 +22,8 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import com.google.common.collect.Range;
 import net.sf.mzmine.datamodel.impl.RowGroupList;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.R2RMap;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity.R2RMS2Similarity;
 
 /**
  * 
@@ -241,4 +243,10 @@ public interface PeakList {
    * @return
    */
   public RowGroupList getGroups();
+
+  public void addR2RSimilarity(R2RMap<R2RMS2Similarity> map);
+
+  public R2RMap<R2RMS2Similarity> getR2RSimilarityMap();
+
+  void addR2RSimilarity(PeakListRow a, PeakListRow b, R2RMS2Similarity similarity);
 }
