@@ -11,6 +11,7 @@ import net.sf.mzmine.datamodel.PeakList;
 public class AnnotationNetworkFrame extends JFrame {
 
   private AnnotationNetworkPanel contentPane;
+  private JCheckBoxMenuItem toggleCollapseIons;
 
   /**
    * Launch the application.
@@ -40,7 +41,7 @@ public class AnnotationNetworkFrame extends JFrame {
     setContentPane(contentPane);
 
     JMenuBar menuBar = new JMenuBar();
-    JCheckBoxMenuItem toggleCollapseIons = new JCheckBoxMenuItem("Collapse ions", false);
+    toggleCollapseIons = new JCheckBoxMenuItem("Collapse ions", false);
     toggleCollapseIons
         .addItemListener(il -> contentPane.collapseIonNodes(toggleCollapseIons.isSelected()));
     menuBar.add(toggleCollapseIons);
@@ -57,10 +58,15 @@ public class AnnotationNetworkFrame extends JFrame {
   }
 
 
-  public AnnotationNetworkFrame(PeakList pkl, boolean connectByNetRelations, boolean onlyBest) {
+  public AnnotationNetworkFrame(PeakList pkl, boolean collapseNodes, boolean connectByNetRelations,
+      boolean onlyBest, boolean ms2SimEdges) {
     this();
+    toggleCollapseIons.setSelected(collapseNodes);
+    contentPane.collapseIonNodes(collapseNodes);
     contentPane.setConnectByNetRelations(connectByNetRelations);
     contentPane.setOnlyBest(onlyBest);
+    contentPane.setShowMs2SimEdges(ms2SimEdges);
+    // last, as it recreates the graph
     contentPane.setPeakList(pkl);
   }
 

@@ -65,15 +65,15 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
-import net.sf.mzmine.datamodel.impl.RowGroupList;
 import net.sf.mzmine.datamodel.impl.RowGroup;
+import net.sf.mzmine.datamodel.impl.RowGroupList;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.CorrelationData;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.CorrelationData.SimilarityMeasure;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.CorrelationRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.MS2SimilarityProviderGroup;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.R2GroupCorrelationData;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.R2RFullCorrelationData;
-import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.CorrelationData.SimilarityMeasure;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.annotationnetwork.visual.AnnotationNetworkPanel;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.corrnetwork.visual.CorrNetworkPanel;
 import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.msmsnetwork.visual.MSMSSimilarityNetworkPanel;
@@ -1076,12 +1076,12 @@ public class MSEcorrGroupWindow extends JFrame {
     RowGroup g = getTableModel().getGroup();
     if (g != null) {
       PeakListRow[] rows = g.toArray(new PeakListRow[g.size()]);
-      pnAnnNetwork.setPeakListRows(rows);
+      pnAnnNetwork.setPeakListRows(rows, peakList.getR2RSimilarityMap());
       pnAnnNetwork.resetZoom();
       pnAnnNetwork.revalidate();
       pnAnnNetwork.repaint();
     } else {
-      pnAnnNetwork.setPeakListRows(null);
+      pnAnnNetwork.setPeakListRows(null, peakList.getR2RSimilarityMap());
     }
   }
 
@@ -1113,7 +1113,7 @@ public class MSEcorrGroupWindow extends JFrame {
       pnCorrNetwork.revalidate();
       pnCorrNetwork.repaint();
     } else {
-      pnAnnNetwork.setPeakListRows(null);
+      pnCorrNetwork.setPeakListRows(null);
     }
   }
 
@@ -1128,7 +1128,7 @@ public class MSEcorrGroupWindow extends JFrame {
       pnMSMSNetwork.revalidate();
       pnMSMSNetwork.repaint();
     } else {
-      pnAnnNetwork.setPeakListRows(null);
+      pnMSMSNetwork.setMap(null);
     }
   }
 

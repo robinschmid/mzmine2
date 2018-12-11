@@ -59,9 +59,13 @@ public class AnnotationNetworkModule implements MZmineRunnableModule {
         parameters.getParameter(AnnotationNetworkParameters.CONNECT_BY_NET_RELATIONS).getValue();
     boolean onlyBest =
         parameters.getParameter(AnnotationNetworkParameters.ONLY_BEST_NETWORKS).getValue();
+    boolean collapseNodes =
+        parameters.getParameter(AnnotationNetworkParameters.COLLAPSE_NODES).getValue();
+    boolean ms2SimEdges =
+        parameters.getParameter(AnnotationNetworkParameters.MS2_SIMILARITY_EDGES).getValue();
     if (pkls != null && pkls.length > 0) {
-      AnnotationNetworkFrame f =
-          new AnnotationNetworkFrame(pkls[0], connectByNetRelations, onlyBest);
+      AnnotationNetworkFrame f = new AnnotationNetworkFrame(pkls[0], collapseNodes,
+          connectByNetRelations, onlyBest, ms2SimEdges);
       f.setVisible(true);
       return ExitCode.OK;
     }

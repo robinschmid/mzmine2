@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import org.graphstream.graph.Edge;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.MultiGraph;
@@ -224,6 +225,20 @@ public class NetworkPanel extends JPanel {
 
   public Viewer getViewer() {
     return viewer;
+  }
+
+  public void setNodeVisible(Node node, boolean visible) {
+    if (!visible)
+      node.addAttribute("ui.hide");
+    else
+      node.removeAttribute("ui.hide");
+  }
+
+  public void setEdgeVisible(Edge edge, boolean visible) {
+    if (!visible)
+      edge.addAttribute("ui.hide");
+    else
+      edge.removeAttribute("ui.hide");
   }
 
   /**

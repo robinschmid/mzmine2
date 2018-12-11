@@ -30,8 +30,15 @@ public class AnnotationNetworkParameters extends SimpleParameterSet {
    */
   public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter();
 
+  public static final BooleanParameter COLLAPSE_NODES = new BooleanParameter("Collapse nodes",
+      "Collapse all nodes into neutral molecule nodes", true);
+
+  public static final BooleanParameter MS2_SIMILARITY_EDGES =
+      new BooleanParameter("MS2 similarity edges", "Show MS2 similarity edges", true);
+
   public static final BooleanParameter CONNECT_BY_NET_RELATIONS = new BooleanParameter(
       "Connect by relations", "Connect neutral molecule nodes by network relations", true);
+
   public static final BooleanParameter ONLY_BEST_NETWORKS =
       new BooleanParameter("Only best networks",
           "Only the networks that only contain first ranked ion identities for all rows", true);
@@ -40,6 +47,7 @@ public class AnnotationNetworkParameters extends SimpleParameterSet {
    * Create the parameter set.
    */
   public AnnotationNetworkParameters() {
-    super(new Parameter[] {PEAK_LISTS, CONNECT_BY_NET_RELATIONS, ONLY_BEST_NETWORKS});
+    super(new Parameter[] {PEAK_LISTS, ONLY_BEST_NETWORKS, COLLAPSE_NODES, CONNECT_BY_NET_RELATIONS,
+        MS2_SIMILARITY_EDGES});
   }
 }
