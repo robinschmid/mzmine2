@@ -301,7 +301,7 @@ public class AnnotationNetworkPanel extends NetworkPanel {
   }
 
   private void addNetworkToGraph(PeakListRow[] rows, IonNetwork net, AtomicInteger added) {
-    Node mnode = getNeutralMolNode(net, true);
+    Node mnode = !net.isUndefined() ? getNeutralMolNode(net, true) : null;
     // bundle all neutral losses together
     Node neutralNode = graph.addNode("NEUTRAL LOSSES");
     neutralNode.setAttribute("ui.class", "NEUTRAL");
@@ -336,6 +336,7 @@ public class AnnotationNetworkPanel extends NetworkPanel {
         }
       });
     });
+
   }
 
   /**
