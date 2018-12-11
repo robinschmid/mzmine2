@@ -131,8 +131,8 @@ public class AnnotationNetworkPanel extends NetworkPanel {
    */
   public void setPeakList(PeakList pkl) {
     this.pkl = pkl;
-    this.ms2SimMap = pkl.getR2RSimilarityMap();
     if (pkl != null) {
+      this.ms2SimMap = pkl.getR2RSimilarityMap();
       createNewGraph(pkl.getRows());
     } else
       clear();

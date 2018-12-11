@@ -269,7 +269,7 @@ public class MS2SimilarityTask extends AbstractTask {
         }
       }
       if (stageProgress != null)
-        stageProgress.getAndSet((i + 1) / (double) rows.length);
+        stageProgress.getAndAdd(1d / rows.length);
     });
     LOG.info("MS2 similarity check on rows done");
     return map;
