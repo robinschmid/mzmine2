@@ -18,18 +18,48 @@
 
 package net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport;
 
-import net.sf.mzmine.datamodel.PeakListRow;
+import java.text.MessageFormat;
+import java.util.HashMap;
 import net.sf.mzmine.datamodel.impl.SimplePeakIdentity;
-import net.sf.mzmine.main.MZmineCore;
 
 public class GNPSResultsIdentity extends SimplePeakIdentity {
+  public enum ATT {
+    CLUSTER_INDEX("cluster index", Integer.class), // GNPS cluster - similarity
+    COMPOUND_NAME("Compound_Name", String.class), // library match
+    ADDUCT("Adduct", String.class), // from GNPS library match
+    MASS_DIFF("MassDiff", Double.class), // absolute diff from gnps
+    LIBRARY_MATCH_SCORE("MQScore", Double.class), // cosine score to library spec
+    SHARED_SIGNALS("SharedPeaks", String.class), // shared signals library <-> query
+    INCHI("INCHI", String.class), SMILES("Smiles", String.class), // structures
+    IONSOURCE("Ion_Source", String.class), IONMODE("IonMode",
+        String.class), INSTRUMENT("Instrument", String.class), // instrument
+    GNPS_LIBRARY_URL("GNPSLibraryURL", String.class), // link to library entry
+    GNPS_NETWORK_URL("GNPSLinkout_Network", String.class), // link to network
+    GNPS_CLUSTER_URL("GNPSLinkout_Cluster", String.class); // link to cluster
 
-  public GNPSResultsIdentity(final PeakListRow peak1, final PeakListRow peak2) {
+    private String key;
+    private Class c;
 
-    super("Complex of " + MZmineCore.getConfiguration().getMZFormat().format(peak1.getAverageMZ())
-        + " and " + MZmineCore.getConfiguration().getMZFormat().format(peak2.getAverageMZ())
-        + " m/z");
+    private ATT(String key, Class c) {
+      this.c = c;
+      this.key = key;
+    }
 
-    setPropertyValue(PROPERTY_METHOD, "Complex search");
+    public Class getValueClass() {
+      return c;
+    }
+
+    public String getKey() {
+      return key;
+    }
   }
+
+  private HashMap<String, ?> results;
+
+  public GNPSResultsIdentity(HashMap<String, ?> results, String compound, String adduct) {
+    super(MessageFormat.format("{0} ({1})", compound, adduct));
+
+    setPropertyValue(PROPERTY_METHOD, "GNPS results import");
+  }
+
 }

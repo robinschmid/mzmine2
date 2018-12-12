@@ -9,6 +9,7 @@ public class R2RMS2Similarity {
   //
   private List<MS2Similarity> massDiffSim = new ArrayList<>();
   private List<MS2Similarity> spectralSim = new ArrayList<>();
+  private MS2Similarity gnpsSim = null;
 
   public R2RMS2Similarity(PeakListRow a, PeakListRow b) {
     super();
@@ -24,8 +25,13 @@ public class R2RMS2Similarity {
     spectralSim.add(sim);
   }
 
+  public void addGNPSSim(MS2Similarity sim) {
+    gnpsSim = sim;
+  }
+
+
   public int size() {
-    return Math.max(massDiffSim.size(), spectralSim.size());
+    return Math.max(gnpsSim != null ? 1 : 0, Math.max(massDiffSim.size(), spectralSim.size()));
   }
 
   public List<MS2Similarity> getMassDiffSim() {
@@ -34,6 +40,10 @@ public class R2RMS2Similarity {
 
   public List<MS2Similarity> getSpectralSim() {
     return spectralSim;
+  }
+
+  public MS2Similarity getGNPSSim() {
+    return gnpsSim;
   }
 
   public PeakListRow getA() {

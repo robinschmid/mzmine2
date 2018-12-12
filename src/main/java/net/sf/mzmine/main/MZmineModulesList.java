@@ -54,6 +54,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.pe
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.singlerow.FormulaPredictionModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.sort.FormulaSortModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.fragmentsearch.FragmentSearchModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsImportModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.clearionids.ClearIonIdentitiesModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.filterionidnet.FilterIonIdNetworksModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.formula.createavgformulas.CreateAvgNetworkFormulasModule;
@@ -208,7 +209,7 @@ public class MZmineModulesList {
       CustomDBSearchModule.class, FragmentSearchModule.class, AdductSearchModule.class,
       ComplexSearchModule.class, OnlineDBSearchModule.class, LipidSearchModule.class,
       CameraSearchModule.class, NistMsSearchModule.class, Ms2SearchModule.class,
-      SiriusProcessingModule.class, MS2SimilarityModule.class,
+      SiriusProcessingModule.class, MS2SimilarityModule.class, GNPSResultsImportModule.class,
 
       // Visualizers
       TICVisualizerModule.class, SpectraVisualizerModule.class, TwoDVisualizerModule.class,
