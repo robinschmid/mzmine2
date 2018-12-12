@@ -13,7 +13,8 @@ import org.graphstream.graph.implementations.SingleGraph;
 import org.graphstream.ui.geom.Point3;
 import org.graphstream.ui.spriteManager.Sprite;
 import org.graphstream.ui.spriteManager.SpriteManager;
-import org.graphstream.ui.swingViewer.ViewPanel;
+import org.graphstream.ui.swing_viewer.SwingViewer;
+import org.graphstream.ui.swing_viewer.ViewPanel;
 import org.graphstream.ui.view.Viewer;
 
 public class TestNetworks {
@@ -37,7 +38,7 @@ public class TestNetworks {
   private void createDirect() {
     Graph graph = new SingleGraph("tutorial 1");
 
-    graph.addAttribute("ui.stylesheet", styleSheet);
+    graph.setAttribute("ui.stylesheet", styleSheet);
     graph.setAutoCreate(true);
     graph.setStrict(false);
     graph.display();
@@ -51,7 +52,7 @@ public class TestNetworks {
     graph.addEdge("EF", "E", "F");
 
     for (Node node : graph) {
-      node.addAttribute("ui.label", node.getId());
+      node.setAttribute("ui.label", node.getId());
     }
 
 
@@ -61,7 +62,7 @@ public class TestNetworks {
   private void createDirectMulti() {
     Graph graph = new SingleGraph("tutorial 1");
 
-    graph.addAttribute("ui.stylesheet", styleSheet);
+    graph.setAttribute("ui.stylesheet", styleSheet);
     graph.setAutoCreate(true);
     graph.setStrict(false);
     graph.display();
@@ -79,7 +80,7 @@ public class TestNetworks {
     graph.addEdge("XZ", "X", "Z");
 
     for (Node node : graph) {
-      node.addAttribute("ui.label", node.getId());
+      node.setAttribute("ui.label", node.getId());
     }
 
   }
@@ -87,7 +88,7 @@ public class TestNetworks {
   public void createNewFrame() {
     graph = new SingleGraph("tutorial 1");
 
-    graph.addAttribute("ui.stylesheet", styleSheet);
+    graph.setAttribute("ui.stylesheet", styleSheet);
     graph.setAutoCreate(true);
     graph.setStrict(false);
 
@@ -99,17 +100,17 @@ public class TestNetworks {
     graph.addEdge("DF", "D", "F");
     graph.addEdge("EF", "E", "F");
 
-    graph.getEdge("AB").addAttribute("ui.label", "EDGE");
+    graph.getEdge("AB").setAttribute("ui.label", "EDGE");
 
-    graph.getNode("A").addAttribute("ui.class", "big, important");
+    graph.getNode("A").setAttribute("ui.class", "big, important");
 
     for (Node node : graph) {
-      node.addAttribute("ui.label", node.getId());
+      node.setAttribute("ui.label", node.getId());
     }
 
-    viewer = new Viewer(graph, Viewer.ThreadingModel.GRAPH_IN_GUI_THREAD);
+    viewer = new SwingViewer(graph, Viewer.ThreadingModel.GRAPH_IN_GUI_THREAD);
     viewer.enableAutoLayout();
-    view = viewer.addDefaultView(false); // false indicates "no JFrame".
+    view = (ViewPanel) viewer.addDefaultView(false); // false indicates "no JFrame".
 
     JFrame frame = new JFrame("Test");
     frame.getContentPane().add(view, BorderLayout.CENTER);

@@ -83,7 +83,7 @@ public class MSMSSimilarityNetworkPanel extends NetworkPanel {
     String label = edgeSuffix + "=" + percForm.format(corr);
     String edge = node1 + node2 + edgeSuffix;
     graph.addEdge(edge, node1, node2);
-    graph.getEdge(edge).addAttribute("ui.label", label);
+    graph.getEdge(edge).setAttribute("ui.label", label);
   }
 
   private String toNodeName(PeakListRow row) {

@@ -19,13 +19,10 @@ import org.graphstream.graph.implementations.MultiGraph;
 import org.graphstream.stream.file.FileSink;
 import org.graphstream.stream.file.FileSinkGraphML;
 import org.graphstream.stream.file.FileSinkImages;
-import org.graphstream.stream.file.FileSinkImages.LayoutPolicy;
-import org.graphstream.stream.file.FileSinkImages.OutputType;
-import org.graphstream.stream.file.FileSinkImages.Quality;
-import org.graphstream.stream.file.FileSinkImages.Resolutions;
 import org.graphstream.stream.file.FileSinkSVG;
 import org.graphstream.ui.geom.Point3;
-import org.graphstream.ui.swingViewer.ViewPanel;
+import org.graphstream.ui.swing_viewer.SwingViewer;
+import org.graphstream.ui.swing_viewer.ViewPanel;
 import org.graphstream.ui.view.Viewer;
 import net.sf.mzmine.util.files.FileAndPathUtil;
 import net.sf.mzmine.util.files.FileTypeFilter;
@@ -48,7 +45,7 @@ public class NetworkPanel extends JPanel {
   // save screenshot
   protected FileSinkGraphML saveGraphML = new FileSinkGraphML();
   protected FileSinkSVG saveSVG = new FileSinkSVG();
-  protected FileSinkImages savePNG = new FileSinkImages(OutputType.PNG, Resolutions.HD1080);
+  protected FileSinkImages savePNG = FileSinkImages.createDefault();
   protected JFileChooser saveDialog = new JFileChooser();
 
   // visual
@@ -82,11 +79,6 @@ public class NetworkPanel extends JPanel {
   public NetworkPanel(String title, String styleSheet, boolean showTitle) {
     this.setLayout(new BorderLayout());
 
-
-    savePNG.setLayoutPolicy(LayoutPolicy.COMPUTED_FULLY_AT_NEW_IMAGE);
-    savePNG.setStyleSheet(EXPORT_STYLE_SHEET);
-    savePNG.setQuality(Quality.HIGH);
-
     saveDialog.addChoosableFileFilter(pngFilter = new FileTypeFilter("png", "PNG image file"));
     saveDialog.addChoosableFileFilter(svgFilter = new FileTypeFilter("svg", "SVG image file"));
     saveDialog.addChoosableFileFilter(
@@ -113,9 +105,9 @@ public class NetworkPanel extends JPanel {
     graph.setAutoCreate(true);
     graph.setStrict(false);
 
-    viewer = new Viewer(graph, Viewer.ThreadingModel.GRAPH_IN_GUI_THREAD);
+    viewer = new SwingViewer(graph, Viewer.ThreadingModel.GRAPH_IN_GUI_THREAD);
     viewer.enableAutoLayout();
-    view = viewer.addDefaultView(false); // false indicates "no JFrame".
+    view = (ViewPanel) viewer.addDefaultView(false); // false indicates "no JFrame".
     this.add(view, BorderLayout.CENTER);
 
     // listener
@@ -164,6 +156,12 @@ public class NetworkPanel extends JPanel {
         && saveDialog.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
       File f = saveDialog.getSelectedFile();
       if (saveDialog.getFileFilter() == pngFilter || FileAndPathUtil.getFormat(f).equals("png")) {
+        // savePNG = new FileSinkImages
+        // savePNG.setResolution(2500, 2500);
+        // savePNG.setOutputType(OutputType.png);
+        // savePNG.setLayoutPolicy(LayoutPolicy.COMPUTED_FULLY_AT_NEW_IMAGE);
+        // savePNG.setStyleSheet(EXPORT_STYLE_SHEET);
+        // savePNG.setQuality(Quality.HIGH);
         f = FileAndPathUtil.getRealFilePath(saveDialog.getSelectedFile(), "png");
         saveToFile(savePNG, f);
       } else if (saveDialog.getFileFilter() == svgFilter
@@ -201,22 +199,22 @@ public class NetworkPanel extends JPanel {
         Object label = node.getAttribute("LABEL");
         if (label == null)
           label = node.getId();
-        node.addAttribute("ui.label", label);
+        node.setAttribute("ui.label", label);
       } else
         node.removeAttribute("ui.label");
     }
   }
 
   public void showEdgeLabels(boolean show) {
-    for (Edge edge : graph.getEdgeSet()) {
+    graph.edges().forEach(edge -> {
       if (show) {
         Object label = edge.getAttribute("LABEL");
         if (label == null)
           label = edge.getId();
-        edge.addAttribute("ui.label", label);
+        edge.setAttribute("ui.label", label);
       } else
         edge.removeAttribute("ui.label");
-    }
+    });
   }
 
   /**
@@ -225,9 +223,9 @@ public class NetworkPanel extends JPanel {
    */
   public void setStyleSheet(String styleSheet) {
     this.styleSheet = styleSheet;
-    graph.addAttribute("ui.stylesheet", styleSheet);
-    graph.addAttribute("ui.quality", 3);
-    graph.addAttribute("ui.antialias");
+    graph.setAttribute("ui.stylesheet", styleSheet);
+    graph.setAttribute("ui.quality", 3);
+    graph.setAttribute("ui.antialias");
   }
 
   public void clear() {
@@ -249,14 +247,14 @@ public class NetworkPanel extends JPanel {
 
   public void setNodeVisible(Node node, boolean visible) {
     if (!visible)
-      node.addAttribute("ui.hide");
+      node.setAttribute("ui.hide");
     else
       node.removeAttribute("ui.hide");
   }
 
   public void setEdgeVisible(Edge edge, boolean visible) {
     if (!visible)
-      edge.addAttribute("ui.hide");
+      edge.setAttribute("ui.hide");
     else
       edge.removeAttribute("ui.hide");
   }
@@ -273,7 +271,7 @@ public class NetworkPanel extends JPanel {
 
   public void addSelection(Node node) {
     if (node != null) {
-      node.addAttribute("ui.class", "big, important");
+      node.setAttribute("ui.class", "big, important");
       selectedNodes.add(node);
     }
   }
@@ -299,16 +297,16 @@ public class NetworkPanel extends JPanel {
   public String addNewEdge(Node node1, Node node2, String edgeNameSuffix, Object edgeLabel) {
     String edge = node1.getId() + node2.getId() + edgeNameSuffix;
     graph.addEdge(edge, node1, node2);
-    graph.getEdge(edge).addAttribute("ui.label", edgeLabel);
-    graph.getEdge(edge).addAttribute("LABEL", edgeLabel);
+    graph.getEdge(edge).setAttribute("ui.label", edgeLabel);
+    graph.getEdge(edge).setAttribute("LABEL", edgeLabel);
     return edge;
   }
 
   public String addNewEdge(String node1, String node2, String edgeNameSuffix, Object edgeLabel) {
     String edge = node1 + node2 + edgeNameSuffix;
     graph.addEdge(edge, node1, node2);
-    graph.getEdge(edge).addAttribute("ui.label", edgeLabel);
-    graph.getEdge(edge).addAttribute("LABEL", edgeLabel);
+    graph.getEdge(edge).setAttribute("ui.label", edgeLabel);
+    graph.getEdge(edge).setAttribute("LABEL", edgeLabel);
     return edge;
   }
 

@@ -106,8 +106,8 @@ public class AnnotationNetworkPanel extends NetworkPanel {
 
   public void collapseIonNodes(boolean collapse) {
     this.collapse = collapse;
-    for (Node node : graph.getNodeSet()) {
-      NodeType type = node.getAttribute(ATT.TYPE.toString());
+    for (Node node : graph) {
+      NodeType type = (NodeType) node.getAttribute(ATT.TYPE.toString());
       if (type != null) {
         switch (type) {
           case NEUTRAL_LOSS_CENTER:
@@ -122,8 +122,8 @@ public class AnnotationNetworkPanel extends NetworkPanel {
       }
     }
 
-    for (Edge edge : graph.getEdgeSet()) {
-      EdgeType type = edge.getAttribute(ATT.TYPE.toString());
+    graph.edges().forEach(edge -> {
+      EdgeType type = (EdgeType) edge.getAttribute(ATT.TYPE.toString());
       if (type != null) {
         switch (type) {
           case ION_IDENTITY:
@@ -140,7 +140,7 @@ public class AnnotationNetworkPanel extends NetworkPanel {
             break;
         }
       }
-    }
+    });
   }
 
   /**
@@ -193,14 +193,14 @@ public class AnnotationNetworkPanel extends NetworkPanel {
       // add id name
       for (Node node : graph) {
         if (node.getId().startsWith("Net"))
-          node.addAttribute("ui.class", "MOL");
+          node.setAttribute("ui.class", "MOL");
         if (node.getId().equals("NEUTRAL LOSSES"))
-          node.addAttribute("ui.class", "NEUTRAL");
+          node.setAttribute("ui.class", "NEUTRAL");
 
 
-        String l = node.getAttribute(ATT.LABEL.toString());
+        String l = (String) node.getAttribute(ATT.LABEL.toString());
         if (l != null)
-          node.addAttribute("ui.label", l);
+          node.setAttribute("ui.label", l);
       }
       clearSelections();
 
@@ -239,8 +239,8 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     if (a != null && b != null) {
       String edgeName = addNewEdge(a, b, EdgeType.MS2_SIMILARITY.toString(), label);
       Edge edge = graph.getEdge(edgeName);
-      edge.addAttribute(ATT.TYPE.toString(), EdgeType.MS2_SIMILARITY);
-      edge.addAttribute(ATT.LABEL.toString(), label);
+      edge.setAttribute(ATT.TYPE.toString(), EdgeType.MS2_SIMILARITY);
+      edge.setAttribute(ATT.LABEL.toString(), label);
     }
     // get all neutral M
     if (ra.hasIonIdentity() && rb.hasIonIdentity()) {
@@ -254,8 +254,8 @@ public class AnnotationNetworkPanel extends NetworkPanel {
                   String edgeName =
                       addNewEdge(nodeA, nodeB, EdgeType.MS2_SIMILARITY_NEUTRAL_M.toString(), label);
                   Edge edge = graph.getEdge(edgeName);
-                  edge.addAttribute(ATT.TYPE.toString(), EdgeType.MS2_SIMILARITY_NEUTRAL_M);
-                  edge.addAttribute(ATT.LABEL.toString(), label);
+                  edge.setAttribute(ATT.TYPE.toString(), EdgeType.MS2_SIMILARITY_NEUTRAL_M);
+                  edge.setAttribute(ATT.LABEL.toString(), label);
                 });
           });
     }
@@ -292,9 +292,9 @@ public class AnnotationNetworkPanel extends NetworkPanel {
           String edgeLabel = rel.getDescription();
           String edgeName = addNewEdge(a, b, "relations", edgeLabel);
           Edge edge = graph.getEdge(edgeName);
-          edge.addAttribute("ui.class", "medium");
-          edge.addAttribute(ATT.TYPE.toString(), EdgeType.NETWORK_RELATIONS);
-          edge.addAttribute(ATT.LABEL.toString(), edgeLabel);
+          edge.setAttribute("ui.class", "medium");
+          edge.setAttribute(ATT.TYPE.toString(), EdgeType.NETWORK_RELATIONS);
+          edge.setAttribute(ATT.LABEL.toString(), edgeLabel);
         }
       }
     }
@@ -305,7 +305,7 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     // bundle all neutral losses together
     Node neutralNode = graph.addNode("NEUTRAL LOSSES");
     neutralNode.setAttribute("ui.class", "NEUTRAL");
-    neutralNode.addAttribute(ATT.TYPE.toString(), NodeType.NEUTRAL_LOSS_CENTER);
+    neutralNode.setAttribute(ATT.TYPE.toString(), NodeType.NEUTRAL_LOSS_CENTER);
 
     // add center neutral M
     net.entrySet().stream().forEach(e -> {
@@ -355,14 +355,14 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     Node node = graph.getNode("Net" + net.getID());
     if (node == null && createNew) {
       node = graph.addNode("Net" + net.getID());
-      node.addAttribute(ATT.TYPE.toString(), NodeType.NEUTRAL_M);
-      node.addAttribute(ATT.LABEL.toString(), name);
-      node.addAttribute("ui.label", name);
-      node.addAttribute(ATT.NET_ID.toString(), net.getID());
-      node.addAttribute(ATT.RT.toString(), net.getAvgRT());
-      node.addAttribute(ATT.NEUTRAL_MASS.toString(), net.getNeutralMass());
-      node.addAttribute(ATT.INTENSITY.toString(), net.getHeightSum());
-      node.addAttribute(ATT.ION_TYPE.toString(),
+      node.setAttribute(ATT.TYPE.toString(), NodeType.NEUTRAL_M);
+      node.setAttribute(ATT.LABEL.toString(), name);
+      node.setAttribute("ui.label", name);
+      node.setAttribute(ATT.NET_ID.toString(), net.getID());
+      node.setAttribute(ATT.RT.toString(), net.getAvgRT());
+      node.setAttribute(ATT.NEUTRAL_MASS.toString(), net.getNeutralMass());
+      node.setAttribute(ATT.INTENSITY.toString(), net.getHeightSum());
+      node.setAttribute(ATT.ION_TYPE.toString(),
           net.values().stream().map(IonIdentity::getIonType).toArray());
     }
 
@@ -378,7 +378,7 @@ public class AnnotationNetworkPanel extends NetworkPanel {
 
   private void addNewDeltaMZEdge(Node node1, Node node2, double dmz) {
     String edgeName = super.addNewEdge(node1, node2, "ions", "\u0394 " + mzForm.format(dmz));
-    graph.getEdge(edgeName).addAttribute(ATT.TYPE.toString(), EdgeType.ION_IDENTITY);
+    graph.getEdge(edgeName).setAttribute(ATT.TYPE.toString(), EdgeType.ION_IDENTITY);
   }
 
   private PeakListRow findRowByID(int id, PeakListRow[] rows) {
@@ -415,23 +415,23 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     Node node = graph.getNode(toNodeName(row));
     if (node == null) {
       node = graph.addNode(toNodeName(row));
-      node.addAttribute(ATT.LABEL.toString(), label);
-      node.addAttribute("ui.label", label);
-      node.addAttribute(ATT.TYPE.toString(), NodeType.FEATURE);
-      node.addAttribute(ATT.ID.toString(), row.getID());
-      node.addAttribute(ATT.RT.toString(), row.getAverageRT());
-      node.addAttribute(ATT.MZ.toString(), row.getAverageMZ());
-      node.addAttribute(ATT.INTENSITY.toString(), row.getBestPeak().getHeight());
-      node.addAttribute(ATT.CHARGE.toString(), row.getRowCharge());
-      node.addAttribute(ATT.GROUP_ID.toString(), row.getGroupID());
+      node.setAttribute(ATT.LABEL.toString(), label);
+      node.setAttribute("ui.label", label);
+      node.setAttribute(ATT.TYPE.toString(), NodeType.FEATURE);
+      node.setAttribute(ATT.ID.toString(), row.getID());
+      node.setAttribute(ATT.RT.toString(), row.getAverageRT());
+      node.setAttribute(ATT.MZ.toString(), row.getAverageMZ());
+      node.setAttribute(ATT.INTENSITY.toString(), row.getBestPeak().getHeight());
+      node.setAttribute(ATT.CHARGE.toString(), row.getRowCharge());
+      node.setAttribute(ATT.GROUP_ID.toString(), row.getGroupID());
       if (esi != null) {
-        node.addAttribute(ATT.ION_TYPE.toString(), esi.getIonType());
-        node.addAttribute(ATT.NEUTRAL_MASS.toString(),
+        node.setAttribute(ATT.ION_TYPE.toString(), esi.getIonType());
+        node.setAttribute(ATT.NEUTRAL_MASS.toString(),
             esi.getIonType().getMass(row.getAverageMZ()));
-        node.addAttribute(ATT.NET_ID.toString(), esi.getNetID());
+        node.setAttribute(ATT.NET_ID.toString(), esi.getNetID());
         String ms2Veri = (esi.getMSMSMultimerCount() > 0 ? "xmer_verified" : "")
             + (esi.getMSMSModVerify() > 0 ? " modification_verified" : "");
-        node.addAttribute(ATT.MS2_VERIFICATION.toString(), ms2Veri);
+        node.setAttribute(ATT.MS2_VERIFICATION.toString(), ms2Veri);
       }
     }
 
