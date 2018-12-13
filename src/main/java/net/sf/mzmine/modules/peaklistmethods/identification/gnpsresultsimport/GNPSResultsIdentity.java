@@ -54,12 +54,19 @@ public class GNPSResultsIdentity extends SimplePeakIdentity {
     }
   }
 
-  private HashMap<String, ?> results;
+  private HashMap<String, Object> results;
 
-  public GNPSResultsIdentity(HashMap<String, ?> results, String compound, String adduct) {
+  public GNPSResultsIdentity(HashMap<String, Object> results, String compound, String adduct) {
     super(MessageFormat.format("{0} ({1})", compound, adduct));
-
+    this.results = results;
     setPropertyValue(PROPERTY_METHOD, "GNPS results import");
   }
 
+  public HashMap<String, Object> getResults() {
+    return results;
+  }
+
+  public Object getResult(ATT att) {
+    return results.get(att.toString());
+  }
 }

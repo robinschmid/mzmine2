@@ -5,11 +5,12 @@ import java.text.DecimalFormat;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
@@ -25,6 +26,7 @@ import net.sf.mzmine.framework.networks.NetworkPanel;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.R2RMap;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity.R2RMS2Similarity;
+import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsIdentity;
 
 public class AnnotationNetworkPanel extends NetworkPanel {
   private static final Logger LOG = Logger.getLogger(AnnotationNetworkPanel.class.getName());
@@ -40,12 +42,20 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     }
   }
 
+  public enum EDGE_ATT {
+    TYPE, LABEL, GNPS_SCORE, DIFF_SCORE, SIM_SCORE, DIFF_N, SIM_N;
+    @Override
+    public String toString() {
+      return super.toString().replaceAll("_", " ");
+    }
+  }
+
   public enum EdgeType {
-    ION_IDENTITY, NETWORK_RELATIONS, MS2_SIMILARITY, MS2_SIMILARITY_NEUTRAL_M;
+    ION_IDENTITY, NETWORK_RELATIONS, MS2_SIMILARITY, MS2_SIMILARITY_NEUTRAL_M, MS2_SIMILARITY_NEUTRAL_M_TO_FEATURE;
   }
 
   public enum NodeType {
-    NEUTRAL_M, FEATURE, NEUTRAL_LOSS_CENTER;
+    NEUTRAL_M, ION_FEATURE, SINGLE_FEATURE, NEUTRAL_LOSS_CENTER;
   }
 
   // data
@@ -59,6 +69,8 @@ public class AnnotationNetworkPanel extends NetworkPanel {
   private boolean ms2SimEdges;
 
   private R2RMap<R2RMS2Similarity> ms2SimMap;
+
+  private boolean showIonEdges;
 
 
   /**
@@ -93,15 +105,44 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     toggleShowRelations
         .addItemListener(il -> setConnectByNetRelations(toggleShowRelations.isSelected()));
 
-    JToggleButton toggleShowEdgeLabel = new JToggleButton("Show edge label", true);
+    JToggleButton toggleShowIonIdentityEdges = new JToggleButton("Show ion edges", true);
+    menu.add(toggleShowIonIdentityEdges);
+    toggleShowIonIdentityEdges
+        .addItemListener(il -> showIonIdentityEdges(toggleShowIonIdentityEdges.isSelected()));
+
+    JToggleButton toggleShowEdgeLabel = new JToggleButton("Show edge label", false);
     menu.add(toggleShowEdgeLabel);
     toggleShowEdgeLabel.addItemListener(il -> showEdgeLabels(toggleShowEdgeLabel.isSelected()));
 
-    JToggleButton toggleShowNodeLabel = new JToggleButton("Show node label", true);
+    JToggleButton toggleShowNodeLabel = new JToggleButton("Show node label", false);
     menu.add(toggleShowNodeLabel);
     toggleShowNodeLabel.addItemListener(il -> showNodeLabels(toggleShowNodeLabel.isSelected()));
 
+    JButton showGNPSMatches = new JButton("GNPS matches");
+    menu.add(showGNPSMatches);
+    showGNPSMatches.addActionListener(e -> showGNPSMatches());
+
     this.revalidate();
+  }
+
+  /**
+   * Show GNPS library match
+   */
+  private void showGNPSMatches() {
+    int n = 0;
+    for (Node node : graph) {
+      String name = (String) node.getAttribute(GNPSResultsIdentity.ATT.COMPOUND_NAME.getKey());
+      if (name != null) {
+        node.setAttribute("ui.label", name);
+        n++;
+      }
+    }
+    LOG.info("Show " + n + " GNPS library matches");
+  }
+
+  private void showIonIdentityEdges(boolean selected) {
+    showIonEdges = selected;
+    collapseIonNodes(collapse);
   }
 
   public void collapseIonNodes(boolean collapse) {
@@ -111,10 +152,12 @@ public class AnnotationNetworkPanel extends NetworkPanel {
       if (type != null) {
         switch (type) {
           case NEUTRAL_LOSS_CENTER:
-          case FEATURE:
+          case ION_FEATURE:
             setNodeVisible(node, !collapse);
             break;
           case NEUTRAL_M:
+            break;
+          case SINGLE_FEATURE:
             break;
           default:
             break;
@@ -123,12 +166,13 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     }
 
     graph.edges().forEach(edge -> {
-      EdgeType type = (EdgeType) edge.getAttribute(ATT.TYPE.toString());
+      EdgeType type = (EdgeType) edge.getAttribute(EDGE_ATT.TYPE.toString());
       if (type != null) {
         switch (type) {
           case ION_IDENTITY:
-            setEdgeVisible(edge, !collapse);
+            setEdgeVisible(edge, !collapse && showIonEdges);
             break;
+          case MS2_SIMILARITY_NEUTRAL_M_TO_FEATURE:
           case MS2_SIMILARITY_NEUTRAL_M:
           case MS2_SIMILARITY:
             setEdgeVisible(edge, ms2SimEdges);
@@ -188,7 +232,10 @@ public class AnnotationNetworkPanel extends NetworkPanel {
       addNetworkRelationsEdges(nets);
 
       // add ms2 similarity edges
-      addMS2SimEdges(nets);
+      addMS2SimEdges(rows);
+
+      // add gnps library matches to nodes
+      addGNPSLibraryMatchesToNodes(rows);
 
       // add id name
       for (Node node : graph) {
@@ -211,12 +258,29 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     }
   }
 
-  private void addMS2SimEdges(IonNetwork[] nets) {
-    if (ms2SimMap != null) {
-      Map<Integer, PeakListRow> map = new HashMap<>();
-      Arrays.stream(nets).flatMap(n -> n.keySet().stream()).forEach(r -> map.put(r.getID(), r));
+  private void addGNPSLibraryMatchesToNodes(PeakListRow[] rows) {
+    int n = 0;
+    for (PeakListRow r : rows) {
+      GNPSResultsIdentity identity =
+          Arrays.stream(r.getPeakIdentities()).filter(GNPSResultsIdentity.class::isInstance)
+              .map(GNPSResultsIdentity.class::cast).findFirst().orElse(null);
 
-      PeakListRow[] rows = map.values().toArray(new PeakListRow[0]);
+      if (identity != null) {
+        n++;
+        Node node = getRowNode(r, true);
+        identity.getResults().entrySet().stream().filter(e -> e.getValue() != null).forEach(e -> {
+          // row node
+          node.setAttribute(e.getKey(), e.getValue());
+          // M nodes
+          streamNeutralMolNodes(r).forEach(mnode -> mnode.setAttribute(e.getKey(), e.getValue()));
+        });
+      }
+    }
+    LOG.info("Added " + n + " GNPS library matches to their respective nodes");
+  }
+
+  private void addMS2SimEdges(PeakListRow[] rows) {
+    if (ms2SimMap != null) {
       for (int i = 0; i < rows.length - 1; i++) {
         for (int j = i + 1; j < rows.length; j++) {
           PeakListRow a = rows[i];
@@ -231,34 +295,63 @@ public class AnnotationNetworkPanel extends NetworkPanel {
   }
 
   private void addMS2SimEdges(PeakListRow ra, PeakListRow rb, R2RMS2Similarity sim) {
-    final String label = "spec=" + percForm.format(sim.getSpectralAvgCosine()) + " delta="
-        + percForm.format(sim.getDiffAvgCosine());
-    //
-    Node a = getRowNode(ra);
-    Node b = getRowNode(rb);
-    if (a != null && b != null) {
-      String edgeName = addNewEdge(a, b, EdgeType.MS2_SIMILARITY.toString(), label);
-      Edge edge = graph.getEdge(edgeName);
-      edge.setAttribute(ATT.TYPE.toString(), EdgeType.MS2_SIMILARITY);
-      edge.setAttribute(ATT.LABEL.toString(), label);
-    }
+    StringBuilder builder = new StringBuilder();
+    if (sim.getSpectralAvgCosine() > 4)
+      builder.append("spec=" + percForm.format(sim.getSpectralAvgCosine()));
+    if (sim.getDiffAvgCosine() > 4)
+      builder.append("delta=" + percForm.format(sim.getDiffAvgCosine()));
+    if (sim.getGNPSSim() != null && sim.getGNPSSim().getCosine() > 4)
+      builder.append("gnps=" + percForm.format(sim.getGNPSSim().getCosine()));
+    final String label = builder.toString();
+
+    Node a = getRowNode(ra, true);
+    Node b = getRowNode(rb, true);
+    addMS2SimEdges(a, b, sim, EdgeType.MS2_SIMILARITY, label);
+
     // get all neutral M
     if (ra.hasIonIdentity() && rb.hasIonIdentity()) {
-      ra.getIonIdentities().stream().map(IonIdentity::getNetwork)
-          .map(netA -> getNeutralMolNode(netA, false)).filter(Objects::nonNull).forEach(nodeA -> {
-            // add connection to all neutral M nodes of rowb
-            rb.getIonIdentities().stream().map(IonIdentity::getNetwork)
-                .map(netB -> getNeutralMolNode(netB, false)).filter(Objects::nonNull)
-                .forEach(nodeB -> {
-                  // connect a and b
-                  String edgeName =
-                      addNewEdge(nodeA, nodeB, EdgeType.MS2_SIMILARITY_NEUTRAL_M.toString(), label);
-                  Edge edge = graph.getEdge(edgeName);
-                  edge.setAttribute(ATT.TYPE.toString(), EdgeType.MS2_SIMILARITY_NEUTRAL_M);
-                  edge.setAttribute(ATT.LABEL.toString(), label);
-                });
-          });
+      streamNeutralMolNodes(ra).forEach(nodeA -> {
+        // add connection to all neutral M nodes of rowb
+        streamNeutralMolNodes(rb).forEach(nodeB -> {
+          // connect a and b
+          addMS2SimEdges(nodeA, nodeB, sim, EdgeType.MS2_SIMILARITY_NEUTRAL_M, label);
+        });
+      });
+    } else if (ra.hasIonIdentity()) {
+      // rb has no ion network:
+      // add edge neutralMolA -- b
+      streamNeutralMolNodes(ra).forEach(nodeA -> {
+        addMS2SimEdges(nodeA, b, sim, EdgeType.MS2_SIMILARITY_NEUTRAL_M_TO_FEATURE, label);
+      });
+    } else if (rb.hasIonIdentity()) {
+      // ra has no ion network:
+      // add edge neutralMolB -- a
+      streamNeutralMolNodes(rb).forEach(nodeB -> {
+        addMS2SimEdges(nodeB, a, sim, EdgeType.MS2_SIMILARITY_NEUTRAL_M_TO_FEATURE, label);
+      });
     }
+  }
+
+  private void addMS2SimEdges(Node a, Node b, R2RMS2Similarity sim, EdgeType type, String label) {
+    String edgeName = addNewEdge(a, b, type.toString(), label);
+    Edge edge = graph.getEdge(edgeName);
+    edge.setAttribute(EDGE_ATT.TYPE.toString(), type);
+    edge.setAttribute(EDGE_ATT.LABEL.toString(), label);
+    edge.setAttribute(EDGE_ATT.DIFF_SCORE.toString(), sim.getDiffAvgCosine());
+    edge.setAttribute(EDGE_ATT.DIFF_N.toString(), sim.getDiffAvgOverlap());
+    edge.setAttribute(EDGE_ATT.SIM_N.toString(), sim.getSpectralAvgOverlap());
+    edge.setAttribute(EDGE_ATT.SIM_SCORE.toString(), sim.getSpectralAvgCosine());
+    if (sim.getGNPSSim() != null)
+      edge.setAttribute(EDGE_ATT.GNPS_SCORE.toString(), sim.getGNPSSim().getCosine());
+  }
+
+
+
+  private Stream<Node> streamNeutralMolNodes(PeakListRow row) {
+    if (!row.hasIonIdentity())
+      return Stream.empty();
+    return row.getIonIdentities().stream().map(IonIdentity::getNetwork)
+        .map(netA -> getNeutralMolNode(netA, false)).filter(Objects::nonNull);
   }
 
   /**
@@ -293,8 +386,8 @@ public class AnnotationNetworkPanel extends NetworkPanel {
           String edgeName = addNewEdge(a, b, "relations", edgeLabel);
           Edge edge = graph.getEdge(edgeName);
           edge.setAttribute("ui.class", "medium");
-          edge.setAttribute(ATT.TYPE.toString(), EdgeType.NETWORK_RELATIONS);
-          edge.setAttribute(ATT.LABEL.toString(), edgeLabel);
+          edge.setAttribute(EDGE_ATT.TYPE.toString(), EdgeType.NETWORK_RELATIONS);
+          edge.setAttribute(EDGE_ATT.LABEL.toString(), edgeLabel);
         }
       }
     }
@@ -378,7 +471,7 @@ public class AnnotationNetworkPanel extends NetworkPanel {
 
   private void addNewDeltaMZEdge(Node node1, Node node2, double dmz) {
     String edgeName = super.addNewEdge(node1, node2, "ions", "\u0394 " + mzForm.format(dmz));
-    graph.getEdge(edgeName).setAttribute(ATT.TYPE.toString(), EdgeType.ION_IDENTITY);
+    graph.getEdge(edgeName).setAttribute(EDGE_ATT.TYPE.toString(), EdgeType.ION_IDENTITY);
   }
 
   private PeakListRow findRowByID(int id, PeakListRow[] rows) {
@@ -397,8 +490,12 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     return "Row" + row.getID();
   }
 
-  private Node getRowNode(PeakListRow row) {
-    return graph.getNode(toNodeName(row));
+  private Node getRowNode(PeakListRow row, boolean addMissing) {
+    Node node = graph.getNode(toNodeName(row));
+    if (addMissing && node == null) {
+      node = getRowNode(row, row.getBestIonIdentity());
+    }
+    return node;
   }
 
   private Node getRowNode(PeakListRow row, IonIdentity esi) {
@@ -417,7 +514,8 @@ public class AnnotationNetworkPanel extends NetworkPanel {
       node = graph.addNode(toNodeName(row));
       node.setAttribute(ATT.LABEL.toString(), label);
       node.setAttribute("ui.label", label);
-      node.setAttribute(ATT.TYPE.toString(), NodeType.FEATURE);
+      node.setAttribute(ATT.TYPE.toString(),
+          esi != null ? NodeType.ION_FEATURE : NodeType.SINGLE_FEATURE);
       node.setAttribute(ATT.ID.toString(), row.getID());
       node.setAttribute(ATT.RT.toString(), row.getAverageRT());
       node.setAttribute(ATT.MZ.toString(), row.getAverageMZ());
