@@ -19,43 +19,17 @@ public class AnnotationNetworkPanel extends NetworkPanel {
 
   private AnnotationNetworkGenerator generator = new AnnotationNetworkGenerator();
 
-  public enum ATT {
-    TYPE, RT, MZ, ID, INTENSITY, NEUTRAL_MASS, CHARGE, ION_TYPE, MS2_VERIFICATION, LABEL, NET_ID, GROUP_ID;
-    @Override
-    public String toString() {
-      return super.toString().replaceAll("_", " ");
-    }
-  }
-
-  public enum EDGE_ATT {
-    TYPE, LABEL, GNPS_SCORE, DIFF_SCORE, SIM_SCORE, DIFF_N, SIM_N;
-    @Override
-    public String toString() {
-      return super.toString().replaceAll("_", " ");
-    }
-  }
-
-  public enum EdgeType {
-    ION_IDENTITY, NETWORK_RELATIONS, MS2_SIMILARITY, MS2_SIMILARITY_NEUTRAL_M, MS2_SIMILARITY_NEUTRAL_M_TO_FEATURE;
-  }
-
-  public enum NodeType {
-    NEUTRAL_M, ION_FEATURE, SINGLE_FEATURE, NEUTRAL_LOSS_CENTER;
-  }
-
   // data
   private PeakList pkl;
   private PeakListRow[] rows;
 
-  private boolean connectByNetRelations;
   private boolean onlyBest;
+  private boolean showNetRelationsEdges;
   private boolean collapse = true;
-
-  private boolean ms2SimEdges;
+  private boolean showIonEdges = true;
+  private boolean showMs2SimEdges;
 
   private R2RMap<R2RMS2Similarity> ms2SimMap;
-
-  private boolean showIonEdges = true;
 
 
   /**
@@ -133,12 +107,12 @@ public class AnnotationNetworkPanel extends NetworkPanel {
   public void collapseIonNodes(boolean collapse) {
     this.collapse = collapse;
     for (Node node : graph) {
-      NodeType type = (NodeType) node.getAttribute(ATT.TYPE.toString());
+      NodeType type = (NodeType) node.getAttribute(NodeAtt.TYPE.toString());
       if (type != null) {
         switch (type) {
           case NEUTRAL_LOSS_CENTER:
           case ION_FEATURE:
-            setNodeVisible(node, !collapse);
+            setVisible(node, !collapse);
             break;
           case NEUTRAL_M:
             break;
@@ -151,24 +125,27 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     }
 
     graph.edges().forEach(edge -> {
-      EdgeType type = (EdgeType) edge.getAttribute(EDGE_ATT.TYPE.toString());
+      EdgeType type = (EdgeType) edge.getAttribute(EdgeAtt.TYPE.toString());
       if (type != null) {
         switch (type) {
           case ION_IDENTITY:
-            setEdgeVisible(edge, !collapse && showIonEdges);
+            setVisible(edge, !collapse && showIonEdges);
             break;
           case MS2_SIMILARITY_NEUTRAL_M_TO_FEATURE:
           case MS2_SIMILARITY_NEUTRAL_M:
           case MS2_SIMILARITY:
-            setEdgeVisible(edge, ms2SimEdges);
+            setVisible(edge, showMs2SimEdges);
             break;
           case NETWORK_RELATIONS:
-            setEdgeVisible(edge, connectByNetRelations);
+            setVisible(edge, showNetRelationsEdges);
             break;
           default:
             break;
         }
       }
+      // only if both nodes are visible
+      if (!isVisible(edge.getSourceNode()) || !isVisible(edge.getTargetNode()))
+        setVisible(edge, false);
     });
   }
 
@@ -203,9 +180,11 @@ public class AnnotationNetworkPanel extends NetworkPanel {
   }
 
   public void createNewGraph(PeakListRow[] rows) {
+    clear();
     generator.createNewGraph(rows, graph, onlyBest, ms2SimMap);
-    setStyleSheet(styleSheet);
     clearSelections();
+    showEdgeLabels(showEdgeLabels);
+    showNodeLabels(showNodeLabels);
 
     // last state
     collapseIonNodes(collapse);
@@ -234,7 +213,7 @@ public class AnnotationNetworkPanel extends NetworkPanel {
 
 
   public void setConnectByNetRelations(boolean connectByNetRelations) {
-    this.connectByNetRelations = connectByNetRelations;
+    this.showNetRelationsEdges = connectByNetRelations;
     collapseIonNodes(collapse);
   }
 
@@ -247,7 +226,7 @@ public class AnnotationNetworkPanel extends NetworkPanel {
   }
 
   public void setShowMs2SimEdges(boolean ms2SimEdges) {
-    this.ms2SimEdges = ms2SimEdges;
+    this.showMs2SimEdges = ms2SimEdges;
     collapseIonNodes(collapse);
   }
 }

@@ -64,6 +64,9 @@ public class NetworkPanel extends JPanel {
 
   private JPanel pnSettings;
 
+  protected boolean showNodeLabels = false;
+  protected boolean showEdgeLabels = false;
+
   /**
    * Create the panel.
    */
@@ -194,6 +197,7 @@ public class NetworkPanel extends JPanel {
   }
 
   public void showNodeLabels(boolean show) {
+    this.showNodeLabels = show;
     for (Node node : graph) {
       if (show) {
         Object label = node.getAttribute("LABEL");
@@ -206,6 +210,8 @@ public class NetworkPanel extends JPanel {
   }
 
   public void showEdgeLabels(boolean show) {
+    this.showEdgeLabels = show;
+
     graph.edges().forEach(edge -> {
       if (show) {
         Object label = edge.getAttribute("LABEL");
@@ -245,18 +251,26 @@ public class NetworkPanel extends JPanel {
     return viewer;
   }
 
-  public void setNodeVisible(Node node, boolean visible) {
+  public void setVisible(Node node, boolean visible) {
     if (!visible)
       node.setAttribute("ui.hide");
     else
       node.removeAttribute("ui.hide");
   }
 
-  public void setEdgeVisible(Edge edge, boolean visible) {
+  public void setVisible(Edge edge, boolean visible) {
     if (!visible)
       edge.setAttribute("ui.hide");
     else
       edge.removeAttribute("ui.hide");
+  }
+
+  public boolean isVisible(Edge edge) {
+    return edge.getAttribute("ui.hide") == null;
+  }
+
+  public boolean isVisible(Node node) {
+    return node.getAttribute("ui.hide") == null;
   }
 
   /**

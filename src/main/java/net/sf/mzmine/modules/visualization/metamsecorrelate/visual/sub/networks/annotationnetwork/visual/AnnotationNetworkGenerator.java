@@ -5,6 +5,7 @@ import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -13,6 +14,7 @@ import org.graphstream.graph.Edge;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.datamodel.identities.MolecularFormulaIdentity;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
@@ -21,10 +23,6 @@ import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.R2RMap;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity.R2RMS2Similarity;
 import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsIdentity;
-import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.annotationnetwork.visual.AnnotationNetworkPanel.ATT;
-import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.annotationnetwork.visual.AnnotationNetworkPanel.EDGE_ATT;
-import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.annotationnetwork.visual.AnnotationNetworkPanel.EdgeType;
-import net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.networks.annotationnetwork.visual.AnnotationNetworkPanel.NodeType;
 
 public class AnnotationNetworkGenerator {
   private static final Logger LOG = Logger.getLogger(AnnotationNetworkGenerator.class.getName());
@@ -64,7 +62,7 @@ public class AnnotationNetworkGenerator {
           node.setAttribute("ui.class", "NEUTRAL");
 
 
-        String l = (String) node.getAttribute(ATT.LABEL.toString());
+        String l = (String) node.getAttribute(NodeAtt.LABEL.toString());
         if (l != null)
           node.setAttribute("ui.label", l);
       }
@@ -77,7 +75,7 @@ public class AnnotationNetworkGenerator {
    */
   public void deleteAllCollapsedNodes() {
     for (int i = 0; i < graph.getNodeCount();) {
-      NodeType type = (NodeType) graph.getNode(i).getAttribute(ATT.TYPE.toString());
+      NodeType type = (NodeType) graph.getNode(i).getAttribute(NodeAtt.TYPE.toString());
       if (type.equals(NodeType.ION_FEATURE)) {
         graph.removeNode(i);
       } else
@@ -162,14 +160,19 @@ public class AnnotationNetworkGenerator {
   private void addMS2SimEdges(Node a, Node b, R2RMS2Similarity sim, EdgeType type, String label) {
     String edgeName = addNewEdge(a, b, type.toString(), label, false);
     Edge edge = graph.getEdge(edgeName);
-    edge.setAttribute(EDGE_ATT.TYPE.toString(), type);
-    edge.setAttribute(EDGE_ATT.LABEL.toString(), label);
-    edge.setAttribute(EDGE_ATT.DIFF_SCORE.toString(), sim.getDiffAvgCosine());
-    edge.setAttribute(EDGE_ATT.DIFF_N.toString(), sim.getDiffAvgOverlap());
-    edge.setAttribute(EDGE_ATT.SIM_N.toString(), sim.getSpectralAvgOverlap());
-    edge.setAttribute(EDGE_ATT.SIM_SCORE.toString(), sim.getSpectralAvgCosine());
-    if (sim.getGNPSSim() != null)
-      edge.setAttribute(EDGE_ATT.GNPS_SCORE.toString(), sim.getGNPSSim().getCosine());
+    edge.setAttribute(EdgeAtt.TYPE.toString(), type);
+    edge.setAttribute(EdgeAtt.LABEL.toString(), label);
+    edge.setAttribute(EdgeAtt.DIFF_SCORE.toString(), sim.getDiffAvgCosine());
+    edge.setAttribute(EdgeAtt.DIFF_N.toString(), sim.getDiffAvgOverlap());
+    edge.setAttribute(EdgeAtt.SIM_N.toString(), sim.getSpectralAvgOverlap());
+    edge.setAttribute(EdgeAtt.SIM_SCORE.toString(), sim.getSpectralAvgCosine());
+    if (sim.getGNPSSim() != null) {
+      edge.setAttribute(EdgeAtt.GNPS_SCORE.toString(), sim.getGNPSSim().getCosine());
+      edge.setAttribute(EdgeAtt.SCORE.toString(), sim.getGNPSSim().getCosine());
+    } else if (sim.getSpectralAvgCosine() > 0.3)
+      edge.setAttribute(EdgeAtt.SCORE.toString(), sim.getSpectralAvgCosine());
+    else if (sim.getDiffAvgCosine() > 0.3)
+      edge.setAttribute(EdgeAtt.SCORE.toString(), sim.getDiffAvgCosine());
   }
 
   private Stream<Node> streamNeutralMolNodes(PeakListRow row) {
@@ -219,8 +222,8 @@ public class AnnotationNetworkGenerator {
           String edgeName = addNewEdge(a, b, "relations", edgeLabel, true);
           Edge edge = graph.getEdge(edgeName);
           edge.setAttribute("ui.class", "medium");
-          edge.setAttribute(EDGE_ATT.TYPE.toString(), EdgeType.NETWORK_RELATIONS);
-          edge.setAttribute(EDGE_ATT.LABEL.toString(), edgeLabel);
+          edge.setAttribute(EdgeAtt.TYPE.toString(), EdgeType.NETWORK_RELATIONS);
+          edge.setAttribute(EdgeAtt.LABEL.toString(), edgeLabel);
         }
       }
     }
@@ -276,7 +279,7 @@ public class AnnotationNetworkGenerator {
     if (neutralNode == null) {
       neutralNode = graph.addNode("NEUTRAL LOSSES");
       neutralNode.setAttribute("ui.class", "NEUTRAL");
-      neutralNode.setAttribute(ATT.TYPE.toString(), NodeType.NEUTRAL_LOSS_CENTER);
+      neutralNode.setAttribute(NodeAtt.TYPE.toString(), NodeType.NEUTRAL_LOSS_CENTER);
     }
     return neutralNode;
   }
@@ -297,15 +300,24 @@ public class AnnotationNetworkGenerator {
     Node node = graph.getNode("Net" + net.getID());
     if (node == null && createNew) {
       node = graph.addNode("Net" + net.getID());
-      node.setAttribute(ATT.TYPE.toString(), NodeType.NEUTRAL_M);
-      node.setAttribute(ATT.LABEL.toString(), name);
+      node.setAttribute(NodeAtt.TYPE.toString(), NodeType.NEUTRAL_M);
+      node.setAttribute(NodeAtt.LABEL.toString(), name);
       node.setAttribute("ui.label", name);
-      node.setAttribute(ATT.NET_ID.toString(), net.getID());
-      node.setAttribute(ATT.RT.toString(), net.getAvgRT());
-      node.setAttribute(ATT.NEUTRAL_MASS.toString(), net.getNeutralMass());
-      node.setAttribute(ATT.INTENSITY.toString(), net.getHeightSum());
-      node.setAttribute(ATT.ION_TYPE.toString(),
-          net.values().stream().map(IonIdentity::getIonType).toArray());
+      node.setAttribute(NodeAtt.NET_ID.toString(), net.getID());
+      node.setAttribute(NodeAtt.RT.toString(), net.getAvgRT());
+      node.setAttribute(NodeAtt.NEUTRAL_MASS.toString(), net.getNeutralMass());
+      node.setAttribute(NodeAtt.INTENSITY.toString(), net.getHeightSum());
+
+      // all intensitites of all iontypes
+      for (Entry<PeakListRow, IonIdentity> e : net.entrySet()) {
+        IonIdentity ion = e.getValue();
+        node.setAttribute("Intensity(" + ion.getIonType().toString(false) + ")",
+            e.getKey().getBestPeak().getHeight());
+      }
+
+      MolecularFormulaIdentity formula = net.getBestMolFormula();
+      if (formula != null)
+        node.setAttribute(NodeAtt.FORMULA.toString(), formula.getFormulaAsString());
     }
 
     return node;
@@ -320,47 +332,61 @@ public class AnnotationNetworkGenerator {
   private Node getRowNode(PeakListRow row, boolean addMissing) {
     Node node = graph.getNode(toNodeName(row));
     if (addMissing && node == null) {
-      node = getRowNode(row, row.getBestIonIdentity());
+      node = getRowNode(row, null);
     }
     return node;
   }
 
+  /**
+   * 
+   * @param row
+   * @param esi only adds ion type info if given as parameter
+   * @return
+   */
   private Node getRowNode(PeakListRow row, IonIdentity esi) {
-    String id = "";
-    if (esi != null) {
-      id = esi.getAdduct() + " by n=" + esi.getPartnerRowsID().length;
-
-      if (esi.getNetID() != -1)
-        id += " (Net" + esi.getNetIDString() + ")";
-    }
-    String label = MessageFormat.format("{0} (mz={1}) {2}", row.getID(),
-        mzForm.format(row.getAverageMZ()), id);
-
     Node node = graph.getNode(toNodeName(row));
-    if (node == null) {
+    if (node != null)
+      return node;
+    else {
+      String id = "";
+      if (esi != null) {
+        id = esi.getAdduct() + " by n=" + esi.getPartnerRowsID().length;
+
+        if (esi.getNetID() != -1)
+          id += " (Net" + esi.getNetIDString() + ")";
+      }
+      String label = MessageFormat.format("{0} (mz={1}) {2}", row.getID(),
+          mzForm.format(row.getAverageMZ()), id);
+
       node = graph.addNode(toNodeName(row));
-      node.setAttribute(ATT.LABEL.toString(), label);
+      node.setAttribute(NodeAtt.LABEL.toString(), label);
       node.setAttribute("ui.label", label);
-      node.setAttribute(ATT.TYPE.toString(),
+      node.setAttribute(NodeAtt.TYPE.toString(),
           esi != null ? NodeType.ION_FEATURE : NodeType.SINGLE_FEATURE);
-      node.setAttribute(ATT.ID.toString(), row.getID());
-      node.setAttribute(ATT.RT.toString(), row.getAverageRT());
-      node.setAttribute(ATT.MZ.toString(), row.getAverageMZ());
-      node.setAttribute(ATT.INTENSITY.toString(), row.getBestPeak().getHeight());
-      node.setAttribute(ATT.CHARGE.toString(), row.getRowCharge());
-      node.setAttribute(ATT.GROUP_ID.toString(), row.getGroupID());
+      node.setAttribute(NodeAtt.ID.toString(), row.getID());
+      node.setAttribute(NodeAtt.RT.toString(), row.getAverageRT());
+      node.setAttribute(NodeAtt.MZ.toString(), row.getAverageMZ());
+      node.setAttribute(NodeAtt.INTENSITY.toString(), row.getBestPeak().getHeight());
+      node.setAttribute(NodeAtt.CHARGE.toString(), row.getRowCharge());
+      node.setAttribute(NodeAtt.GROUP_ID.toString(), row.getGroupID());
       if (esi != null) {
         // undefined is not represented by a neutral M node
         if (esi.getIonType().isUndefinedAdduct())
-          node.setAttribute(ATT.TYPE.toString(), NodeType.SINGLE_FEATURE);
+          node.setAttribute(NodeAtt.TYPE.toString(), NodeType.SINGLE_FEATURE);
 
-        node.setAttribute(ATT.ION_TYPE.toString(), esi.getIonType());
-        node.setAttribute(ATT.NEUTRAL_MASS.toString(),
+        node.setAttribute(NodeAtt.ION_TYPE.toString(), esi.getIonType().toString(false));
+        node.setAttribute(NodeAtt.NEUTRAL_MASS.toString(),
             esi.getIonType().getMass(row.getAverageMZ()));
-        node.setAttribute(ATT.NET_ID.toString(), esi.getNetID());
+        node.setAttribute(NodeAtt.NET_ID.toString(), esi.getNetID());
         String ms2Veri = (esi.getMSMSMultimerCount() > 0 ? "xmer_verified" : "")
             + (esi.getMSMSModVerify() > 0 ? " modification_verified" : "");
-        node.setAttribute(ATT.MS2_VERIFICATION.toString(), ms2Veri);
+        node.setAttribute(NodeAtt.MS2_VERIFICATION.toString(), ms2Veri);
+
+        MolecularFormulaIdentity formula = esi.getBestMolFormula();
+        if (esi.getNetwork() != null)
+          formula = esi.getNetwork().getBestMolFormula();
+        if (formula != null)
+          node.setAttribute(NodeAtt.FORMULA.toString(), formula.getFormulaAsString());
       }
     }
 
@@ -369,7 +395,7 @@ public class AnnotationNetworkGenerator {
 
   private void addNewDeltaMZEdge(Node node1, Node node2, double dmz) {
     String edgeName = addNewEdge(node1, node2, "ions", "\u0394 " + mzForm.format(dmz), true);
-    graph.getEdge(edgeName).setAttribute(EDGE_ATT.TYPE.toString(), EdgeType.ION_IDENTITY);
+    graph.getEdge(edgeName).setAttribute(EdgeAtt.TYPE.toString(), EdgeType.ION_IDENTITY);
   }
 
   public String addNewEdge(Node node1, Node node2, String edgeNameSuffix, Object edgeLabel,
