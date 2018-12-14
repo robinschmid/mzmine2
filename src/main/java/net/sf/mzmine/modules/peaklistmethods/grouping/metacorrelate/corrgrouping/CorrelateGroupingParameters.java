@@ -110,7 +110,17 @@ public class CorrelateGroupingParameters extends SimpleParameterSet {
       MinimumFeaturesFilterParameters minFFilter, boolean useFShapeCorr, boolean useImaxCorr,
       FeatureShapeCorrelationParameters fShapeParam,
       InterSampleHeightCorrParameters heightCorrParam) {
-    this();
+    super(new Parameter[] {RT_TOLERANCE,
+        // Group and minimum samples filter
+        GROUPSPARAMETER,
+        // feature filter
+        MIN_HEIGHT, NOISE_LEVEL, MIN_SAMPLES_FILTER,
+        // feature shape correlation
+        FSHAPE_CORRELATION,
+        // intensity max correlation
+        IMAX_CORRELATION,
+        // suffix or auto suffix
+        SUFFIX});
     this.getParameter(RT_TOLERANCE).setValue(rtTol);
     this.getParameter(GROUPSPARAMETER).setValue(useGroups);
     this.getParameter(GROUPSPARAMETER).getEmbeddedParameter().setValue(gParam);

@@ -345,8 +345,6 @@ public class AnnotationNetworkPanel extends NetworkPanel {
       edge.setAttribute(EDGE_ATT.GNPS_SCORE.toString(), sim.getGNPSSim().getCosine());
   }
 
-
-
   private Stream<Node> streamNeutralMolNodes(PeakListRow row) {
     if (!row.hasIonIdentity())
       return Stream.empty();

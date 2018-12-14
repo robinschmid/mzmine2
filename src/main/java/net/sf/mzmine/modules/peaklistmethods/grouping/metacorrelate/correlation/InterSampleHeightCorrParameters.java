@@ -61,6 +61,18 @@ public class InterSampleHeightCorrParameters extends SimpleParameterSet {
       "Similarity measure", SimilarityMeasure.values(), SimilarityMeasure.PEARSON);
 
 
+  // Constructor
+  public InterSampleHeightCorrParameters(double minR, int minDP, double minHeight,
+      double noiseLevel, SimilarityMeasure measure) {
+    this();
+    this.getParameter(MIN_CORRELATION).setValue(minR);
+    this.getParameter(MIN_DP).setValue(minDP);
+    this.getParameter(MIN_HEIGHT).setValue(minHeight);
+    this.getParameter(NOISE_LEVEL).setValue(noiseLevel);
+    this.getParameter(MEASURE).setValue(measure);
+  }
+
+
   public InterSampleHeightCorrParameters() {
     this(false);
   }

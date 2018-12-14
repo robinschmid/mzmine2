@@ -30,13 +30,14 @@ import net.sf.mzmine.parameters.parametertypes.MassListParameter;
 import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
 import net.sf.mzmine.parameters.parametertypes.PercentParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
+import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTToleranceParameter;
 
 public class FeatureShapeCorrelationParameters extends SimpleParameterSet {
 
   // AS MAIN SETTINGS
   // General parameters
-  public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter();
+  public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter(0);
   // RT-tolerance: Grouping
   public static final RTToleranceParameter RT_TOLERANCE = new RTToleranceParameter("RT tolerance",
       "Maximum allowed difference of retention time to set a relationship between peaks");
@@ -80,6 +81,21 @@ public class FeatureShapeCorrelationParameters extends SimpleParameterSet {
           0.5, 0, 1));
 
   // Constructor
+  public FeatureShapeCorrelationParameters(RTTolerance rtTol, double noiseLevel, int minDP,
+      int minDPEdge, double minR, boolean useTotalCorr, double minTotalR,
+      SimilarityMeasure measure) {
+    super(new Parameter[] {RT_TOLERANCE, NOISE_LEVEL_PEAK_SHAPE, MIN_DP_CORR_PEAK_SHAPE,
+        MIN_DP_FEATURE_EDGE, MEASURE, MIN_R_SHAPE_INTRA, MIN_TOTAL_CORR});
+    this.getParameter(RT_TOLERANCE).setValue(rtTol);
+    this.getParameter(NOISE_LEVEL_PEAK_SHAPE).setValue(noiseLevel);
+    this.getParameter(MIN_DP_CORR_PEAK_SHAPE).setValue(minDP);
+    this.getParameter(MIN_DP_FEATURE_EDGE).setValue(minDPEdge);
+    this.getParameter(MIN_R_SHAPE_INTRA).setValue(minR);
+    this.getParameter(MIN_TOTAL_CORR).setValue(useTotalCorr);
+    this.getParameter(MIN_TOTAL_CORR).getEmbeddedParameter().setValue(minTotalR);
+    this.getParameter(MEASURE).setValue(measure);
+  }
+
   public FeatureShapeCorrelationParameters() {
     this(false);
   }

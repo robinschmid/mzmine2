@@ -23,6 +23,8 @@ import java.util.Arrays;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.correlation.FeatureShapeCorrelationParameters;
+import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.correlation.InterSampleHeightCorrParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.corrgrouping.CorrelateGroupingParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.CorrelationData.SimilarityMeasure;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeaturesFilterParameters;
@@ -78,10 +80,10 @@ public class SimpleMetaCorrelateTask extends MetaCorrelateTask {
     shapeSimMeasure = SimilarityMeasure.PEARSON;
     minCorrelatedDataPoints = 5;
     minCorrDPOnFeatureEdge = 2;
-
     // total corr
     useTotalShapeCorrFilter = true;
     minTotalShapeCorrR = 0.5;
+
     // ADDUCTS
     MZTolerance mzTolerance =
         parameterSet.getParameter(SimpleMetaCorrelateParameters.MZ_TOLERANCE).getValue();
@@ -150,6 +152,12 @@ public class SimpleMetaCorrelateTask extends MetaCorrelateTask {
       suffix = parameters.getParameter(SimpleMetaCorrelateParameters.SUFFIX).getEmbeddedParameter()
           .getValue();
 
+
+    corrParam = new FeatureShapeCorrelationParameters(rtTolerance, noiseLevelCorr,
+        minCorrelatedDataPoints, minCorrDPOnFeatureEdge, minShapeCorrR, useTotalShapeCorrFilter,
+        minTotalShapeCorrR, shapeSimMeasure);
+    heightCorrParam = new InterSampleHeightCorrParameters(minHeightCorr, minDPHeightCorr, minHeight,
+        noiseLevelCorr, heightSimMeasure);
 
     // create grouping param
     groupParam = new CorrelateGroupingParameters(rtTolerance, useGroups, groupingParameter,
