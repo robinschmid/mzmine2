@@ -69,6 +69,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.sirius.SiriusProcess
 import net.sf.mzmine.modules.peaklistmethods.io.casmiimport.CasmiImportModule;
 import net.sf.mzmine.modules.peaklistmethods.io.csvexport.CSVExportModule;
 import net.sf.mzmine.modules.peaklistmethods.io.gnpsexport.GNPSExportModule;
+import net.sf.mzmine.modules.peaklistmethods.io.graphml.NetworkGraphMLExportModule;
 import net.sf.mzmine.modules.peaklistmethods.io.metaboanalystexport.MetaboAnalystExportModule;
 import net.sf.mzmine.modules.peaklistmethods.io.mgfexport.MGFExportModule;
 import net.sf.mzmine.modules.peaklistmethods.io.mspexport.MSPExportModule;
@@ -171,6 +172,7 @@ public class MZmineModulesList {
       SQLExportModule.class, XMLExportModule.class, CasmiImportModule.class,
       MzTabImportModule.class, XMLImportModule.class, MSPExportModule.class, MGFExportModule.class,
       GNPSExportModule.class, SiriusExportModule.class, ExportCorrAnnotationModule.class,
+      NetworkGraphMLExportModule.class,
 
       // Gap filling
       PeakFinderModule.class, MultiThreadPeakFinderModule.class, SameRangeGapFillerModule.class,

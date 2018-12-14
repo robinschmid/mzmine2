@@ -181,7 +181,7 @@ public class NetworkPanel extends JPanel {
       if (graph != null && graph.getNodeCount() > 0)
         sink.writeAll(graph, f.getAbsolutePath());
     } catch (Exception e) {
-      LOG.log(Level.SEVERE, "Screenshot of network not saved", e);
+      LOG.log(Level.SEVERE, "File of network not saved", e);
     }
   }
 
