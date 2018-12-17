@@ -82,6 +82,10 @@ public class MS2SimilarityModule implements MZmineProcessingModule {
           tasks.add(new MS2SimilarityTask(parameters, pkl, nets));
           started = true;
           break;
+        case ALL_ROWS:
+          tasks.add(new MS2SimilarityTask(parameters, pkl, pkl.getRows()));
+          started = true;
+          break;
       }
     }
     if (!started)

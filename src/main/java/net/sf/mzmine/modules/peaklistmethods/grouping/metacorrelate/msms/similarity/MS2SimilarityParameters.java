@@ -41,7 +41,12 @@ import net.sf.mzmine.util.ExitCode;
 public class MS2SimilarityParameters extends SimpleParameterSet {
 
   public enum Mode {
-    GROUPS, ION_NETWORKS;
+    ALL_ROWS, GROUPS, ION_NETWORKS;
+
+    @Override
+    public String toString() {
+      return super.toString().replaceAll("_", " ");
+    }
   }
 
   // NOT INCLUDED in sub

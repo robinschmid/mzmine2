@@ -49,6 +49,7 @@ class NetworkGraphMLExportTask extends AbstractTask {
     peakList = parameters.getParameter(NetworkGraphMLExportParameters.PEAKLIST).getValue()
         .getMatchingPeakLists()[0];
     fileFull = parameters.getParameter(NetworkGraphMLExportParameters.FILE).getValue();
+    fileFull = FileAndPathUtil.getRealFilePath(fileFull, "graphml");
     String name = FileAndPathUtil.eraseFormat(fileFull.getName());
     fileCollapsed =
         FileAndPathUtil.getRealFilePath(fileFull.getParentFile(), name + "_collapsed", "graphml");

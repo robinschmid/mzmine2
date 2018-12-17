@@ -156,12 +156,15 @@ public class MS2SimilarityTask extends AbstractTask {
     else if (group != null)
       map = checkGroup(this, stageProgress, group, massList, mzTolerance, minHeight, minDP,
           minMatch, maxDPForDiff, onlyBestMS2Scan);
-    else if (rows != null)
+    else if (rows != null) {
       map = checkRows(this, stageProgress, rows, massList, mzTolerance, minHeight, minDP, minMatch,
           maxDPForDiff, onlyBestMS2Scan);
-    else if (groups != null)
+    } else if (groups != null)
       checkGroupList(this, stageProgress, groups, massList, mzTolerance, minHeight, minDP, minMatch,
           maxDPForDiff, onlyBestMS2Scan);
+
+    if (peakList != null && map != null)
+      peakList.addR2RSimilarity(map);
   }
 
 
