@@ -648,20 +648,10 @@ public class SiriusExportTask extends AbstractTask {
     // TODO : best feature mz or avg?
     // intensity?
     writer.write(mzForm.format(row.getAverageMZ()));
-    writer.write(" " + intensityForm.format(best.getHeight()));
-    writer.write(" " + (corr == null || Double.isNaN(r) ? "" : corrForm.format(r))); // correlation
-    if (id != null) {
+    writer.write(" " + best.getHeight());
+    writer.write(" " + (corr == null || Double.isNaN(r) ? "1" : corrForm.format(r))); // correlation
+    if (id != null)
       writer.write(" " + id.getAdduct());
-      // TODO added by Robin
-      // need to check if this is conform to the standards
-      writer.write(" by=" + id.getPartnerRowsID().length);
-      if (network != null) {
-        writer.write(" " + COMPOUND_ID + network.getID());
-      } else
-        writer.write(" ");
-    } else
-      writer.write("   ");
-    writer.write(" FEATURE_ID=" + row.getID());
     writer.newLine();
     // export isotope pattern
     writeCorrelationIsotopes(writer, row);
@@ -686,12 +676,12 @@ public class SiriusExportTask extends AbstractTask {
           // TODO : best feature mz or avg?
           // intensity?
           writer.write(mzForm.format(dp.getMZ()));
-          writer.write(" " + intensityForm.format(dp.getIntensity()));
+          writer.write(" " + dp.getIntensity());
 
           // isotope
-          writer.write(' '); // skip correlation
-          writer.write(" +" + Math.round((float) (dp.getMZ() - mz0)));
-          writer.write("    "); // skip rowID
+          int charge = row.getRowCharge() == 0 ? 1 : row.getRowCharge();
+          writer.write(" 1"); // skip correlation
+          writer.write(" +" + Math.round((float) (dp.getMZ() - mz0) * charge));
           writer.newLine();
         }
       }
@@ -701,8 +691,7 @@ public class SiriusExportTask extends AbstractTask {
   private void writeSpectrum(BufferedWriter writer, DataPoint[] dps) throws IOException {
     for (DataPoint dp : dps) {
       writer.write(mzForm.format(dp.getMZ()));
-      writer.write(' ');
-      writer.write(intensityForm.format(dp.getIntensity()));
+      writer.write(" " + dp.getIntensity());
       writer.newLine();
 
     }
