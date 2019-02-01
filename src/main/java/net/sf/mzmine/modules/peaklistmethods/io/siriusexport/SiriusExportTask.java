@@ -44,6 +44,7 @@ import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.CorrelationRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.R2GroupCorrelationData;
 import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
 import net.sf.mzmine.util.DataPointSorter;
@@ -101,6 +102,9 @@ public class SiriusExportTask extends AbstractTask {
    */
   private boolean exportCorrMSOnce;
 
+  // to exclude duplicates in correlated spectrum
+  private MZTolerance mzTol;
+
 
   @Override
   public double getFinishedPercentage() {
@@ -117,6 +121,7 @@ public class SiriusExportTask extends AbstractTask {
         .getMatchingPeakLists();
 
     this.fileName = parameters.getParameter(SiriusExportParameters.FILENAME).getValue();
+    this.mzTol = parameters.getParameter(SiriusExportParameters.MZ_TOL).getValue();
 
     // this.fractionalMZ =
     // parameters.getParameter(SiriusExportParameters.FRACTIONAL_MZ)
@@ -602,21 +607,39 @@ public class SiriusExportTask extends AbstractTask {
     IonNetwork network = id == null ? null : id.getNetwork();
     if (network != null) {
       for (Entry<PeakListRow, IonIdentity> e : network.entrySet()) {
-        rows.put(e.getKey(), e.getValue());
+        // filter duplicates
+        boolean isDuplicate = false;
+        for (Entry<PeakListRow, IonIdentity> other : rows.entrySet()) {
+          PeakListRow or = other.getKey();
+          PeakListRow nr = e.getKey();
+          if (mzTol.checkWithinTolerance(or.getAverageMZ(), nr.getAverageMZ())) {
+            isDuplicate = true;
+            // same mz? export only the one row with the highest intensity
+            if (or.getBestPeak().getHeight() < nr.getBestPeak().getHeight()) {
+              rows.remove(or);
+              rows.put(nr, e.getValue());
+              break;
+            }
+          }
+        }
+        // add new row
+        if (!isDuplicate)
+          rows.put(e.getKey(), e.getValue());
       }
     } else {
-      rows.put(mainRow, mainRow.getBestIonIdentity());
+      rows.put(mainRow, id);
     }
 
     // add all group rows that are correlated to main
-    if (g != null) {
-      for (int i = 0; i < g.size(); ++i) {
-        PeakListRow row = g.get(i);
-        if (g.isCorrelated(mainRow, row) && !rows.containsKey(row)) {
-          rows.put(row, null);
-        }
-      }
-    }
+    // might be too many
+    // if (g != null) {
+    // for (int i = 0; i < g.size(); ++i) {
+    // PeakListRow row = g.get(i);
+    // if (g.isCorrelated(mainRow, row) && !rows.containsKey(row)) {
+    // rows.put(row, null);
+    // }
+    // }
+    // }
 
     // export all rows
     rows.entrySet().stream()
