@@ -160,8 +160,17 @@ public class IonModification extends NeutralMolecule implements Comparable<IonMo
     this.charge = charge;
     this.molFormula = molFormula;
     this.maxModification = maxModification;
-    parsedName = parseName();
     this.type = type;
+    parsedName = parseName();
+  }
+
+  @Override
+  public String parseName() {
+    String sign = this.getMass() < 0 ? "-" : "+";
+    // always +?
+    if (type.equals(IonModificationType.UNDEFINED_ADDUCT))
+      sign = "+";
+    return sign + getName();
   }
 
   /**
