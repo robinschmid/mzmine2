@@ -70,6 +70,7 @@ import net.sf.mzmine.util.SortingProperty;
 
 /**
  * Peak-list table pop-up menu.
+ * 
  */
 public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener {
 
