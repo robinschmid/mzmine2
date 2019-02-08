@@ -12,6 +12,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import net.sf.mzmine.datamodel.PeakList;
@@ -476,12 +477,13 @@ public class IonNetworkLogic {
    * @param removeEmpty
    */
   public static void recalcAllAnnotationNetworks(PeakList peakList, boolean removeEmpty) {
-    streamNetworks(peakList, false).forEach(n -> {
+    List<IonNetwork> list = streamNetworks(peakList, false).collect(Collectors.toList());
+    for (IonNetwork n : list) {
       if (removeEmpty && n.size() < 2) {
         n.delete();
       } else
         n.recalcConnections();
-    });
+    }
   }
 
   /**
