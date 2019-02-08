@@ -235,7 +235,7 @@ public class SiriusExportTask extends AbstractTask {
       final int noisePeaksBehindParentPeak = mergedSpectrum.length - behindParent;
       if (noisePeaksBehindParentPeak >= 10) {
         final DataPoint[] subspec = new DataPoint[noisePeaksBehindParentPeak];
-        System.arraycopy(mergedSpectrum, noisePeaksBehindParentPeak, subspec, 0, subspec.length);
+        System.arraycopy(mergedSpectrum, behindParent, subspec, 0, subspec.length);
         Arrays.sort(subspec, sorter);
         int q75 = (int) (subspec.length * 0.75);
         baseline = Math.max(subspec[q75].getIntensity(), baseline);
