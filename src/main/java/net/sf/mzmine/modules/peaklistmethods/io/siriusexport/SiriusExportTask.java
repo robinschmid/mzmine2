@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import org.apache.commons.math3.special.Erf;
@@ -626,7 +627,8 @@ public class SiriusExportTask extends AbstractTask {
         if (!isDuplicate)
           rows.put(e.getKey(), e.getValue());
       }
-    } else {
+    }
+    if (rows.isEmpty()) {
       rows.put(mainRow, id);
     }
 
@@ -652,7 +654,7 @@ public class SiriusExportTask extends AbstractTask {
           try {
             exportCorrelatedRow(writer, r, corrb, e.getValue());
           } catch (IOException e1) {
-            e1.printStackTrace();
+            logger.log(Level.SEVERE, e1.getMessage(), e1);
           }
         });
     writer.write("END IONS");
