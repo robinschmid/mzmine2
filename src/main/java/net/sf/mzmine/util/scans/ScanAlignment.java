@@ -16,6 +16,7 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 public class ScanAlignment {
 
   /**
+   * Aligned data points in mzTolerance
    * 
    * @param a
    * @param b
