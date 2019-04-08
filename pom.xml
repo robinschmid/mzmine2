@@ -357,14 +357,16 @@
 
 		<!-- End of JDBC drivers -->
 
+<!-- https://mvnrepository.com/artifact/com.alanmrace/jimzmlparser -->
+<dependency>
+    <groupId>com.alanmrace</groupId>
+    <artifactId>jimzmlparser</artifactId>
+    <version>1.0.5</version>
+</dependency>
+
+
 		<!-- Start of jars included with MZmine (internal repository) -->
 
-		<!-- moved jimzML to private repository -->
-		<dependency>
-			<groupId>alanmrace</groupId>
-			<artifactId>jimzMLParser</artifactId>
-			<version>1.2</version>
-		</dependency>
 		<!-- 
 		<dependency>
 			<groupId>net.rs.lamsi</groupId>
