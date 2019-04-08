@@ -168,20 +168,22 @@ public class IonNetworkLibrary {
     return (!a.hasAdductOverlap(b)
         && !a.getAdduct().getType().equals(IonModificationType.UNDEFINED_ADDUCT)
         && !b.getAdduct().getType().equals(IonModificationType.UNDEFINED_ADDUCT))
+        // all beeing M+?
         || (a.getAdduct().getType().equals(IonModificationType.UNDEFINED_ADDUCT)
             && b.getAdduct().getType().equals(IonModificationType.UNDEFINED_ADDUCT));
   }
 
   /**
-   * [yM+X]2+ and [yM+X-H]+ are only different by -H. if any adduct part or modification equals,
+   * [yM+X]+ and [yM+X-H]+ are only different by -H. if any adduct part or modification equals,
    * return false. Charge is different
    * 
    * @param a
    * @param b
-   * @return only true if charge is equal or no modification or adduct sub part equals
+   * @return only true if charge is different or no modification or adduct sub part equals
    */
   private boolean checkMultiChargeDifference(IonType a, IonType b) {
-    return a.getCharge() == b.getCharge() || (a.hasModificationOverlap(b) && a.hasAdductOverlap(b));
+    return a.getCharge() != b.getCharge()
+        || (!a.hasModificationOverlap(b) && !a.hasAdductOverlap(b));
   }
 
   /**
@@ -205,7 +207,7 @@ public class IonNetworkLibrary {
    * @return
    */
   private boolean checkChargeStates(IonType adduct, IonType adduct2, int z1, int z2) {
-    return (z1 <= 0 || adduct.getAbsCharge() == z1) && (z2 <= 0 || adduct2.getAbsCharge() == z2);
+    return (z1 == 0 || adduct.getAbsCharge() == z1) && (z2 == 0 || adduct2.getAbsCharge() == z2);
   }
 
   /**
