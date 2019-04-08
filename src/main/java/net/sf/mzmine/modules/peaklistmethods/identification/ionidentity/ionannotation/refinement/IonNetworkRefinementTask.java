@@ -20,10 +20,12 @@ package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionanno
 
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
@@ -90,35 +92,67 @@ public class IonNetworkRefinementTask extends AbstractTask {
     long count = IonNetworkLogic.streamNetworks(pkl).count();
     LOG.info("Ion identity networks before refinement: " + count);
 
-    for (PeakListRow row : pkl.getRows()) {
-
-      if (row.hasIonIdentity()) {
-        List<IonIdentity> all = IonNetworkLogic.sortIonIdentities(row, true);
-        IonIdentity best = all.get(0);
-
-        if (deleteXmersOnMSMS && all.size() > 1) {
-          // xmers
-          if (deleteXmersOnMSMS(row, best, all, trueThreshold)) {
-            all = IonNetworkLogic.sortIonIdentities(row, true);
-            best = all.get(0);
-          }
-        }
-
-        if (best == null)
-          continue;
-
-        if (trueThreshold > 1) {
-          int links = getLinks(best);
-
-          if (links >= trueThreshold) {
-            for (int i = 1; i < row.getIonIdentities().size();)
-              row.getIonIdentities().get(i).delete(row);
+    IonNetwork[] nets = IonNetworkLogic.getAllNetworks(pkl, false);
+    // TODO new network refinement
+    for (IonNetwork net : nets) {
+      // not deleted
+      if (net.size() > 0) {
+        // delete small ones
+        if (net.size() >= trueThreshold && trueThreshold > 1) {
+          if (isBestNet(net)) {
+            deleteAllOther(net);
           }
         }
       }
     }
+
+    // for (PeakListRow row : pkl.getRows()) {
+    //
+    // if (row.hasIonIdentity()) {
+    // List<IonIdentity> all = IonNetworkLogic.sortIonIdentities(row, true);
+    // IonIdentity best = all.get(0);
+    //
+    // if (deleteXmersOnMSMS && all.size() > 1) {
+    // // xmers
+    // if (deleteXmersOnMSMS(row, best, all, trueThreshold)) {
+    // all = IonNetworkLogic.sortIonIdentities(row, true);
+    // best = all.get(0);
+    // }
+    // }
+    //
+    // if (best == null)
+    // continue;
+    //
+    // if (trueThreshold > 1) {
+    // int links = getLinks(best);
+    //
+    // if (links >= trueThreshold) {
+    // for (int i = 1; i < row.getIonIdentities().size();)
+    // row.getIonIdentities().get(i).delete(row);
+    // }
+    // }
+    // }
+    // }
     count = IonNetworkLogic.streamNetworks(pkl).count();
     LOG.info("Ion identity networks after refinement: " + count);
+  }
+
+  private static boolean isBestNet(IonNetwork net) {
+    for (PeakListRow row : net.keySet()) {
+      IonIdentity id = row.getBestIonIdentity();
+      // is best of all rows
+      if (id != null && !id.getNetwork().equals(net)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private static void deleteAllOther(IonNetwork net) {
+    for (PeakListRow row : net.keySet()) {
+      Stream.of(IonNetworkLogic.getAllNetworks(row)).
+      if(!net.equals(o))
+    }
   }
 
   private static int getLinks(IonIdentity best) {

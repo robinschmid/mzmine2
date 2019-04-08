@@ -282,7 +282,9 @@ public class IonNetworkingTask extends AbstractTask {
    * @param compared
    * @param annotPairs
    */
-  private void annotateGroup(RowGroup g, AtomicInteger compared, AtomicInteger annotPairs) {
+  private void annotateGroup(RowGroup g,
+      // AtomicInteger finished,
+      AtomicInteger compared, AtomicInteger annotPairs) {
     for (int i = 0; i < g.size() - 1; i++) {
       // check against existing networks
       for (int k = i + 1; k < g.size(); k++) {
@@ -296,6 +298,7 @@ public class IonNetworkingTask extends AbstractTask {
             annotPairs.incrementAndGet();
         }
       }
+      // finished.incrementAndGet();
     }
   }
 
