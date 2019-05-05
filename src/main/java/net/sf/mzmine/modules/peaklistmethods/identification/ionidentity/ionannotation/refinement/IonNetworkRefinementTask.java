@@ -150,8 +150,11 @@ public class IonNetworkRefinementTask extends AbstractTask {
 
   private static void deleteAllOther(IonNetwork net) {
     for (PeakListRow row : net.keySet()) {
-      Stream.of(IonNetworkLogic.getAllNetworks(row)).
-      if(!net.equals(o))
+      Stream.of(IonNetworkLogic.getAllNetworks(row)).forEach(o -> {
+        if (net.getID() != o.getID()) {
+          o.delete();
+        }
+      });
     }
   }
 
