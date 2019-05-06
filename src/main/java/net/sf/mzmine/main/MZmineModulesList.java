@@ -83,6 +83,7 @@ import net.sf.mzmine.modules.projectmethods.projectclose.ProjectCloseModule;
 import net.sf.mzmine.modules.projectmethods.projectload.ProjectLoadModule;
 import net.sf.mzmine.modules.projectmethods.projectsave.ProjectSaveAsModule;
 import net.sf.mzmine.modules.projectmethods.projectsave.ProjectSaveModule;
+import net.sf.mzmine.modules.rawdatamethods.exportscans.ExtractAllScansModule;
 import net.sf.mzmine.modules.rawdatamethods.exportscans.ExtractScansModule;
 import net.sf.mzmine.modules.rawdatamethods.filtering.alignscans.AlignScansModule;
 import net.sf.mzmine.modules.rawdatamethods.filtering.baselinecorrection.BaselineCorrectionModule;
@@ -134,14 +135,13 @@ public class MZmineModulesList {
 
       // Raw data methods
       RawDataImportModule.class, RawDataExportModule.class, ExtractScansModule.class,
-      MassDetectionModule.class, ShoulderPeaksFilterModule.class, ChromatogramBuilderModule.class,
-      ImageBuilderModule.class, SimpleImageBuilderModule.class, ADAPChromatogramBuilderModule.class,
+      ExtractAllScansModule.class, MassDetectionModule.class, ShoulderPeaksFilterModule.class,
+      ChromatogramBuilderModule.class, ImageBuilderModule.class, SimpleImageBuilderModule.class,
+      ADAPChromatogramBuilderModule.class,
       // Not ready for prime time: ADAP3DModule.class,
       GridMassModule.class, ManualPeakPickerModule.class, MsMsPeakPickerModule.class,
       ScanFiltersModule.class, CropFilterModule.class, BaselineCorrectionModule.class,
       AlignScansModule.class, ScanSmoothingModule.class, OrderDataFilesModule.class,
-
-      ExtractScansModule.class,
 
       // Alignment
       OrderPeakListsModule.class, JoinAlignerModule.class, HierarAlignerGcModule.class,

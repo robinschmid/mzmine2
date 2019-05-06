@@ -41,125 +41,184 @@ class ExtractScansTask extends AbstractTask {
   private double centerTime;
   private File file;
   private List<RawDataFile> dataFiles;
-  private boolean useMassList, autoMax, exportSummary, exportHeader;
+  private boolean useMassList, autoMax, exportHeader;
   private String delimiter = "\t";
   private String massList;
 
   private double minTime, maxTime;
   private boolean useCenterTime;
+  private boolean separateFolders;
+  private boolean exportAllScans;
 
 
+  /**
+   * ExtractAllScansParameters or ExtractScansParameters
+   * 
+   * @param parameters
+   */
   ExtractScansTask(ParameterSet parameters) {
-    dataFiles = Arrays.asList(parameters.getParameter(ExtractScansParameters.dataFiles).getValue()
-        .getMatchingRawDataFiles());
-    scans = parameters.getParameter(ExtractScansParameters.scans).getValue().intValue();
-    centerTime = parameters.getParameter(ExtractScansParameters.centerTime).getValue();
-    file = parameters.getParameter(ExtractScansParameters.file).getValue();
-    autoMax = parameters.getParameter(ExtractScansParameters.autoMax).getValue();
-    // exportSummary = parameters.getParameter(ExtractScansParameters.exportSummary).getValue();
-    exportHeader = parameters.getParameter(ExtractScansParameters.exportHeader).getValue();
-    // export mass list
-    useMassList = parameters.getParameter(ExtractScansParameters.useMassList).getValue();
-    massList = parameters.getParameter(ExtractScansParameters.useMassList).getEmbeddedParameter()
-        .getValue();
-    useCenterTime = parameters.getParameter(ExtractScansParameters.useCenterTime).getValue();
-    minTime = parameters.getParameter(ExtractScansParameters.rangeTime).getValue().lowerEndpoint();
-    maxTime = parameters.getParameter(ExtractScansParameters.rangeTime).getValue().upperEndpoint();
+    if (parameters instanceof ExtractAllScansParameters) {
+      dataFiles = Arrays.asList(parameters.getParameter(ExtractAllScansParameters.dataFiles)
+          .getValue().getMatchingRawDataFiles());
+      file = parameters.getParameter(ExtractAllScansParameters.file).getValue();
+      separateFolders =
+          parameters.getParameter(ExtractAllScansParameters.separateFolders).getValue();
+      exportAllScans = true;
+      exportHeader = parameters.getParameter(ExtractScansParameters.exportHeader).getValue();
+      // export mass list
+      useMassList = parameters.getParameter(ExtractScansParameters.useMassList).getValue();
+      massList = parameters.getParameter(ExtractScansParameters.useMassList).getEmbeddedParameter()
+          .getValue();
+
+      useCenterTime = false;
+      autoMax = false;
+    } else {
+      dataFiles = Arrays.asList(parameters.getParameter(ExtractScansParameters.dataFiles).getValue()
+          .getMatchingRawDataFiles());
+      scans = parameters.getParameter(ExtractScansParameters.scans).getValue().intValue();
+      centerTime = parameters.getParameter(ExtractScansParameters.centerTime).getValue();
+      file = parameters.getParameter(ExtractScansParameters.file).getValue();
+      separateFolders = parameters.getParameter(ExtractScansParameters.separateFolders).getValue();
+      exportAllScans = parameters.getParameter(ExtractScansParameters.exportAllScans).getValue();
+      autoMax = parameters.getParameter(ExtractScansParameters.autoMax).getValue();
+      // exportSummary = parameters.getParameter(ExtractScansParameters.exportSummary).getValue();
+      exportHeader = parameters.getParameter(ExtractScansParameters.exportHeader).getValue();
+      // export mass list
+      useMassList = parameters.getParameter(ExtractScansParameters.useMassList).getValue();
+      massList = parameters.getParameter(ExtractScansParameters.useMassList).getEmbeddedParameter()
+          .getValue();
+      useCenterTime = parameters.getParameter(ExtractScansParameters.useCenterTime).getValue();
+      minTime =
+          parameters.getParameter(ExtractScansParameters.rangeTime).getValue().lowerEndpoint();
+      maxTime =
+          parameters.getParameter(ExtractScansParameters.rangeTime).getValue().upperEndpoint();
+    }
   }
 
+  @Override
   public double getFinishedPercentage() {
     return perc;
   }
 
+  @Override
   public String getTaskDescription() {
     return "Extracting scans to CSV file(s)";
   }
 
 
+  @Override
   public void run() {
     setStatus(TaskStatus.PROCESSING);
-    if (useCenterTime) {
+    if (exportAllScans) {
+      exportAllScans();
+    } else if (useCenterTime) {
       // scans arround a center time
-      for (int r = 0; r < dataFiles.size(); r++) {
-        RawDataFile raw = dataFiles.get(r);
-        int start = 0;
-        double max = 0;
-        // find center scan
-        for (int i = 0; i < raw.getNumOfScans(); i++) {
-          Scan scan = raw.getScan(raw.getScanNumbers()[i]);
-          double rt = scan.getRetentionTime();
-          if (autoMax) {
-            double tic = scan.getTIC();
-            if (tic > max) {
-              start = i;
-              max = tic;
-            }
-          } else {
-            if (rt > centerTime || i == raw.getNumOfScans() - 1) {
-              // export scans
-              start = i;
-              break;
-            }
-          }
-        }
-        if (autoMax) {
-          scanMaxTIC = start;
-        }
-        start = start - scans / 2;
-        if (start + scans > raw.getNumOfScans())
-          start = raw.getNumOfScans() - scans;
-        if (start < 0)
-          start = 0;
-
-        exportScans(file, raw, start, scans, (double) 1.0 / dataFiles.size());
-        //
-        perc = (double) (r + 1) / dataFiles.size();
-      }
+      exportScansAroundCenterTime();
     } else {
-      // export between min/max time
-      for (int r = 0; r < dataFiles.size(); r++) {
-        RawDataFile raw = dataFiles.get(r);
-        int start = -1;
-        int end = -1;
-        for (int i = 0; i < raw.getNumOfScans(); i++) {
-          Scan scan = raw.getScan(raw.getScanNumbers()[i]);
-          double rt = scan.getRetentionTime();
-
-          if (i == raw.getNumOfScans() - 1) {
-            // no minimum was set?
-            if (start == -1) {
-              setErrorMessage("And of scans reached. Minimum was set too high?");
-              setStatus(TaskStatus.ERROR);
-              return;
-            } else {
-              // set end to max
-              end = i;
-            }
-          } else if (rt >= minTime && start == -1) {
-            // export scans
-            start = i;
-          } else if (rt > maxTime) {
-            // export scans
-            end = i - 1;
-            break;
-          }
-        }
-        if (start != -1 && end != -1)
-          exportScans(file, raw, start, end - start, (double) 1.0 / dataFiles.size());
-        //
-        perc = (double) (r + 1) / dataFiles.size();
-      }
+      exportInTimeWindow();
     }
 
     if (getStatus() == TaskStatus.PROCESSING)
       setStatus(TaskStatus.FINISHED);
   }
 
+  private void exportAllScans() {
+    // export all
+    for (int r = 0; r < dataFiles.size(); r++) {
+      RawDataFile raw = dataFiles.get(r);
+
+      exportScans(file, raw, 0, raw.getNumOfScans(), 1.0 / dataFiles.size());
+      //
+      perc = (double) (r + 1) / dataFiles.size();
+    }
+  }
+
+  private void exportInTimeWindow() {
+    // export between min/max time
+    for (int r = 0; r < dataFiles.size(); r++) {
+      RawDataFile raw = dataFiles.get(r);
+      int start = -1;
+      int end = -1;
+      for (int i = 0; i < raw.getNumOfScans(); i++) {
+        Scan scan = raw.getScan(raw.getScanNumbers()[i]);
+        double rt = scan.getRetentionTime();
+
+        if (i == raw.getNumOfScans() - 1) {
+          // no minimum was set?
+          if (start == -1) {
+            setErrorMessage("And of scans reached. Minimum was set too high?");
+            setStatus(TaskStatus.ERROR);
+            return;
+          } else {
+            // set end to max
+            end = i;
+          }
+        } else if (rt >= minTime && start == -1) {
+          // export scans
+          start = i;
+        } else if (rt > maxTime) {
+          // export scans
+          end = i - 1;
+          break;
+        }
+      }
+      if (start != -1 && end != -1)
+        exportScans(file, raw, start, end - start, 1.0 / dataFiles.size());
+      //
+      perc = (double) (r + 1) / dataFiles.size();
+    }
+  }
+
+  private void exportScansAroundCenterTime() {
+    for (int r = 0; r < dataFiles.size(); r++) {
+      RawDataFile raw = dataFiles.get(r);
+      int start = 0;
+      double max = 0;
+      // find center scan
+      for (int i = 0; i < raw.getNumOfScans(); i++) {
+        Scan scan = raw.getScan(raw.getScanNumbers()[i]);
+        double rt = scan.getRetentionTime();
+        if (autoMax) {
+          double tic = scan.getTIC();
+          if (tic > max) {
+            start = i;
+            max = tic;
+          }
+        } else {
+          if (rt > centerTime || i == raw.getNumOfScans() - 1) {
+            // export scans
+            start = i;
+            break;
+          }
+        }
+      }
+      if (autoMax) {
+        scanMaxTIC = start;
+      }
+      start = start - scans / 2;
+      if (start + scans > raw.getNumOfScans())
+        start = raw.getNumOfScans() - scans;
+      if (start < 0)
+        start = 0;
+
+      exportScans(file, raw, start, scans, 1.0 / dataFiles.size());
+      //
+      perc = (double) (r + 1) / dataFiles.size();
+    }
+  }
+
   private void exportScans(File dir, RawDataFile raw, int start, int scans, double pp) {
     // Open file
     DecimalFormat format = new DecimalFormat("00");
-    File fileDir = new File(dir, FileAndPathUtil.eraseFormat(raw.getName()));
+    // directory
+    String rawName = FileAndPathUtil.eraseFormat(raw.getName());
+    final File fileDir;
+    if (separateFolders)
+      fileDir = new File(dir, rawName);
+    else
+      fileDir = dir;
     FileAndPathUtil.createDirectory(fileDir);
+
     int end = Math.min(scans + start, raw.getNumOfScans());
     String linescans = "scan" + delimiter + raw.getScanNumbers()[start] + delimiter + "to"
         + delimiter + raw.getScanNumbers()[end - 1] + "\n";
@@ -167,7 +226,9 @@ class ExtractScansTask extends AbstractTask {
         + "to" + raw.getScan(raw.getScanNumbers()[end - 1]).getRetentionTime() + "\n";
     String linePath = raw.getName() + "\n";
     String lineOptions = "export of" + delimiter;
-    if (!useCenterTime) {
+    if (exportAllScans) {
+      lineOptions += "ALL SCANS";
+    } else if (!useCenterTime) {
       double st = raw.getScan(raw.getScanNumbers()[start]).getRetentionTime();
       double et = raw.getScan(raw.getScanNumbers()[end]).getRetentionTime();
       lineOptions += scans + delimiter + "scans from time " + delimiter + st + " to " + et + "\n";
@@ -181,7 +242,11 @@ class ExtractScansTask extends AbstractTask {
 
     for (int i = start; i < end; i++) {
       FileWriter writer;
-      File file = new File(fileDir, "scan" + format.format((i - start + 1)) + ".csv");
+      String fileName = "scan" + format.format((i - start + 1)) + ".csv";
+      // same folder? prefix for filename
+      if (!separateFolders)
+        fileName = rawName + "_" + fileName;
+      final File file = new File(fileDir, fileName);
       StringBuilder out = new StringBuilder();
       try {
         writer = new FileWriter(file);
@@ -231,7 +296,7 @@ class ExtractScansTask extends AbstractTask {
         }
       }
       //
-      perc += pp / (double) scans;
+      perc += pp / scans;
     }
   }
 

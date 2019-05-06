@@ -18,54 +18,31 @@
 
 package net.sf.mzmine.modules.rawdatamethods.exportscans;
 
-import java.text.DecimalFormat;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
-import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
-import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.MassListParameter;
 import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
 import net.sf.mzmine.parameters.parametertypes.filenames.DirectoryParameter;
-import net.sf.mzmine.parameters.parametertypes.ranges.RTRangeParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.RawDataFilesParameter;
 
-public class ExtractScansParameters extends SimpleParameterSet {
+public class ExtractAllScansParameters extends SimpleParameterSet {
 
   public static final RawDataFilesParameter dataFiles = new RawDataFilesParameter();
-  public static final BooleanParameter useCenterTime = new BooleanParameter("Use center time",
-      "If checked the center time and scan count are used for export. Otherwise all scans in the given time range are exported.",
-      false);
   public static final BooleanParameter separateFolders = new BooleanParameter("In separate folders",
       "Either separate folders for each raw data file or in one folder with the raw data file name as a prefix",
       false);
-  public static final BooleanParameter exportAllScans = new BooleanParameter("All scans",
-      "All scans (center time and scan count is left out then)", true);
-  public static final IntegerParameter scans = new IntegerParameter("Scan count to be exported",
-      "Total scan count to be exported centered around the center time", 30, true);
-
-  public static final DoubleParameter centerTime =
-      new DoubleParameter("Center time", "Center time", new DecimalFormat("#.##"), 0.0);
-
-  public static final RTRangeParameter rangeTime = new RTRangeParameter("Time range",
-      "If \"use center time\" is unchecked all scans between the minimum and maximum time are exported (inclusive).",
-      false, null);
 
   public static final DirectoryParameter file =
       new DirectoryParameter("Output directory", "Directory to write scans to");
-  public static final BooleanParameter autoMax = new BooleanParameter("Auto search max",
-      "Automatically search for maximum TIC intensity as center scan", false);
   public static final BooleanParameter exportHeader =
       new BooleanParameter("Export header", "Exports a header for each scan file", false);
-  public static final BooleanParameter exportSummary =
-      new BooleanParameter("Export summary", "Exports a summary Microsoft Excel file", true);
 
   public static final OptionalParameter<MassListParameter> useMassList =
       new OptionalParameter<>(new MassListParameter());
 
-  public ExtractScansParameters() {
-    super(new Parameter[] {useMassList, dataFiles, file, separateFolders, exportAllScans,
-        useCenterTime, scans, centerTime, rangeTime, autoMax, exportHeader});
+  public ExtractAllScansParameters() {
+    super(new Parameter[] {useMassList, dataFiles, file, separateFolders, exportHeader});
   }
 
 }
