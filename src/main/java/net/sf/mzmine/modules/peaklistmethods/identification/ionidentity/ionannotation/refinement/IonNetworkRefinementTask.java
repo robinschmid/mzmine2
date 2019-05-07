@@ -19,6 +19,7 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement;
 
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 import net.sf.mzmine.datamodel.MZmineProject;
@@ -85,15 +86,34 @@ public class IonNetworkRefinementTask extends AbstractTask {
 
 
   public void refine() {
+    // sort and refine
     refine(peakList, trueThreshold, deleteXmersOnMSMS);
   }
 
   public static void refine(PeakList pkl, int trueThreshold, boolean deleteXmersOnMSMS) {
+    // sort
+    IonNetworkLogic.sortIonIdentities(pkl, true);
+
     long count = IonNetworkLogic.streamNetworks(pkl).count();
     LOG.info("Ion identity networks before refinement: " + count);
 
     IonNetwork[] nets = IonNetworkLogic.getAllNetworks(pkl, false);
+    deleteAllWithoutMonomer(nets);
+    deleteSmallerNetworks(nets, trueThreshold);
+
     // TODO new network refinement
+
+    count = IonNetworkLogic.streamNetworks(pkl).count();
+    LOG.info("Ion identity networks after refinement: " + count);
+  }
+
+  /**
+   * Delete all smaller networks if one network is the preferred in all rows
+   * 
+   * @param nets
+   * @param trueThreshold
+   */
+  private static void deleteSmallerNetworks(IonNetwork[] nets, int trueThreshold) {
     for (IonNetwork net : nets) {
       // not deleted
       if (net.size() > 0) {
@@ -105,38 +125,39 @@ public class IonNetworkRefinementTask extends AbstractTask {
         }
       }
     }
-
-    // for (PeakListRow row : pkl.getRows()) {
-    //
-    // if (row.hasIonIdentity()) {
-    // List<IonIdentity> all = IonNetworkLogic.sortIonIdentities(row, true);
-    // IonIdentity best = all.get(0);
-    //
-    // if (deleteXmersOnMSMS && all.size() > 1) {
-    // // xmers
-    // if (deleteXmersOnMSMS(row, best, all, trueThreshold)) {
-    // all = IonNetworkLogic.sortIonIdentities(row, true);
-    // best = all.get(0);
-    // }
-    // }
-    //
-    // if (best == null)
-    // continue;
-    //
-    // if (trueThreshold > 1) {
-    // int links = getLinks(best);
-    //
-    // if (links >= trueThreshold) {
-    // for (int i = 1; i < row.getIonIdentities().size();)
-    // row.getIonIdentities().get(i).delete(row);
-    // }
-    // }
-    // }
-    // }
-    count = IonNetworkLogic.streamNetworks(pkl).count();
-    LOG.info("Ion identity networks after refinement: " + count);
   }
 
+  /**
+   * Delete all networks without monomer or with 1 monomer and >=3 multimers
+   * 
+   * @param nets
+   */
+  private static void deleteAllWithoutMonomer(IonNetwork[] nets) {
+    for (IonNetwork net : nets) {
+      // not deleted
+      if (net.size() > 0) {
+        int monomer = 0;
+        int multimer = 0;
+        for (Entry<PeakListRow, IonIdentity> e : net.entrySet()) {
+          if (e.getValue().getIonType().getMolecules() == 1)
+            monomer++;
+          else if (e.getValue().getIonType().getMolecules() > 1)
+            multimer++;
+        }
+        // no monomer
+        // 1 monomer and >=3 multimers --> delete
+        if (monomer == 0 || (monomer == 1 && multimer >= 3))
+          net.delete();
+      }
+    }
+  }
+
+  /**
+   * Is best network in all rows?
+   * 
+   * @param net
+   * @return
+   */
   private static boolean isBestNet(IonNetwork net) {
     for (PeakListRow row : net.keySet()) {
       IonIdentity id = row.getBestIonIdentity();
@@ -148,6 +169,11 @@ public class IonNetworkRefinementTask extends AbstractTask {
     return true;
   }
 
+  /**
+   * Keep net but delete all other networks from all rows
+   * 
+   * @param net
+   */
   private static void deleteAllOther(IonNetwork net) {
     for (PeakListRow row : net.keySet()) {
       Stream.of(IonNetworkLogic.getAllNetworks(row)).forEach(o -> {

@@ -33,7 +33,8 @@ public class IonNetworkLibrary {
   private final IonModification[] selectedMods;
   private List<IonType> allAdducts = new ArrayList<>();
   private final boolean isPositive;
-  private final int maxMolecules, maxCharge;
+  private final int maxCharge;
+  private final int maxMolecules;
 
   public IonNetworkLibrary(IonNetworkingParameters parameterSet) {
     this(parameterSet, parameterSet.getParameter(IonNetworkingParameters.MZ_TOLERANCE).getValue(),
