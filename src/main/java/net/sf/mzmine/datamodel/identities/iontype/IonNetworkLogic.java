@@ -37,12 +37,12 @@ public class IonNetworkLogic {
   public static int compareRows(IonIdentity a, IonIdentity b, RowGroup g) {
     if (a == null && b == null)
       return 0;
-    // M+?
+    // M+? (undefined
     else if (a == null || a.getIonType().isUndefinedAdductParent())
       return -1;
     else if (b == null || b.getIonType().isUndefinedAdductParent())
       return 1;
-    // M-H2O+? (one is?
+    // M-H2O+? (one is? undefined
     else if (a.getIonType().isUndefinedAdduct() && !b.getIonType().isUndefinedAdduct())
       return -1;
     else if (!a.getIonType().isUndefinedAdduct() && b.getIonType().isUndefinedAdduct())
@@ -52,6 +52,12 @@ public class IonNetworkLogic {
     int result = Integer.compare(a.getLikelyhood(), b.getLikelyhood());
     if (result != 0)
       return result;
+    if (result == 0) {
+      // if a has less nM molecules in cluster
+      result = Integer.compare(b.getIonType().getMolecules(), a.getIonType().getMolecules());
+      if (result != 0)
+        return result;
+    }
 
     int bLinks = getLinksTo(b, g);
     int aLinks = getLinksTo(a, g);
@@ -445,17 +451,9 @@ public class IonNetworkLogic {
     ident.sort(new Comparator<IonIdentity>() {
       @Override
       public int compare(IonIdentity a, IonIdentity b) {
-        // reversed order
-        switch (compareRows(a, b, group)) {
-          case -1:
-            return 1;
-          case 1:
-            return -1;
-          default:
-            return 0;
-        }
+        return compareRows(a, b, group);
       }
-    });
+    }.reversed());
     return ident;
   }
 
