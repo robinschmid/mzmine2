@@ -19,6 +19,8 @@
 package net.sf.mzmine.modules.masslistmethods.imagebuildersimple;
 
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import com.google.common.collect.Range;
@@ -28,7 +30,6 @@ import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.MassList;
 import net.sf.mzmine.datamodel.PeakList;
-import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimplePeakList;
@@ -130,6 +131,7 @@ public class SimpleImageBuilderTask extends AbstractTask {
   /**
    * @see net.sf.mzmine.taskcontrol.Task#getTaskDescription()
    */
+  @Override
   public String getTaskDescription() {
     return "Detecting images in " + dataFile;
   }
@@ -137,6 +139,7 @@ public class SimpleImageBuilderTask extends AbstractTask {
   /**
    * @see net.sf.mzmine.taskcontrol.Task#getFinishedPercentage()
    */
+  @Override
   public double getFinishedPercentage() {
     if (totalScans == 0)
       return 0;
@@ -152,14 +155,13 @@ public class SimpleImageBuilderTask extends AbstractTask {
   /**
    * @see Runnable#run()
    */
+  @Override
   public void run() {
     setStatus(TaskStatus.PROCESSING);
     logger.info("Started simple image builder on " + dataFile);
 
     // Create new peak list
     newPeakList = new SimplePeakList(dataFile + " " + suffix, dataFile);
-
-    Feature[] chromatograms;
 
     // all selected scans
     scans = scanSelection.getMatchingScans(dataFile);
@@ -240,10 +242,11 @@ public class SimpleImageBuilderTask extends AbstractTask {
 
     // average
     for (int i = 0; i < countBin.length; i++) {
-      mzBin[i] = mzBin[i] / (double) countBin[i];
-      intensityBin[i] = intensityBin[i] / (double) countBin[i];
+      mzBin[i] = mzBin[i] / countBin[i];
+      intensityBin[i] = intensityBin[i] / countBin[i];
     }
 
+    List<Feature> features = new ArrayList<>();
     // percentage done
     processedScans = 0;
     totalScans = countBin.length;
@@ -261,25 +264,31 @@ public class SimpleImageBuilderTask extends AbstractTask {
         double avgMZ = mzBin[i];
         // logger.info("Adding bin " + i + " with avg m/z=" + avgMZ + " at center (sigma) " +
         // center+ "(" + sigma + ")");
-        addToPeakList(newPeakList, scans, center, sigma);
+        Feature f = createFeature(scans, center, sigma);
+        if (f != null)
+          features.add(f);
       }
 
       processedScans++;
     }
 
-    if (newPeakList.getNumberOfRows() > 0) {
+    if (!features.isEmpty()) {
       // filter duplicates
-      for (int i = 0; i < newPeakList.getNumberOfRows() - 1; i++) {
-        PeakListRow r = newPeakList.getRow(i);
-        PeakListRow r2 = newPeakList.getRow(i + 1);
-        if (mzTolerance.checkWithinTolerance(r.getAverageMZ(), r2.getAverageMZ())) {
+      for (int i = 0; i < features.size() - 1; i++) {
+        Feature r = features.get(i);
+        Feature r2 = features.get(i + 1);
+        if (mzTolerance.checkWithinTolerance(r.getMZ(), r2.getMZ())) {
           // remove the one with the lowest number of scans
-          if (r.getBestPeak().getScanNumbers().length < r2.getBestPeak().getScanNumbers().length)
-            newPeakList.removeRow(i);
+          if (r.getScanNumbers().length < r2.getScanNumbers().length)
+            features.remove(i);
           else
-            newPeakList.removeRow(i + 1);
+            features.remove(i + 1);
         }
       }
+
+      // add to peaklist
+      for (Feature f : features)
+        addToPeakList(newPeakList, f);
 
       //
       logger.info("Adding peaklist to project: " + newPeakList.getName());
@@ -290,7 +299,9 @@ public class SimpleImageBuilderTask extends AbstractTask {
       logger.info("Calculating quality parameters for peaklist: " + newPeakList.getName());
       QualityParameters.calculateQualityParameters(newPeakList);
 
-    } else {
+    } else
+
+    {
       throw new MSDKRuntimeException("Data was empty. Review your selected filters.");
     }
 
@@ -349,24 +360,28 @@ public class SimpleImageBuilderTask extends AbstractTask {
   }
 
 
-  private void addToPeakList(SimplePeakList pkl, Scan[] scans, double meanMZ, double sigma) {
+  private Feature createFeature(Scan[] scans, double meanMZ, double sigma) {
     try {
       Feature f = FeatureCreator.createFeature(dataFile, massListName, scans, meanMZ, sigma);
       // only add if meet filter
       if (f.getHeight() >= minimumHeight) {
-        SimplePeakListRow newRow = new SimplePeakListRow(newPeakID);
-        newPeakID++;
-        newRow.addPeak(dataFile, f);
-        newPeakList.addRow(newRow);
-        // logger.info("Added chromatogram #" + newPeakList.getNumberOfRows() + " at "
-        // + mzform.format(f.getMZ()));
+        return f;
       } else {
         countTooSmall++;
-        // logger.info("NOT added TOO SMALL chromatogram #" + countTooSmall + " at "
-        // + mzform.format(f.getMZ()));
       }
     } catch (Exception e) {
-      e.printStackTrace();
+      logger.log(Level.WARNING, "Error while adding feature", e);
+    }
+    return null;
+  }
+
+  private void addToPeakList(SimplePeakList pkl, Feature f) {
+    try {
+      SimplePeakListRow newRow = new SimplePeakListRow(newPeakID);
+      newPeakID++;
+      newRow.addPeak(dataFile, f);
+      newPeakList.addRow(newRow);
+    } catch (Exception e) {
       logger.log(Level.WARNING, "Error while adding feature", e);
     }
   }

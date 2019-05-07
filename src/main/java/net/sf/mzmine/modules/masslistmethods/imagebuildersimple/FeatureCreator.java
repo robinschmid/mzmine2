@@ -92,7 +92,7 @@ public class FeatureCreator {
         }
       }
     }
-    if (data.size() > 4) {
+    if (data.size() > 2) {
       // array
       DataPoint[] dataArray = data.toArray(new DataPoint[data.size()]);
       // stats
