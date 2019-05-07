@@ -191,6 +191,8 @@ public class RowGroup extends ArrayList<PeakListRow> {
    * @return
    */
   public boolean isCorrelated(int i, int k) {
+    if (i == -1 || k == -1)
+      return false;
     return true;
   }
 
@@ -203,6 +205,10 @@ public class RowGroup extends ArrayList<PeakListRow> {
    * @return
    */
   public boolean isCorrelated(PeakListRow a, PeakListRow b) {
-    return isCorrelated(indexOf(a), indexOf(b));
+    int ia = indexOf(a);
+    int ib = indexOf(b);
+    if (ia == -1 || ib == -1)
+      return false;
+    return isCorrelated(ia, ib);
   }
 }

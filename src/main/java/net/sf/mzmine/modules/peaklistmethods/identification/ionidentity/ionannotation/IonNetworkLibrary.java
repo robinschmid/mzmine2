@@ -11,8 +11,10 @@ import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.datamodel.identities.iontype.IonModification;
 import net.sf.mzmine.datamodel.identities.iontype.IonModificationType;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonType;
 import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.parameters.parametertypes.ionidentity.IonLibraryParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
 public class IonNetworkLibrary {
@@ -36,9 +38,13 @@ public class IonNetworkLibrary {
   private final int maxCharge;
   private final int maxMolecules;
 
-  public IonNetworkLibrary(IonNetworkingParameters parameterSet) {
-    this(parameterSet, parameterSet.getParameter(IonNetworkingParameters.MZ_TOLERANCE).getValue(),
-        parameterSet.getParameter(IonNetworkingParameters.MAX_CHARGE).getValue());
+  /**
+   * Set mztolerance later
+   * 
+   * @param parameterSet
+   */
+  public IonNetworkLibrary(IonLibraryParameterSet parameterSet) {
+    this(parameterSet, null);
   }
 
   /**
@@ -46,17 +52,34 @@ public class IonNetworkLibrary {
    * 
    * @param parameterSet
    */
-  public IonNetworkLibrary(IonNetworkingParameters parameterSet, MZTolerance mzTolerance,
-      int maxCharge) {
+  public IonNetworkLibrary(IonLibraryParameterSet parameterSet, MZTolerance mzTolerance) {
+    this.mzTolerance = mzTolerance;
+    this.maxCharge = parameterSet.getParameter(IonLibraryParameterSet.MAX_CHARGE).getValue();
+    // adducts stuff
+    isPositive = parameterSet.getParameter(IonLibraryParameterSet.POSITIVE_MODE).getValue()
+        .equals("POSITIVE");
+    maxMolecules = parameterSet.getParameter(IonLibraryParameterSet.MAX_MOLECULES).getValue();
+
+    selectedAdducts = parameterSet.getParameter(IonLibraryParameterSet.ADDUCTS).getValue()[0];
+    selectedMods = parameterSet.getParameter(IonLibraryParameterSet.ADDUCTS).getValue()[1];
+
+    createAllAdducts(isPositive, maxMolecules, maxCharge);
+  }
+
+  /**
+   * For simple setup
+   * 
+   * @param parameterSet
+   */
+  public IonNetworkLibrary(MZTolerance mzTolerance, int maxCharge, boolean isPositive,
+      int maxMolecules, IonModification[] selectedAdducts, IonModification[] selectedMods) {
     this.mzTolerance = mzTolerance;
     this.maxCharge = maxCharge;
+    this.isPositive = isPositive;
     // adducts stuff
-    isPositive = parameterSet.getParameter(IonNetworkingParameters.POSITIVE_MODE).getValue()
-        .equals("POSITIVE");
-    maxMolecules = parameterSet.getParameter(IonNetworkingParameters.MAX_MOLECULES).getValue();
-
-    selectedAdducts = parameterSet.getParameter(IonNetworkingParameters.ADDUCTS).getValue()[0];
-    selectedMods = parameterSet.getParameter(IonNetworkingParameters.ADDUCTS).getValue()[1];
+    this.maxMolecules = maxMolecules;
+    this.selectedAdducts = selectedAdducts;
+    this.selectedMods = selectedMods;
 
     createAllAdducts(isPositive, maxMolecules, maxCharge);
   }
@@ -156,6 +179,34 @@ public class IonNetworkLibrary {
     // no adduct to be found
     return list;
   }
+
+
+  /**
+   * 
+   * @param peakList
+   * @param row
+   * @param net for neutral mass
+   * @return
+   */
+  public List<IonIdentity> findAdducts(PeakList peakList, PeakListRow row, IonNetwork net) {
+    int z = Math.abs(row.getBestPeak().getCharge());
+    List<IonIdentity> list = new ArrayList<>();
+    // check all combinations of adducts
+    for (IonType adduct : allAdducts) {
+      if (z == 0 || adduct.getAbsCharge() == z) {
+        double neutralMass = net.getNeutralMass();
+        double mz = row.getAverageMZ();
+        double rowMass = adduct.getMass(mz);
+        if (mzTolerance.checkWithinTolerance(neutralMass, rowMass)) {
+          // add identity
+          todo add identty to network and to row (later?)
+        }
+      }
+      // no adduct to be found
+    }
+    return list;
+  }
+
 
   /**
    * Do not allow adduct overlap: Only if both are of type undefined ?
@@ -276,6 +327,8 @@ public class IonNetworkLibrary {
       return mode.equals(CheckMode.ALL_FEATURES) && hasCommonPeak;
     }
   }
+
+
 
   /**
    * adds modification to the existing adducts
