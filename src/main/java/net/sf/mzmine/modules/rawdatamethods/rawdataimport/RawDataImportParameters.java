@@ -32,12 +32,13 @@ import net.sf.mzmine.util.ExitCode;
 public class RawDataImportParameters extends SimpleParameterSet {
 
   private static final FileFilter filters[] = new FileFilter[] {
-      new FileNameExtensionFilter("All raw data files", "cdf", "nc", "mzData", "mzML", "mzXML",
+      new FileNameExtensionFilter("All raw data files", "cdf", "nc", "mzData", "mzML", "mzXML", "imzML",
           "xml", "raw", "csv", "zip", "gz"),
       new FileNameExtensionFilter("All XML files", "xml"),
       new FileNameExtensionFilter("NetCDF files", "cdf", "nc"),
       new FileNameExtensionFilter("mzData files", "mzData"),
       new FileNameExtensionFilter("mzML files", "mzML"),
+       new FileNameExtensionFilter("imzML files (imaging)", "imzML"),
       new FileNameExtensionFilter("Thermo RAW files", "raw"),
       new FileNameExtensionFilter("Waters RAW folders", "raw"),
       new FileNameExtensionFilter("mzXML files", "mzXML"),

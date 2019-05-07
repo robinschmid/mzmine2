@@ -25,6 +25,7 @@ public enum RawDataFileType {
 
   MZML, //
   MZXML, //
+    IMZML, // imaging
   MZDATA, //
   NETCDF, //
   AGILENT_CSV, //

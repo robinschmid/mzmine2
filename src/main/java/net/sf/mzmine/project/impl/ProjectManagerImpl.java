@@ -77,6 +77,8 @@ public class ProjectManagerImpl implements ProjectManager {
     // Notify the GUI about project structure change
     ((MZmineProjectImpl) project).activateProject();
 
+    // send to listeners
+    MZmineCore.getDesktop().fireProjectChanged();
   }
 
   public static ProjectManagerImpl getInstance() {

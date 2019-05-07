@@ -27,4 +27,8 @@ public interface MZmineProjectListener {
 
   void peakListAdded(PeakList newPeakList);
 
+
+    void dataFileRemoved(RawDataFile newFile);
+
+    void peakListRemoved(PeakList newPeakList);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2018 The MZmine 2 Development Team
+ * Copyright 2006-2015 The MZmine 2 Development Team
  * 
  * This file is part of MZmine 2.
  * 
@@ -40,6 +40,7 @@ import javax.swing.JSeparator;
 import javax.swing.KeyStroke;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
+import net.sf.mzmine.desktop.ImportantWindow;
 import net.sf.mzmine.desktop.impl.MainWindow;
 
 /**
@@ -94,6 +95,8 @@ public class GUIUtils {
   public static void closeAllWindows() {
     for (Window window : Window.getWindows()) {
       if (window instanceof MainWindow)
+        continue;
+      if (window instanceof ImportantWindow)
         continue;
       window.dispose();
     }

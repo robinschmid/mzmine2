@@ -81,6 +81,12 @@ public class BatchTask extends AbstractTask {
       public void dataFileAdded(RawDataFile newFile) {
         createdDataFiles.add(newFile);
       }
+
+      @Override
+      public void dataFileRemoved(RawDataFile newFile) {}
+
+      @Override
+      public void peakListRemoved(PeakList newPeakList) {}
     };
     project.addProjectListener(listener);
 

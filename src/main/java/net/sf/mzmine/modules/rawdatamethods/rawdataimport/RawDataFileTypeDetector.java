@@ -101,8 +101,12 @@ public class RawDataFileTypeDetector {
         return RawDataFileType.NETCDF;
       }
 
-      if (fileHeader.contains(MZML_HEADER))
-        return RawDataFileType.MZML;
+      if (fileHeader.contains(MZML_HEADER)) {
+        if (fileName.getName().toLowerCase().endsWith("imzml"))
+          return RawDataFileType.IMZML;
+        else
+          return RawDataFileType.MZML;
+          }
 
       if (fileHeader.contains(MZDATA_HEADER))
         return RawDataFileType.MZDATA;
@@ -110,9 +114,13 @@ public class RawDataFileTypeDetector {
       if (fileHeader.contains(MZXML_HEADER))
         return RawDataFileType.MZXML;
 
+    if (fileName.getName().toLowerCase().endsWith("imzml"))
+      return RawDataFileType.IMZML;
+      
     } catch (Exception e) {
       e.printStackTrace();
     }
+    
 
     return null;
 

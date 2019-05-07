@@ -24,22 +24,20 @@ import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-
 import javax.annotation.Nonnull;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-
 import com.google.common.base.Strings;
-
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.RawDataFileWriter;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.MZmineModuleCategory;
 import net.sf.mzmine.modules.MZmineProcessingModule;
 import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.AgilentCsvReadTask;
+import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.ImzMLReadTask;
 import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.MzDataReadTask;
 import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.MzMLReadTask;
 import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.MzXMLReadTask;
@@ -47,6 +45,7 @@ import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.NativeFile
 import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.NetCDFReadTask;
 import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.ZipReadTask;
 import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.project.impl.ImagingRawDataFileImpl;
 import net.sf.mzmine.taskcontrol.Task;
 import net.sf.mzmine.util.ExitCode;
 
@@ -142,10 +141,15 @@ public class RawDataImportModule implements MZmineProcessingModule {
       } else {
         newName = fileNames[i].getName();
       }
+      // detect file type
+      RawDataFileType fileType = RawDataFileTypeDetector.detectDataFileType(fileNames[i]);
 
       RawDataFileWriter newMZmineFile;
       try {
-        newMZmineFile = MZmineCore.createNewFile(newName);
+        if (fileType.equals(RawDataFileType.IMZML))
+          newMZmineFile = new ImagingRawDataFileImpl(newName);
+        else
+          newMZmineFile = MZmineCore.createNewFile(newName);
       } catch (IOException e) {
         MZmineCore.getDesktop().displayErrorMessage(MZmineCore.getDesktop().getMainWindow(),
             "Could not create a new temporary file " + e);
@@ -153,7 +157,6 @@ public class RawDataImportModule implements MZmineProcessingModule {
         return ExitCode.ERROR;
       }
 
-      RawDataFileType fileType = RawDataFileTypeDetector.detectDataFileType(fileNames[i]);
       logger.finest("File " + fileNames[i] + " type detected as " + fileType);
 
       if (fileType == null) {
@@ -198,6 +201,9 @@ public class RawDataImportModule implements MZmineProcessingModule {
         break;
       case MZXML:
         newTask = new MzXMLReadTask(project, fileName, newMZmineFile);
+        break;
+      case IMZML:
+        newTask = new ImzMLReadTask(project, fileName, newMZmineFile);
         break;
       case NETCDF:
         newTask = new NetCDFReadTask(project, fileName, newMZmineFile);

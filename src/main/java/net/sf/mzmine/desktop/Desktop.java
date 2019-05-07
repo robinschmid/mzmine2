@@ -24,7 +24,7 @@ import java.awt.Window;
 import javax.annotation.Nonnull;
 import javax.swing.JFrame;
 import javax.swing.event.TreeModelListener;
-
+import net.sf.mzmine.MyStuff.listener.ProjectChangeListener;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.modules.MZmineModule;
@@ -116,6 +116,19 @@ public interface Desktop extends MZmineModule {
   public void removeRawDataTreeListener(TreeModelListener listener);
 
   public void removePeakListTreeListener(TreeModelListener listener);
+
+  /*
+   * Project has changed (new was loaded)
+   */
+  public void fireProjectChanged();
+
+  /**
+   * Listener to project changes (load project)
+   * 
+   * @param listener
+   */
+  public void addProjectChangeListener(ProjectChangeListener listener);
+
 
   @Nonnull
   public ExitCode exitMZmine();

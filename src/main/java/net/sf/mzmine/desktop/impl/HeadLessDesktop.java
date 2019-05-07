@@ -21,11 +21,10 @@ package net.sf.mzmine.desktop.impl;
 import java.awt.Color;
 import java.awt.Window;
 import java.util.logging.Logger;
-
 import javax.annotation.Nonnull;
 import javax.swing.JFrame;
 import javax.swing.event.TreeModelListener;
-
+import net.sf.mzmine.MyStuff.listener.ProjectChangeListener;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.desktop.Desktop;
@@ -126,5 +125,11 @@ public class HeadLessDesktop implements Desktop {
     // TODO Auto-generated method stub
 
   }
+
+  @Override
+  public void fireProjectChanged() {}
+
+  @Override
+  public void addProjectChangeListener(ProjectChangeListener listener) {}
 
 }
