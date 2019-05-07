@@ -28,8 +28,8 @@ import org.jfree.chart.ChartPanel;
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.xy.XYDataset;
+import net.sf.mzmine.chartbasics.ChartLogics;
 import net.sf.mzmine.util.GUIUtils;
-
 
 /**
  * Enhanced version. Use arrows to jump to the next or previous distribution
@@ -46,8 +46,8 @@ public class EHistogramDialog extends HistogramDialog implements ActionListener 
    * 
    * @wbp.parser.constructor
    */
-  public EHistogramDialog(String title, HistogramData data) {
-    this(title, data, 0);
+  public EHistogramDialog(String title, String xLabel, HistogramData data) {
+    this(title, xLabel, data, 0);
   }
 
   /**
@@ -56,8 +56,8 @@ public class EHistogramDialog extends HistogramDialog implements ActionListener 
    * @param data
    * @param binWidth zero (0) for auto detection, -1 to keep last binWidth
    */
-  public EHistogramDialog(String title, HistogramData data, double binWidth) {
-    super(title, data, binWidth);
+  public EHistogramDialog(String title, String xLabel, HistogramData data, double binWidth) {
+    super(title, xLabel, data, binWidth);
     addKeyBindings();
   }
 
@@ -84,7 +84,7 @@ public class EHistogramDialog extends HistogramDialog implements ActionListener 
     pnJump.add(btnPrevious);
 
     JButton btnNext = new JButton(">");
-    btnPrevious.setToolTipText("Jump to previous distribution (use right arrow");
+    btnNext.setToolTipText("Jump to previous distribution (use right arrow");
     btnNext.addActionListener(e -> jumpToNextPeak());
     pnJump.add(btnNext);
   }
@@ -182,10 +182,6 @@ public class EHistogramDialog extends HistogramDialog implements ActionListener 
 
 
     XYDataset data = plot.getDataset(0);
-    // auto range y
-    double maxy = data.getYValue(0, i);
-    plot.getRangeAxis().setRange(0, maxy);
-
 
     // keep same domain axis range length
     boolean keepRange = cbKeepSameXaxis.isSelected();
@@ -221,6 +217,13 @@ public class EHistogramDialog extends HistogramDialog implements ActionListener 
       // find
       getHistoPanel().setGaussianFitRange(lower, upper);
     }
+
+    // auto range y
+    ChartLogics.autoRangeAxis(getChartPanel());
+  }
+
+  private ChartPanel getChartPanel() {
+    return getHistoPanel().getChartPanel();
   }
 
   private XYPlot getXYPlot() {

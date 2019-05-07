@@ -87,8 +87,8 @@ import net.sf.mzmine.modules.projectmethods.projectclose.ProjectCloseModule;
 import net.sf.mzmine.modules.projectmethods.projectload.ProjectLoadModule;
 import net.sf.mzmine.modules.projectmethods.projectsave.ProjectSaveAsModule;
 import net.sf.mzmine.modules.projectmethods.projectsave.ProjectSaveModule;
-import net.sf.mzmine.modules.rawdatamethods.exportscans.ExtractScansModule;
 import net.sf.mzmine.modules.rawdatamethods.exportscans.ExtractAllScansModule;
+import net.sf.mzmine.modules.rawdatamethods.exportscans.ExtractScansModule;
 import net.sf.mzmine.modules.rawdatamethods.filtering.alignscans.AlignScansModule;
 import net.sf.mzmine.modules.rawdatamethods.filtering.baselinecorrection.BaselineCorrectionModule;
 import net.sf.mzmine.modules.rawdatamethods.filtering.cropper.CropFilterModule;
@@ -110,8 +110,6 @@ import net.sf.mzmine.modules.visualization.histogram.HistogramVisualizerModule;
 import net.sf.mzmine.modules.visualization.infovisualizer.InfoVisualizerModule;
 import net.sf.mzmine.modules.visualization.intensityplot.IntensityPlotModule;
 import net.sf.mzmine.modules.visualization.kendrickmassplot.KendrickMassPlotModule;
-import net.sf.mzmine.modules.visualization.metamsecorrelate.MSECorrGroupVisualizerModule;
-import net.sf.mzmine.modules.visualization.mzhistogram.MZDistributionHistoModule;
 import net.sf.mzmine.modules.visualization.mzhistogram.MZDistributionHistoModule;
 import net.sf.mzmine.modules.visualization.neutralloss.NeutralLossVisualizerModule;
 import net.sf.mzmine.modules.visualization.peaklisttable.PeakListTableModule;
@@ -143,8 +141,9 @@ public class MZmineModulesList {
 
       // Raw data methods
       RawDataImportModule.class, RawDataExportModule.class, RawFileMergeModule.class,
-      ExtractScansModule.class, ExtractAllScansModule.class,  MassDetectionModule.class, ShoulderPeaksFilterModule.class,
-      ChromatogramBuilderModule.class, ADAPChromatogramBuilderModule.class,
+      ExtractScansModule.class, ExtractAllScansModule.class, MassDetectionModule.class,
+      ShoulderPeaksFilterModule.class, ChromatogramBuilderModule.class,
+      ADAPChromatogramBuilderModule.class,
       // Not ready for prime time: ADAP3DModule.class,
       GridMassModule.class, ManualPeakPickerModule.class, MsMsPeakPickerModule.class,
       ScanFiltersModule.class, CropFilterModule.class, BaselineCorrectionModule.class,

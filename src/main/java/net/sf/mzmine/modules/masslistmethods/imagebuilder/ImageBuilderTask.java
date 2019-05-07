@@ -124,6 +124,7 @@ public class ImageBuilderTask extends AbstractTask {
   /**
    * @see net.sf.mzmine.taskcontrol.Task#getTaskDescription()
    */
+  @Override
   public String getTaskDescription() {
     return "Detecting images in " + dataFile;
   }
@@ -131,6 +132,7 @@ public class ImageBuilderTask extends AbstractTask {
   /**
    * @see net.sf.mzmine.taskcontrol.Task#getFinishedPercentage()
    */
+  @Override
   public double getFinishedPercentage() {
     if (totalScans == 0)
       return 0;
@@ -146,6 +148,7 @@ public class ImageBuilderTask extends AbstractTask {
   /**
    * @see Runnable#run()
    */
+  @Override
   public void run() {
     setStatus(TaskStatus.PROCESSING);
     logger.info("Started image builder on " + dataFile);
@@ -210,7 +213,7 @@ public class ImageBuilderTask extends AbstractTask {
 
         // create histogram dialog
         EHistogramDialog dialog =
-            new EHistogramDialog("m/z distribution", new HistogramData(dat), binWidth);
+            new EHistogramDialog("m/z distribution", "m/z", new HistogramData(dat), binWidth);
         dialog.setVisible(true);
       }
 
