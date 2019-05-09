@@ -27,7 +27,6 @@ import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.corrgrouping
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.CorrelationData.SimilarityMeasure;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity.MS2SimilarityParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.checkmsms.IonNetworkMSMSCheckParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionidnetworking.IonNetworkLibrary;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionidnetworking.IonNetworkingParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.refinement.IonNetworkRefinementParameters;
@@ -109,18 +108,6 @@ public class SimpleMetaCorrelateTask extends MetaCorrelateTask {
     ms2SimilarityCheckParam.getParameter(MS2SimilarityParameters.MIN_MATCH).setValue(3);
     ms2SimilarityCheckParam.getParameter(MS2SimilarityParameters.MIN_HEIGHT).setValue(0d);
     ms2SimilarityCheckParam.getParameter(MS2SimilarityParameters.MZ_TOLERANCE).setValue(mzTolMS2);
-
-    // MSMS refinement
-    annotationParameters.getParameter(IonNetworkingParameters.MSMS_CHECK).setValue(true);
-    IonNetworkMSMSCheckParameters msmsChecks = annotationParameters
-        .getParameter(IonNetworkingParameters.MSMS_CHECK).getEmbeddedParameters();
-    msmsChecks.getParameter(IonNetworkMSMSCheckParameters.CHECK_MULTIMERS).setValue(true);
-    msmsChecks.getParameter(IonNetworkMSMSCheckParameters.CHECK_NEUTRALLOSSES).setValue(true);
-    // set mass list MS2
-    msmsChecks.getParameter(IonNetworkMSMSCheckParameters.MASS_LIST).setValue(massListMS2);
-    msmsChecks.getParameter(IonNetworkMSMSCheckParameters.MIN_HEIGHT).setValue(
-        parameterSet.getParameter(SimpleMetaCorrelateParameters.NOISE_LEVEL_MS2).getValue());
-    msmsChecks.getParameter(IonNetworkMSMSCheckParameters.MZ_TOLERANCE).setValue(mzTolMS2);
 
     // refinement
     annotationParameters.getParameter(IonNetworkingParameters.ANNOTATION_REFINEMENTS)

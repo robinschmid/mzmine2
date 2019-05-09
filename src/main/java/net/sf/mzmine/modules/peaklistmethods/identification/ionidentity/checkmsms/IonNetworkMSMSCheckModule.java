@@ -28,7 +28,7 @@ import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.Task;
 import net.sf.mzmine.util.ExitCode;
 
-public class IonNetworkRefinementModule implements MZmineProcessingModule {
+public class IonNetworkMSMSCheckModule implements MZmineProcessingModule {
 
   private static final String NAME = "Check all ion identities by MS/MS ";
 
