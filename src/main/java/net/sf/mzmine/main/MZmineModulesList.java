@@ -204,7 +204,7 @@ public class MZmineModulesList {
 
       // ion identity networks
       IonNetworkingModule.class, AddIonNetworkingModule.class, IonNetworkRefinementModule.class,
-      IonNetRelationsModule.class, ClearIonIdentitiesModule.class,
+      IonNetworkRefinementModule.class, IonNetRelationsModule.class, ClearIonIdentitiesModule.class,
       FormulaPredictionIonNetworkModule.class, CreateAvgNetworkFormulasModule.class,
 
       // Identification

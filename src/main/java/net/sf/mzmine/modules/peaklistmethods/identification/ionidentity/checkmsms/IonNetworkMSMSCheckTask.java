@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement;
+package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.checkmsms;
 
 import java.text.MessageFormat;
 import java.util.List;

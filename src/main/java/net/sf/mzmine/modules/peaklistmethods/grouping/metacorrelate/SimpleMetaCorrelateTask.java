@@ -27,9 +27,9 @@ import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.corrgrouping
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.CorrelationData.SimilarityMeasure;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity.MS2SimilarityParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.checkmsms.IonNetworkMSMSCheckParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkLibrary;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkingParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkMSMSCheckParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkRefinementParameters;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
