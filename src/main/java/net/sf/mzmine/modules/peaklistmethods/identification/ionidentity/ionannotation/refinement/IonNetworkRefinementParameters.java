@@ -38,10 +38,18 @@ public class IonNetworkRefinementParameters extends SimpleParameterSet {
   public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter();
 
 
+  public static final OptionalParameter<IntegerParameter> MIN_NETWORK_SIZE =
+      new OptionalParameter<>(new IntegerParameter("Minimum size", "Minimum network size", 2));
   public static final OptionalParameter<IntegerParameter> TRUE_THRESHOLD =
       new OptionalParameter<>(new IntegerParameter("Delete smaller networks: Link threshold",
           "links>=true threshold, then delete all other occurance in annotation networks", 4));
 
+  public static final BooleanParameter DELETE_SMALL_NO_MAJOR = new BooleanParameter(
+      "Delete small networks without major",
+      "Delete small networks without H, Na or NH4 adduct (H and NH4 with minor modifcations allowed); no fragments for Na",
+      false);
+  public static final BooleanParameter DELETE_ROWS_WITHOUT_ID =
+      new BooleanParameter("Delete rows witout ion id", "Keeps only rows with ion ids", false);
   public static final BooleanParameter DELETE_WITHOUT_MONOMER =
       new BooleanParameter("Delete networks without monomer",
           "Deletes all networks without monomer or with 1 monomer and >=3 multimers", true);
@@ -59,8 +67,10 @@ public class IonNetworkRefinementParameters extends SimpleParameterSet {
 
   public IonNetworkRefinementParameters(boolean isSub) {
     super(isSub ? // no peak list and rt tolerance
-        new Parameter[] {TRUE_THRESHOLD, DELETE_WITHOUT_MONOMER}
-        : new Parameter[] {PEAK_LISTS, TRUE_THRESHOLD, DELETE_WITHOUT_MONOMER});
+        new Parameter[] {MIN_NETWORK_SIZE, DELETE_SMALL_NO_MAJOR, TRUE_THRESHOLD,
+            DELETE_WITHOUT_MONOMER, DELETE_ROWS_WITHOUT_ID}
+        : new Parameter[] {PEAK_LISTS, MIN_NETWORK_SIZE, DELETE_SMALL_NO_MAJOR, TRUE_THRESHOLD,
+            DELETE_WITHOUT_MONOMER, DELETE_ROWS_WITHOUT_ID});
   }
 
 }

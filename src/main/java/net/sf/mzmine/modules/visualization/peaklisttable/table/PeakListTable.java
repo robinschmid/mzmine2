@@ -258,7 +258,7 @@ public class PeakListTable extends JTable implements ComponentToolTipProvider {
             if (item.toString() == REMOVE_IDENTITY) {
               IonIdentity identity = peakListRow.getBestIonIdentity();
               if (identity != null) {
-                peakListRow.removeIonIdentity(identity);
+                identity.delete(peakListRow);
                 DefaultComboBoxModel<?> comboModel = (DefaultComboBoxModel<?>) combo.getModel();
                 comboModel.removeElement(identity);
                 AbstractTableModel model = ((AbstractTableModel) getModel());

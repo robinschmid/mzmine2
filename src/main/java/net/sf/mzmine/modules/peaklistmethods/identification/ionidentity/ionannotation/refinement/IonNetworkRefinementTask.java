@@ -18,16 +18,20 @@
 
 package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+import javax.swing.SwingUtilities;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
+import net.sf.mzmine.datamodel.identities.iontype.IonModification;
 import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
+import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
@@ -48,6 +52,10 @@ public class IonNetworkRefinementTask extends AbstractTask {
   // delete all other xmers when one was confirmed in MSMS
   private boolean deleteWithoutMonomer = true;
   private boolean deleteSmallerNets = true;
+  private boolean filterMinSize = true;
+  private boolean deleteSmallNoMajor = false;
+  private boolean keepRowOnlyWithID = false;
+  private int minNetworkSize = 2;
 
   /**
    * Create the task.
@@ -71,6 +79,15 @@ public class IonNetworkRefinementTask extends AbstractTask {
         parameterSet.getParameter(IonNetworkRefinementParameters.TRUE_THRESHOLD).getValue();
     trueThreshold = parameterSet.getParameter(IonNetworkRefinementParameters.TRUE_THRESHOLD)
         .getEmbeddedParameter().getValue();
+
+    filterMinSize =
+        parameterSet.getParameter(IonNetworkRefinementParameters.MIN_NETWORK_SIZE).getValue();
+    minNetworkSize = parameterSet.getParameter(IonNetworkRefinementParameters.MIN_NETWORK_SIZE)
+        .getEmbeddedParameter().getValue();
+    deleteSmallNoMajor =
+        parameterSet.getParameter(IonNetworkRefinementParameters.DELETE_SMALL_NO_MAJOR).getValue();
+    keepRowOnlyWithID =
+        parameterSet.getParameter(IonNetworkRefinementParameters.DELETE_ROWS_WITHOUT_ID).getValue();
   }
 
   @Override
@@ -92,7 +109,8 @@ public class IonNetworkRefinementTask extends AbstractTask {
 
   public void refine() {
     // sort and refine
-    refine(peakList, deleteSmallerNets, deleteWithoutMonomer, trueThreshold);
+    refine(peakList, deleteSmallerNets, deleteWithoutMonomer, trueThreshold, deleteSmallNoMajor,
+        filterMinSize, minNetworkSize, keepRowOnlyWithID);
   }
 
   /**
@@ -101,15 +119,23 @@ public class IonNetworkRefinementTask extends AbstractTask {
    * 
    * @param pkl
    * @param trueThreshold
+   * @param minNetworkSize
+   * @param filterMinSize
+   * @param deleteSmallNoMajor
    * @param deleteXmersOnMSMS
    */
   public static void refine(PeakList pkl, boolean deleteSmallerNets, boolean deleteWithoutMonomer,
-      int trueThreshold) {
+      int trueThreshold, boolean deleteSmallNoMajor, boolean filterMinSize, int minNetworkSize,
+      boolean keepRowOnlyWithID) {
     // sort
     IonNetworkLogic.sortIonIdentities(pkl, true);
 
     long count = IonNetworkLogic.streamNetworks(pkl).count();
     LOG.info("Ion identity networks before refinement: " + count);
+
+    // min size
+    deleteSmallOrWithoutMajor(pkl, filterMinSize, minNetworkSize, deleteSmallNoMajor,
+        keepRowOnlyWithID);
 
     IonNetwork[] nets = IonNetworkLogic.getAllNetworks(pkl, false);
     if (deleteWithoutMonomer)
@@ -117,10 +143,31 @@ public class IonNetworkRefinementTask extends AbstractTask {
     if (deleteSmallerNets)
       deleteSmallerNetworks(nets, trueThreshold);
 
+    // remove all identities where networks were marked as deleted
+    deleteAllIonsOfDeletedNetworks(pkl.getRows());
     // TODO new network refinement
 
     count = IonNetworkLogic.streamNetworks(pkl).count();
     LOG.info("Ion identity networks after refinement: " + count);
+  }
+
+  /**
+   * Delete all ion identities of as deleted marked networks
+   * 
+   * @param rows
+   */
+  private static void deleteAllIonsOfDeletedNetworks(PeakListRow[] rows) {
+    for (PeakListRow row : rows) {
+      if (row.hasIonIdentity()) {
+        for (int i = 0; i < row.getIonIdentities().size(); i++) {
+          IonIdentity id = row.getIonIdentities().get(i);
+          if (id.isDeleted() || id.getNetwork() == null || id.getNetwork().isEmpty()) {
+            id.delete(row);
+            i--;
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -206,6 +253,51 @@ public class IonNetworkRefinementTask extends AbstractTask {
       links++;
     return links;
   }
+
+
+  /**
+   * Delete all networks smaller min size
+   * 
+   * @param pkl
+   * @param minNetSize
+   * @param deleteSmallNoMajor
+   * @throws Exception
+   */
+  public static void deleteSmallOrWithoutMajor(PeakList pkl, boolean filterMinSize, int minNetSize,
+      boolean deleteSmallNoMajor, boolean deleteRowsWithoutIon) {
+    if (filterMinSize || deleteSmallNoMajor) {
+      // need to convert to array first to avoid concurren mod exception
+      IonNetwork[] nets = IonNetworkLogic.getAllNetworks(pkl, false);
+      Arrays.stream(nets).forEach(net -> {
+        if ((filterMinSize && net.size() < minNetSize)
+            || (deleteSmallNoMajor && !hasMajorIonID(net)))
+          net.delete();
+      });
+    }
+
+    // remove all rows without ion identity?
+    if (deleteRowsWithoutIon)
+      SwingUtilities.invokeLater(() -> {
+        for (int i = 0; i < pkl.getNumberOfRows();)
+          if (pkl.getRow(i).hasIonIdentity())
+            i++;
+          else
+            pkl.removeRow(i);
+      });
+
+    // Repaint the window to reflect the change in the peak list
+    if (MZmineCore.getDesktop().getMainWindow() != null)
+      MZmineCore.getDesktop().getMainWindow().repaint();
+  }
+
+  private static boolean hasMajorIonID(IonNetwork net) {
+    return net.values().stream().map(IonIdentity::getIonType).anyMatch(ion -> {
+      return ion.getAdduct().equals(IonModification.H) //
+          || (ion.getAdduct().equals(IonModification.NA) && ion.getModCount() == 0)
+          || ion.getAdduct().equals(IonModification.NH4);
+    });
+  }
+
 
   /**
    * Delete xmers if one was verified by msms
