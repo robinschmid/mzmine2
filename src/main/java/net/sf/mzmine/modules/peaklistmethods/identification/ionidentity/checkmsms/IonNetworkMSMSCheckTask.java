@@ -41,6 +41,7 @@ import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.MSMSLog
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
+import net.sf.mzmine.taskcontrol.TaskStatus;
 
 public class IonNetworkMSMSCheckTask extends AbstractTask {
   // Logger.
@@ -100,7 +101,7 @@ public class IonNetworkMSMSCheckTask extends AbstractTask {
 
   @Override
   public double getFinishedPercentage() {
-    return totalRows == 0 ? 0 : finishedRows / totalRows;
+    return totalRows == 0 ? 1 : finishedRows / totalRows;
   }
 
   @Override
@@ -111,6 +112,8 @@ public class IonNetworkMSMSCheckTask extends AbstractTask {
   @Override
   public void run() {
     doCheck();
+    finishedRows = totalRows;
+    setStatus(TaskStatus.FINISHED);
   }
 
   public void doCheck() {
