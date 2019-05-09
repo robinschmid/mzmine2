@@ -92,8 +92,8 @@ public class SimpleMetaCorrelateTask extends MetaCorrelateTask {
         parameterSet.getParameter(SimpleMetaCorrelateParameters.ADDUCT_LIBRARY).getValue();
     annotationParameters = parameterSet.getParameter(SimpleMetaCorrelateParameters.ADDUCT_LIBRARY)
         .getEmbeddedParameters();
-    annotationParameters = IonNetworkingParameters.createFullParamSet(annotationParameters,
-        rtTolerance, mzTolerance, minHeight);
+    annotationParameters =
+        IonNetworkingParameters.createFullParamSet(annotationParameters, mzTolerance, minHeight);
     library = new IonNetworkLibrary(
         annotationParameters.getParameter(IonNetworkingParameters.LIBRARY).getEmbeddedParameters(),
         mzTolerance);

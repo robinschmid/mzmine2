@@ -25,7 +25,6 @@ import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannot
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
-import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.ionidentity.IonLibraryParameterSet;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
@@ -33,8 +32,6 @@ import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParamete
 import net.sf.mzmine.parameters.parametertypes.submodules.SubModuleParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
-import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
-import net.sf.mzmine.parameters.parametertypes.tolerances.RTToleranceParameter;
 import net.sf.mzmine.util.ExitCode;
 
 public class AddIonNetworkingParameters extends SimpleParameterSet {
@@ -46,17 +43,10 @@ public class AddIonNetworkingParameters extends SimpleParameterSet {
   // NOT INCLUDED in sub
   // General parameters
   public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter();
-  // RT-tolerance: Grouping
-  public static final RTToleranceParameter RT_TOLERANCE = new RTToleranceParameter("RT tolerance",
-      "Maximum allowed difference of retention time to set a relationship between peaks");
 
   // MZ-tolerance: deisotoping, adducts
   public static final MZToleranceParameter MZ_TOLERANCE = new MZToleranceParameter("m/z tolerance",
       "Tolerance value of the m/z difference between peaks");
-
-  public static final BooleanParameter LIMIT_BY_GROUPS =
-      new BooleanParameter("Limit by feature groups",
-          "Only annotate features which where correlated or grouped otherwise.", true);
 
   public static final DoubleParameter MIN_HEIGHT = new DoubleParameter("Min height",
       "Minimum height of feature shape (not used for average mode)",
@@ -92,12 +82,12 @@ public class AddIonNetworkingParameters extends SimpleParameterSet {
   private static Parameter[] createParam(Setup setup) {
     switch (setup) {
       case FULL:
-        return new Parameter[] {PEAK_LISTS, RT_TOLERANCE, MZ_TOLERANCE, LIMIT_BY_GROUPS, MIN_HEIGHT,
-            MSMS_CHECK, ANNOTATION_REFINEMENTS, LIBRARY};
+        return new Parameter[] {PEAK_LISTS, MZ_TOLERANCE, MIN_HEIGHT, MSMS_CHECK,
+            ANNOTATION_REFINEMENTS, LIBRARY};
       case SUB:
-        return new Parameter[] {MZ_TOLERANCE, LIMIT_BY_GROUPS, MSMS_CHECK, ANNOTATION_REFINEMENTS};
+        return new Parameter[] {MZ_TOLERANCE, MSMS_CHECK, ANNOTATION_REFINEMENTS};
       case SIMPLE:
-        return new Parameter[] {LIMIT_BY_GROUPS, LIBRARY};
+        return new Parameter[] {LIBRARY};
     }
     return new Parameter[0];
   }
@@ -110,8 +100,8 @@ public class AddIonNetworkingParameters extends SimpleParameterSet {
    * @return
    */
   public static AddIonNetworkingParameters createFullParamSet(AddIonNetworkingParameters param,
-      RTTolerance rtTol, double minHeight) {
-    return createFullParamSet(param, rtTol, null, minHeight);
+      double minHeight) {
+    return createFullParamSet(param, null, minHeight);
   }
 
   /**
@@ -123,12 +113,11 @@ public class AddIonNetworkingParameters extends SimpleParameterSet {
    * @return
    */
   public static AddIonNetworkingParameters createFullParamSet(AddIonNetworkingParameters param,
-      RTTolerance rtTol, MZTolerance mzTol, double minHeight) {
+      MZTolerance mzTol, double minHeight) {
     AddIonNetworkingParameters full = new AddIonNetworkingParameters();
     for (Parameter p : param.getParameters()) {
       full.getParameter(p).setValue(p.getValue());
     }
-    full.getParameter(AddIonNetworkingParameters.RT_TOLERANCE).setValue(rtTol);
     if (mzTol != null)
       full.getParameter(AddIonNetworkingParameters.MZ_TOLERANCE).setValue(mzTol);
 

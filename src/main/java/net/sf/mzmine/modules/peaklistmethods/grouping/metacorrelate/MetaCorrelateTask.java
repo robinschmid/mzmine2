@@ -210,7 +210,7 @@ public class MetaCorrelateTask extends AbstractTask {
     annotationParameters =
         parameterSet.getParameter(MetaCorrelateParameters.ADDUCT_LIBRARY).getEmbeddedParameters();
     annotationParameters =
-        IonNetworkingParameters.createFullParamSet(annotationParameters, rtTolerance, minHeight);
+        IonNetworkingParameters.createFullParamSet(annotationParameters, minHeight);
     library = new IonNetworkLibrary(
         annotationParameters.getParameter(IonNetworkingParameters.LIBRARY).getEmbeddedParameters(),
         annotationParameters.getParameter(IonNetworkingParameters.MZ_TOLERANCE).getValue());
@@ -358,7 +358,6 @@ public class MetaCorrelateTask extends AbstractTask {
       if (searchAdducts) {
         LOG.info("Corr: Annotation of groups only");
         setStage(Stage.ANNOTATION);
-        annotationParameters.getParameter(IonNetworkingParameters.LIMIT_BY_GROUPS).setValue(true);
         IonNetworkingTask annTask =
             new IonNetworkingTask(project, annotationParameters, groupedPKL);
         steps.add(annTask);
