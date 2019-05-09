@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement;
+package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.refinement;
 
 import java.util.Arrays;
 import java.util.List;

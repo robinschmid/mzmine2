@@ -58,7 +58,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.clearion
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.formula.createavgformulas.CreateAvgNetworkFormulasModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.formula.prediction.FormulaPredictionIonNetworkModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkingModule;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkRefinementModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.refinement.IonNetworkRefinementModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.relations.IonNetRelationsModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.lipididentification.LipidSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ms2search.Ms2SearchModule;
