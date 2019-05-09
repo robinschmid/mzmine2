@@ -20,7 +20,6 @@ package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionidne
 
 import java.awt.Window;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.checkmsms.IonNetworkMSMSCheckParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionidnetworking.IonNetworkLibrary.CheckMode;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.refinement.IonNetworkRefinementParameters;
 import net.sf.mzmine.parameters.Parameter;
@@ -70,9 +69,9 @@ public class IonNetworkingParameters extends SimpleParameterSet {
 
   // MS MS
   // check for truth MS/MS
-  public static final OptionalModuleParameter<IonNetworkMSMSCheckParameters> MSMS_CHECK =
-      new OptionalModuleParameter<IonNetworkMSMSCheckParameters>("Check MS/MS",
-          "Check MS/MS for truth of multimers", new IonNetworkMSMSCheckParameters(true));
+  // public static final OptionalModuleParameter<IonNetworkMSMSCheckParameters> MSMS_CHECK =
+  // new OptionalModuleParameter<IonNetworkMSMSCheckParameters>("Check MS/MS",
+  // "Check MS/MS for truth of multimers", new IonNetworkMSMSCheckParameters(true));
 
   public static final OptionalModuleParameter<IonNetworkRefinementParameters> ANNOTATION_REFINEMENTS =
       new OptionalModuleParameter<IonNetworkRefinementParameters>("Annotation refinement", "",
@@ -94,11 +93,10 @@ public class IonNetworkingParameters extends SimpleParameterSet {
   private static Parameter[] createParam(Setup setup) {
     switch (setup) {
       case FULL:
-        return new Parameter[] {PEAK_LISTS, MZ_TOLERANCE, CHECK_MODE, MIN_HEIGHT, MSMS_CHECK,
+        return new Parameter[] {PEAK_LISTS, MZ_TOLERANCE, CHECK_MODE, MIN_HEIGHT,
             ANNOTATION_REFINEMENTS, LIBRARY};
       case SUB:
-        return new Parameter[] {MZ_TOLERANCE, CHECK_MODE, MSMS_CHECK, ANNOTATION_REFINEMENTS,
-            LIBRARY};
+        return new Parameter[] {MZ_TOLERANCE, CHECK_MODE, ANNOTATION_REFINEMENTS, LIBRARY};
       case SIMPLE:
         return new Parameter[] {CHECK_MODE, LIBRARY};
     }

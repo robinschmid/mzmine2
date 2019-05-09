@@ -33,8 +33,6 @@ import net.sf.mzmine.datamodel.identities.iontype.networks.IonNetworkSorter;
 import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.datamodel.impl.RowGroupList;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeatureFilter;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.checkmsms.IonNetworkMSMSCheckParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.checkmsms.IonNetworkMSMSCheckTask;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionidnetworking.IonNetworkLibrary;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionidnetworking.IonNetworkLibrary.CheckMode;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.refinement.IonNetworkRefinementParameters;
@@ -69,10 +67,6 @@ public class AddIonNetworkingTask extends AbstractTask {
   private double minHeight;
   private CheckMode checkMode;
 
-  // MSMS
-  private boolean doMSMSchecks;
-  private IonNetworkMSMSCheckParameters msmsChecks;
-
   private CheckMode adductCheckMode;
 
   private boolean performAnnotationRefinement;
@@ -94,11 +88,6 @@ public class AddIonNetworkingTask extends AbstractTask {
 
     mzTolerance = parameterSet.getParameter(AddIonNetworkingParameters.MZ_TOLERANCE).getValue();
     minHeight = parameterSet.getParameter(AddIonNetworkingParameters.MIN_HEIGHT).getValue();
-
-    // MSMS refinement
-    doMSMSchecks = parameterSet.getParameter(AddIonNetworkingParameters.MSMS_CHECK).getValue();
-    msmsChecks =
-        parameterSet.getParameter(AddIonNetworkingParameters.MSMS_CHECK).getEmbeddedParameters();
 
     performAnnotationRefinement =
         parameterSet.getParameter(AddIonNetworkingParameters.ANNOTATION_REFINEMENTS).getValue();
@@ -238,13 +227,6 @@ public class AddIonNetworkingTask extends AbstractTask {
     // recalc annotation networks
     IonNetworkLogic.recalcAllAnnotationNetworks(peakList, true);
 
-    // refinement of adducts
-    // do MSMS check for multimers
-    if (doMSMSchecks) {
-      LOG.info("Corr: MSMS annotation checks");
-      IonNetworkMSMSCheckTask task = new IonNetworkMSMSCheckTask(project, msmsChecks, peakList);
-      task.doCheck();
-    }
     if (isCanceled())
       return;
 
