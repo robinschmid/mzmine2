@@ -20,7 +20,6 @@ package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.addiona
 
 import java.awt.Window;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.checkmsms.IonNetworkMSMSCheckParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.refinement.IonNetworkRefinementParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
@@ -58,9 +57,9 @@ public class AddIonNetworkingParameters extends SimpleParameterSet {
 
   // MS MS
   // check for truth MS/MS
-  public static final OptionalModuleParameter<IonNetworkMSMSCheckParameters> MSMS_CHECK =
-      new OptionalModuleParameter<IonNetworkMSMSCheckParameters>("Check MS/MS",
-          "Check MS/MS for truth of multimers", new IonNetworkMSMSCheckParameters(true));
+  // public static final OptionalModuleParameter<IonNetworkMSMSCheckParameters> MSMS_CHECK =
+  // new OptionalModuleParameter<IonNetworkMSMSCheckParameters>("Check MS/MS",
+  // "Check MS/MS for truth of multimers", new IonNetworkMSMSCheckParameters(true));
 
   public static final OptionalModuleParameter<IonNetworkRefinementParameters> ANNOTATION_REFINEMENTS =
       new OptionalModuleParameter<IonNetworkRefinementParameters>("Annotation refinement", "",
@@ -82,10 +81,10 @@ public class AddIonNetworkingParameters extends SimpleParameterSet {
   private static Parameter[] createParam(Setup setup) {
     switch (setup) {
       case FULL:
-        return new Parameter[] {PEAK_LISTS, MZ_TOLERANCE, MIN_HEIGHT, MSMS_CHECK,
-            ANNOTATION_REFINEMENTS, LIBRARY};
+        return new Parameter[] {PEAK_LISTS, MZ_TOLERANCE, MIN_HEIGHT, ANNOTATION_REFINEMENTS,
+            LIBRARY};
       case SUB:
-        return new Parameter[] {MZ_TOLERANCE, MSMS_CHECK, ANNOTATION_REFINEMENTS};
+        return new Parameter[] {MZ_TOLERANCE, ANNOTATION_REFINEMENTS};
       case SIMPLE:
         return new Parameter[] {LIBRARY};
     }
