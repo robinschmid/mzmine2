@@ -19,17 +19,14 @@
 package net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate;
 
 import java.text.MessageFormat;
-import java.util.Arrays;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
-import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.correlation.FeatureShapeCorrelationParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.correlation.InterSampleHeightCorrParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.corrgrouping.CorrelateGroupingParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.CorrelationData.SimilarityMeasure;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity.MS2SimilarityParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkLibrary;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkingParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkMSMSCheckParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkRefinementParameters;
@@ -96,10 +93,7 @@ public class SimpleMetaCorrelateTask extends MetaCorrelateTask {
         .getEmbeddedParameters();
     annotationParameters = IonNetworkingParameters.createFullParamSet(annotationParameters,
         rtTolerance, mzTolerance, minHeight);
-    // simple parameter setup: provide mzTol and charge
-    int maxCharge =
-        Arrays.stream(peakList.getRows()).mapToInt(PeakListRow::getRowCharge).max().orElse(3);
-    library = new IonNetworkLibrary(annotationParameters, mzTolerance, maxCharge);
+    library = annotationParameters.createLibrary();
 
     // MS2 similarity
     checkMS2Similarity =

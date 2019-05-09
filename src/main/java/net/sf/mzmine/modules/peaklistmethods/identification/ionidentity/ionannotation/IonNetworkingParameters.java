@@ -168,4 +168,13 @@ public class IonNetworkingParameters extends SimpleParameterSet {
     dialog.setVisible(true);
     return dialog.getExitCode();
   }
+
+  /**
+   * Create ion identity library
+   * 
+   * @return
+   */
+  public IonNetworkLibrary createLibrary() {
+    return getParameter(LIBRARY).createLibrary(getParameter(MZ_TOLERANCE).getValue());
+  }
 }
