@@ -197,21 +197,23 @@ public class IonNetworkLibrary {
     List<IonIdentity> list = new ArrayList<>();
     // check all combinations of adducts
     for (IonType adduct : allAdducts) {
-      if (z == 0 || adduct.getAbsCharge() == z) {
-        double neutralMass = net.getNeutralMass();
-        double mz = row.getAverageMZ();
-        double rowMass = adduct.getMass(mz);
-        if (mzTolerance.checkWithinTolerance(neutralMass, rowMass)) {
-          // add identity
-          IonIdentity a = new IonIdentity(adduct);
-          net.put(row, a);
-          row.addIonIdentity(a, false);
-          // update
-          MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row, false);
-          return a;
+      if (!adduct.isUndefinedAdduct()) {
+        if (z == 0 || adduct.getAbsCharge() == z) {
+          double neutralMass = net.getNeutralMass();
+          double mz = row.getAverageMZ();
+          double rowMass = adduct.getMass(mz);
+          if (mzTolerance.checkWithinTolerance(neutralMass, rowMass)) {
+            // add identity
+            IonIdentity a = new IonIdentity(adduct);
+            net.put(row, a);
+            row.addIonIdentity(a, false);
+            // update
+            MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row, false);
+            return a;
+          }
         }
+        // no adduct to be found
       }
-      // no adduct to be found
     }
     return null;
   }

@@ -165,20 +165,23 @@ public class AddIonNetworkingTask extends AbstractTask {
 
     for (PeakListRow row : peakList.getRows()) {
       if (this.isCanceled()) {
-
+        setStatus(TaskStatus.CANCELED);
+        return;
       }
       // min height
       if (row.getBestPeak().getHeight() >= minHeight) {
         for (IonNetwork net : nets) {
-          if (rtTolerance.checkWithinTolerance(net.getAvgRT(), row.getAverageRT())) {
-            // only if not already in network
-            if (!net.containsKey(row)) {
-              // check against existing networks
-              compared.incrementAndGet();
-              // check for adducts in library
-              IonIdentity id = library.findAdducts(row, net);
-              if (id != null)
-                annotPairs.incrementAndGet();
+          if (!net.isUndefined()) {
+            if (rtTolerance.checkWithinTolerance(net.getAvgRT(), row.getAverageRT())) {
+              // only if not already in network
+              if (!net.containsKey(row)) {
+                // check against existing networks
+                compared.incrementAndGet();
+                // check for adducts in library
+                IonIdentity id = library.findAdducts(row, net);
+                if (id != null)
+                  annotPairs.incrementAndGet();
+              }
             }
           }
         }
@@ -235,15 +238,17 @@ public class AddIonNetworkingTask extends AbstractTask {
       // min height
       if (g.get(i).getBestPeak().getHeight() >= minHeight) {
         for (IonNetwork net : nets) {
-          // only if not already in network
-          if (!net.containsKey(row)) {
-            // check against existing networks
-            if (isCorrelated(g, g.get(i), net)) {
-              compared.incrementAndGet();
-              // check for adducts in library
-              IonIdentity id = library.findAdducts(g.get(i), net);
-              if (id != null)
-                annotPairs.incrementAndGet();
+          if (!net.isUndefined()) {
+            // only if not already in network
+            if (!net.containsKey(row)) {
+              // check against existing networks
+              if (isCorrelated(g, g.get(i), net)) {
+                compared.incrementAndGet();
+                // check for adducts in library
+                IonIdentity id = library.findAdducts(g.get(i), net);
+                if (id != null)
+                  annotPairs.incrementAndGet();
+              }
             }
           }
         }
