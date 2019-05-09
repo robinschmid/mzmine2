@@ -200,6 +200,9 @@ public class PeakListTableColumnModel extends DefaultTableColumnModel implements
           newColumn.setCellRenderer(netFormulaRenderer);
           newColumn.setCellEditor(netFormulaRenderer);
           break;
+        case IONTYPE:
+          newColumn.setCellRenderer(defaultRendererLeft);
+          break;
         default:
           newColumn.setCellRenderer(defaultRenderer);
       }
