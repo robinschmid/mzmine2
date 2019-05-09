@@ -16,28 +16,24 @@
  * USA
  */
 
-package net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity;
+package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.checkmsms;
 
 import java.util.Collection;
 import javax.annotation.Nonnull;
-import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
-import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
-import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
 import net.sf.mzmine.modules.MZmineModuleCategory;
 import net.sf.mzmine.modules.MZmineProcessingModule;
-import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity.MS2SimilarityParameters.Mode;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.Task;
 import net.sf.mzmine.util.ExitCode;
 
-public class MS2SimilarityModule implements MZmineProcessingModule {
+public class IonNetworkMSMSCheckModule implements MZmineProcessingModule {
 
-  private static final String NAME = "MS2 similarity";
+  private static final String NAME = "Check all ion identities by MS/MS ";
 
   private static final String DESCRIPTION =
-      "Checks MS2 similarity of all rows within the groups or on all networks and between networks";
+      "Checks ion identities (in-source fragments) and multimers) by MS/MS";
 
   @Override
   public @Nonnull String getName() {
@@ -46,17 +42,18 @@ public class MS2SimilarityModule implements MZmineProcessingModule {
 
   @Override
   public @Nonnull String getDescription() {
+
     return DESCRIPTION;
   }
 
   @Override
   public @Nonnull MZmineModuleCategory getModuleCategory() {
-    return MZmineModuleCategory.IDENTIFICATION;
+    return MZmineModuleCategory.ION_IDENTITY_NETWORKS;
   }
 
   @Override
   public @Nonnull Class<? extends ParameterSet> getParameterSetClass() {
-    return MS2SimilarityParameters.class;
+    return IonNetworkMSMSCheckParameters.class;
   }
 
   @Override
@@ -64,32 +61,11 @@ public class MS2SimilarityModule implements MZmineProcessingModule {
   public ExitCode runModule(@Nonnull MZmineProject project, @Nonnull final ParameterSet parameters,
       @Nonnull final Collection<Task> tasks) {
 
-    Mode mode = parameters.getParameter(MS2SimilarityParameters.MODE).getValue();
-    PeakList[] peakLists = parameters.getParameter(MS2SimilarityParameters.PEAK_LISTS).getValue()
+    PeakList[] pkl = parameters.getParameter(IonNetworkMSMSCheckParameters.PEAK_LISTS).getValue()
         .getMatchingPeakLists();
-    boolean started = false;
-    for (PeakList pkl : peakLists) {
-      switch (mode) {
-        case GROUPS:
-          // run on all group lists
-          if (pkl.getGroups() != null && !pkl.getGroups().isEmpty()) {
-            tasks.add(new MS2SimilarityTask(parameters, pkl, pkl.getGroups()));
-            started = true;
-          }
-          break;
-        case ION_NETWORKS:
-          IonNetwork[] nets = IonNetworkLogic.getAllNetworks(pkl, true);
-          tasks.add(new MS2SimilarityTask(parameters, pkl, nets));
-          started = true;
-          break;
-        case ALL_ROWS:
-          tasks.add(new MS2SimilarityTask(parameters, pkl, pkl.getRows()));
-          started = true;
-          break;
-      }
-    }
-    if (!started)
-      throw new MSDKRuntimeException("No groups available in selected peakLists");
+    for (PeakList p : pkl)
+      tasks.add(new IonNetworkMSMSCheckTask(project, parameters, p));
+
     return ExitCode.OK;
   }
 }

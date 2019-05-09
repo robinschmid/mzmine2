@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import org.apache.commons.math3.special.Erf;
@@ -44,6 +45,7 @@ import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.CorrelationRowGroup;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.R2GroupCorrelationData;
 import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
 import net.sf.mzmine.util.DataPointSorter;
@@ -101,6 +103,9 @@ public class SiriusExportTask extends AbstractTask {
    */
   private boolean exportCorrMSOnce;
 
+  // to exclude duplicates in correlated spectrum
+  private MZTolerance mzTol;
+
 
   @Override
   public double getFinishedPercentage() {
@@ -117,6 +122,7 @@ public class SiriusExportTask extends AbstractTask {
         .getMatchingPeakLists();
 
     this.fileName = parameters.getParameter(SiriusExportParameters.FILENAME).getValue();
+    this.mzTol = parameters.getParameter(SiriusExportParameters.MZ_TOL).getValue();
 
     // this.fractionalMZ =
     // parameters.getParameter(SiriusExportParameters.FRACTIONAL_MZ)
@@ -230,7 +236,7 @@ public class SiriusExportTask extends AbstractTask {
       final int noisePeaksBehindParentPeak = mergedSpectrum.length - behindParent;
       if (noisePeaksBehindParentPeak >= 10) {
         final DataPoint[] subspec = new DataPoint[noisePeaksBehindParentPeak];
-        System.arraycopy(mergedSpectrum, noisePeaksBehindParentPeak, subspec, 0, subspec.length);
+        System.arraycopy(mergedSpectrum, behindParent, subspec, 0, subspec.length);
         Arrays.sort(subspec, sorter);
         int q75 = (int) (subspec.length * 0.75);
         baseline = Math.max(subspec[q75].getIntensity(), baseline);
@@ -602,21 +608,40 @@ public class SiriusExportTask extends AbstractTask {
     IonNetwork network = id == null ? null : id.getNetwork();
     if (network != null) {
       for (Entry<PeakListRow, IonIdentity> e : network.entrySet()) {
-        rows.put(e.getKey(), e.getValue());
+        // filter duplicates
+        boolean isDuplicate = false;
+        for (Entry<PeakListRow, IonIdentity> other : rows.entrySet()) {
+          PeakListRow or = other.getKey();
+          PeakListRow nr = e.getKey();
+          if (mzTol.checkWithinTolerance(or.getAverageMZ(), nr.getAverageMZ())) {
+            isDuplicate = true;
+            // same mz? export only the one row with the highest intensity
+            if (or.getBestPeak().getHeight() < nr.getBestPeak().getHeight()) {
+              rows.remove(or);
+              rows.put(nr, e.getValue());
+              break;
+            }
+          }
+        }
+        // add new row
+        if (!isDuplicate)
+          rows.put(e.getKey(), e.getValue());
       }
-    } else {
-      rows.put(mainRow, mainRow.getBestIonIdentity());
+    }
+    if (rows.isEmpty()) {
+      rows.put(mainRow, id);
     }
 
     // add all group rows that are correlated to main
-    if (g != null) {
-      for (int i = 0; i < g.size(); ++i) {
-        PeakListRow row = g.get(i);
-        if (g.isCorrelated(mainRow, row) && !rows.containsKey(row)) {
-          rows.put(row, null);
-        }
-      }
-    }
+    // might be too many
+    // if (g != null) {
+    // for (int i = 0; i < g.size(); ++i) {
+    // PeakListRow row = g.get(i);
+    // if (g.isCorrelated(mainRow, row) && !rows.containsKey(row)) {
+    // rows.put(row, null);
+    // }
+    // }
+    // }
 
     // export all rows
     rows.entrySet().stream()
@@ -629,7 +654,7 @@ public class SiriusExportTask extends AbstractTask {
           try {
             exportCorrelatedRow(writer, r, corrb, e.getValue());
           } catch (IOException e1) {
-            e1.printStackTrace();
+            logger.log(Level.SEVERE, e1.getMessage(), e1);
           }
         });
     writer.write("END IONS");
@@ -648,20 +673,10 @@ public class SiriusExportTask extends AbstractTask {
     // TODO : best feature mz or avg?
     // intensity?
     writer.write(mzForm.format(row.getAverageMZ()));
-    writer.write(" " + intensityForm.format(best.getHeight()));
-    writer.write(" " + (corr == null || Double.isNaN(r) ? "" : corrForm.format(r))); // correlation
-    if (id != null) {
+    writer.write(" " + best.getHeight());
+    writer.write(" " + (corr == null || Double.isNaN(r) ? "1" : corrForm.format(r))); // correlation
+    if (id != null)
       writer.write(" " + id.getAdduct());
-      // TODO added by Robin
-      // need to check if this is conform to the standards
-      writer.write(" by=" + id.getPartnerRowsID().length);
-      if (network != null) {
-        writer.write(" " + COMPOUND_ID + network.getID());
-      } else
-        writer.write(" ");
-    } else
-      writer.write("   ");
-    writer.write(" FEATURE_ID=" + row.getID());
     writer.newLine();
     // export isotope pattern
     writeCorrelationIsotopes(writer, row);
@@ -686,12 +701,12 @@ public class SiriusExportTask extends AbstractTask {
           // TODO : best feature mz or avg?
           // intensity?
           writer.write(mzForm.format(dp.getMZ()));
-          writer.write(" " + intensityForm.format(dp.getIntensity()));
+          writer.write(" " + dp.getIntensity());
 
           // isotope
-          writer.write(' '); // skip correlation
-          writer.write(" +" + Math.round((float) (dp.getMZ() - mz0)));
-          writer.write("    "); // skip rowID
+          int charge = row.getRowCharge() == 0 ? 1 : row.getRowCharge();
+          writer.write(" 1"); // skip correlation
+          writer.write(" +" + Math.round((float) (dp.getMZ() - mz0) * charge));
           writer.newLine();
         }
       }
@@ -701,8 +716,7 @@ public class SiriusExportTask extends AbstractTask {
   private void writeSpectrum(BufferedWriter writer, DataPoint[] dps) throws IOException {
     for (DataPoint dp : dps) {
       writer.write(mzForm.format(dp.getMZ()));
-      writer.write(' ');
-      writer.write(intensityForm.format(dp.getIntensity()));
+      writer.write(" " + dp.getIntensity());
       writer.newLine();
 
     }

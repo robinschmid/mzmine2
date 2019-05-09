@@ -10,10 +10,20 @@ public class MS2Similarity {
     this.overlap = overlap;
   }
 
+  /**
+   * Number of overlapping signals
+   * 
+   * @return
+   */
   public int getOverlap() {
     return overlap;
   }
 
+  /**
+   * Cosine similarity
+   * 
+   * @return
+   */
   public double getCosine() {
     return cosine;
   }

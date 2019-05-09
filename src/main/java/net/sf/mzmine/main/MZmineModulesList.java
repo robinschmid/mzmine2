@@ -41,8 +41,6 @@ import net.sf.mzmine.modules.peaklistmethods.filtering.rowsfilter.RowsFilterModu
 import net.sf.mzmine.modules.peaklistmethods.gapfilling.peakfinder.PeakFinderModule;
 import net.sf.mzmine.modules.peaklistmethods.gapfilling.peakfinder.multithreaded.MultiThreadPeakFinderModule;
 import net.sf.mzmine.modules.peaklistmethods.gapfilling.samerange.SameRangeGapFillerModule;
-import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.MetaCorrelateModule;
-import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.SimpleMetaCorrelateModule;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.corrgrouping.CorrelateGroupingModule;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.export.ExportCorrAnnotationModule;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity.MS2SimilarityModule;
@@ -55,11 +53,13 @@ import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.si
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.sort.FormulaSortModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.fragmentsearch.FragmentSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsImportModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.addionannotations.AddIonNetworkingModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.checkmsms.IonNetworkMSMSCheckModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.clearionids.ClearIonIdentitiesModule;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.filterionidnet.FilterIonIdNetworksModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.formula.createavgformulas.CreateAvgNetworkFormulasModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.formula.prediction.FormulaPredictionIonNetworkModule;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkingModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionidnetworking.IonNetworkingModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.refinement.IonNetworkRefinementModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.relations.IonNetRelationsModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.lipididentification.LipidSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.ms2search.Ms2SearchModule;
@@ -199,12 +199,14 @@ public class MZmineModulesList {
       SammonsPlotModule.class, ClusteringModule.class, HeatMapModule.class,
 
       // row grouping
-      CorrelateGroupingModule.class, MetaCorrelateModule.class, SimpleMetaCorrelateModule.class,
+      CorrelateGroupingModule.class,
+      // use grouping and ion networking separately
+      // MetaCorrelateModule.class, SimpleMetaCorrelateModule.class,
 
       // ion identity networks
-      IonNetworkingModule.class, FilterIonIdNetworksModule.class, IonNetRelationsModule.class,
-      ClearIonIdentitiesModule.class, FormulaPredictionIonNetworkModule.class,
-      CreateAvgNetworkFormulasModule.class,
+      IonNetworkingModule.class, AddIonNetworkingModule.class, IonNetworkRefinementModule.class,
+      IonNetworkMSMSCheckModule.class, IonNetRelationsModule.class, ClearIonIdentitiesModule.class,
+      FormulaPredictionIonNetworkModule.class, CreateAvgNetworkFormulasModule.class,
 
       // Identification
       FormulaPredictionModule.class, FormulaPredictionPeakListModule.class, FormulaSortModule.class,

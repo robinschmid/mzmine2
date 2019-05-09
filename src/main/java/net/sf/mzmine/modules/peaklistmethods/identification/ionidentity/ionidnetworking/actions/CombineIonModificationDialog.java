@@ -1,4 +1,4 @@
-package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.actions;
+package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionidnetworking.actions;
 
 import java.awt.BorderLayout;
 import java.awt.Component;

@@ -21,7 +21,7 @@
  * pre-existing code or project. Syngenta does not assert ownership or copyright any over pre-existing work.
  */
 
-package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.actions;
+package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionidnetworking.actions;
 
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;

@@ -19,20 +19,17 @@
 package net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate;
 
 import java.text.MessageFormat;
-import java.util.Arrays;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
-import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.correlation.FeatureShapeCorrelationParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.correlation.InterSampleHeightCorrParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.corrgrouping.CorrelateGroupingParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.CorrelationData.SimilarityMeasure;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity.MS2SimilarityParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkLibrary;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkingParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkMSMSCheckParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkRefinementParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionidnetworking.IonNetworkLibrary;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionidnetworking.IonNetworkingParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.refinement.IonNetworkRefinementParameters;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 
@@ -94,12 +91,11 @@ public class SimpleMetaCorrelateTask extends MetaCorrelateTask {
         parameterSet.getParameter(SimpleMetaCorrelateParameters.ADDUCT_LIBRARY).getValue();
     annotationParameters = parameterSet.getParameter(SimpleMetaCorrelateParameters.ADDUCT_LIBRARY)
         .getEmbeddedParameters();
-    annotationParameters = IonNetworkingParameters.createFullParamSet(annotationParameters,
-        rtTolerance, mzTolerance, minHeight);
-    // simple parameter setup: provide mzTol and charge
-    int maxCharge =
-        Arrays.stream(peakList.getRows()).mapToInt(PeakListRow::getRowCharge).max().orElse(3);
-    library = new IonNetworkLibrary(annotationParameters, mzTolerance, maxCharge);
+    annotationParameters =
+        IonNetworkingParameters.createFullParamSet(annotationParameters, mzTolerance, minHeight);
+    library = new IonNetworkLibrary(
+        annotationParameters.getParameter(IonNetworkingParameters.LIBRARY).getEmbeddedParameters(),
+        mzTolerance);
 
     // MS2 similarity
     checkMS2Similarity =
@@ -113,25 +109,15 @@ public class SimpleMetaCorrelateTask extends MetaCorrelateTask {
     ms2SimilarityCheckParam.getParameter(MS2SimilarityParameters.MIN_HEIGHT).setValue(0d);
     ms2SimilarityCheckParam.getParameter(MS2SimilarityParameters.MZ_TOLERANCE).setValue(mzTolMS2);
 
-    // MSMS refinement
-    annotationParameters.getParameter(IonNetworkingParameters.MSMS_CHECK).setValue(true);
-    IonNetworkMSMSCheckParameters msmsChecks = annotationParameters
-        .getParameter(IonNetworkingParameters.MSMS_CHECK).getEmbeddedParameters();
-    msmsChecks.getParameter(IonNetworkMSMSCheckParameters.CHECK_MULTIMERS).setValue(true);
-    msmsChecks.getParameter(IonNetworkMSMSCheckParameters.CHECK_NEUTRALLOSSES).setValue(true);
-    // set mass list MS2
-    msmsChecks.getParameter(IonNetworkMSMSCheckParameters.MASS_LIST).setValue(massListMS2);
-    msmsChecks.getParameter(IonNetworkMSMSCheckParameters.MIN_HEIGHT).setValue(
-        parameterSet.getParameter(SimpleMetaCorrelateParameters.NOISE_LEVEL_MS2).getValue());
-    msmsChecks.getParameter(IonNetworkMSMSCheckParameters.MZ_TOLERANCE).setValue(mzTolMS2);
-
     // refinement
     annotationParameters.getParameter(IonNetworkingParameters.ANNOTATION_REFINEMENTS)
         .setValue(true);
     IonNetworkRefinementParameters refineParam = annotationParameters
         .getParameter(IonNetworkingParameters.ANNOTATION_REFINEMENTS).getEmbeddedParameters();
-    refineParam.getParameter(IonNetworkRefinementParameters.DELETE_XMERS_ON_MSMS).setValue(true);
-    refineParam.getParameter(IonNetworkRefinementParameters.TRUE_THRESHOLD).setValue(4);
+    refineParam.getParameter(IonNetworkRefinementParameters.DELETE_WITHOUT_MONOMER).setValue(true);
+    refineParam.getParameter(IonNetworkRefinementParameters.TRUE_THRESHOLD).getEmbeddedParameter()
+        .setValue(4);
+    refineParam.getParameter(IonNetworkRefinementParameters.TRUE_THRESHOLD).setValue(true);
 
     // END OF ADDUCTS AND REFINEMENT
     // intensity correlation across samples

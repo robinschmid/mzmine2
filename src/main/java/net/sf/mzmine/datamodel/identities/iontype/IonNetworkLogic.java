@@ -12,6 +12,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import net.sf.mzmine.datamodel.PeakList;
@@ -36,12 +37,12 @@ public class IonNetworkLogic {
   public static int compareRows(IonIdentity a, IonIdentity b, RowGroup g) {
     if (a == null && b == null)
       return 0;
-    // M+?
+    // M+? (undefined
     else if (a == null || a.getIonType().isUndefinedAdductParent())
       return -1;
     else if (b == null || b.getIonType().isUndefinedAdductParent())
       return 1;
-    // M-H2O+? (one is?
+    // M-H2O+? (one is? undefined
     else if (a.getIonType().isUndefinedAdduct() && !b.getIonType().isUndefinedAdduct())
       return -1;
     else if (!a.getIonType().isUndefinedAdduct() && b.getIonType().isUndefinedAdduct())
@@ -51,6 +52,12 @@ public class IonNetworkLogic {
     int result = Integer.compare(a.getLikelyhood(), b.getLikelyhood());
     if (result != 0)
       return result;
+    if (result == 0) {
+      // if a has less nM molecules in cluster
+      result = Integer.compare(b.getIonType().getMolecules(), a.getIonType().getMolecules());
+      if (result != 0)
+        return result;
+    }
 
     int bLinks = getLinksTo(b, g);
     int aLinks = getLinksTo(a, g);
@@ -444,17 +451,9 @@ public class IonNetworkLogic {
     ident.sort(new Comparator<IonIdentity>() {
       @Override
       public int compare(IonIdentity a, IonIdentity b) {
-        // reversed order
-        switch (compareRows(a, b, group)) {
-          case -1:
-            return 1;
-          case 1:
-            return -1;
-          default:
-            return 0;
-        }
+        return compareRows(a, b, group);
       }
-    });
+    }.reversed());
     return ident;
   }
 
@@ -476,12 +475,13 @@ public class IonNetworkLogic {
    * @param removeEmpty
    */
   public static void recalcAllAnnotationNetworks(PeakList peakList, boolean removeEmpty) {
-    streamNetworks(peakList, false).forEach(n -> {
+    List<IonNetwork> list = streamNetworks(peakList, false).collect(Collectors.toList());
+    for (IonNetwork n : list) {
       if (removeEmpty && n.size() < 2) {
         n.delete();
       } else
         n.recalcConnections();
-    });
+    }
   }
 
   /**
@@ -578,7 +578,14 @@ public class IonNetworkLogic {
                   && r.getBestIonIdentity().getNetwork().getID() == net.getID()));
     // get all IOnNetworks
     else
-      stream = Arrays.stream(rows).filter(PeakListRow::hasIonIdentity) //
+      stream = Arrays.stream(rows)//
+          // .filter(r -> {
+          // if (r.getID() == 1003)
+          // return true;
+          // else
+          // return false;
+          // }) //
+          .filter(PeakListRow::hasIonIdentity) //
           .flatMap(r -> r.getIonIdentities().stream().map(IonIdentity::getNetwork)
               .filter(Objects::nonNull).filter(net -> net.hasSmallestID(r)));
     if (sorter != null)

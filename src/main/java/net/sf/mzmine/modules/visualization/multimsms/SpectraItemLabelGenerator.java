@@ -40,6 +40,8 @@ public class SpectraItemLabelGenerator implements XYItemLabelGenerator {
   public SpectraItemLabelGenerator() {}
 
   /**
+   * Labels for mz signals
+   * 
    * @see org.jfree.chart.labels.XYItemLabelGenerator#generateLabel(org.jfree.data.xy.XYDataset,
    *      int, int)
    */

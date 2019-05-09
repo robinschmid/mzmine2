@@ -398,6 +398,9 @@ public class IonIdentity {
         score += getNetwork().size() - 1;
       else
         score += partner.size();
+
+      if (ionType.getMolecules() == 1)
+        score += 0.5;
       return score;
     }
   }

@@ -16,9 +16,8 @@
  * USA
  */
 
-package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation;
+package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionidnetworking;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -27,30 +26,20 @@ import com.google.common.util.concurrent.AtomicDouble;
 import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
-import net.sf.mzmine.datamodel.PeakListRow;
-import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
 import net.sf.mzmine.datamodel.identities.iontype.networks.IonNetworkSorter;
 import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.datamodel.impl.RowGroupList;
-import net.sf.mzmine.datamodel.impl.SimplePeakListAppliedMethod;
-import net.sf.mzmine.desktop.Desktop;
-import net.sf.mzmine.desktop.impl.HeadLessDesktop;
-import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeatureFilter;
-import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeatureFilter.OverlapResult;
-import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeaturesFilterParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkLibrary.CheckMode;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkMSMSCheckParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkMSMSCheckTask;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkRefinementParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkRefinementTask;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionidnetworking.IonNetworkLibrary.CheckMode;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.refinement.IonNetworkRefinementParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.refinement.IonNetworkRefinementTask;
 import net.sf.mzmine.parameters.ParameterSet;
-import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
+import net.sf.mzmine.parameters.parametertypes.ionidentity.IonLibraryParameterSet;
+import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
-import net.sf.mzmine.util.PeakListRowSorter;
 import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
 
@@ -62,7 +51,6 @@ public class IonNetworkingTask extends AbstractTask {
   private AtomicDouble stageProgress = new AtomicDouble(0);
   private final PeakList peakList;
 
-  private final RTTolerance rtTolerance;
   private IonNetworkLibrary library;
 
   private final ParameterSet parameters;
@@ -72,19 +60,14 @@ public class IonNetworkingTask extends AbstractTask {
   private double minHeight;
   private CheckMode checkMode;
 
-  // MSMS
-  private boolean doMSMSchecks;
-  private IonNetworkMSMSCheckParameters msmsChecks;
-
-  // only correlate the ones correlated in a group
-  private boolean limitByGroups;
-
   private CheckMode adductCheckMode;
 
   private boolean performAnnotationRefinement;
   private IonNetworkRefinementParameters refineParam;
 
   private MinimumFeatureFilter minFeaturesFilter;
+
+  private MZTolerance mzTolerance;
 
 
   /**
@@ -99,35 +82,16 @@ public class IonNetworkingTask extends AbstractTask {
     this.peakList = peakLists;
     parameters = parameterSet;
 
-    limitByGroups = parameterSet.getParameter(IonNetworkingParameters.LIMIT_BY_GROUPS).getValue();
     adductCheckMode = parameterSet.getParameter(IonNetworkingParameters.CHECK_MODE).getValue();
     // tolerances
-    rtTolerance = parameterSet.getParameter(IonNetworkingParameters.RT_TOLERANCE).getValue();
+    mzTolerance = parameterSet.getParameter(IonNetworkingParameters.MZ_TOLERANCE).getValue();
     minHeight = parameterSet.getParameter(IonNetworkingParameters.MIN_HEIGHT).getValue();
     checkMode = parameterSet.getParameter(IonNetworkingParameters.CHECK_MODE).getValue();
-
-    // MSMS refinement
-    doMSMSchecks = parameterSet.getParameter(IonNetworkingParameters.MSMS_CHECK).getValue();
-    msmsChecks =
-        parameterSet.getParameter(IonNetworkingParameters.MSMS_CHECK).getEmbeddedParameters();
 
     performAnnotationRefinement =
         parameterSet.getParameter(IonNetworkingParameters.ANNOTATION_REFINEMENTS).getValue();
     refineParam = parameterSet.getParameter(IonNetworkingParameters.ANNOTATION_REFINEMENTS)
         .getEmbeddedParameters();
-
-    if (minFeaturesFilter == null) {
-      try {
-        MinimumFeaturesFilterParameters minFeatureFilterParam =
-            (MinimumFeaturesFilterParameters) parameterSet
-                .getParameter(IonNetworkingParameters.MIN_FEATURE_FILTER).getEmbeddedParameters();
-
-        minFeaturesFilter = minFeatureFilterParam.createFilter();
-      } catch (Exception e) {
-        LOG.warning("No min features filter setup");
-      }
-    } else
-      this.minFeaturesFilter = minFeaturesFilter;
   }
 
   public IonNetworkingTask(final MZmineProject project, final ParameterSet parameterSet,
@@ -152,12 +116,10 @@ public class IonNetworkingTask extends AbstractTask {
       setStatus(TaskStatus.PROCESSING);
       // create library
       LOG.info("Creating annotation library");
-      library = new IonNetworkLibrary((IonNetworkingParameters) parameters);
-      if (limitByGroups) {
-        annotateGroups(library);
-      } else {
-        annotatePeakList(library);
-      }
+      IonLibraryParameterSet p =
+          parameters.getParameter(IonNetworkingParameters.LIBRARY).getEmbeddedParameters();
+      library = new IonNetworkLibrary(p, mzTolerance);
+      annotateGroups(library);
       setStatus(TaskStatus.FINISHED);
     } catch (Exception t) {
       LOG.log(Level.SEVERE, "Adduct search error", t);
@@ -167,90 +129,6 @@ public class IonNetworkingTask extends AbstractTask {
     }
   }
 
-  private void annotatePeakList(IonNetworkLibrary library) {
-    LOG.info("Starting adduct detection on " + peakList.getName());
-    // use average RT
-    boolean useAvgRT = CheckMode.AVGERAGE.equals(checkMode);
-
-    // work
-    RawDataFile[] raw = peakList.getRawDataFiles();
-    PeakListRow[] rows = peakList.getRows();
-    Arrays.sort(rows, new PeakListRowSorter(SortingProperty.RT, SortingDirection.Ascending));
-    int totalRows = rows.length;
-    // for all rows
-    int compared = 0;
-    int annotPairs = 0;
-    for (int i = 0; i < rows.length; i++) {
-      boolean stopSearch = false;
-      for (int k = i + 1; k < rows.length && (neverStop || !stopSearch); k++) {
-        PeakListRow p0 = rows[i];
-        PeakListRow p1 = rows[k];
-        // is within retention time in all raw data files
-        boolean inRange = true;
-
-        // check average
-        if (useAvgRT) {
-          double rt0 = p0.getAverageRT();
-          double rt1 = p1.getAverageRT();
-          // upper end of search at 3 times tolerance to safe processing time
-          if (!rtTolerance.checkWithinTolerance(rt0, rt1)) {
-            inRange = false;
-            stopSearch = true;
-          }
-        } else {
-          if (minFeaturesFilter != null) {
-            inRange = minFeaturesFilter.filterMinFeaturesOverlap(raw, rows[i], rows[k])
-                .equals(OverlapResult.TRUE);
-          } else {
-            // check all raw data files with both peaks
-            for (int r = 0; r < raw.length && inRange; r++) {
-              if (p0.hasPeak(raw[r]) && p1.hasPeak(raw[r])) {
-                double rt0 = p0.getPeak(raw[r]).getRT();
-                double rt1 = p1.getPeak(raw[r]).getRT();
-                // upper end of search at 3 times tolerance to safe processing time
-                double upperEndSearch =
-                    (rtTolerance.getToleranceRange(rt0).upperEndpoint() - rt0) * 3;
-                if (rt1 > upperEndSearch)
-                  stopSearch = true;
-                if (!rtTolerance.checkWithinTolerance(rt0, rt1))
-                  inRange = false;
-              }
-            }
-          }
-        }
-
-
-        // check row against row
-        if (inRange) {
-          // check for adducts in library
-          List<IonIdentity[]> id = library.findAdducts(peakList, p0, p1, p0.getRowCharge(),
-              p1.getRowCharge(), checkMode, minHeight);
-          compared++;
-          if (!id.isEmpty())
-            annotPairs++;
-        }
-      }
-      stageProgress.set(i / (double) totalRows);
-    }
-
-    //
-    refineAndFinishNetworks();
-
-    // finish
-    if (!isCanceled()) {
-      peakList.addDescriptionOfAppliedTask(
-          new SimplePeakListAppliedMethod("Identification of adducts", parameters));
-
-      // Repaint the window to reflect the change in the peak list
-      Desktop desktop = MZmineCore.getDesktop();
-      if (!(desktop instanceof HeadLessDesktop))
-        desktop.getMainWindow().repaint();
-
-      // Done.
-      setStatus(TaskStatus.FINISHED);
-      LOG.info("Finished adducts search in " + peakList);
-    }
-  }
 
   private void annotateGroups(IonNetworkLibrary library) {
     // get groups
@@ -282,7 +160,9 @@ public class IonNetworkingTask extends AbstractTask {
    * @param compared
    * @param annotPairs
    */
-  private void annotateGroup(RowGroup g, AtomicInteger compared, AtomicInteger annotPairs) {
+  private void annotateGroup(RowGroup g,
+      // AtomicInteger finished,
+      AtomicInteger compared, AtomicInteger annotPairs) {
     for (int i = 0; i < g.size() - 1; i++) {
       // check against existing networks
       for (int k = i + 1; k < g.size(); k++) {
@@ -296,6 +176,7 @@ public class IonNetworkingTask extends AbstractTask {
             annotPairs.incrementAndGet();
         }
       }
+      // finished.incrementAndGet();
     }
   }
 
@@ -315,13 +196,6 @@ public class IonNetworkingTask extends AbstractTask {
     // recalc annotation networks
     IonNetworkLogic.recalcAllAnnotationNetworks(peakList, true);
 
-    // refinement of adducts
-    // do MSMS check for multimers
-    if (doMSMSchecks) {
-      LOG.info("Corr: MSMS annotation checks");
-      IonNetworkMSMSCheckTask task = new IonNetworkMSMSCheckTask(project, msmsChecks, peakList);
-      task.doCheck();
-    }
     if (isCanceled())
       return;
 

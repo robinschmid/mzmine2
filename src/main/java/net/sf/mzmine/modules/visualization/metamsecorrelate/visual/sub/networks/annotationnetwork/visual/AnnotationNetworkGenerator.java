@@ -241,7 +241,7 @@ public class AnnotationNetworkGenerator {
       if (e.getValue().getIonType().isModifiedUndefinedAdduct()) {
         // neutral
         addNewEdge(neutralNode, node, "ions", "", false);
-      } else if (!e.getValue().getIonType().isUndefinedAdduct()) {
+      } else if (!e.getValue().getIonType().isUndefinedAdduct() && mnode != null) {
         addNewDeltaMZEdge(node, mnode, Math.abs(net.getNeutralMass() - e.getKey().getAverageMZ()));
       }
       added.incrementAndGet();

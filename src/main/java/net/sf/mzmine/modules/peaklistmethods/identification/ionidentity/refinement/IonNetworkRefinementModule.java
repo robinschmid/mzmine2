@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.filterionidnet;
+package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.refinement;
 
 import java.util.Collection;
 import javax.annotation.Nonnull;
@@ -28,12 +28,11 @@ import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.Task;
 import net.sf.mzmine.util.ExitCode;
 
-public class FilterIonIdNetworksModule implements MZmineProcessingModule {
+public class IonNetworkRefinementModule implements MZmineProcessingModule {
 
-  private static final String NAME = "Filter ion identity networks";
+  private static final String NAME = "Ion identity network refinement";
 
-  private static final String DESCRIPTION =
-      "This module filters the identity results of ion identity networking";
+  private static final String DESCRIPTION = "Refinement of ion identity networks";
 
   @Override
   public @Nonnull String getName() {
@@ -54,8 +53,7 @@ public class FilterIonIdNetworksModule implements MZmineProcessingModule {
 
   @Override
   public @Nonnull Class<? extends ParameterSet> getParameterSetClass() {
-
-    return FilterIonIdNetworksParameters.class;
+    return IonNetworkRefinementParameters.class;
   }
 
   @Override
@@ -63,10 +61,10 @@ public class FilterIonIdNetworksModule implements MZmineProcessingModule {
   public ExitCode runModule(@Nonnull MZmineProject project, @Nonnull final ParameterSet parameters,
       @Nonnull final Collection<Task> tasks) {
 
-    PeakList[] pkl = parameters.getParameter(FilterIonIdNetworksParameters.PEAK_LISTS).getValue()
+    PeakList[] pkl = parameters.getParameter(IonNetworkRefinementParameters.PEAK_LISTS).getValue()
         .getMatchingPeakLists();
     for (PeakList p : pkl)
-      tasks.add(new FilterIonIdNetworksTask(project, parameters, p));
+      tasks.add(new IonNetworkRefinementTask(project, parameters, p));
 
     return ExitCode.OK;
   }

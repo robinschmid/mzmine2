@@ -1,5 +1,11 @@
 package net.sf.mzmine.util.maths;
 
+/**
+ * Different math transformations
+ * 
+ * @author Robin Schmid (robinschmid@uni-muenster.de)
+ *
+ */
 @FunctionalInterface
 public interface Transform {
 

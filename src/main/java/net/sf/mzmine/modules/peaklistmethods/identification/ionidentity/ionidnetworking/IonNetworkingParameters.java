@@ -16,29 +16,23 @@
  * USA
  */
 
-package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation;
+package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionidnetworking;
 
 import java.awt.Window;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeaturesFilterParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkLibrary.CheckMode;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkRefinementParameters;
-import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkMSMSCheckParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionidnetworking.IonNetworkLibrary.CheckMode;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.refinement.IonNetworkRefinementParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
-import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
-import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
-import net.sf.mzmine.parameters.parametertypes.ionidentity.IonModificationParameter;
+import net.sf.mzmine.parameters.parametertypes.ionidentity.IonLibraryParameterSet;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
 import net.sf.mzmine.parameters.parametertypes.submodules.SubModuleParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
-import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
-import net.sf.mzmine.parameters.parametertypes.tolerances.RTToleranceParameter;
 import net.sf.mzmine.util.ExitCode;
 
 public class IonNetworkingParameters extends SimpleParameterSet {
@@ -50,23 +44,11 @@ public class IonNetworkingParameters extends SimpleParameterSet {
   // NOT INCLUDED in sub
   // General parameters
   public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter();
-  // RT-tolerance: Grouping
-  public static final RTToleranceParameter RT_TOLERANCE = new RTToleranceParameter("RT tolerance",
-      "Maximum allowed difference of retention time to set a relationship between peaks");
-
-  public static final SubModuleParameter MIN_FEATURE_FILTER = new SubModuleParameter(
-      "Min samples filter",
-      "Only annotate if features are present and within RT range in n smaples (or X% of samples)",
-      new MinimumFeaturesFilterParameters(true));
 
   // INCLUDED in sub
   // MZ-tolerance: deisotoping, adducts
   public static final MZToleranceParameter MZ_TOLERANCE = new MZToleranceParameter("m/z tolerance",
       "Tolerance value of the m/z difference between peaks");
-
-  public static final BooleanParameter LIMIT_BY_GROUPS =
-      new BooleanParameter("Limit by feature groups",
-          "Only annotate features which where correlated or grouped otherwise.", true);
 
   public static final ComboParameter<CheckMode> CHECK_MODE =
       new ComboParameter<IonNetworkLibrary.CheckMode>("Check",
@@ -81,22 +63,15 @@ public class IonNetworkingParameters extends SimpleParameterSet {
 
   // adduct finder parameter - taken from the adduct finder
   // search for adducts? Bonus for correlation?
-  public static final ComboParameter<String> POSITIVE_MODE = new ComboParameter<>("MS mode",
-      "Positive or negative mode?", new String[] {"POSITIVE", "NEGATIVE"}, "POSITIVE");
-
-  public static final IntegerParameter MAX_CHARGE = new IntegerParameter("Maximum charge",
-      "Maximum charge to be used for adduct search.", 2, 1, 100);
-  public static final IntegerParameter MAX_MOLECULES = new IntegerParameter(
-      "Maximum molecules/cluster", "Maximum molecules per cluster (f.e. [2M+Na]+).", 3, 1, 10);
-
-  public static final IonModificationParameter ADDUCTS = new IonModificationParameter("Adducts",
-      "List of adducts, each one refers a specific distance in m/z axis between related peaks");
+  public static final SubModuleParameter<IonLibraryParameterSet> LIBRARY =
+      new SubModuleParameter<>("Ion identity library", "Adducts, in-source fragments and multimers",
+          new IonLibraryParameterSet());
 
   // MS MS
   // check for truth MS/MS
-  public static final OptionalModuleParameter<IonNetworkMSMSCheckParameters> MSMS_CHECK =
-      new OptionalModuleParameter<IonNetworkMSMSCheckParameters>("Check MS/MS",
-          "Check MS/MS for truth of multimers", new IonNetworkMSMSCheckParameters(true));
+  // public static final OptionalModuleParameter<IonNetworkMSMSCheckParameters> MSMS_CHECK =
+  // new OptionalModuleParameter<IonNetworkMSMSCheckParameters>("Check MS/MS",
+  // "Check MS/MS for truth of multimers", new IonNetworkMSMSCheckParameters(true));
 
   public static final OptionalModuleParameter<IonNetworkRefinementParameters> ANNOTATION_REFINEMENTS =
       new OptionalModuleParameter<IonNetworkRefinementParameters>("Annotation refinement", "",
@@ -118,14 +93,12 @@ public class IonNetworkingParameters extends SimpleParameterSet {
   private static Parameter[] createParam(Setup setup) {
     switch (setup) {
       case FULL:
-        return new Parameter[] {PEAK_LISTS, RT_TOLERANCE, MZ_TOLERANCE, MIN_FEATURE_FILTER,
-            LIMIT_BY_GROUPS, CHECK_MODE, MIN_HEIGHT, POSITIVE_MODE, MAX_CHARGE, MAX_MOLECULES,
-            MSMS_CHECK, ANNOTATION_REFINEMENTS, ADDUCTS};
+        return new Parameter[] {PEAK_LISTS, MZ_TOLERANCE, CHECK_MODE, MIN_HEIGHT,
+            ANNOTATION_REFINEMENTS, LIBRARY};
       case SUB:
-        return new Parameter[] {MZ_TOLERANCE, LIMIT_BY_GROUPS, CHECK_MODE, POSITIVE_MODE,
-            MAX_CHARGE, MAX_MOLECULES, MSMS_CHECK, ANNOTATION_REFINEMENTS, ADDUCTS};
+        return new Parameter[] {MZ_TOLERANCE, CHECK_MODE, ANNOTATION_REFINEMENTS, LIBRARY};
       case SIMPLE:
-        return new Parameter[] {LIMIT_BY_GROUPS, CHECK_MODE, POSITIVE_MODE, MAX_MOLECULES, ADDUCTS};
+        return new Parameter[] {CHECK_MODE, LIBRARY};
     }
     return new Parameter[0];
   }
@@ -138,8 +111,8 @@ public class IonNetworkingParameters extends SimpleParameterSet {
    * @return
    */
   public static IonNetworkingParameters createFullParamSet(IonNetworkingParameters param,
-      RTTolerance rtTol, double minHeight) {
-    return createFullParamSet(param, rtTol, null, minHeight);
+      double minHeight) {
+    return createFullParamSet(param, null, minHeight);
   }
 
   /**
@@ -151,12 +124,11 @@ public class IonNetworkingParameters extends SimpleParameterSet {
    * @return
    */
   public static IonNetworkingParameters createFullParamSet(IonNetworkingParameters param,
-      RTTolerance rtTol, MZTolerance mzTol, double minHeight) {
+      MZTolerance mzTol, double minHeight) {
     IonNetworkingParameters full = new IonNetworkingParameters();
     for (Parameter p : param.getParameters()) {
       full.getParameter(p).setValue(p.getValue());
     }
-    full.getParameter(IonNetworkingParameters.RT_TOLERANCE).setValue(rtTol);
     if (mzTol != null)
       full.getParameter(IonNetworkingParameters.MZ_TOLERANCE).setValue(mzTol);
 
@@ -179,4 +151,5 @@ public class IonNetworkingParameters extends SimpleParameterSet {
     dialog.setVisible(true);
     return dialog.getExitCode();
   }
+
 }

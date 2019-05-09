@@ -93,8 +93,7 @@ public class ScanUtils {
    * @param mzMax m/z range maximum
    * @return double[2] containing base peak m/z and intensity
    */
-  public static @Nonnull DataPoint findBasePeak(@Nonnull Scan scan,
-      @Nonnull Range<Double> mzRange) {
+  public static DataPoint findBasePeak(@Nonnull Scan scan, @Nonnull Range<Double> mzRange) {
 
     DataPoint dataPoints[] = scan.getDataPointsByMass(mzRange);
     DataPoint basePeak = null;
@@ -466,7 +465,7 @@ public class ScanUtils {
    * Find the highest data point in array
    * 
    */
-  public static @Nonnull DataPoint findTopDataPoint(@Nonnull DataPoint dataPoints[]) {
+  public static DataPoint findTopDataPoint(@Nonnull DataPoint dataPoints[]) {
 
     DataPoint topDP = null;
 

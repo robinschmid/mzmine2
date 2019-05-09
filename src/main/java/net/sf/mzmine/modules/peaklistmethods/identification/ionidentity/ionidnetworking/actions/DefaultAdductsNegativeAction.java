@@ -22,7 +22,7 @@
  * pre-existing work.
  */
 
-package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.actions;
+package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionidnetworking.actions;
 
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
@@ -33,7 +33,7 @@ import net.sf.mzmine.parameters.parametertypes.MultiChoiceComponent;
  * An action to handle resetting the adducts list.
  * 
  */
-public class DefaultNeutralModificationAction extends AbstractAction {
+public class DefaultAdductsNegativeAction extends AbstractAction {
   /**
    * 
    */
@@ -44,9 +44,9 @@ public class DefaultNeutralModificationAction extends AbstractAction {
   /**
    * Create the action.
    */
-  public DefaultNeutralModificationAction(MultiChoiceComponent parent) {
-    super("Reset mods");
-    putValue(SHORT_DESCRIPTION, "Reset modification choices to default set");
+  public DefaultAdductsNegativeAction(MultiChoiceComponent parent) {
+    super("Reset negative");
+    putValue(SHORT_DESCRIPTION, "Reset adduct choices to default set for negative mode");
     this.parent = parent;
   }
 
@@ -54,7 +54,7 @@ public class DefaultNeutralModificationAction extends AbstractAction {
   public void actionPerformed(final ActionEvent e) {
     if (parent != null) {
       // Reset default choices.
-      parent.setChoices(IonModification.getDefaultModifications());
+      parent.setChoices(IonModification.getDefaultValuesNeg());
     }
   }
 }

@@ -21,13 +21,14 @@ import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.MassListParameter;
 import net.sf.mzmine.parameters.parametertypes.filenames.FileNameParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
+import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
 import net.sf.mzmine.util.ExitCode;
 
 
 public class SiriusExportParameters extends SimpleParameterSet {
 
   public SiriusExportParameters() {
-    super(new Parameter[] {PEAK_LISTS, FILENAME, MERGE, MASS_LIST, RENUMBER_ID,
+    super(new Parameter[] {PEAK_LISTS, FILENAME, MERGE, MASS_LIST, MZ_TOL, RENUMBER_ID,
         // metaMSEcorrelate or MS annotate parameters
         NEED_ANNOTATION, EXCLUDE_MULTICHARGE, EXCLUDE_MULTIMERS, EXCLUDE_INSOURCE_FRAGMENTS,
         // TODO experimental
@@ -49,6 +50,13 @@ public class SiriusExportParameters extends SimpleParameterSet {
       "mgf");
 
   public static final MassListParameter MASS_LIST = new MassListParameter();
+
+  /**
+   * MZTolerance to exclude duplicates in correlated spectrum
+   */
+  public static final MZToleranceParameter MZ_TOL = new MZToleranceParameter();
+
+
 
   public static final BooleanParameter RENUMBER_ID =
       new BooleanParameter("Renumber IDs", "Resets the IDs (uses the row ID otherwise)", false);
