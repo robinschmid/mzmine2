@@ -137,7 +137,8 @@ public class FilterIonIdNetworksTask extends AbstractTask {
   public static void doFiltering(PeakList pkl, int minNetSize, boolean deleteSmallNoMajor,
       boolean deleteRowsWithoutIon) {
     // need to convert to array first to avoid concurren mod exception
-    Arrays.stream(IonNetworkLogic.getAllNetworks(pkl, false)).forEach(net -> {
+    IonNetwork[] nets = IonNetworkLogic.getAllNetworks(pkl, false);
+    Arrays.stream(nets).forEach(net -> {
       if (net.size() < minNetSize || (deleteSmallNoMajor && !hasMajorIonID(net)))
         net.delete();
     });

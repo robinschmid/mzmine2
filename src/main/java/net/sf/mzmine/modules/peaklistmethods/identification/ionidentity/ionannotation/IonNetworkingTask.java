@@ -47,6 +47,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannot
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkRefinementParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkRefinementTask;
 import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.parameters.parametertypes.ionidentity.IonLibraryParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
@@ -156,7 +157,9 @@ public class IonNetworkingTask extends AbstractTask {
       setStatus(TaskStatus.PROCESSING);
       // create library
       LOG.info("Creating annotation library");
-      library = parameters.getParameter(IonNetworkingParameters.LIBRARY).createLibrary(mzTolerance);
+      IonLibraryParameterSet p =
+          parameters.getParameter(IonNetworkingParameters.LIBRARY).getEmbeddedParameters();
+      library = new IonNetworkLibrary(p, mzTolerance);
       if (limitByGroups) {
         annotateGroups(library);
       } else {

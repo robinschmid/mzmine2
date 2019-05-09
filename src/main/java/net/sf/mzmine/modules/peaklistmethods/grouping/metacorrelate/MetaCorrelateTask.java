@@ -211,7 +211,9 @@ public class MetaCorrelateTask extends AbstractTask {
         parameterSet.getParameter(MetaCorrelateParameters.ADDUCT_LIBRARY).getEmbeddedParameters();
     annotationParameters =
         IonNetworkingParameters.createFullParamSet(annotationParameters, rtTolerance, minHeight);
-    library = annotationParameters.createLibrary();
+    library = new IonNetworkLibrary(
+        annotationParameters.getParameter(IonNetworkingParameters.LIBRARY).getEmbeddedParameters(),
+        annotationParameters.getParameter(IonNetworkingParameters.MZ_TOLERANCE).getValue());
     // END OF ADDUCTS AND REFINEMENT
 
     checkMS2Similarity =

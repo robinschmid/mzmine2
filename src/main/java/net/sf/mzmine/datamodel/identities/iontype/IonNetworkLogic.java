@@ -578,7 +578,14 @@ public class IonNetworkLogic {
                   && r.getBestIonIdentity().getNetwork().getID() == net.getID()));
     // get all IOnNetworks
     else
-      stream = Arrays.stream(rows).filter(PeakListRow::hasIonIdentity) //
+      stream = Arrays.stream(rows)//
+          // .filter(r -> {
+          // if (r.getID() == 1003)
+          // return true;
+          // else
+          // return false;
+          // }) //
+          .filter(PeakListRow::hasIonIdentity) //
           .flatMap(r -> r.getIonIdentities().stream().map(IonIdentity::getNetwork)
               .filter(Objects::nonNull).filter(net -> net.hasSmallestID(r)));
     if (sorter != null)

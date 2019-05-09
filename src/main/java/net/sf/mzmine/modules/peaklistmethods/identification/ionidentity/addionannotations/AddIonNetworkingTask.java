@@ -18,8 +18,6 @@
 
 package net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.addionannotations;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,19 +26,13 @@ import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
-import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
 import net.sf.mzmine.datamodel.identities.iontype.networks.IonNetworkSorter;
 import net.sf.mzmine.datamodel.impl.RowGroup;
 import net.sf.mzmine.datamodel.impl.RowGroupList;
-import net.sf.mzmine.datamodel.impl.SimplePeakListAppliedMethod;
-import net.sf.mzmine.desktop.Desktop;
-import net.sf.mzmine.desktop.impl.HeadLessDesktop;
-import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeatureFilter;
-import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeatureFilter.OverlapResult;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkLibrary;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkLibrary.CheckMode;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkMSMSCheckParameters;
@@ -52,10 +44,15 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
-import net.sf.mzmine.util.PeakListRowSorter;
 import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
 
+/**
+ * Add row/ionidentites to existing networks
+ * 
+ * @author r_schm33
+ *
+ */
 public class AddIonNetworkingTask extends AbstractTask {
 
   // Logger.
@@ -140,8 +137,9 @@ public class AddIonNetworkingTask extends AbstractTask {
       setStatus(TaskStatus.PROCESSING);
       // create library
       LOG.info("Creating annotation library");
-      library =
-          parameters.getParameter(AddIonNetworkingParameters.LIBRARY).createLibrary(mzTolerance);
+      library = new IonNetworkLibrary(
+          parameters.getParameter(AddIonNetworkingParameters.LIBRARY).getEmbeddedParameters(),
+          mzTolerance);
       if (limitByGroups) {
         annotateGroups(library);
       } else {
@@ -157,91 +155,45 @@ public class AddIonNetworkingTask extends AbstractTask {
   }
 
   private void annotatePeakList(IonNetworkLibrary library) {
-    LOG.info("Starting adduct detection on " + peakList.getName());
-    // use average RT
-    boolean useAvgRT = CheckMode.AVGERAGE.equals(checkMode);
+    LOG.info("Starting adduct detection on peaklist " + peakList.getName());
+    //
+    AtomicInteger compared = new AtomicInteger(0);
+    AtomicInteger annotPairs = new AtomicInteger(0);
 
-    // work
-    RawDataFile[] raw = peakList.getRawDataFiles();
-    PeakListRow[] rows = peakList.getRows();
-    Arrays.sort(rows, new PeakListRowSorter(SortingProperty.RT, SortingDirection.Ascending));
-    int totalRows = rows.length;
-    // for all rows
-    int compared = 0;
-    int annotPairs = 0;
-    for (int i = 0; i < rows.length; i++) {
-      boolean stopSearch = false;
-      for (int k = i + 1; k < rows.length && (neverStop || !stopSearch); k++) {
-        PeakListRow p0 = rows[i];
-        PeakListRow p1 = rows[k];
-        // is within retention time in all raw data files
-        boolean inRange = true;
+    // all networks of this group
+    IonNetwork[] nets = IonNetworkLogic.getAllNetworks(peakList, false);
 
-        // check average
-        if (useAvgRT) {
-          double rt0 = p0.getAverageRT();
-          double rt1 = p1.getAverageRT();
-          // upper end of search at 3 times tolerance to safe processing time
-          if (!rtTolerance.checkWithinTolerance(rt0, rt1)) {
-            inRange = false;
-            stopSearch = true;
-          }
-        } else {
-          if (minFeaturesFilter != null) {
-            inRange = minFeaturesFilter.filterMinFeaturesOverlap(raw, rows[i], rows[k])
-                .equals(OverlapResult.TRUE);
-          } else {
-            // check all raw data files with both peaks
-            for (int r = 0; r < raw.length && inRange; r++) {
-              if (p0.hasPeak(raw[r]) && p1.hasPeak(raw[r])) {
-                double rt0 = p0.getPeak(raw[r]).getRT();
-                double rt1 = p1.getPeak(raw[r]).getRT();
-                // upper end of search at 3 times tolerance to safe processing time
-                double upperEndSearch =
-                    (rtTolerance.getToleranceRange(rt0).upperEndpoint() - rt0) * 3;
-                if (rt1 > upperEndSearch)
-                  stopSearch = true;
-                if (!rtTolerance.checkWithinTolerance(rt0, rt1))
-                  inRange = false;
-              }
+    for (PeakListRow row : peakList.getRows()) {
+      if (this.isCanceled()) {
+
+      }
+      // min height
+      if (row.getBestPeak().getHeight() >= minHeight) {
+        for (IonNetwork net : nets) {
+          if (rtTolerance.checkWithinTolerance(net.getAvgRT(), row.getAverageRT())) {
+            // only if not already in network
+            if (!net.containsKey(row)) {
+              // check against existing networks
+              compared.incrementAndGet();
+              // check for adducts in library
+              IonIdentity id = library.findAdducts(row, net);
+              if (id != null)
+                annotPairs.incrementAndGet();
             }
           }
         }
-
-
-        // check row against row
-        if (inRange) {
-          // check for adducts in library
-          List<IonIdentity[]> id = library.findAdducts(peakList, p0, p1, p0.getRowCharge(),
-              p1.getRowCharge(), checkMode, minHeight);
-          compared++;
-          if (!id.isEmpty())
-            annotPairs++;
-        }
+        stageProgress.addAndGet(1d / peakList.getNumberOfRows());
       }
-      stageProgress.set(i / (double) totalRows);
+      // finished.incrementAndGet();
     }
+    LOG.info("Corr: A total of " + compared.get() + " row2row adduct comparisons with "
+        + annotPairs.get() + " annotation pairs");
 
-    //
     refineAndFinishNetworks();
-
-    // finish
-    if (!isCanceled()) {
-      peakList.addDescriptionOfAppliedTask(
-          new SimplePeakListAppliedMethod("Identification of adducts", parameters));
-
-      // Repaint the window to reflect the change in the peak list
-      Desktop desktop = MZmineCore.getDesktop();
-      if (!(desktop instanceof HeadLessDesktop))
-        desktop.getMainWindow().repaint();
-
-      // Done.
-      setStatus(TaskStatus.FINISHED);
-      LOG.info("Finished adducts search in " + peakList);
-    }
   }
 
   private void annotateGroups(IonNetworkLibrary library) {
+    LOG.info("Starting adduct detection on groups of peaklist " + peakList.getName());
     // get groups
     RowGroupList groups = peakList.getGroups();
 
@@ -254,7 +206,7 @@ public class AddIonNetworkingTask extends AbstractTask {
     // for all groups
     groups.parallelStream().forEach(g -> {
       if (!this.isCanceled()) {
-        annotateGroup(g, compared, annotPairs);
+        annotateGroup(library, g, compared, annotPairs);
         stageProgress.addAndGet(1d / groups.size());
       }
     });
@@ -267,27 +219,32 @@ public class AddIonNetworkingTask extends AbstractTask {
   /**
    * Annotates all rows in a group
    * 
+   * @param library
    * @param g
    * @param compared
    * @param annotPairs
    */
-  private void annotateGroup(RowGroup g,
+  private void annotateGroup(IonNetworkLibrary library, RowGroup g,
       // AtomicInteger finished,
       AtomicInteger compared, AtomicInteger annotPairs) {
     // all networks of this group
     IonNetwork[] nets = IonNetworkLogic.getAllNetworks(g.toArray(new PeakListRow[g.size()]), false);
 
     for (int i = 0; i < g.size(); i++) {
+      PeakListRow row = g.get(i);
       // min height
       if (g.get(i).getBestPeak().getHeight() >= minHeight) {
         for (IonNetwork net : nets) {
-          // check against existing networks
-          if (isCorrelated(g, g.get(i), net)) {
-            compared.incrementAndGet();
-            // check for adducts in library
-            List<IonIdentity[]> id = library.findAdducts(peakList, g.get(i), net);
-            if (!id.isEmpty())
-              annotPairs.incrementAndGet();
+          // only if not already in network
+          if (!net.containsKey(row)) {
+            // check against existing networks
+            if (isCorrelated(g, g.get(i), net)) {
+              compared.incrementAndGet();
+              // check for adducts in library
+              IonIdentity id = library.findAdducts(g.get(i), net);
+              if (id != null)
+                annotPairs.incrementAndGet();
+            }
           }
         }
       }

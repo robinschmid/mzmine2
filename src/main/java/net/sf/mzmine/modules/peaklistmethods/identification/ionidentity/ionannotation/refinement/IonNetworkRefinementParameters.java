@@ -22,6 +22,7 @@ import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
+import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 
 /**
@@ -37,14 +38,18 @@ public class IonNetworkRefinementParameters extends SimpleParameterSet {
   public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter();
 
 
-  public static final IntegerParameter TRUE_THRESHOLD = new IntegerParameter("True link threshold",
-      "links>=true threshold, then delete all other occurance in annotation networks", 4);
+  public static final OptionalParameter<IntegerParameter> TRUE_THRESHOLD =
+      new OptionalParameter<>(new IntegerParameter("Delete smaller networks: Link threshold",
+          "links>=true threshold, then delete all other occurance in annotation networks", 4));
 
-
-  public static final BooleanParameter DELETE_XMERS_ON_MSMS = new BooleanParameter(
-      "Use MS/MS xmer verification to exclude",
-      "If an xmer was identified by MS/MS annotation of fragment xmers, then use this identification and delete rest",
-      true);
+  public static final BooleanParameter DELETE_WITHOUT_MONOMER =
+      new BooleanParameter("Delete networks without monomer",
+          "Deletes all networks without monomer or with 1 monomer and >=3 multimers", true);
+  // public static final BooleanParameter DELETE_XMERS_ON_MSMS = new BooleanParameter(
+  // "Use MS/MS xmer verification to exclude",
+  // "If an xmer was identified by MS/MS annotation of fragment xmers, then use this identification
+  // and delete rest",
+  // true);
 
 
   // Constructor
@@ -54,8 +59,8 @@ public class IonNetworkRefinementParameters extends SimpleParameterSet {
 
   public IonNetworkRefinementParameters(boolean isSub) {
     super(isSub ? // no peak list and rt tolerance
-        new Parameter[] {TRUE_THRESHOLD, DELETE_XMERS_ON_MSMS}
-        : new Parameter[] {PEAK_LISTS, TRUE_THRESHOLD, DELETE_XMERS_ON_MSMS});
+        new Parameter[] {TRUE_THRESHOLD, DELETE_WITHOUT_MONOMER}
+        : new Parameter[] {PEAK_LISTS, TRUE_THRESHOLD, DELETE_WITHOUT_MONOMER});
   }
 
 }

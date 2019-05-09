@@ -30,6 +30,7 @@ import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
+import net.sf.mzmine.taskcontrol.TaskStatus;
 
 public class IonNetworkRefinementTask extends AbstractTask {
   // Logger.
@@ -45,7 +46,8 @@ public class IonNetworkRefinementTask extends AbstractTask {
   // >= trueThreshold delete all other occurance in networks
   private int trueThreshold = 4;
   // delete all other xmers when one was confirmed in MSMS
-  private boolean deleteXmersOnMSMS = true;
+  private boolean deleteWithoutMonomer = true;
+  private boolean deleteSmallerNets = true;
 
   /**
    * Create the task.
@@ -63,10 +65,12 @@ public class IonNetworkRefinementTask extends AbstractTask {
     totalRows = 0;
 
     // tolerances
-    deleteXmersOnMSMS =
-        parameterSet.getParameter(IonNetworkRefinementParameters.DELETE_XMERS_ON_MSMS).getValue();
-    trueThreshold =
+    deleteWithoutMonomer =
+        parameterSet.getParameter(IonNetworkRefinementParameters.DELETE_WITHOUT_MONOMER).getValue();
+    deleteSmallerNets =
         parameterSet.getParameter(IonNetworkRefinementParameters.TRUE_THRESHOLD).getValue();
+    trueThreshold = parameterSet.getParameter(IonNetworkRefinementParameters.TRUE_THRESHOLD)
+        .getEmbeddedParameter().getValue();
   }
 
   @Override
@@ -82,15 +86,25 @@ public class IonNetworkRefinementTask extends AbstractTask {
   @Override
   public void run() {
     refine();
+    setStatus(TaskStatus.FINISHED);
   }
 
 
   public void refine() {
     // sort and refine
-    refine(peakList, trueThreshold, deleteXmersOnMSMS);
+    refine(peakList, deleteSmallerNets, deleteWithoutMonomer, trueThreshold);
   }
 
-  public static void refine(PeakList pkl, int trueThreshold, boolean deleteXmersOnMSMS) {
+  /**
+   * Delete all without monomer or 1 monomer and >=3 multimers. Delete all smaller networks if one
+   * network is the best for all
+   * 
+   * @param pkl
+   * @param trueThreshold
+   * @param deleteXmersOnMSMS
+   */
+  public static void refine(PeakList pkl, boolean deleteSmallerNets, boolean deleteWithoutMonomer,
+      int trueThreshold) {
     // sort
     IonNetworkLogic.sortIonIdentities(pkl, true);
 
@@ -98,8 +112,10 @@ public class IonNetworkRefinementTask extends AbstractTask {
     LOG.info("Ion identity networks before refinement: " + count);
 
     IonNetwork[] nets = IonNetworkLogic.getAllNetworks(pkl, false);
-    deleteAllWithoutMonomer(nets);
-    deleteSmallerNetworks(nets, trueThreshold);
+    if (deleteWithoutMonomer)
+      deleteAllWithoutMonomer(nets);
+    if (deleteSmallerNets)
+      deleteSmallerNetworks(nets, trueThreshold);
 
     // TODO new network refinement
 

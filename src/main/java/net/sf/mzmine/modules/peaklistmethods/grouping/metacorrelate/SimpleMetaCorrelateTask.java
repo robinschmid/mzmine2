@@ -27,6 +27,7 @@ import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.corrgrouping
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.CorrelationData.SimilarityMeasure;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.minfeaturefilter.MinimumFeaturesFilterParameters;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.msms.similarity.MS2SimilarityParameters;
+import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkLibrary;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.IonNetworkingParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkMSMSCheckParameters;
 import net.sf.mzmine.modules.peaklistmethods.identification.ionidentity.ionannotation.refinement.IonNetworkRefinementParameters;
@@ -93,7 +94,9 @@ public class SimpleMetaCorrelateTask extends MetaCorrelateTask {
         .getEmbeddedParameters();
     annotationParameters = IonNetworkingParameters.createFullParamSet(annotationParameters,
         rtTolerance, mzTolerance, minHeight);
-    library = annotationParameters.createLibrary();
+    library = new IonNetworkLibrary(
+        annotationParameters.getParameter(IonNetworkingParameters.LIBRARY).getEmbeddedParameters(),
+        mzTolerance);
 
     // MS2 similarity
     checkMS2Similarity =
@@ -124,8 +127,10 @@ public class SimpleMetaCorrelateTask extends MetaCorrelateTask {
         .setValue(true);
     IonNetworkRefinementParameters refineParam = annotationParameters
         .getParameter(IonNetworkingParameters.ANNOTATION_REFINEMENTS).getEmbeddedParameters();
-    refineParam.getParameter(IonNetworkRefinementParameters.DELETE_XMERS_ON_MSMS).setValue(true);
-    refineParam.getParameter(IonNetworkRefinementParameters.TRUE_THRESHOLD).setValue(4);
+    refineParam.getParameter(IonNetworkRefinementParameters.DELETE_WITHOUT_MONOMER).setValue(true);
+    refineParam.getParameter(IonNetworkRefinementParameters.TRUE_THRESHOLD).getEmbeddedParameter()
+        .setValue(4);
+    refineParam.getParameter(IonNetworkRefinementParameters.TRUE_THRESHOLD).setValue(true);
 
     // END OF ADDUCTS AND REFINEMENT
     // intensity correlation across samples

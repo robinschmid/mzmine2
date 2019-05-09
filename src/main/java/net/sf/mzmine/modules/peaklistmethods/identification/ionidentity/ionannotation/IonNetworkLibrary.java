@@ -182,13 +182,17 @@ public class IonNetworkLibrary {
 
 
   /**
+   * Searches for an IonType for row in network
    * 
-   * @param peakList
    * @param row
    * @param net for neutral mass
    * @return
    */
-  public List<IonIdentity> findAdducts(PeakList peakList, PeakListRow row, IonNetwork net) {
+  public IonIdentity findAdducts(PeakListRow row, IonNetwork net) {
+    // already contained
+    if (net.containsKey(row))
+      return null;
+
     int z = Math.abs(row.getBestPeak().getCharge());
     List<IonIdentity> list = new ArrayList<>();
     // check all combinations of adducts
@@ -199,12 +203,17 @@ public class IonNetworkLibrary {
         double rowMass = adduct.getMass(mz);
         if (mzTolerance.checkWithinTolerance(neutralMass, rowMass)) {
           // add identity
-          todo add identty to network and to row (later?)
+          IonIdentity a = new IonIdentity(adduct);
+          net.put(row, a);
+          row.addIonIdentity(a, false);
+          // update
+          MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row, false);
+          return a;
         }
       }
       // no adduct to be found
     }
-    return list;
+    return null;
   }
 
 

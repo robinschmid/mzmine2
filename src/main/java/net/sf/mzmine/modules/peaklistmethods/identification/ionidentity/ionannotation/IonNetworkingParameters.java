@@ -30,7 +30,7 @@ import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
-import net.sf.mzmine.parameters.parametertypes.ionidentity.IonLibraryParameter;
+import net.sf.mzmine.parameters.parametertypes.ionidentity.IonLibraryParameterSet;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
 import net.sf.mzmine.parameters.parametertypes.submodules.SubModuleParameter;
@@ -80,7 +80,9 @@ public class IonNetworkingParameters extends SimpleParameterSet {
 
   // adduct finder parameter - taken from the adduct finder
   // search for adducts? Bonus for correlation?
-  public static final IonLibraryParameter LIBRARY = new IonLibraryParameter();
+  public static final SubModuleParameter<IonLibraryParameterSet> LIBRARY =
+      new SubModuleParameter<>("Ion identity library", "Adducts, in-source fragments and multimers",
+          new IonLibraryParameterSet());
 
   // MS MS
   // check for truth MS/MS
@@ -169,12 +171,4 @@ public class IonNetworkingParameters extends SimpleParameterSet {
     return dialog.getExitCode();
   }
 
-  /**
-   * Create ion identity library
-   * 
-   * @return
-   */
-  public IonNetworkLibrary createLibrary() {
-    return getParameter(LIBRARY).createLibrary(getParameter(MZ_TOLERANCE).getValue());
-  }
 }
