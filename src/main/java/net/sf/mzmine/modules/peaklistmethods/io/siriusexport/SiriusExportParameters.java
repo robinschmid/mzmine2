@@ -12,23 +12,25 @@
 
 package net.sf.mzmine.modules.peaklistmethods.io.siriusexport;
 
-import java.awt.Window;
+import net.sf.mzmine.modules.tools.msmsspectramerge.MsMsSpectraMergeParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
-import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.MassListParameter;
 import net.sf.mzmine.parameters.parametertypes.filenames.FileNameParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
+import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
 import net.sf.mzmine.util.ExitCode;
+
+import java.awt.*;
 
 
 public class SiriusExportParameters extends SimpleParameterSet {
 
   public SiriusExportParameters() {
-    super(new Parameter[] {PEAK_LISTS, FILENAME, MERGE, MASS_LIST, MZ_TOL, RENUMBER_ID,
+    super(new Parameter[] {PEAK_LISTS, FILENAME, MASS_LIST, MERGE_PARAMETER, MZ_TOL, RENUMBER_ID,
         // metaMSEcorrelate or MS annotate parameters
         NEED_ANNOTATION, EXCLUDE_MULTICHARGE, EXCLUDE_MULTIMERS, EXCLUDE_INSOURCE_FRAGMENTS,
         // TODO experimental
@@ -36,9 +38,10 @@ public class SiriusExportParameters extends SimpleParameterSet {
   }
 
   // PARAMETER
-  public static final ComboParameter<MERGE_MODE> MERGE =
-      new ComboParameter<MERGE_MODE>("Merge mode MS/MS", "How to merge MS/MS spectra",
-          MERGE_MODE.values(), MERGE_MODE.MERGE_CONSECUTIVE_SCANS);
+
+
+  public static final OptionalModuleParameter<MsMsSpectraMergeParameters> MERGE_PARAMETER = new OptionalModuleParameter<>("Merge MS/MS", "Merge high qualitative MS/MS into one spectrum instead of exporting all MS/MS separately.", new MsMsSpectraMergeParameters(), true);
+
 
   public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter();
 
@@ -93,22 +96,6 @@ public class SiriusExportParameters extends SimpleParameterSet {
    * , true );
    */
 
-
-  public enum MERGE_MODE {
-    NO_MERGE("Do not merge"), MERGE_CONSECUTIVE_SCANS(
-        "Merge consecutive scans"), MERGE_OVER_SAMPLES(
-            "Merge all MS/MS belonging to the same feature");
-    private final String name;
-
-    private MERGE_MODE(String name) {
-      this.name = name;
-    }
-
-    @Override
-    public String toString() {
-      return name;
-    }
-  }
 
   @Override
   public ExitCode showSetupDialog(Window parent, boolean valueCheckRequired) {

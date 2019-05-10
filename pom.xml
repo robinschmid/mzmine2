@@ -107,15 +107,15 @@
 	</build>
 	<repositories>
 		<repository>
+			<id>lib</id>
+			<name>MZmine local libraries</name>
+			<url>file://${project.basedir}/src/main/lib</url>
+		</repository>
+		<repository>
 			<!-- jmzml, jmztab repository -->
 			<id>nexus-ebi-release-repo</id>
 			<name>The EBI Maven repository</name>
 			<url>http://www.ebi.ac.uk/Tools/maven/repos/content/groups/ebi-repo/</url>
-		</repository>
-		<repository>
-			<id>lib</id>
-			<name>MZmine local libraries</name>
-			<url>file://${project.basedir}/src/main/lib</url>
 		</repository>
     <repository>
         <id>jitpack.io</id>
@@ -548,6 +548,7 @@
 			<groupId>io.github.msdk</groupId>
 			<artifactId>msdk-id-sirius</artifactId>
 			<version>${msdk.version}</version>
+			<type>pom</type>
 			<exclusions>
 				<exclusion>
 					<groupId>org.apache.httpcomponents</groupId>

@@ -29,6 +29,22 @@
 
 package net.sf.mzmine.modules.peaklistmethods.io.gnpsexport;
 
+import io.github.msdk.MSDKRuntimeException;
+import net.sf.mzmine.datamodel.*;
+import net.sf.mzmine.datamodel.impl.SimpleFeature;
+import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
+import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.peaklistmethods.io.gnpsexport.GNPSExportParameters.RowFilter;
+import net.sf.mzmine.modules.peaklistmethods.io.siriusexport.SiriusExportTask;
+import net.sf.mzmine.modules.tools.msmsspectramerge.MergedSpectrum;
+import net.sf.mzmine.modules.tools.msmsspectramerge.MsMsSpectraMergeModule;
+import net.sf.mzmine.modules.tools.msmsspectramerge.MsMsSpectraMergeParameters;
+import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.taskcontrol.AbstractTask;
+import net.sf.mzmine.taskcontrol.TaskStatus;
+import net.sf.mzmine.util.PeakUtils;
+import net.sf.mzmine.util.files.FileAndPathUtil;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -38,23 +54,6 @@ import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import io.github.msdk.MSDKRuntimeException;
-import net.sf.mzmine.datamodel.DataPoint;
-import net.sf.mzmine.datamodel.Feature;
-import net.sf.mzmine.datamodel.MassList;
-import net.sf.mzmine.datamodel.PeakList;
-import net.sf.mzmine.datamodel.PeakListRow;
-import net.sf.mzmine.datamodel.Scan;
-import net.sf.mzmine.datamodel.impl.SimpleFeature;
-import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
-import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.io.gnpsexport.GNPSExportParameters.RowFilter;
-import net.sf.mzmine.modules.peaklistmethods.io.siriusexport.SiriusExportTask;
-import net.sf.mzmine.parameters.ParameterSet;
-import net.sf.mzmine.taskcontrol.AbstractTask;
-import net.sf.mzmine.taskcontrol.TaskStatus;
-import net.sf.mzmine.util.PeakUtils;
-import net.sf.mzmine.util.files.FileAndPathUtil;
 
 /**
  * Exports all files needed for GNPS

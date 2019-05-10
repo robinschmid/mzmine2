@@ -29,8 +29,8 @@
 
 package net.sf.mzmine.modules.peaklistmethods.io.gnpsexport;
 
-import java.awt.Window;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.modules.tools.msmsspectramerge.MsMsSpectraMergeParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
@@ -41,6 +41,8 @@ import net.sf.mzmine.parameters.parametertypes.filenames.FileNameParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
 import net.sf.mzmine.util.ExitCode;
+
+import java.awt.*;
 
 
 public class GNPSExportParameters extends SimpleParameterSet {
@@ -91,6 +93,10 @@ public class GNPSExportParameters extends SimpleParameterSet {
 
   public static final MassListParameter MASS_LIST = new MassListParameter();
 
+
+  public static final OptionalModuleParameter<MsMsSpectraMergeParameters> MERGE_PARAMETER = new OptionalModuleParameter<>("Merge MS/MS", "Merge high qualitative MS/MS instead of exporting just the most intensive one.", new MsMsSpectraMergeParameters(), true);
+
+
   public static final OptionalModuleParameter<GNPSSubmitParameters> SUBMIT =
       new OptionalModuleParameter<GNPSSubmitParameters>("Submit to GNPS",
           "Directly submits a GNPS job", new GNPSSubmitParameters());
@@ -107,7 +113,7 @@ public class GNPSExportParameters extends SimpleParameterSet {
       new BooleanParameter("Open folder", "Opens the export folder", false);
 
   public GNPSExportParameters() {
-    super(new Parameter[] {PEAK_LISTS, FILENAME, MASS_LIST, FILTER, SUBMIT, OPEN_FOLDER});
+    super(new Parameter[] {PEAK_LISTS, FILENAME, MASS_LIST, MERGE_PARAMETER, FILTER, SUBMIT, OPEN_FOLDER});
   }
 
   @Override
