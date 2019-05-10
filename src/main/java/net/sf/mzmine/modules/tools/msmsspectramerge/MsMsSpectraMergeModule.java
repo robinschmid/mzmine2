@@ -157,7 +157,7 @@ public class MsMsSpectraMergeModule implements MZmineModule {
         MZTolerance ppm = parameters.getParameter(MsMsSpectraMergeParameters.MASS_ACCURACY).getValue();
         final double isolationWindowOffset = parameters.getParameter(MsMsSpectraMergeParameters.ISOLATION_WINDOW_OFFSET).getValue();
         final double isolationWindowWidth = parameters.getParameter(MsMsSpectraMergeParameters.ISOLATION_WINDOW_WIDTH).getValue();
-        FragmentScan[] allFragmentScans = FragmentScan.getAllFragmentScansFor(feature, massList, Range.closed(isolationWindowOffset-isolationWindowWidth, isolationWindowOffset + isolationWindowWidth), ppm, getAllMs2ScanNumbersFor(feature.getDataFile()));
+        FragmentScan[] allFragmentScans = FragmentScan.getAllFragmentScansFor(feature, massList, Range.closed(isolationWindowOffset-isolationWindowWidth, isolationWindowOffset + isolationWindowWidth), ppm, getAllMs2ScanNumbersFor(feature,ppm));
         final List<MergedSpectrum> mergedSpec = new ArrayList<>();
         for (FragmentScan scan : allFragmentScans) {
             MergedSpectrum e = mergeConsecutiveScans(scan, massList, Ms2QualityScoreModel.SelectByLowChimericIntensityRelativeToMs1Intensity);
@@ -314,6 +314,8 @@ public class MsMsSpectraMergeModule implements MZmineModule {
         final double lowestMassToConsider = Math.min(50d, scans.feature.getMZ()-50d);
 
         final DataPoint[] initialMostIntensive = ScanUtils.extractMostIntensivePeaksAcrossMassRange(initial.data, Range.closed(lowestMassToConsider, 150d), 6);
+        if (initialMostIntensive.length==0)
+            return MergedSpectrum.empty(totalNumberOfScans);
         final double lowestIntensityToConsider = 0.005d * initialMostIntensive[ScanUtils.findMostIntensivePeakWithin(initialMostIntensive, Range.closed(lowestMassToConsider,scans.feature.getMZ()))].getIntensity();
         Range<Double> cosineRange = Range.closed(lowestMassToConsider, scans.feature.getMZ() - 20);
         final double initialCosine = ScanUtils.probabilityProductUnnormalized(initialMostIntensive,initialMostIntensive,mzTolerance,lowestIntensityToConsider, cosineRange);
@@ -426,8 +428,11 @@ public class MsMsSpectraMergeModule implements MZmineModule {
 
     /////////////////////////////////////////////////////
 
-    final HashMap<String, int[]> fragmentScans = new HashMap<>();
-    protected synchronized int[] getAllMs2ScanNumbersFor(RawDataFile r) {
+    final HashMap<String, Scan[]> fragmentScans = new HashMap<>();
+    protected int[] getAllMs2ScanNumbersFor(Feature f,MZTolerance tolerance) {
+        return Arrays.stream(getAllMs2ScanNumbersFor(f.getDataFile())).filter(x->tolerance.checkWithinTolerance(x.getPrecursorMZ(), f.getMZ()) && f.getRawDataPointsRTRange().contains(x.getRetentionTime()) && f.getCharge()==x.getPrecursorCharge()).mapToInt(Scan::getScanNumber).toArray();
+    }
+    protected synchronized Scan[] getAllMs2ScanNumbersFor(RawDataFile r) {
         if (fragmentScans.containsKey(r.getName()))
             return fragmentScans.get(r.getName());
         int[] scans = new int[0];
@@ -440,8 +445,9 @@ public class MsMsSpectraMergeModule implements MZmineModule {
             }
         }
         Arrays.sort(scans);
-        fragmentScans.put(r.getName(), scans);
-        return scans;
+        Scan[] value = Arrays.stream(scans).mapToObj(r::getScan).toArray(Scan[]::new);
+        fragmentScans.put(r.getName(), value);
+        return value;
     }
 
     //////////////////////////////////////////////////////
