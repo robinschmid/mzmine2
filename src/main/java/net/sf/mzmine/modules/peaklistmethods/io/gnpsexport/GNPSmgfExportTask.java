@@ -57,7 +57,7 @@ import java.util.regex.Pattern;
 
 /**
  * Exports all files needed for GNPS
- * 
+ *
  * @author Robin Schmid (robinschmid@uni-muenster.de)
  *
  */
@@ -71,6 +71,8 @@ public class GNPSmgfExportTask extends AbstractTask {
   private final String plNamePattern = "{}";
   private int currentIndex = 0;
   private final String massListName;
+  private final MsMsSpectraMergeParameters mergeParameters;
+  private final MsMsSpectraMergeModule merger;
 
   // by robin
   private NumberFormat mzForm = MZmineCore.getConfiguration().getMZFormat();
@@ -89,6 +91,13 @@ public class GNPSmgfExportTask extends AbstractTask {
     this.fileName = parameters.getParameter(GNPSExportParameters.FILENAME).getValue();
     this.massListName = parameters.getParameter(GNPSExportParameters.MASS_LIST).getValue();
     this.filter = parameters.getParameter(GNPSExportParameters.FILTER).getValue();
+    if (parameters.getParameter(GNPSExportParameters.MERGE_PARAMETER).getValue()) {
+      mergeParameters = parameters.getParameter(GNPSExportParameters.MERGE_PARAMETER).getEmbeddedParameters();
+      merger = new MsMsSpectraMergeModule(mergeParameters);
+    } else {
+      mergeParameters = null;
+      merger = null;
+    }
   }
 
   @Override
@@ -253,10 +262,19 @@ public class GNPSmgfExportTask extends AbstractTask {
 
         writer.write("MSLEVEL=2" + newLine);
 
-        DataPoint peaks[] = massList.getDataPoints();
-        for (DataPoint peak : peaks) {
-          writer.write(mzForm.format(peak.getMZ()) + " " + intensityForm.format(peak.getIntensity())
-              + newLine);
+        DataPoint[] dataPoints = massList.getDataPoints();
+        if (merger != null) {
+          MergedSpectrum spectrum = merger.getBestMergedSpectrum(row, massListName);
+          if (spectrum!=null) {
+            dataPoints = spectrum.data;
+            writer.write("MERGED_STATS=");
+            writer.write(spectrum.getMergeStatsDescription());
+            writer.write(newLine);
+          }
+        }
+        for (DataPoint peak : dataPoints) {
+            writer.write(mzForm.format(peak.getMZ()) + " " + intensityForm.format(peak.getIntensity())
+                    + newLine);
         }
 
         writer.write("END IONS" + newLine);
