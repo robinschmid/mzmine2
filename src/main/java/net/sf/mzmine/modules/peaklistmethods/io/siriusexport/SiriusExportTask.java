@@ -391,9 +391,6 @@ public class SiriusExportTask extends AbstractTask {
         // run MS annotations module or better metaMSEcorrelate
         String msAnnotationsFlags = createMSAnnotationFlags(row, mzForm);
 
-        List<DataPoint[]> toMerge = new ArrayList<>();
-        List<String> sources = new ArrayList<>();
-
         MergeMode mergeMode = mergeParameters == null ? null : mergeParameters.getParameter(MsMsSpectraMergeParameters.MERGE_MODE).getValue();
         if ((mergeMode != MergeMode.ACROSS_SAMPLES)) {
             for (Feature f : row.getPeaks()) {

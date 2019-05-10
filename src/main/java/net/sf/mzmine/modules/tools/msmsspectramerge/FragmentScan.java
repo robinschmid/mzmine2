@@ -87,9 +87,9 @@ class FragmentScan {
     private PolarityType polarity;
 
 
-    static FragmentScan[] getAllFragmentScansFor(Feature feature, String massList, Range<Double> isolationWindow, MZTolerance massAccuracy) {
+    static FragmentScan[] getAllFragmentScansFor(Feature feature, String massList, Range<Double> isolationWindow, MZTolerance massAccuracy, int[] ms2ScanNumbers) {
         final RawDataFile file = feature.getDataFile();
-        final int[] ms2 = feature.getAllMS2FragmentScanNumbers().clone();
+        final int[] ms2 = ms2ScanNumbers.clone();
         Arrays.sort(ms2);
         final List<FragmentScan> fragmentScans = new ArrayList<>();
         // search for ms1 scans

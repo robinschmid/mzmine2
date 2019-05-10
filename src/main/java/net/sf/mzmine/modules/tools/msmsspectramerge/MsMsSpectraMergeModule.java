@@ -157,7 +157,7 @@ public class MsMsSpectraMergeModule implements MZmineModule {
         MZTolerance ppm = parameters.getParameter(MsMsSpectraMergeParameters.MASS_ACCURACY).getValue();
         final double isolationWindowOffset = parameters.getParameter(MsMsSpectraMergeParameters.ISOLATION_WINDOW_OFFSET).getValue();
         final double isolationWindowWidth = parameters.getParameter(MsMsSpectraMergeParameters.ISOLATION_WINDOW_WIDTH).getValue();
-        FragmentScan[] allFragmentScans = FragmentScan.getAllFragmentScansFor(feature, massList, Range.closed(isolationWindowOffset-isolationWindowWidth, isolationWindowOffset + isolationWindowWidth), ppm);
+        FragmentScan[] allFragmentScans = FragmentScan.getAllFragmentScansFor(feature, massList, Range.closed(isolationWindowOffset-isolationWindowWidth, isolationWindowOffset + isolationWindowWidth), ppm, getAllMs2ScanNumbersFor(feature.getDataFile()));
         final List<MergedSpectrum> mergedSpec = new ArrayList<>();
         for (FragmentScan scan : allFragmentScans) {
             MergedSpectrum e = mergeConsecutiveScans(scan, massList, Ms2QualityScoreModel.SelectByLowChimericIntensityRelativeToMs1Intensity);
@@ -422,5 +422,28 @@ public class MsMsSpectraMergeModule implements MZmineModule {
         }
         return orderedByMz;
     }
+
+
+    /////////////////////////////////////////////////////
+
+    final HashMap<String, int[]> fragmentScans = new HashMap<>();
+    protected synchronized int[] getAllMs2ScanNumbersFor(RawDataFile r) {
+        if (fragmentScans.containsKey(r.getName()))
+            return fragmentScans.get(r.getName());
+        int[] scans = new int[0];
+        for (int msLevel : r.getMSLevels()) {
+            if (msLevel > 1) {
+                int[] concat = r.getScanNumbers(msLevel);
+                int offset = scans.length;
+                scans = Arrays.copyOf(scans, scans.length + concat.length);
+                System.arraycopy(concat, 0, scans, offset, concat.length);
+            }
+        }
+        Arrays.sort(scans);
+        fragmentScans.put(r.getName(), scans);
+        return scans;
+    }
+
+    //////////////////////////////////////////////////////
 
 }
