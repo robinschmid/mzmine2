@@ -405,11 +405,18 @@ public class SiriusExportTask extends AbstractTask {
                             writeHeader(writer, row, f.getDataFile(), polarity, MsType.MSMS, spectrum.filterByRelativeNumberOfScans(mergeParameters.getParameter(MsMsSpectraMergeParameters.PEAK_COUNT_PARAMETER).getValue()), msAnnotationsFlags);
                             writeSpectrum(writer, spectrum.data);
                         }
-                    } else {
+                    } else if (mergeMode == MergeMode.SAME_SAMPLE) {
                         MergedSpectrum spectrum = mergeMethod.mergeFromSameSample(f, massListName).filterByRelativeNumberOfScans(mergeParameters.getParameter(MsMsSpectraMergeParameters.PEAK_COUNT_PARAMETER).getValue());
                         if (spectrum.data.length > 0) {
                             writeHeader(writer, row, f.getDataFile(), polarity, MsType.MSMS, spectrum, msAnnotationsFlags);
                             writeSpectrum(writer, spectrum.data);
+                        }
+                    } else {
+                        final Scan s = f.getDataFile().getScan(f.getMostIntenseFragmentScanNumber());
+                        final DataPoint[] dps = s.getMassList(massListName).getDataPoints();
+                        if (dps.length > 0) {
+                            writeHeader(writer, row, f.getDataFile(), polarity, MsType.MSMS, f.getMostIntenseFragmentScanNumber(), msAnnotationsFlags);
+                            writeSpectrum(writer, dps);
                         }
                     }
                 }
