@@ -49,6 +49,8 @@ import net.sf.mzmine.util.files.FileAndPathUtil;
 public class GNPSUtils {
   // Logger.
   private static final Logger LOG = Logger.getLogger(GNPSUtils.class.getName());
+  public static final String URL =
+      "http://dorresteinappshub.ucsd.edu:5050/uploadanalyzefeaturenetworking";
 
   /**
    * Submit job to GNPS
@@ -68,6 +70,8 @@ public class GNPSUtils {
     boolean openWebsite = param.getParameter(GNPSSubmitParameters.OPEN_WEBSITE).getValue();
     String presets = param.getParameter(GNPSSubmitParameters.PRESETS).getValue().toString();
     String email = param.getParameter(GNPSSubmitParameters.EMAIL).getValue();
+    String username = param.getParameter(GNPSSubmitParameters.USER).getValue();
+    String password = param.getParameter(GNPSSubmitParameters.PASSWORD).getValue();
     //
     File folder = file.getParentFile();
     String name = file.getName();
@@ -85,7 +89,8 @@ public class GNPSUtils {
       File meta = !useMeta ? null
           : param.getParameter(GNPSSubmitParameters.META_FILE).getEmbeddedParameter().getValue();
 
-      return submitJob(mgf, quan, meta, edgeAnn, edgeCorr, email, presets, openWebsite);
+      return submitJob(mgf, quan, meta, edgeAnn, edgeCorr, email, presets, openWebsite, username,
+          password);
     } else
       return "";
   }
@@ -99,7 +104,8 @@ public class GNPSUtils {
    * @return
    */
   public static String submitJob(File mgf, File quan, File meta, File edgeAnn, File edgeCorr,
-      String email, String presets, boolean openWebsite) throws MSDKRuntimeException {
+      String email, String presets, boolean openWebsite, String username, String password)
+      throws MSDKRuntimeException {
     try {
       // NEEDED files
       if (mgf.exists() && quan.exists() && !presets.isEmpty()) {
@@ -115,6 +121,10 @@ public class GNPSUtils {
           entity.addPart("featurequantification", new FileBody(quan));
           entity.addPart("featurems2", new FileBody(mgf));
 
+          // user and password
+          entity.addPart("username", new StringBody(username));
+          entity.addPart("password", new StringBody(password));
+
           // ######################################################
           // OPTIONAL
           // email, meta data, additional edges
@@ -126,8 +136,7 @@ public class GNPSUtils {
           if (edgeAnn != null && edgeAnn.exists())
             entity.addPart("additionalpairs", new FileBody(edgeAnn));
 
-          HttpPost httppost =
-              new HttpPost("http://mingwangbeta.ucsd.edu:5050/uploadanalyzefeaturenetworking");
+          HttpPost httppost = new HttpPost(URL);
           httppost.setEntity(entity);
 
           LOG.info("Submitting GNPS job " + httppost.getRequestLine());
