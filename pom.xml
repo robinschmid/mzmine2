@@ -548,7 +548,6 @@
 			<groupId>io.github.msdk</groupId>
 			<artifactId>msdk-id-sirius</artifactId>
 			<version>${msdk.version}</version>
-			<type>pom</type>
 			<exclusions>
 				<exclusion>
 					<groupId>org.apache.httpcomponents</groupId>

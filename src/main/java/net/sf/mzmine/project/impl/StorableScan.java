@@ -18,21 +18,23 @@
 
 package net.sf.mzmine.project.impl;
 
-import com.google.common.collect.Range;
-import net.sf.mzmine.datamodel.*;
-import net.sf.mzmine.desktop.impl.projecttree.RawDataTreeModel;
-import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.util.scans.ScanUtils;
-
-import javax.annotation.Nonnull;
-import javax.swing.*;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Vector;
 import java.util.logging.Logger;
+import javax.annotation.Nonnull;
+import javax.swing.SwingUtilities;
+import com.google.common.collect.Range;
+import net.sf.mzmine.datamodel.DataPoint;
+import net.sf.mzmine.datamodel.MassList;
+import net.sf.mzmine.datamodel.MassSpectrumType;
+import net.sf.mzmine.datamodel.PolarityType;
+import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.datamodel.Scan;
+import net.sf.mzmine.desktop.impl.projecttree.RawDataTreeModel;
+import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.util.scans.ScanUtils;
 
 /**
  * Implementation of the Scan interface which stores raw data points in a temporary file, accessed
@@ -110,6 +112,7 @@ public class StorableScan implements Scan {
   /**
    * @return Scan's datapoints from temporary file.
    */
+  @Override
   public @Nonnull DataPoint[] getDataPoints() {
 
     try {
@@ -122,18 +125,10 @@ public class StorableScan implements Scan {
 
   }
 
-  public @Nonnull FloatBuffer readDataPointsAsFloatBuffer() {
-    try {
-      return rawDataFile.readDataPointsAsFloatBuffer(storageID);
-    } catch (IOException e) {
-      logger.severe("Could not read data from temporary file " + e.toString());
-      return FloatBuffer.wrap(new float[0]);
-    }
-  }
-
   /**
    * @return Returns scan datapoints within a given range
    */
+  @Override
   public @Nonnull DataPoint[] getDataPointsByMass(@Nonnull Range<Double> mzRange) {
 
     DataPoint dataPoints[] = getDataPoints();
@@ -162,6 +157,7 @@ public class StorableScan implements Scan {
   /**
    * @return Returns scan datapoints over certain intensity
    */
+  @Override
   public @Nonnull DataPoint[] getDataPointsOverIntensity(double intensity) {
     int index;
     Vector<DataPoint> points = new Vector<DataPoint>();
@@ -178,6 +174,7 @@ public class StorableScan implements Scan {
     return pointsOverIntensity;
   }
 
+  @Override
   public @Nonnull RawDataFile getDataFile() {
     return rawDataFile;
   }
@@ -189,6 +186,7 @@ public class StorableScan implements Scan {
   /**
    * @see net.sf.mzmine.datamodel.Scan#getNumberOfDataPoints()
    */
+  @Override
   public int getNumberOfDataPoints() {
     return numberOfDataPoints;
   }
@@ -196,6 +194,7 @@ public class StorableScan implements Scan {
   /**
    * @see net.sf.mzmine.datamodel.Scan#getScanNumber()
    */
+  @Override
   public int getScanNumber() {
     return scanNumber;
   }
@@ -203,6 +202,7 @@ public class StorableScan implements Scan {
   /**
    * @see net.sf.mzmine.datamodel.Scan#getMSLevel()
    */
+  @Override
   public int getMSLevel() {
     return msLevel;
   }
@@ -210,6 +210,7 @@ public class StorableScan implements Scan {
   /**
    * @see net.sf.mzmine.datamodel.Scan#getPrecursorMZ()
    */
+  @Override
   public double getPrecursorMZ() {
     return precursorMZ;
   }
@@ -217,6 +218,7 @@ public class StorableScan implements Scan {
   /**
    * @return Returns the precursorCharge.
    */
+  @Override
   public int getPrecursorCharge() {
     return precursorCharge;
   }
@@ -224,6 +226,7 @@ public class StorableScan implements Scan {
   /**
    * @see net.sf.mzmine.datamodel.Scan#getScanAcquisitionTime()
    */
+  @Override
   public double getRetentionTime() {
     return retentionTime;
   }
@@ -260,6 +263,7 @@ public class StorableScan implements Scan {
   /**
    * @see net.sf.mzmine.datamodel.Scan#getMZRangeMax()
    */
+  @Override
   public @Nonnull Range<Double> getDataPointMZRange() {
     if (mzRange == null)
       updateValues();
@@ -269,6 +273,7 @@ public class StorableScan implements Scan {
   /**
    * @see net.sf.mzmine.datamodel.Scan#getBasePeakMZ()
    */
+  @Override
   public DataPoint getHighestDataPoint() {
     if ((basePeak == null) && (numberOfDataPoints > 0))
       updateValues();
@@ -278,6 +283,7 @@ public class StorableScan implements Scan {
   /**
    * @see net.sf.mzmine.datamodel.Scan#getFragmentScanNumbers()
    */
+  @Override
   public int[] getFragmentScanNumbers() {
     return fragmentScans;
   }
@@ -292,6 +298,7 @@ public class StorableScan implements Scan {
   /**
    * @see net.sf.mzmine.datamodel.Scan#getSpectrumType()
    */
+  @Override
   public MassSpectrumType getSpectrumType() {
     if (spectrumType == null) {
       spectrumType = ScanUtils.detectSpectrumType(getDataPoints());
@@ -299,6 +306,7 @@ public class StorableScan implements Scan {
     return spectrumType;
   }
 
+  @Override
   public double getTIC() {
     if (totalIonCurrent == null)
       updateValues();
@@ -310,72 +318,9 @@ public class StorableScan implements Scan {
     return ScanUtils.scanToString(this);
   }
 
-
-  public synchronized void addMassList(final String massListName, ByteBuffer buffer) {
-    try {
-      int id = rawDataFile.storeDataPoints(buffer);
-      StorableMassList storedMassList = new StorableMassList(rawDataFile, id, massListName, this);
-
-      // Add the new mass list
-      massLists.add(storedMassList);
-
-      // Add the mass list to the tree model
-      MZmineProjectImpl project =
-              (MZmineProjectImpl) MZmineCore.getProjectManager().getCurrentProject();
-
-      // Check if we are adding to the current project
-      if (Arrays.asList(project.getDataFiles()).contains(rawDataFile)) {
-        final RawDataTreeModel treeModel = project.getRawDataTreeModel();
-        final MassList newMassList = storedMassList;
-        Runnable swingCode = new Runnable() {
-          @Override
-          public void run() {
-            treeModel.addObject(newMassList);
-          }
-        };
-
-        try {
-          if (SwingUtilities.isEventDispatchThread())
-            swingCode.run();
-          else
-            SwingUtilities.invokeAndWait(swingCode);
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-
-      }
-    } catch (IOException e) {
-      logger.severe("Could not write data to temporary file " + e.toString());
-      return;
-    }
-  }
-
   @Override
   public synchronized void addMassList(final @Nonnull MassList massList) {
-
-    // Remove all mass lists with same name, if there are any
-    MassList currentMassLists[] = massLists.toArray(new MassList[0]);
-    for (MassList ml : currentMassLists) {
-      if (ml.getName().equals(massList.getName()))
-        removeMassList(ml);
-    }
-
-    StorableMassList storedMassList;
-    if (massList instanceof StorableMassList) {
-      storedMassList = (StorableMassList) massList;
-    } else {
-      DataPoint massListDataPoints[] = massList.getDataPoints();
-      try {
-        int mlStorageID = rawDataFile.storeDataPoints(massListDataPoints);
-        storedMassList = new StorableMassList(rawDataFile, mlStorageID, massList.getName(), this);
-      } catch (IOException e) {
-        logger.severe("Could not write data to temporary file " + e.toString());
-        return;
-      }
-    }
-
-    // Add the new mass list
-    massLists.add(storedMassList);
+    MassList storedMassList = addMassListWithoutNotification(massList);
 
     // Add the mass list to the tree model
     MZmineProjectImpl project =
@@ -433,6 +378,35 @@ public class StorableScan implements Scan {
 
     }
 
+  }
+
+  @Override
+  public MassList addMassListWithoutNotification(@Nonnull MassList massList) {
+    // Remove all mass lists with same name, if there are any
+    MassList currentMassLists[] = massLists.toArray(new MassList[0]);
+    for (MassList ml : currentMassLists) {
+      if (ml.getName().equals(massList.getName()))
+        removeMassList(ml);
+    }
+
+    StorableMassList storedMassList;
+    if (massList instanceof StorableMassList) {
+      storedMassList = (StorableMassList) massList;
+    } else {
+      DataPoint massListDataPoints[] = massList.getDataPoints();
+      try {
+        int mlStorageID = rawDataFile.storeDataPoints(massListDataPoints);
+        storedMassList = new StorableMassList(rawDataFile, mlStorageID, massList.getName(), this);
+      } catch (IOException e) {
+        logger.severe("Could not write data to temporary file " + e.toString());
+        return null;
+      }
+    }
+
+    // Add the new mass list
+    massLists.add(storedMassList);
+
+    return storedMassList;
   }
 
   @Override

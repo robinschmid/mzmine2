@@ -18,9 +18,11 @@
 
 package net.sf.mzmine.datamodel;
 
-import javax.annotation.Nonnull;
-
 import com.google.common.collect.Range;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.List;
 
 public interface RawDataFile {
 
@@ -78,12 +80,12 @@ public interface RawDataFile {
   public int[] getScanNumbers(int msLevel, @Nonnull Range<Double> rtRange);
 
   /**
-   * 
+   * Scan could be null if scanID is not contained in the raw data file
+   *
    * @param scan Desired scan number
    * @return Desired scan
    */
-  @Nonnull
-  public Scan getScan(int scan);
+  public @Nullable Scan getScan(int scan);
 
   @Nonnull
   public Range<Double> getDataMZRange();
@@ -105,5 +107,7 @@ public interface RawDataFile {
    * Close the file in case it is removed from the project
    */
   public void close();
+
+  public void notifyUpdatedMassLists(List<MassList> massList);
 
 }
