@@ -189,7 +189,7 @@ public class IonIdentity {
     b.append(adduct);
 
     // xmer and multimer
-    if (getMSMSMultimerCount() > 0 || (getIonType().getModCount() > 0 && getMSMSModVerify() > 0)) {
+    if (getMSMSMultimerCount() > 0 && (getIonType().getModCount() > 0 && getMSMSModVerify() > 0)) {
       b.append(" (MS/MS:xmer, insource frag)");
     }
     // MSMS backed id for multimers

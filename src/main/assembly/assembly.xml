@@ -37,6 +37,12 @@
 			<directoryMode>0755</directoryMode>
 		</fileSet>
 		<fileSet>
+			<directory>src/main/style</directory>
+			<outputDirectory>style</outputDirectory>
+			<fileMode>0644</fileMode>
+			<directoryMode>0755</directoryMode>
+		</fileSet>
+		<fileSet>
 			<directory>src/main/lib/vendor_lib</directory>
 			<outputDirectory>lib/vendor_lib</outputDirectory>
 			<fileMode>0644</fileMode>

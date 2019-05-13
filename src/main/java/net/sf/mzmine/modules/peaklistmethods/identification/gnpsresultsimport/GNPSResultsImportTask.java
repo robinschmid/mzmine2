@@ -20,11 +20,17 @@ package net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.implementations.DefaultGraph;
 import org.graphstream.stream.file.FileSource;
@@ -118,8 +124,12 @@ public class GNPSResultsImportTask extends AbstractTask {
     setStatus(TaskStatus.PROCESSING);
     logger.info("Importing GNPS results for " + peakList);
 
+    // remove zeros from edge ids (GNPS export error)
+    removeZeroIDFromEdge(file);
+
     Graph graph = new DefaultGraph("GNPS");
     if (importGraphData(graph, file)) {
+
       // import library matches from nodes
       importLibraryMatches(graph);
 
@@ -135,8 +145,34 @@ public class GNPSResultsImportTask extends AbstractTask {
       if (!(desktop instanceof HeadLessDesktop))
         desktop.getMainWindow().repaint();
 
-      setStatus(TaskStatus.FINISHED);
       logger.info("Finished import of GNPS results for " + peakList);
+      setStatus(TaskStatus.FINISHED);
+    } else {
+      setErrorMessage("Error while importing graphml file: " + file.getAbsolutePath());
+      setStatus(TaskStatus.ERROR);
+    }
+  }
+
+  /**
+   * All edges have id=0 - this causes an exception. Replace all zero ids and save the file
+   * 
+   * @param file2
+   */
+  private void removeZeroIDFromEdge(File file) {
+    try {
+      logger.info("replacing zero ids in graphml");
+      Path path = Paths.get(file.getAbsolutePath());
+      Stream<String> lines = Files.lines(path);
+      List<String> replaced =
+          lines.map(line -> line.replaceAll("edge id=\"0\"", "edge")).collect(Collectors.toList());
+      Files.write(path, replaced);
+      lines.close();
+      logger.info("zero ids in graphml replaces");
+    } catch (IOException e) {
+      logger.log(Level.SEVERE, "graphml NOT LOADED: " + file.getAbsolutePath(), e);
+      setErrorMessage("Cannot load graphml file: " + file.getAbsolutePath());
+      setStatus(TaskStatus.ERROR);
+      cancel();
     }
   }
 
