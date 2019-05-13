@@ -34,10 +34,16 @@ import net.sf.mzmine.util.files.FileTypeFilter;
 public class NetworkPanel extends JPanel {
   private static final Logger LOG = Logger.getLogger(NetworkPanel.class.getName());
 
+  public static final String DEFAULT_STYLE_FILE = "style/graph_network_style.css";
+
   public static final String STYLE_SHEET =
-      "edge {fill-color: rgb(50,100,50); stroke-color: rgb(50,100,50); stroke-width: 1px;}  node {text-size: 11; fill-color: black; size: 10px; stroke-mode: plain; stroke-color: rgb(50,100,50); stroke-width: 1px;} "
-          + "node.important{fill-color: red;} node.big{size: 15px;} node.MOL{fill-color: cyan; size: 15px;}  node.NEUTRAL{fill-color: violet;} "
-          + "edge.medium{fill-color: rgb(50,100,200); stroke-color: rgb(50,100,200); stroke-width: 2.5px;}";
+      "edge {text-visibility-mode: under-zoom; text-visibility: 0.3; fill-color: rgb(100,160,100); stroke-color: rgb(50,100,50); stroke-width: 1px; text-alignment: along;} "
+          + "edge.medium{fill-color: rgb(50,100,200); stroke-color: rgb(50,100,200); stroke-width: 2.5px;} "
+          + "node {text-visibility-mode: under-zoom; text-visibility: 0.3; text-alignment: at-right; text-offset: 2; text-size: 12; fill-color: black; "
+          + "size: 11px; stroke-mode: plain; stroke-color: rgb(50,100,50); stroke-width: 1px;} "
+          + "node.important{fill-color: red;} node.big{size: 15px;} "
+          + "node.MOL{text-visibility-mode: under-zoom; text-visibility: 0.99; fill-color: cyan; size: 15px;} "
+          + "node.NEUTRAL{fill-color: violet;}";
 
   public static final String EXPORT_STYLE_SHEET =
       "edge {fill-color: rgb(25,85,25); stroke-color: rgb(50,100,50); stroke-width: 2px;}  node {text-size: 16; fill-color: black; size: 16px; stroke-mode: plain; stroke-color: rgb(50,100,50); stroke-width: 2px;} "
@@ -175,8 +181,7 @@ public class NetworkPanel extends JPanel {
    */
   private String loadDefaultStyle() {
     try {
-      File file =
-          new File(getClass().getClassLoader().getResource("graph_network_style.css").getFile());
+      File file = new File(DEFAULT_STYLE_FILE);
       String style =
           Files.readLines(file, Charsets.UTF_8).stream().collect(Collectors.joining(" "));
       LOG.info("Default style from file: " + style);
