@@ -69,6 +69,7 @@ public class GNPSUtils {
     boolean corr = false;
     boolean openWebsite = param.getParameter(GNPSSubmitParameters.OPEN_WEBSITE).getValue();
     String presets = param.getParameter(GNPSSubmitParameters.PRESETS).getValue().toString();
+    String title = param.getParameter(GNPSSubmitParameters.JOB_TITLE).getValue();
     String email = param.getParameter(GNPSSubmitParameters.EMAIL).getValue();
     String username = param.getParameter(GNPSSubmitParameters.USER).getValue();
     String password = param.getParameter(GNPSSubmitParameters.PASSWORD).getValue();
@@ -89,8 +90,8 @@ public class GNPSUtils {
       File meta = !useMeta ? null
           : param.getParameter(GNPSSubmitParameters.META_FILE).getEmbeddedParameter().getValue();
 
-      return submitJob(mgf, quan, meta, edgeAnn, edgeCorr, email, presets, openWebsite, username,
-          password);
+      return submitJob(mgf, quan, meta, edgeAnn, edgeCorr, title, email, presets, openWebsite,
+          username, password);
     } else
       return "";
   }
@@ -104,8 +105,8 @@ public class GNPSUtils {
    * @return
    */
   public static String submitJob(File mgf, File quan, File meta, File edgeAnn, File edgeCorr,
-      String email, String presets, boolean openWebsite, String username, String password)
-      throws MSDKRuntimeException {
+      String title, String email, String presets, boolean openWebsite, String username,
+      String password) throws MSDKRuntimeException {
     try {
       // NEEDED files
       if (mgf.exists() && quan.exists() && !presets.isEmpty()) {
@@ -116,6 +117,7 @@ public class GNPSUtils {
           // ######################################################
           // NEEDED
           // tool, presets, quant table, mgf
+          entity.addPart("description", new StringBody(title == null ? "" : title));
           entity.addPart("featuretool", new StringBody("MZMINE2"));
           entity.addPart("networkingpreset", new StringBody(presets));
           entity.addPart("featurequantification", new FileBody(quan));
