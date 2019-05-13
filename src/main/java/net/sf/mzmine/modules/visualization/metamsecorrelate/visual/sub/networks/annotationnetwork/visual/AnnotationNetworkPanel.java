@@ -50,7 +50,11 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     menu.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
     menu.add(new JLabel("Menu"));
 
-    JToggleButton toggleCollapseIons = new JToggleButton("Collapse ions", false);
+    showEdgeLabels = false;
+    showNodeLabels = true;
+    collapse = true;
+
+    JToggleButton toggleCollapseIons = new JToggleButton("Collapse ions", collapse);
     menu.add(toggleCollapseIons);
     toggleCollapseIons.addItemListener(il -> collapseIonNodes(toggleCollapseIons.isSelected()));
 
@@ -69,11 +73,11 @@ public class AnnotationNetworkPanel extends NetworkPanel {
     toggleShowIonIdentityEdges
         .addItemListener(il -> showIonIdentityEdges(toggleShowIonIdentityEdges.isSelected()));
 
-    JToggleButton toggleShowEdgeLabel = new JToggleButton("Show edge label", false);
+    JToggleButton toggleShowEdgeLabel = new JToggleButton("Show edge label", showEdgeLabels);
     menu.add(toggleShowEdgeLabel);
     toggleShowEdgeLabel.addItemListener(il -> showEdgeLabels(toggleShowEdgeLabel.isSelected()));
 
-    JToggleButton toggleShowNodeLabel = new JToggleButton("Show node label", false);
+    JToggleButton toggleShowNodeLabel = new JToggleButton("Show node label", showNodeLabels);
     menu.add(toggleShowNodeLabel);
     toggleShowNodeLabel.addItemListener(il -> showNodeLabels(toggleShowNodeLabel.isSelected()));
 
