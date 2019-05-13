@@ -5,10 +5,12 @@ import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -24,6 +26,8 @@ import org.graphstream.ui.geom.Point3;
 import org.graphstream.ui.swing_viewer.SwingViewer;
 import org.graphstream.ui.swing_viewer.ViewPanel;
 import org.graphstream.ui.view.Viewer;
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 import net.sf.mzmine.util.files.FileAndPathUtil;
 import net.sf.mzmine.util.files.FileTypeFilter;
 
@@ -71,15 +75,17 @@ public class NetworkPanel extends JPanel {
    * Create the panel.
    */
   public NetworkPanel(String title, boolean showTitle) {
-    this(title, STYLE_SHEET, showTitle);
-    System.setProperty("org.graphstream.ui.renderer",
-        "org.graphstream.ui.j2dviewer.J2DGraphRenderer");
+    this(title, "", showTitle);
   }
 
   /**
    * @wbp.parser.constructor
    */
-  public NetworkPanel(String title, String styleSheet, boolean showTitle) {
+  public NetworkPanel(String title, String styleSheet2, boolean showTitle) {
+    System.setProperty("org.graphstream.ui", "swing");
+    System.setProperty("gs.ui.renderer", "org.graphstream.ui.j2dviewer.J2DGraphRenderer");
+    System.setProperty("org.graphstream.ui.renderer",
+        "org.graphstream.ui.j2dviewer.J2DGraphRenderer");
     this.setLayout(new BorderLayout());
 
     saveDialog.addChoosableFileFilter(pngFilter = new FileTypeFilter("png", "PNG image file"));
@@ -88,7 +94,15 @@ public class NetworkPanel extends JPanel {
         graphMLFilter = new FileTypeFilter("graphml", "Export graph to graphml"));
     saveDialog.setFileFilter(pngFilter);
 
-    this.styleSheet = styleSheet;
+    // load default from file
+    if (styleSheet2 == null || styleSheet2.isEmpty())
+      this.styleSheet = loadDefaultStyle();
+    else
+      this.styleSheet = styleSheet2;
+
+    // set default in this class
+    if (styleSheet == null || styleSheet.isEmpty())
+      this.styleSheet = STYLE_SHEET;
 
     // add settings
     pnSettings = new JPanel();
@@ -104,7 +118,7 @@ public class NetworkPanel extends JPanel {
     selectedNodes = new ArrayList<Node>();
 
     graph = new MultiGraph(title);
-    setStyleSheet(styleSheet);
+    setStyleSheet(this.styleSheet);
     graph.setAutoCreate(true);
     graph.setStrict(false);
 
@@ -152,6 +166,25 @@ public class NetworkPanel extends JPanel {
       }
     });
     view.addMouseWheelListener(event -> zoom(event.getWheelRotation() < 0));
+  }
+
+  /**
+   * Load default style from file
+   * 
+   * @return
+   */
+  private String loadDefaultStyle() {
+    try {
+      File file =
+          new File(getClass().getClassLoader().getResource("graph_network_style.css").getFile());
+      String style =
+          Files.readLines(file, Charsets.UTF_8).stream().collect(Collectors.joining(" "));
+      LOG.info("Default style from file: " + style);
+      return style;
+    } catch (IOException e) {
+      LOG.log(Level.WARNING, "Cannot load graph_network_style.css resource", e);
+    }
+    return "";
   }
 
   public void openSaveDialog() {

@@ -350,10 +350,12 @@ public class AnnotationNetworkGenerator {
     else {
       String id = "";
       if (esi != null) {
-        id = esi.getAdduct() + " by n=" + esi.getPartnerRowsID().length;
+        id = esi.getAdduct();
 
-        if (esi.getNetID() != -1)
-          id += " (Net" + esi.getNetIDString() + ")";
+        // id += " by n=" + esi.getPartnerRowsID().length;
+        //
+        // if (esi.getNetID() != -1)
+        // id += " (Net" + esi.getNetIDString() + ")";
       }
       String label = MessageFormat.format("{0} (mz={1}) {2}", row.getID(),
           mzForm.format(row.getAverageMZ()), id);
