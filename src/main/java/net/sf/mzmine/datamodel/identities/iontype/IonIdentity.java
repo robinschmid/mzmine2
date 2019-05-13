@@ -187,19 +187,23 @@ public class IonIdentity {
     // b.append(" ");
     // }
     b.append(adduct);
-    b.append(" identified by ID=");
-    b.append(getPartnerRows());
 
+    // xmer and multimer
+    if (getMSMSMultimerCount() > 0 || (getIonType().getModCount() > 0 && getMSMSModVerify() > 0)) {
+      b.append(" (MS/MS:xmer, insource frag)");
+    }
     // MSMS backed id for multimers
-    if (getMSMSMultimerCount() > 0) {
+    else if (getMSMSMultimerCount() > 0) {
       b.append(" (MS/MS:xmer)");
     }
     // MSMS backed id for insource frag
-    if (getIonType().getModCount() > 0) {
-      if (getMSMSModVerify() > 0) {
-        b.append(" (MS/MS:insource frag)");
-      }
+    else if (getIonType().getModCount() > 0 && getMSMSModVerify() > 0) {
+      b.append(" (MS/MS:insource frag)");
     }
+
+    b.append(" identified by ID=");
+    b.append(getPartnerRows());
+
     return b.toString();
   }
 
