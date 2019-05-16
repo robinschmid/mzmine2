@@ -27,7 +27,6 @@ import net.sf.mzmine.util.scans.ScanUtils;
 import javax.annotation.Nonnull;
 import javax.swing.*;
 import java.io.IOException;
-import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Vector;
@@ -119,15 +118,6 @@ public class StorableScan implements Scan {
       return new DataPoint[0];
     }
 
-  }
-
-  public @Nonnull FloatBuffer readDataPointsAsFloatBuffer() {
-    try {
-      return rawDataFile.readDataPointsAsFloatBuffer(storageID);
-    } catch (IOException e) {
-      logger.severe("Could not read data from temporary file " + e.toString());
-      return FloatBuffer.wrap(new float[0]);
-    }
   }
 
   /**
