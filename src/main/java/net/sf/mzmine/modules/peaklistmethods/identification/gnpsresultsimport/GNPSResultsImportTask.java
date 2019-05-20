@@ -59,6 +59,7 @@ public class GNPSResultsImportTask extends AbstractTask {
 
   private AtomicDouble progress = new AtomicDouble(0);
   private ParameterSet parameters;
+  private String step = "Importing GNPS results for";
 
   public enum EdgeAtt {
     EDGE_TYPE("EdgeType", String.class), // edgetype
@@ -113,7 +114,7 @@ public class GNPSResultsImportTask extends AbstractTask {
    */
   @Override
   public String getTaskDescription() {
-    return "Importing GNPS results for " + peakList + " in file " + file;
+    return step + " " + peakList + " in file " + file;
   }
 
   /**
@@ -130,15 +131,21 @@ public class GNPSResultsImportTask extends AbstractTask {
     Graph graph = new DefaultGraph("GNPS");
     if (importGraphData(graph, file)) {
 
+      progress.set(0d);
+      step = "Importing library matches";
+      logger.info("Starting to import library matches");
       // import library matches from nodes
       importLibraryMatches(graph);
 
       // import MS2 similarity from GNPS edges
+      progress.set(0d);
+      step = "Importing MS2 similarity edges";
+      logger.info("Starting to import MS2 similarity edges");
       importMS2SimilarityEdges(graph);
 
       // Add task description to peakList
       ((SimplePeakList) peakList).addDescriptionOfAppliedTask(
-          new SimplePeakListAppliedMethod("Identification of complexes", parameters));
+          new SimplePeakListAppliedMethod("GNPS results import", parameters));
 
       // Repaint the window to reflect the change in the peak list
       Desktop desktop = MZmineCore.getDesktop();
@@ -182,6 +189,8 @@ public class GNPSResultsImportTask extends AbstractTask {
 
     R2RMap<R2RMS2Similarity> map = peakList.getR2RSimilarityMap();
 
+    final int size = graph.getEdgeCount();
+    AtomicInteger done = new AtomicInteger(0);
     graph.edges().forEach(edge -> {
       // edge type is gnps? (Cosine)
       String type = (String) edge.getAttribute(EdgeAtt.EDGE_TYPE.getKey());
@@ -209,6 +218,9 @@ public class GNPSResultsImportTask extends AbstractTask {
         } else
           missingRows.getAndIncrement();
       }
+      // increment
+      done.getAndIncrement();
+      progress.set(done.get() / (double) size);
     });
 
 
@@ -223,6 +235,8 @@ public class GNPSResultsImportTask extends AbstractTask {
     AtomicInteger missingRows = new AtomicInteger(0);
     AtomicInteger libraryMatches = new AtomicInteger(0);
     // go through all nodes and add info
+    final int size = graph.getNodeCount();
+    AtomicInteger done = new AtomicInteger(0);
     graph.nodes().forEach(node -> {
       int id = Integer.parseInt(node.getId());
       // has library match?
@@ -251,6 +265,10 @@ public class GNPSResultsImportTask extends AbstractTask {
         }
       } else
         missingRows.getAndIncrement();
+
+      // increment
+      done.getAndIncrement();
+      progress.set(done.get() / (double) size);
     });
 
     if (missingRows.get() > 0)
