@@ -649,24 +649,52 @@ public class SiriusExportTask extends AbstractTask {
         writer.newLine();
     }
 
+    protected int np1 = 0, np2 = 0, np3 = 0, np4 = 0, npw = 0, npe=0;
+
     protected void exportCorrelatedRow(BufferedWriter writer, PeakListRow row,
                                        R2GroupCorrelationData corr, IonIdentity id) throws IOException {
         double r = corr == null ? 0 : corr.getAvgPeakShapeR();
-        Feature best = row.getBestPeak();
+
+        final DataPoint[] isotopes = IsotopeUtils.extractIsotopes(row);
+
+        ++np1;
+        if (isotopes.length >= 2) {
+            ++np2;
+        }
+        if (isotopes.length >= 3) {
+            ++np3;
+        }
+        if (isotopes.length >= 4) {
+            ++np4;
+        }
+        if (row.getBestIsotopePattern()!=null && row.getBestIsotopePattern().getDataPoints().length >= isotopes.length) {
+            ++npe;
+        }
+        if (row.getBestIsotopePattern()!=null && row.getBestIsotopePattern().getDataPoints().length > isotopes.length) {
+            ++npw;
+            System.out.println(IsotopeUtils.extractIsotopes(row));
+        }
+        System.out.printf(Locale.US, "total = %d, +2 = %d, +3 = %d, +4 = %d, better = %d, worse = %d, equal = %d\n",
+                np1, np2, np3, np4, np1-npe, npw, npe);
+
         if (id == null)
             id = row.getBestIonIdentity();
         IonNetwork network = id == null ? null : id.getNetwork();
 
-        // TODO : best feature mz or avg?
-        // intensity?
-        writer.write(mzForm.format(row.getAverageMZ()));
-        writer.write(" " + best.getHeight());
-        writer.write(" " + (corr == null || Double.isNaN(r) ? "1" : corrForm.format(r))); // correlation
-        if (id != null)
-            writer.write(" " + id.getAdduct());
-        writer.newLine();
-        // export isotope pattern
-        writeCorrelationIsotopes(writer, row);
+        for (int k=0; k < isotopes.length; ++k) {
+            writer.write(String.valueOf(isotopes[k].getMZ()));
+            writer.write('\t');
+            writer.write(String.valueOf(isotopes[k].getIntensity()));
+            if (id != null && k==0) {
+                writer.write('\t');
+                writer.write(id.getAdduct().toString());
+                if (corr!=null) {
+                    writer.write('\t');
+                    writer.write(String.valueOf(corr.getAvgPeakShapeR()));
+                }
+            }
+            writer.newLine();
+        }
     }
 
     /**
@@ -677,6 +705,7 @@ public class SiriusExportTask extends AbstractTask {
      * @throws IOException
      */
     private void writeCorrelationIsotopes(BufferedWriter writer, PeakListRow row) throws IOException {
+        /*
         IsotopePattern pattern = row.getBestIsotopePattern();
         if (pattern != null) {
             double mz0 = 0;
@@ -697,6 +726,35 @@ public class SiriusExportTask extends AbstractTask {
                     writer.newLine();
                 }
             }
+        }
+        */
+        /*{
+            try (BufferedWriter bw = new BufferedWriter(new FileWriter("isoPeaks.txt", true))) {
+                final Feature feature = row.getBestPeak();
+                final DataPoint[] isotopePattern = IsotopeUtils.extractIsotopes(feature);
+                bw.write("---- NOW -----\n");
+                for (DataPoint p : isotopePattern) {
+                    bw.write(p.getMZ() + "\t" + p.getIntensity());
+                    bw.newLine();
+                }
+                bw.write("---- BEFORE -----\n");
+                if (feature.getIsotopePattern()!=null && feature.getIsotopePattern().getDataPoints().length>=1) {
+                    IsotopePattern iso = feature.getIsotopePattern();
+                    double base = iso.getDataPoints()[0].getIntensity();
+                    for (DataPoint p : iso.getDataPoints()) {
+                        bw.write(p.getMZ() + "\t" + (100d*p.getIntensity() / base));
+                        bw.newLine();
+                    }
+                }
+
+            }
+        }
+        */
+        final Feature feature = row.getBestPeak();
+        final DataPoint[] isotopePattern = IsotopeUtils.extractIsotopes(feature);
+        for (DataPoint dp : isotopePattern) {
+            writer.write(dp.getMZ() + "\t" + dp.getIntensity());
+            writer.newLine();
         }
     }
 
