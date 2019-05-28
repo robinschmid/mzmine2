@@ -212,7 +212,7 @@ class ThreeDSamplingTask extends AbstractTask {
         @Override
         public void run() {
           New3DJavafxStage newStage = new New3DJavafxStage(finalIntensityValues, rtResolution,
-              mzResolution, maxBinnedIntensity, 100, 1E6);
+              mzResolution, maxBinnedIntensity, 0, 1E6);
           newStage.show();
         }
       });

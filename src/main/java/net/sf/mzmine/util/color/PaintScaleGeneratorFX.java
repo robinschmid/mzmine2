@@ -10,15 +10,14 @@ public class PaintScaleGeneratorFX {
       boolean oneSided, int steps) {
     ColorFXScale scale = new ColorFXScale();
 
-    scale.add(min, color);
     for (int i = 0; i < steps; i++) {
-      float p = (float) i / (steps);
+      double p = i / (double) (steps);
       double v = (min + (max - min) * p);
       Color g = null;
       if (oneSided)
-        g = interpolateMonochromOneSided(color, p, true);
+        g = interpolateMonochromOneSided(color, (float) p, true);
       else
-        g = interpolateMonochrom(color, p, 1, false);
+        g = interpolateMonochrom(color, (float) p, 1, false);
 
       scale.add(v, g);
     }

@@ -57,7 +57,6 @@ public class New3DJavafxStage extends Stage {
 
   public New3DJavafxStage(float[][] intensityValues, int rtResolution, int mzResolution,
       double maxBinnedIntensity, double minIntensity, double maxintensity) {
-    initColors(100, minIntensity, maxintensity);
 
     plot.getTransforms().addAll(rotateX, rotateY);
     int size = 500;
@@ -73,14 +72,17 @@ public class New3DJavafxStage extends Stage {
     float factorX = size / rtResolution;
     float factorZ = size / mzResolution;
 
-    float maxIntensityValue = -Float.MAX_VALUE;
+    float minIntensityValue = Float.POSITIVE_INFINITY;
+    float maxIntensityValue = Float.NEGATIVE_INFINITY;
     for (int i = 0; i < rtResolution; i++) {
       for (int j = 0; j < mzResolution; j++) {
-        if (maxIntensityValue < intensityValues[i][j]) {
+        if (maxIntensityValue < intensityValues[i][j])
           maxIntensityValue = intensityValues[i][j];
-        }
+        if (minIntensityValue > intensityValues[i][j])
+          minIntensityValue = intensityValues[i][j];
       }
     }
+    initColors(255, minIntensityValue * 1.02, maxIntensityValue * 0.95);
 
     for (int x = 0; x < rtResolution; x++) {
       for (int z = 0; z < mzResolution; z++) {
@@ -179,7 +181,7 @@ public class New3DJavafxStage extends Stage {
   }
 
   private void initColors(int steps, double minIntensity, double maxintensity) {
-    scale = PaintScaleGeneratorFX.generateMonochrome(Color.BLUE, minIntensity, maxintensity, true,
+    scale = PaintScaleGeneratorFX.generateMonochrome(Color.BLUE, minIntensity, maxintensity, false,
         steps);
   }
 
