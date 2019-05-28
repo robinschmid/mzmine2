@@ -19,10 +19,8 @@
 package net.sf.mzmine.modules.visualization.new3d;
 
 import java.util.logging.Logger;
-
-import org.fxyz3d.geometry.Point3D;
-
-import java.util.ArrayList;
+import com.google.common.collect.Range;
+import javafx.application.Platform;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.MassSpectrumType;
 import net.sf.mzmine.datamodel.RawDataFile;
@@ -32,12 +30,8 @@ import net.sf.mzmine.taskcontrol.TaskStatus;
 import net.sf.mzmine.util.ExceptionUtils;
 import net.sf.mzmine.util.scans.ScanUtils;
 import net.sf.mzmine.util.scans.ScanUtils.BinningType;
-//import visad.Linear2DSet;
-//import visad.Set;
-
-import com.google.common.collect.Range;
-
-import javafx.application.Platform;
+// import visad.Linear2DSet;
+// import visad.Set;
 
 
 /**
@@ -57,7 +51,7 @@ class ThreeDSamplingTask extends AbstractTask {
   private int retrievedScans = 0;
 
   // The 3D display
-  //private ThreeDDisplay display;
+  // private ThreeDDisplay display;
   private ThreeDBottomPanel bottomPanel;
 
   // maximum value on Z axis
@@ -71,8 +65,7 @@ class ThreeDSamplingTask extends AbstractTask {
    * @param visualizer
    */
   ThreeDSamplingTask(RawDataFile dataFile, Scan scans[], Range<Double> rtRange,
-      Range<Double> mzRange, int rtResolution, int mzResolution,
-      ThreeDBottomPanel bottomPanel) {
+      Range<Double> mzRange, int rtResolution, int mzResolution, ThreeDBottomPanel bottomPanel) {
 
     this.dataFile = dataFile;
     this.scans = scans;
@@ -88,6 +81,7 @@ class ThreeDSamplingTask extends AbstractTask {
   /**
    * @see net.sf.mzmine.taskcontrol.Task#getTaskDescription()
    */
+  @Override
   public String getTaskDescription() {
     return "Sampling 3D plot of " + dataFile;
   }
@@ -95,6 +89,7 @@ class ThreeDSamplingTask extends AbstractTask {
   /**
    * @see net.sf.mzmine.taskcontrol.Task#getFinishedPercentage()
    */
+  @Override
   public double getFinishedPercentage() {
     return (double) retrievedScans / scans.length;
   }
@@ -102,17 +97,18 @@ class ThreeDSamplingTask extends AbstractTask {
   /**
    * @see java.lang.Runnable#run()
    */
+  @Override
   public void run() {
 
     setStatus(TaskStatus.PROCESSING);
 
     logger.info("Started sampling 3D plot of " + dataFile);
-    
+
     try {
 
-//      Set domainSet = new Linear2DSet(display.getDomainTuple(), rtRange.lowerEndpoint(),
-//          rtRange.upperEndpoint(), rtResolution, mzRange.lowerEndpoint(), mzRange.upperEndpoint(),
-//          mzResolution);
+      // Set domainSet = new Linear2DSet(display.getDomainTuple(), rtRange.lowerEndpoint(),
+      // rtRange.upperEndpoint(), rtResolution, mzRange.lowerEndpoint(), mzRange.upperEndpoint(),
+      // mzResolution);
 
       final double rtStep = (rtRange.upperEndpoint() - rtRange.lowerEndpoint()) / rtResolution;
 
@@ -153,10 +149,11 @@ class ThreeDSamplingTask extends AbstractTask {
           int intensityValuesIndex = (rtResolution * mzIndex) + scanBinIndex;
           if (binnedIntensities[mzIndex] > intensityValues[0][intensityValuesIndex]) {
             intensityValues[0][intensityValuesIndex] = (float) binnedIntensities[mzIndex];
-            //list3DPoints.add(new Point3D((double)scanBinIndex,(double)intensityValues[0][intensityValuesIndex],(double)mzIndex));
+            // list3DPoints.add(new
+            // Point3D((double)scanBinIndex,(double)intensityValues[0][intensityValuesIndex],(double)mzIndex));
           }
           if (intensityValues[0][intensityValuesIndex] > maxBinnedIntensity)
-            maxBinnedIntensity = (double) binnedIntensities[mzIndex];
+            maxBinnedIntensity = binnedIntensities[mzIndex];
         }
 
         rtDataSet[scanBinIndex] = true;
@@ -200,24 +197,28 @@ class ThreeDSamplingTask extends AbstractTask {
         }
 
       }
-      
+
       float[][] finalIntensityValues = new float[rtResolution][mzResolution];
       for (int rtIndex = 0; rtIndex < rtResolution; rtIndex++) {
-    	  for (int mzIndex = 0; mzIndex < mzResolution; mzIndex++) {
-    		  int valueIndex = (rtResolution * mzIndex) + rtIndex;
-    		  finalIntensityValues[rtIndex][mzIndex] = (float) (intensityValues[0][valueIndex]/maxBinnedIntensity);
-    	  }
+        for (int mzIndex = 0; mzIndex < mzResolution; mzIndex++) {
+          int valueIndex = (rtResolution * mzIndex) + rtIndex;
+          finalIntensityValues[rtIndex][mzIndex] =
+              (float) (intensityValues[0][valueIndex] / maxBinnedIntensity);
+        }
       }
-      
+
       Platform.setImplicitExit(false);
-      Platform.runLater(new Runnable() { 
-    	  public void run() {
-		      New3DJavafxStage newStage = new New3DJavafxStage(finalIntensityValues,rtResolution,mzResolution,maxBinnedIntensity); 
-		      newStage.show();
-	      }
+      Platform.runLater(new Runnable() {
+        @Override
+        public void run() {
+          New3DJavafxStage newStage = new New3DJavafxStage(finalIntensityValues, rtResolution,
+              mzResolution, maxBinnedIntensity, 100, 1E6);
+          newStage.show();
+        }
       });
-//      display.setData(intensityValues, domainSet, rtRange.lowerEndpoint(), rtRange.upperEndpoint(),
-//    		  mzRange.lowerEndpoint(), mzRange.upperEndpoint(), maxBinnedIntensity);
+      // display.setData(intensityValues, domainSet, rtRange.lowerEndpoint(),
+      // rtRange.upperEndpoint(),
+      // mzRange.lowerEndpoint(), mzRange.upperEndpoint(), maxBinnedIntensity);
 
       // After we have constructed everything, load the peak lists into
       // the bottom panel
