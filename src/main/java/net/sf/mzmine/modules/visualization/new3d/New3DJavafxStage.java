@@ -82,6 +82,12 @@ public class New3DJavafxStage extends Stage {
       }
     }
 
+    for (int x = 0; x < rtResolution; x++) {
+      for (int z = 0; z < mzResolution; z++) {
+        mesh.getPoints().addAll(x * factorX, -intensityValues[x][z] * amplification, z * factorZ);
+      }
+    }
+
     int rtLength = rtResolution;
     int mzLength = mzResolution;
     float rtTotal = rtLength;
@@ -173,7 +179,7 @@ public class New3DJavafxStage extends Stage {
   }
 
   private void initColors(int steps, double minIntensity, double maxintensity) {
-    scale = PaintScaleGeneratorFX.generateMonochrome(Color.BLUE, minIntensity, maxintensity, false,
+    scale = PaintScaleGeneratorFX.generateMonochrome(Color.BLUE, minIntensity, maxintensity, true,
         steps);
   }
 
