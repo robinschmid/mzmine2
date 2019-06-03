@@ -29,6 +29,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
@@ -369,4 +370,13 @@ public class MainWindow extends JFrame implements MZmineModule, Desktop, WindowL
   public void addProjectChangeListener(ProjectChangeListener listener) {
     projectChangeListener.add(listener);
   }
+  /**
+   * Menu items for the last used projects
+   * 
+   * @param list
+   */
+  public void createLastUsedProjectsMenu(List<File> list) {
+    getMainMenu().setLastProjects(list);
+  }
+
 }

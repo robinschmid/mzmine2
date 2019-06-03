@@ -19,51 +19,36 @@
 package net.sf.mzmine.modules.peaklistmethods.identification.spectraldbsearch;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
-import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.impl.SimplePeakListAppliedMethod;
 import net.sf.mzmine.desktop.Desktop;
 import net.sf.mzmine.desktop.impl.HeadLessDesktop;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.identification.spectraldbsearch.parser.GnpsJsonParser;
-import net.sf.mzmine.modules.peaklistmethods.identification.spectraldbsearch.parser.MonaJsonParser;
-import net.sf.mzmine.modules.peaklistmethods.identification.spectraldbsearch.parser.NistMspParser;
-import net.sf.mzmine.modules.peaklistmethods.identification.spectraldbsearch.parser.SpectralDBParser;
 import net.sf.mzmine.parameters.ParameterSet;
-import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
-import net.sf.mzmine.parameters.parametertypes.tolerances.RTTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
-import net.sf.mzmine.util.files.FileTypeFilter;
+import net.sf.mzmine.util.spectraldb.entry.SpectralDBEntry;
+import net.sf.mzmine.util.spectraldb.parser.AutoLibraryParser;
+import net.sf.mzmine.util.spectraldb.parser.LibraryEntryProcessor;
+import net.sf.mzmine.util.spectraldb.parser.UnsupportedFormatException;
 
 class LocalSpectralDBSearchTask extends AbstractTask {
 
   private Logger logger = Logger.getLogger(this.getClass().getName());
 
-  private static final String METHOD = "MS/MS spectral DB search";
-  private static final int MAX_ERROR = 3;
-  private int errorCounter = 0;
   private final PeakList peakList;
   private final @Nonnull String massListName;
   private final File dataBaseFile;
-  private final MZTolerance mzTolerance;
-  private final RTTolerance rtTolerance;
-  private final boolean useRT;
-  private int finishedRows = 0;
-  private final int totalRows;
 
   private ParameterSet parameters;
 
-  private final double noiseLevel;
-  private final double minSimilarity;
-  private final int minMatch;
-
-  private List<SpectralMatchTask> tasks;
+  private List<PeakListSpectralMatchTask> tasks;
 
   private int totalTasks;
 
@@ -72,16 +57,6 @@ class LocalSpectralDBSearchTask extends AbstractTask {
     this.parameters = parameters;
     dataBaseFile = parameters.getParameter(LocalSpectralDBSearchParameters.dataBaseFile).getValue();
     massListName = parameters.getParameter(LocalSpectralDBSearchParameters.massList).getValue();
-    mzTolerance = parameters.getParameter(LocalSpectralDBSearchParameters.mzTolerance).getValue();
-    noiseLevel = parameters.getParameter(LocalSpectralDBSearchParameters.noiseLevelMS2).getValue();
-
-    useRT = parameters.getParameter(LocalSpectralDBSearchParameters.rtTolerance).getValue();
-    rtTolerance = parameters.getParameter(LocalSpectralDBSearchParameters.rtTolerance)
-        .getEmbeddedParameter().getValue();
-
-    minMatch = parameters.getParameter(LocalSpectralDBSearchParameters.minMatch).getValue();
-    minSimilarity = parameters.getParameter(LocalSpectralDBSearchParameters.minCosine).getValue();
-    totalRows = peakList.getNumberOfRows();
   }
 
   /**
@@ -99,8 +74,7 @@ class LocalSpectralDBSearchTask extends AbstractTask {
    */
   @Override
   public String getTaskDescription() {
-    return "MS/MS spectral database identification of " + peakList + " using database "
-        + dataBaseFile;
+    return "Spectral database identification of " + peakList + " using database " + dataBaseFile;
   }
 
   /**
@@ -123,23 +97,25 @@ class LocalSpectralDBSearchTask extends AbstractTask {
               i--;
             }
           }
+          // wait for all sub tasks to finish
           try {
             Thread.sleep(100);
           } catch (Exception e) {
             cancel();
           }
         }
+        // cancelled
+        if (isCanceled()) {
+          tasks.stream().forEach(AbstractTask::cancel);
+        }
       } else {
         setStatus(TaskStatus.ERROR);
         setErrorMessage("DB file was empty - or error while parsing " + dataBaseFile);
-        throw new MSDKRuntimeException(
-            "DB file was empty - or error while parsing " + dataBaseFile);
       }
     } catch (Exception e) {
       logger.log(Level.SEVERE, "Could not read file " + dataBaseFile, e);
       setStatus(TaskStatus.ERROR);
       setErrorMessage(e.toString());
-      throw new MSDKRuntimeException(e);
     }
     logger.info("Added " + count + " spectral library matches");
 
@@ -162,34 +138,24 @@ class LocalSpectralDBSearchTask extends AbstractTask {
    * @param dataBaseFile
    * @return
    */
-  private List<SpectralMatchTask> parseFile(File dataBaseFile) {
-    FileTypeFilter json = new FileTypeFilter("json", "");
-    FileTypeFilter msp = new FileTypeFilter("msp", "");
-    if (json.accept(dataBaseFile)) {
-      // test Gnps and MONA json parser
-      SpectralDBParser[] parser =
-          new SpectralDBParser[] {new GnpsJsonParser(), new MonaJsonParser()};
-      for (SpectralDBParser p : parser) {
-        try {
-          List<SpectralMatchTask> list = p.parse(this, peakList, parameters, dataBaseFile);
-          if (!list.isEmpty())
-            return list;
-        } catch (Exception ex) {
-        }
+  private List<PeakListSpectralMatchTask> parseFile(File dataBaseFile)
+      throws UnsupportedFormatException, IOException {
+    //
+    List<PeakListSpectralMatchTask> tasks = new ArrayList<>();
+    AutoLibraryParser parser = new AutoLibraryParser(100, new LibraryEntryProcessor() {
+      @Override
+      public void processNextEntries(List<SpectralDBEntry> list, int alreadyProcessed) {
+        // start last task
+        PeakListSpectralMatchTask task =
+            new PeakListSpectralMatchTask(peakList, parameters, alreadyProcessed + 1, list);
+        MZmineCore.getTaskController().addTask(task);
+        tasks.add(task);
       }
-    } else if (msp.accept(dataBaseFile)) {
-      // load NIST msp format
-      NistMspParser parser = new NistMspParser();
-      try {
-        List<SpectralMatchTask> list = parser.parse(this, peakList, parameters, dataBaseFile);
-        if (!list.isEmpty())
-          return list;
-      } catch (Exception ex) {
-      }
-    } else {
-      logger.log(Level.WARNING, "Unsupported file format: " + dataBaseFile.getAbsolutePath());
-    }
-    return new ArrayList<>();
+    });
+
+    // return tasks
+    parser.parse(this, dataBaseFile);
+    return tasks;
   }
 
 }

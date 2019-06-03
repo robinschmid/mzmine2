@@ -21,6 +21,7 @@ package net.sf.mzmine.project.impl;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.channels.FileChannel;
@@ -29,6 +30,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
@@ -39,6 +41,7 @@ import com.google.common.collect.Range;
 import com.google.common.primitives.Ints;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.ImagingScan;
+import net.sf.mzmine.datamodel.MassList;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.RawDataFileWriter;
 import net.sf.mzmine.datamodel.Scan;
@@ -72,6 +75,10 @@ public class RawDataFileImpl implements RawDataFile, RawDataFileWriter {
   // Temporary file for scan data storage
   private File dataPointsFileName;
   private RandomAccessFile dataPointsFile;
+
+  // To store mass lists that have been added but not yet reflected in the GUI by the
+  // notifyUpdatedMassLists() method
+  private final List<MassList> newMassLists = new ArrayList<>();
 
   /**
    * Scans
@@ -338,7 +345,9 @@ public class RawDataFileImpl implements RawDataFile, RawDataFileWriter {
     if (buffer.capacity() < numOfBytes) {
       buffer = ByteBuffer.allocate(numOfBytes * 2);
     } else {
-      buffer.clear();
+      // JDK 9 breaks compatibility with JRE8: need to cast
+      // https://stackoverflow.com/questions/48693695/java-nio-buffer-not-loading-clear-method-on-runtime
+      ((Buffer) buffer).clear();
     }
 
     FloatBuffer floatBuffer = buffer.asFloatBuffer();
@@ -371,7 +380,9 @@ public class RawDataFileImpl implements RawDataFile, RawDataFileWriter {
     if (buffer.capacity() < numOfBytes) {
       buffer = ByteBuffer.allocate(numOfBytes * 2);
     } else {
-      buffer.clear();
+      // JDK 9 breaks compatibility with JRE8: need to cast
+      // https://stackoverflow.com/questions/48693695/java-nio-buffer-not-loading-clear-method-on-runtime
+      ((Buffer) buffer).clear();
     }
 
     dataPointsFile.seek(currentOffset);
@@ -539,6 +550,7 @@ public class RawDataFileImpl implements RawDataFile, RawDataFileWriter {
       logger.warning("Could not close file " + dataPointsFileName + ": " + e.toString());
     }
   }
+
 
   @Override
   public @Nonnull String getName() {
