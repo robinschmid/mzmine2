@@ -56,7 +56,7 @@ import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.formats.MSPEntr
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.GnpsLibrarySubmitParameters;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibrarySubmitIonParameters;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibrarySubmitParameters;
-import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.view.MSMSLibrarySubmissionWindow;
+import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.view.SpectralLibrarySubmissionWindow;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.view.ResultsTextPane;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
@@ -93,9 +93,9 @@ public class LibrarySubmitTask extends AbstractTask {
   private final File fileMSP;
 
   // window to show results
-  private final MSMSLibrarySubmissionWindow window;
+  private final SpectralLibrarySubmissionWindow window;
 
-  public LibrarySubmitTask(MSMSLibrarySubmissionWindow window,
+  public LibrarySubmitTask(SpectralLibrarySubmissionWindow window,
       Map<LibrarySubmitIonParameters, DataPoint[]> map) {
     this.window = window;
     this.map = map;
