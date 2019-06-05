@@ -92,7 +92,7 @@ import net.sf.mzmine.util.scans.sorting.ScanSortMode;
  * @author Robin Schmid
  *
  */
-public class MSMSLibrarySubmissionWindow extends JFrame {
+public class SpectralLibrarySubmissionWindow extends JFrame {
 
   private Logger log = Logger.getLogger(this.getClass().getName());
   protected Map<String, JComponent> parametersAndComponents;
@@ -140,7 +140,7 @@ public class MSMSLibrarySubmissionWindow extends JFrame {
   /**
    * Create the frame.
    */
-  public MSMSLibrarySubmissionWindow() {
+  public SpectralLibrarySubmissionWindow() {
     setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
     setBounds(100, 100, 854, 619);
 
