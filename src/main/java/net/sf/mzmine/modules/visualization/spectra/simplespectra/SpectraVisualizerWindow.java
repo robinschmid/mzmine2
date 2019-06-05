@@ -52,7 +52,7 @@ import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.desktop.impl.WindowsMenu;
 import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.view.MSMSLibrarySubmissionWindow;
+import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.view.SpectralLibrarySubmissionWindow;
 import net.sf.mzmine.modules.peaklistmethods.isotopes.isotopeprediction.IsotopePatternCalculator;
 import net.sf.mzmine.modules.visualization.spectra.simplespectra.datapointprocessing.DataPointProcessingManager;
 import net.sf.mzmine.modules.visualization.spectra.simplespectra.datapointprocessing.DataPointProcessingParameters;
@@ -433,7 +433,7 @@ public class SpectraVisualizerWindow extends JFrame implements ActionListener {
     // library entry creation
     if (command.equals("CREATE_LIBRARY_ENTRY")) {
       // open window with all selected rows
-      MSMSLibrarySubmissionWindow libraryWindow = new MSMSLibrarySubmissionWindow();
+      SpectralLibrarySubmissionWindow libraryWindow = new SpectralLibrarySubmissionWindow();
       libraryWindow.setData(currentScan);
       libraryWindow.setVisible(true);
     }

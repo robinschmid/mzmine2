@@ -52,7 +52,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.nist.NistMsSearchMod
 import net.sf.mzmine.modules.peaklistmethods.identification.onlinedbsearch.OnlineDBSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.sirius.SiriusProcessingModule;
 import net.sf.mzmine.modules.peaklistmethods.io.siriusexport.SiriusExportModule;
-import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.view.MSMSLibrarySubmissionWindow;
+import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.view.SpectralLibrarySubmissionWindow;
 import net.sf.mzmine.modules.rawdatamethods.peakpicking.manual.ManualPeakPickerModule;
 import net.sf.mzmine.modules.visualization.intensityplot.IntensityPlotModule;
 import net.sf.mzmine.modules.visualization.peaklisttable.export.IsotopePatternExportModule;
@@ -687,14 +687,14 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
     }
     if (exportMSMSLibrary.equals(src)) {
       // open window with all selected rows
-      MSMSLibrarySubmissionWindow libraryWindow = new MSMSLibrarySubmissionWindow();
+      SpectralLibrarySubmissionWindow libraryWindow = new SpectralLibrarySubmissionWindow();
       libraryWindow.setData(allClickedPeakListRows, SortingProperty.MZ, SortingDirection.Ascending,
           true);
       libraryWindow.setVisible(true);
     }
     if (exportMS1Library.equals(src)) {
       // open window with all selected rows
-      MSMSLibrarySubmissionWindow libraryWindow = new MSMSLibrarySubmissionWindow();
+      SpectralLibrarySubmissionWindow libraryWindow = new SpectralLibrarySubmissionWindow();
       libraryWindow.setData(allClickedPeakListRows, SortingProperty.MZ, SortingDirection.Ascending,
           false);
       libraryWindow.setVisible(true);

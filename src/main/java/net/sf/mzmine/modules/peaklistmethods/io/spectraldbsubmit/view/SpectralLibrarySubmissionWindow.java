@@ -283,14 +283,57 @@ public class SpectralLibrarySubmissionWindow extends JFrame {
   }
 
   /**
-   * set data as set of scans of one entry
+   * set data as set of scans. <br>
+   * All MS1? Then use them as one entry <br>
+   * Any MS2? Then discard MS1, and bin all scans by precursor mz to multiple new entries
    * 
    * @param scans
    */
   public void setData(Scan[] scans) {
-    scanList = new ArrayList<>();
-    scanList.add(scans);
-    setData(scanList);
+    // all MS1
+    if (Arrays.stream(scans).allMatch(s -> s.getPrecursorMZ() <= 0)) {
+      // separate scans by precursor mz
+      scanList = new ArrayList<>();
+      scanList.add(scans);
+      setData(scanList);
+    } else {
+      // has MS2
+      List<Scan> list = new ArrayList<>();
+      for (Scan s : scans)
+        list.add(s);
+      // remove MS1
+      for (int i = 0; i < list.size();) {
+        if (list.get(i).getPrecursorMZ() <= 0)
+          list.remove(i);
+        else
+          i++;
+      }
+
+      // split scans by precursor mz into bins
+      MZTolerance tolerance = new MZTolerance(0.1, 0);
+      scanList = new ArrayList<>();
+
+      // until all scans were binned
+      while (!list.isEmpty()) {
+        List<Scan> binned = new ArrayList<>();
+        Scan base = list.remove(0);
+        double baseMZ = base.getPrecursorMZ();
+        binned.add(base);
+
+        // all scans with the same precursor mz
+        for (int i = 0; i < list.size();) {
+          if (tolerance.checkWithinTolerance(baseMZ, list.get(i).getPrecursorMZ())) {
+            binned.add(list.remove(i));
+          } else
+            i++;
+        }
+
+        scanList.add(binned.toArray(new Scan[0]));
+      }
+
+      // set data
+      setData(scanList);
+    }
   }
 
   /**

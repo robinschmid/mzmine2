@@ -24,13 +24,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
-
 import javax.swing.JPopupMenu;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
-
 import org.apache.commons.io.FilenameUtils;
-
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.MassList;
 import net.sf.mzmine.datamodel.PeakList;
@@ -38,6 +35,7 @@ import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.view.SpectralLibrarySubmissionWindow;
 import net.sf.mzmine.modules.peaklistmethods.orderpeaklists.OrderPeakListsModule;
 import net.sf.mzmine.modules.peaklistmethods.orderpeaklists.OrderPeakListsParameters;
 import net.sf.mzmine.modules.rawdatamethods.orderdatafiles.OrderDataFilesModule;
@@ -93,6 +91,8 @@ public class ProjectTreeMouseHandler extends MouseAdapter implements ActionListe
     scanPopupMenu = new JPopupMenu();
 
     GUIUtils.addMenuItem(scanPopupMenu, "Show scan", this, "SHOW_SCAN");
+    // all selected
+    GUIUtils.addMenuItem(scanPopupMenu, "Export spectral library", this, "EXPORT_SPECTRAL_LIBRARY");
 
     massListPopupMenu = new JPopupMenu();
 
@@ -116,6 +116,7 @@ public class ProjectTreeMouseHandler extends MouseAdapter implements ActionListe
 
   }
 
+  @Override
   public void actionPerformed(ActionEvent e) {
 
     String command = e.getActionCommand();
@@ -225,6 +226,15 @@ public class ProjectTreeMouseHandler extends MouseAdapter implements ActionListe
         SpectraVisualizerModule.showNewSpectrumWindow(scan.getDataFile(), scan.getScanNumber());
       }
     }
+    // open export spectral library entry window
+    if (command.equals("EXPORT_SPECTRAL_LIBRARY")) {
+      Scan selectedScans[] = tree.getSelectedObjects(Scan.class);
+      if (selectedScans != null && selectedScans.length > 0) {
+        SpectralLibrarySubmissionWindow window = new SpectralLibrarySubmissionWindow();
+        window.setData(selectedScans);
+        window.setVisible(true);
+      }
+    }
 
     if (command.equals("SHOW_MASSLIST")) {
       MassList selectedMassLists[] = tree.getSelectedObjects(MassList.class);
@@ -317,6 +327,7 @@ public class ProjectTreeMouseHandler extends MouseAdapter implements ActionListe
 
   }
 
+  @Override
   public void mouseClicked(MouseEvent e) {
 
     if (e.isPopupTrigger())
@@ -327,11 +338,13 @@ public class ProjectTreeMouseHandler extends MouseAdapter implements ActionListe
 
   }
 
+  @Override
   public void mousePressed(MouseEvent e) {
     if (e.isPopupTrigger())
       handlePopupTriggerEvent(e);
   }
 
+  @Override
   public void mouseReleased(MouseEvent e) {
     if (e.isPopupTrigger())
       handlePopupTriggerEvent(e);
