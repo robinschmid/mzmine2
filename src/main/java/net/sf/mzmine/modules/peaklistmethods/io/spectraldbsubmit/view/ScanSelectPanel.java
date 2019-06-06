@@ -27,6 +27,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -56,6 +58,9 @@ import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.framework.documentfilter.DocumentSizeFilter;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.AdductParser;
+import net.sf.mzmine.modules.tools.msmsspectramerge.MergedSpectrum;
+import net.sf.mzmine.modules.tools.msmsspectramerge.MsMsSpectraMergeModule;
+import net.sf.mzmine.modules.tools.msmsspectramerge.MsMsSpectraMergeParameters;
 import net.sf.mzmine.modules.visualization.spectra.simplespectra.SpectraPlot;
 import net.sf.mzmine.modules.visualization.spectra.simplespectra.datasets.DataPointsDataSet;
 import net.sf.mzmine.util.ColorPalettes;
@@ -127,6 +132,9 @@ public class ScanSelectPanel extends JPanel implements ActionListener {
   private Scan[] scansEntry;
   private JLabel lblAdduct;
   private JPanel pnData;
+  private boolean isMergingSpectra;
+  private MsMsSpectraMergeParameters mergeParam;
+  private List<MergedSpectrum> mergedSpectra;
 
   /**
    * Create the panel.
@@ -405,10 +413,13 @@ public class ScanSelectPanel extends JPanel implements ActionListener {
     createSortedScanList();
   }
 
-  public void setFilter(String massListName, double noiseLevel, int minNumberOfSignals) {
+  public void setFilter(String massListName, double noiseLevel, int minNumberOfSignals,
+      boolean isMergingSpectra, MsMsSpectraMergeParameters mergeParam) {
     this.massListName = massListName;
     this.noiseLevel = noiseLevel;
     this.minNumberOfSignals = minNumberOfSignals;
+    this.isMergingSpectra = isMergingSpectra;
+    this.mergeParam = mergeParam;
     createSortedScanList();
   }
 
@@ -417,6 +428,7 @@ public class ScanSelectPanel extends JPanel implements ActionListener {
    * Creates a sorted list of all scans that match the minimum criteria
    */
   private void createSortedScanList() {
+    mergedSpectra = null;
     if (row == null && scansEntry == null)
       return;
     // get all scans that match filter criteria
@@ -448,12 +460,34 @@ public class ScanSelectPanel extends JPanel implements ActionListener {
       revalidate();
       repaint();
     }
+
+    // merge?
+    if (isMergingSpectra && mergeParam != null) {
+      MsMsSpectraMergeModule merger = MZmineCore.getModuleInstance(MsMsSpectraMergeModule.class);
+      List<MergedSpectrum> spectrum = null;
+      if (row != null)
+        spectrum = merger.getMergedSpectra(mergeParam, row, massListName);
+      else if (scansEntry != null) {
+        MergedSpectrum merged = merger.mergeScanArray(mergeParam, scansEntry, massListName);
+        if (merged != null) {
+          spectrum = new ArrayList<>();
+          spectrum.add(merged);
+        }
+      }
+      // merged?
+      if (spectrum != null && !spectrum.isEmpty()) {
+        spectrum
+            .sort(Comparator.comparingDouble(MergedSpectrum::getBestFragmentScanScore).reversed());
+        mergedSpectra = spectrum;
+      }
+    }
+
     // create chart
     createChart();
   }
 
   public void nextScan() {
-    if (selectedScanI + 1 < scans.size()) {
+    if (selectedScanI + 1 < scans.size() + (mergedSpectra == null ? 0 : mergedSpectra.size())) {
       selectedScanI++;
       createChart();
     }
@@ -485,7 +519,9 @@ public class ScanSelectPanel extends JPanel implements ActionListener {
     setValidSelection(false);
     pnChart.removeAll();
 
-    if (scans != null && !scans.isEmpty()) {
+    DataPoint[] filteredData = getFilteredDataPoints();
+
+    if (filteredData != null && filteredData.length > 0) {
       // get MS/MS spectra window only for the spectra chart
       // create dataset
 
@@ -497,7 +533,7 @@ public class ScanSelectPanel extends JPanel implements ActionListener {
       }
       spectrumPlot.removeAllDataSets();
 
-      DataPointsDataSet data = new DataPointsDataSet("Data", getFilteredDataPoints());
+      DataPointsDataSet data = new DataPointsDataSet("Data", filteredData);
       // green
       spectrumPlot.addDataSet(data, colorUsedData, false);
       if (showRemovedData) {
@@ -511,8 +547,7 @@ public class ScanSelectPanel extends JPanel implements ActionListener {
       spectrumPlot.setPreferredSize(chartSize);
       pnChart.add(spectrumPlot, BorderLayout.CENTER);
 
-      Scan scan = scans.get(selectedScanI);
-      analyzeScan(scan);
+      analyzeScan(filteredData);
       applySelectionState();
       setValidSelection(true);
     } else {
@@ -542,17 +577,32 @@ public class ScanSelectPanel extends JPanel implements ActionListener {
     validSelection = state;
   }
 
-  private void analyzeScan(Scan scan) {
-    MassList massList = ScanUtils.getMassListOrFirst(scan, massListName);
-    if (massList != null) {
-      DataPoint[] dp = massList.getDataPoints();
-      double tic = ScanUtils.getTIC(dp, noiseLevel);
-      int signals = ScanUtils.getNumberOfSignals(dp, noiseLevel);
+  private void analyzeScan(DataPoint[] filteredData) {
+    if (filteredData != null) {
+      double tic = ScanUtils.getTIC(filteredData, noiseLevel);
+      int signals = ScanUtils.getNumberOfSignals(filteredData, noiseLevel);
       lbTIC.setText(MZmineCore.getConfiguration().getIntensityFormat().format(tic));
       lbSignals.setText("" + signals);
       lbTIC.getParent().revalidate();
       lbTIC.getParent().repaint();
     }
+  }
+
+
+
+  @Nullable
+  public DataPoint[] getDataPoints() {
+    DataPoint[] data = null;
+    int merged = mergedSpectra == null ? 0 : mergedSpectra.size();
+    if (selectedScanI < merged) {
+      data = mergedSpectra.get(selectedScanI).data;
+    } else if (scans != null && !scans.isEmpty()) {
+      Scan scan = scans.get(selectedScanI - merged);
+      MassList massList = ScanUtils.getMassListOrFirst(scan, massListName);
+      if (massList != null)
+        data = massList.getDataPoints();
+    }
+    return data;
   }
 
   /**
@@ -562,13 +612,8 @@ public class ScanSelectPanel extends JPanel implements ActionListener {
    */
   @Nullable
   public DataPoint[] getFilteredDataPoints() {
-    if (scans != null && !scans.isEmpty()) {
-      Scan scan = scans.get(selectedScanI);
-      MassList massList = ScanUtils.getMassListOrFirst(scan, massListName);
-      if (massList != null)
-        return ScanUtils.getFiltered(massList.getDataPoints(), noiseLevel);
-    }
-    return null;
+    DataPoint[] data = getDataPoints();
+    return data == null ? null : ScanUtils.getFiltered(data, noiseLevel);
   }
 
   /**
@@ -578,13 +623,8 @@ public class ScanSelectPanel extends JPanel implements ActionListener {
    */
   @Nullable
   public DataPoint[] getFilteredDataPointsRemoved() {
-    if (scans != null && !scans.isEmpty()) {
-      Scan scan = scans.get(selectedScanI);
-      MassList massList = ScanUtils.getMassListOrFirst(scan, massListName);
-      if (massList != null)
-        return ScanUtils.getBelowThreshold(massList.getDataPoints(), noiseLevel);
-    }
-    return null;
+    DataPoint[] data = getDataPoints();
+    return data == null ? null : ScanUtils.getBelowThreshold(data, noiseLevel);
   }
 
   public JLabel getLbMassListError() {

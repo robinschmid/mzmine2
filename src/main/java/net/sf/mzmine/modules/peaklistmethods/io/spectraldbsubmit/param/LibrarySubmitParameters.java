@@ -31,6 +31,7 @@
 package net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param;
 
 import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.tools.msmsspectramerge.MsMsSpectraMergeParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
@@ -60,6 +61,13 @@ public class LibrarySubmitParameters extends SimpleParameterSet {
   public static final ComboParameter<ScanSortMode> sorting = new ComboParameter<>("Sorting",
       "Sorting mode for filtered mass lists", ScanSortMode.values(), ScanSortMode.MAX_TIC);
 
+  public static final OptionalModuleParameter<MsMsSpectraMergeParameters> mergeParam =
+      new OptionalModuleParameter<>("Merge spectra",
+          "Merge high qualitative spectra into one spectrum.", new MsMsSpectraMergeParameters(),
+          false);
+
+
+
   // submission and creation of libraries
   // save to local file
   public static final OptionalParameter<FileNameParameter> LOCALFILE =
@@ -76,7 +84,7 @@ public class LibrarySubmitParameters extends SimpleParameterSet {
 
 
   public LibrarySubmitParameters() {
-    super(new Parameter[] {massList, noiseLevel, minSignals, sorting,
+    super(new Parameter[] {massList, noiseLevel, minSignals, sorting, mergeParam,
         // save to local file
         LOCALFILE, EXPORT_GNPS_JSON, EXPORT_MSP,
         // submit to online library

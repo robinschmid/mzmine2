@@ -67,6 +67,7 @@ import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.LibrarySubmitTa
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibraryMetaDataParameters;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibrarySubmitIonParameters;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibrarySubmitParameters;
+import net.sf.mzmine.modules.tools.msmsspectramerge.MsMsSpectraMergeParameters;
 import net.sf.mzmine.modules.visualization.spectra.multimsms.pseudospectra.PseudoSpectrumDataSet;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.UserParameter;
@@ -136,6 +137,7 @@ public class SpectralLibrarySubmissionWindow extends JFrame {
   private PeakListRow[] rows;
   private List<Scan[]> scanList;
   private ResultsTextPane txtResults;
+  private MsMsSpectraMergeParameters mergeParam;
 
   /**
    * Create the frame.
@@ -230,6 +232,8 @@ public class SpectralLibrarySubmissionWindow extends JFrame {
     minc.addDocumentListener(new DelayedDocumentListener(e -> updateSettingsOnAllSelectors()));
     ComboComponent<ScanSortMode> sortc = getComboSortMode();
     sortc.addItemListener(e -> updateSortModeOnAllSelectors());
+    OptionalModuleComponent mergec = getMergeComponent();
+    mergec.addItemListener(e -> updateSettingsOnAllSelectors());
 
     IntegerComponent mslevel = getMSLevelComponent();
     mslevel.addDocumentListener(new DelayedDocumentListener(e -> {
@@ -495,6 +499,22 @@ public class SpectralLibrarySubmissionWindow extends JFrame {
       JComponent component = parametersAndComponents.get(p.getName());
       up.setValueFromComponent(component);
     }
+
+    // changes in merge param? remerge
+    if (isMergingSpectra()) {
+      MsMsSpectraMergeParameters newMergeParam =
+          paramSubmit.getParameter(LibrarySubmitParameters.mergeParam).getEmbeddedParameters();
+      boolean changed = false;
+      if (!newMergeParam.equals(mergeParam))
+        changed = true;
+      mergeParam = newMergeParam;
+      if (changed)
+        updateSettingsOnAllSelectors();
+    }
+  }
+
+  public boolean isMergingSpectra() {
+    return paramSubmit.getParameter(LibrarySubmitParameters.mergeParam).getValue();
   }
 
   protected int getNumberOfParameters() {
@@ -646,9 +666,11 @@ public class SpectralLibrarySubmissionWindow extends JFrame {
       Integer minSignals = paramSubmit.getParameter(LibrarySubmitParameters.minSignals).getValue();
       Double noiseLevel = paramSubmit.getParameter(LibrarySubmitParameters.noiseLevel).getValue();
       String massListName = paramSubmit.getParameter(LibrarySubmitParameters.massList).getValue();
+      boolean isMergingSpectra = isMergingSpectra();
       if (pnScanSelect != null && minSignals != null && noiseLevel != null && massListName != null)
         for (ScanSelectPanel pn : pnScanSelect)
-          pn.setFilter(massListName, noiseLevel, minSignals);
+          if (pn != null)
+            pn.setFilter(massListName, noiseLevel, minSignals, isMergingSpectra, mergeParam);
     }
   }
 
@@ -939,6 +961,10 @@ public class SpectralLibrarySubmissionWindow extends JFrame {
 
   private MassListComponent getMassListComponent() {
     return (MassListComponent) getComponentForParameter(LibrarySubmitParameters.massList);
+  }
+
+  private OptionalModuleComponent getMergeComponent() {
+    return (OptionalModuleComponent) getComponentForParameter(LibrarySubmitParameters.mergeParam);
   }
 
   private ComboComponent<ScanSortMode> getComboSortMode() {
