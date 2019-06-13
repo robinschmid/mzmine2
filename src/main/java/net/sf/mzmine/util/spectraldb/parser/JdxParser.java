@@ -47,7 +47,7 @@ public class JdxParser extends SpectralDBParser {
   private static Logger logger = Logger.getLogger(NistMspParser.class.getName());
 
   @Override
-  public boolean parse(AbstractTask mainTask, File dataBaseFile) throws IOException {
+  protected boolean parseInternally(AbstractTask mainTask, File dataBaseFile) throws IOException {
     logger.info("Parsing jdx spectral library " + dataBaseFile.getAbsolutePath());
 
     boolean isData = false;

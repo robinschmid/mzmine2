@@ -46,7 +46,7 @@ public class GnpsJsonParser extends SpectralDBParser {
   }
 
   @Override
-  public boolean parse(AbstractTask mainTask, File dataBaseFile) throws IOException {
+  protected boolean parseInternally(AbstractTask mainTask, File dataBaseFile) throws IOException {
     logger.info("Parsing GNPS spectral library " + dataBaseFile.getAbsolutePath());
 
     int correct = 0;
@@ -86,7 +86,6 @@ public class GnpsJsonParser extends SpectralDBParser {
     }
     // finish and process last entries
     finish();
-
     return true;
   }
 
