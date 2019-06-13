@@ -54,7 +54,7 @@ public class GnpsMgfParser extends SpectralDBParser {
   }
 
   @Override
-  public boolean parse(AbstractTask mainTask, File dataBaseFile) throws IOException {
+  protected boolean parseInternally(AbstractTask mainTask, File dataBaseFile) throws IOException {
     logger.info("Parsing mgf spectral library " + dataBaseFile.getAbsolutePath());
 
     // BEGIN IONS

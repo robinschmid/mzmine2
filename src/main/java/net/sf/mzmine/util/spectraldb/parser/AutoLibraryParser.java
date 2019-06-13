@@ -39,7 +39,7 @@ public class AutoLibraryParser extends SpectralDBParser {
   private Logger logger = Logger.getLogger(this.getClass().getName());
 
   @Override
-  public boolean parse(AbstractTask mainTask, File dataBaseFile)
+  protected boolean parseInternally(AbstractTask mainTask, File dataBaseFile)
       throws UnsupportedFormatException, IOException {
     FileTypeFilter json = new FileTypeFilter("json", "");
     FileTypeFilter msp = new FileTypeFilter("msp", "");

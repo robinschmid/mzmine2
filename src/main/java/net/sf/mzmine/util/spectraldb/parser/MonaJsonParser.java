@@ -96,7 +96,7 @@ public class MonaJsonParser extends SpectralDBParser {
   }
 
   @Override
-  public boolean parse(AbstractTask mainTask, File dataBaseFile) throws IOException {
+  protected boolean parseInternally(AbstractTask mainTask, File dataBaseFile) throws IOException {
     logger.info("Parsing MONA spectral json library " + dataBaseFile.getAbsolutePath());
 
     int correct = 0;

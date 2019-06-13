@@ -108,6 +108,7 @@ import net.sf.mzmine.modules.tools.isotopepatternpreview.IsotopePatternPreviewMo
 import net.sf.mzmine.modules.tools.msmsspectramerge.MsMsSpectraMergeModule;
 import net.sf.mzmine.modules.tools.mzrangecalculator.MzRangeFormulaCalculatorModule;
 import net.sf.mzmine.modules.tools.mzrangecalculator.MzRangeMassCalculatorModule;
+import net.sf.mzmine.modules.tools.spectrallibtognps.SpectralLibraryToGNPSModule;
 import net.sf.mzmine.modules.visualization.histogram.HistogramVisualizerModule;
 import net.sf.mzmine.modules.visualization.infovisualizer.InfoVisualizerModule;
 import net.sf.mzmine.modules.visualization.intensityplot.IntensityPlotModule;
@@ -214,6 +215,7 @@ public class MZmineModulesList {
       // Tools
       MzRangeMassCalculatorModule.class, MzRangeFormulaCalculatorModule.class,
       IsotopePatternPreviewModule.class, MsMsSpectraMergeModule.class,
+      SpectralLibraryToGNPSModule.class,
 
       // all other regular MZmineRunnableModule (not MZmineProcessingModule) NOT LISTED IN MENU
       SpectraIdentificationSpectralDatabaseModule.class, LibrarySubmitModule.class,

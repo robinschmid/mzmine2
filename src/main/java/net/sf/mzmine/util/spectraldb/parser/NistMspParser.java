@@ -44,7 +44,7 @@ public class NistMspParser extends SpectralDBParser {
   private static Logger logger = Logger.getLogger(NistMspParser.class.getName());
 
   @Override
-  public boolean parse(AbstractTask mainTask, File dataBaseFile) throws IOException {
+  protected boolean parseInternally(AbstractTask mainTask, File dataBaseFile) throws IOException {
     logger.info("Parsing NIST msp spectral library " + dataBaseFile.getAbsolutePath());
 
     // metadata fields and data points

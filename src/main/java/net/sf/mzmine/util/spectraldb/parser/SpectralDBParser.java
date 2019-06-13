@@ -36,11 +36,20 @@ public abstract class SpectralDBParser {
   private int processedEntries = 0;
   // process entries
   protected LibraryEntryProcessor processor;
+  private boolean isDone = false;
 
   public SpectralDBParser(int bufferEntries, LibraryEntryProcessor processor) {
     list = new ArrayList<>();
     this.bufferEntries = bufferEntries;
     this.processor = processor;
+  }
+
+  public void setDone(boolean isDone) {
+    this.isDone = isDone;
+  }
+
+  public boolean isDone() {
+    return isDone;
   }
 
   /**
@@ -52,8 +61,29 @@ public abstract class SpectralDBParser {
    * @return the list or an empty list if something went wrong (e.g., wrong format)
    * @throws IOException
    */
-  public abstract boolean parse(AbstractTask mainTask, File dataBaseFile)
+  protected abstract boolean parseInternally(AbstractTask mainTask, File dataBaseFile)
       throws UnsupportedFormatException, IOException;
+
+
+  /**
+   * Parses the file and creates spectral db entries
+   * 
+   * @param task
+   * 
+   * @param dataBaseFile
+   * @return the list or an empty list if something went wrong (e.g., wrong format)
+   * @throws IOException
+   */
+  public boolean parse(AbstractTask mainTask, File dataBaseFile)
+      throws UnsupportedFormatException, IOException {
+    try {
+      return parseInternally(mainTask, dataBaseFile);
+    } finally {
+      setDone(true);
+    }
+  }
+
+
 
   /**
    * Add DB entry and push every 1000 entries. Does not allow 0 intensity values.
@@ -91,6 +121,7 @@ public abstract class SpectralDBParser {
     }
 
     logger.info(processedEntries + "  library entries imported");
+    setDone(true);
   }
 
 }
