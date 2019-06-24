@@ -102,6 +102,8 @@ public class SpectraVisualizerWindow extends JFrame implements ActionListener {
 
   private ParameterSet paramSet;
 
+  private boolean dppmWindowOpen;
+
   private static final double zoomCoefficient = 1.2f;
 
   public SpectraVisualizerWindow(RawDataFile dataFile, boolean enableProcessing) {
@@ -142,13 +144,14 @@ public class SpectraVisualizerWindow extends JFrame implements ActionListener {
     settings.applySettingsToWindow(this);
     this.addComponentListener(settings);
 
+    dppmWindowOpen = false;
   }
-  
+
   public SpectraVisualizerWindow(RawDataFile dataFile) {
     this(dataFile, false);
   }
 
-  
+
 
   @Override
   public void dispose() {
@@ -612,11 +615,18 @@ public class SpectraVisualizerWindow extends JFrame implements ActionListener {
       SwingUtilities.invokeLater(new Runnable() {
         @Override
         public void run() {
-          // DPPSetupWindow.getInstance().show();
-          if (DataPointProcessingManager.getInst().getParameters()
-              .showSetupDialog(MZmineCore.getDesktop().getMainWindow(), true) == ExitCode.OK
-              && DataPointProcessingManager.getInst().isEnabled()) {
-            getSpectrumPlot().checkAndRunController();
+          if (!dppmWindowOpen) {
+            dppmWindowOpen = true;
+
+            ExitCode exitCode = DataPointProcessingManager.getInst().getParameters()
+                .showSetupDialog(MZmineCore.getDesktop().getMainWindow(), true);
+
+            dppmWindowOpen = false;
+            if (exitCode == ExitCode.OK && DataPointProcessingManager.getInst().isEnabled()) {
+              // if processing was run before, this removes the previous results.
+              getSpectrumPlot().removeDataPointProcessingResultDataSets();
+              getSpectrumPlot().checkAndRunController();
+            }
           }
         }
       });
@@ -630,11 +640,11 @@ public class SpectraVisualizerWindow extends JFrame implements ActionListener {
           inst.setEnabled(!inst.isEnabled());
           bottomPanel.updateProcessingButton();
           getSpectrumPlot().checkAndRunController();
-          
+
           // if the tick is removed, set the data back to default
-          if(!inst.isEnabled()) {
-//            getSpectrumPlot().removeDataPointProcessingResultDataSets();
-            loadRawData(currentScan);
+          if (!inst.isEnabled()) {
+            getSpectrumPlot().removeDataPointProcessingResultDataSets();
+            // loadRawData(currentScan);
           }
         }
       });
