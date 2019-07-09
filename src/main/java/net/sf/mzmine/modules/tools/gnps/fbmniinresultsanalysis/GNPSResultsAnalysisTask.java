@@ -1,0 +1,680 @@
+/*
+ * Copyright 2006-2018 The MZmine 2 Development Team
+ * 
+ * This file is part of MZmine 2.
+ * 
+ * MZmine 2 is free software; you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
+ * 
+ * MZmine 2 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along with MZmine 2; if not,
+ * write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+ * USA
+ */
+
+package net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.DecimalFormat;
+import java.text.MessageFormat;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.graphstream.graph.Edge;
+import org.graphstream.graph.Graph;
+import org.graphstream.graph.Node;
+import org.graphstream.graph.implementations.MultiGraph;
+import org.graphstream.stream.file.FileSource;
+import org.graphstream.stream.file.FileSourceGraphML;
+import com.google.common.util.concurrent.AtomicDouble;
+import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsIdentity.ATT;
+import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.taskcontrol.AbstractTask;
+import net.sf.mzmine.taskcontrol.TaskStatus;
+
+public class GNPSResultsAnalysisTask extends AbstractTask {
+  private Logger logger = Logger.getLogger(this.getClass().getName());
+  private static String del = ",";
+  private static String nl = "\n";
+
+  public static void main(String[] args) {
+    new GNPSResultsAnalysisTask(new File(
+        "D:\\Daten2\\UCSD\\IIN paper\\20190709_bile_acids\\FBMN_IINwithcorr\\FEATURE-BASED-MOLECULAR-NETWORKING-9103d908-download_cytoscape_data-main.graphml"),
+        new File(
+            "D:\\Daten2\\UCSD\\IIN paper\\20190709_bile_acids\\FBMN_IINwithcorr\\20190709_bile_acid_standards_IIN.mgf"),
+        new File("D:\\Daten2\\UCSD\\IIN paper\\20190709_bile_acids\\FBMN_IINwithcorr\\test1.csv"))
+            .run();;
+  }
+
+  private File file;
+  private File fileMGF;
+  private File output;
+
+  private AtomicDouble progress = new AtomicDouble(0);
+  private ParameterSet parameters;
+  private String step = "Importing GNPS results for";
+
+
+  public enum NodeAtt {
+    IIN_ADDUCT("Best Ion", String.class);
+
+    private String key;
+    private Class c;
+
+    private NodeAtt(String key, Class c) {
+      this.c = c;
+      this.key = key;
+    }
+
+    public Class getValueClass() {
+      return c;
+    }
+
+    public String getKey() {
+      return key;
+    }
+  }
+  public enum EdgeAtt {
+    EDGE_TYPE("EdgeType", String.class), // edgetype
+    EDGE_SCORE("EdgeScore", Double.class), EDGE_ANNOTATION("EdgeAnnotation", String.class);
+
+    private String key;
+    private Class c;
+
+    private EdgeAtt(String key, Class c) {
+      this.c = c;
+      this.key = key;
+    }
+
+    public Class getValueClass() {
+      return c;
+    }
+
+    public String getKey() {
+      return key;
+    }
+  }
+
+  public enum EdgeType {
+    MS1_ANNOTATION("MS1 annotation"), COSINE("Cosine");
+    private String key;
+
+    private EdgeType(String key) {
+      this.key = key;
+    }
+  }
+
+  /**
+   * @param parameters
+   * @param peakList
+   */
+  public GNPSResultsAnalysisTask(ParameterSet parameters) {
+    this.parameters = parameters;
+    file = parameters.getParameter(GNPSResultsAnalysisParameters.FILE).getValue();
+    fileMGF = parameters.getParameter(GNPSResultsAnalysisParameters.FILE_MGF).getValue();
+    output = parameters.getParameter(GNPSResultsAnalysisParameters.OUTPUT).getValue();
+  }
+
+
+  public GNPSResultsAnalysisTask(File file, File fileMGF, File output) {
+    super();
+    this.file = file;
+    this.fileMGF = fileMGF;
+    this.output = output;
+  }
+
+
+  /**
+   * @see net.sf.mzmine.taskcontrol.Task#getFinishedPercentage()
+   */
+  @Override
+  public double getFinishedPercentage() {
+    return progress.get();
+  }
+
+  /**
+   * @see net.sf.mzmine.taskcontrol.Task#getTaskDescription()
+   */
+  @Override
+  public String getTaskDescription() {
+    return "Analyse GNPS results  in file " + file + "and mgf " + fileMGF;
+  }
+
+  /**
+   * @see java.lang.Runnable#run()
+   */
+  @Override
+  public void run() {
+    setStatus(TaskStatus.PROCESSING);
+    logger.info("Importing GNPS results for " + file + " and mgf " + fileMGF);
+
+    // remove zeros from edge ids (GNPS export error)
+    removeZeroIDFromEdge(file);
+
+    Graph graph = new MultiGraph("GNPS");
+    if (importGraphData(graph, file)) {
+
+      progress.set(0d);
+      step = "Importing library matches";
+      logger.info("Starting to import library matches");
+      // import library matches from nodes
+      HashMap<Integer, GNPSResultsIdentity> matches = importLibraryMatches(graph);
+
+      logger.info("Starting to import MS2 data from mgf");
+      HashMap<Integer, Integer> msmsData = importMSMSfromMgf(fileMGF);
+
+      // log some results
+      logImportResults(graph, matches, msmsData);
+
+      // analyse and write files
+      analyse(output, graph, matches, msmsData);
+
+
+      logger.info("Finished import of GNPS results for " + file + " and " + fileMGF);
+      setStatus(TaskStatus.FINISHED);
+    } else {
+      setErrorMessage("Error while importing graphml file: " + file.getAbsolutePath());
+      setStatus(TaskStatus.ERROR);
+    }
+  }
+
+  /**
+   * Analyse and output file
+   * 
+   * @param output
+   * @param graph
+   * @param matches
+   * @param msmsData
+   */
+  private void analyse(File output, Graph graph, HashMap<Integer, GNPSResultsIdentity> matches,
+      HashMap<Integer, Integer> msmsData) {
+    NumberFormat perc = new DecimalFormat("0.0");
+    StringBuilder general = new StringBuilder();
+    StringBuilder distance = new StringBuilder();
+    StringBuilder adduct = new StringBuilder();
+
+
+    HashMap<String, Integer> adductCount = countAdducts(graph);
+    long ions = adductCount.values().stream().mapToInt(i -> i).sum();
+    long ident = matches.size();
+    int total = msmsData.size();
+    long ionsWithLibraryMatch = countIonsWithLibraryMatch(matches, graph);
+
+    // #####################################################################
+    // identified compounds
+    appendLine(general, "total nodes", total);
+    appendLine(general, "Library matches (MS2)", ident);
+    appendLine(general, "Ion identities (MS1)", ions);
+    appendLine(general, "library matches with ion identity", ionsWithLibraryMatch);
+    appendLine(general, "library matches with ion identity %",
+        perc.format(ionsWithLibraryMatch / (double) ident * 100.0));
+
+    appendLine(general);
+    // write all percentages for different min signals MS/MS scan cut off
+    appendLine(general,
+        "Percentage of identified compounds per feature with a minimum of X signals in MS/MS spectrum");
+    // MS/MS signals 0, 1,4,6
+    int[] min = new int[] {0, 1, 4, 6};
+    appendLine(general, "min signals", "MS/MS scans", "identified  %", "singletons FBMN",
+        "singletons IIN+FBMN", "% singletons FBMN", "% singletons IIN+FBMN");
+    for (int minSignals : min) {
+      long msmsSpectra = minSignals == 0 ? total
+          : msmsData.values().stream().filter(signals -> signals >= minSignals).count();
+      String ratio = perc.format(ident / (double) msmsSpectra * 100.0);
+      // singletons FBMN vs IIN+FBMN
+      long[] singletons = countSingletons(graph, msmsData, minSignals);
+      String ratioFBMNSingle = perc.format(singletons[0] / (double) msmsSpectra * 100.0);
+      String ratioIINSingle = perc.format(singletons[1] / (double) msmsSpectra * 100.0);
+
+      // add data line
+      appendLine(general, minSignals, msmsSpectra, ratio, singletons[0], singletons[1],
+          ratioFBMNSingle, ratioIINSingle);
+    }
+
+    // #####################################################################
+    // distance to identity
+    appendSeparator(distance);
+    appendLine(distance,
+        "distance to identified compounds (each node is only counted once (even if connected to multiple identified compounds)");
+    appendLine(distance, "Feature based molecular networking only (NO IIN)");
+    // header
+    int maxDist = 5;
+    distance.append(del + "dist");
+    for (int i = 0; i <= maxDist; i++)
+      distance.append(del + i);
+    for (int i = 0; i <= maxDist; i++)
+      distance.append(del + i);
+    distance.append(nl);
+
+    distance.append("min signals" + del + "MS/MS scans");
+    for (int i = 0; i <= maxDist; i++)
+      distance.append(del + "n within " + i);
+    for (int i = 0; i <= maxDist; i++)
+      distance.append(del + "% within " + i);
+    distance.append(nl);
+
+    for (int minSignals : min) {
+      long msmsSpectra = minSignals == 0 ? total
+          : msmsData.values().stream().filter(signals -> signals >= minSignals).count();
+      // count in distance
+      int[] dist = countInDist(graph, matches, msmsData, minSignals, maxDist, true);
+
+      distance.append(minSignals + del + msmsSpectra);
+      for (int i = 0; i <= maxDist; i++)
+        distance.append(del + dist[i]);
+      for (int i = 0; i <= maxDist; i++)
+        distance.append(del + (perc.format(dist[i] / (double) msmsSpectra * 100.0)));
+      distance.append(nl);
+    }
+
+    // ###############################
+    // with IIN
+    distance.append(nl + nl + "FBMN and IIN edges" + nl);
+    distance.append(del + "dist");
+    for (int i = 0; i <= maxDist; i++)
+      distance.append(del + i);
+    for (int i = 0; i <= maxDist; i++)
+      distance.append(del + i);
+    distance.append(nl);
+
+    distance.append("min signals" + del + "MS/MS scans");
+    for (int i = 0; i <= maxDist; i++)
+      distance.append(del + "n within " + i);
+    for (int i = 0; i <= maxDist; i++)
+      distance.append(del + "% within " + i);
+    distance.append(nl);
+
+    for (int minSignals : min) {
+      long msmsSpectra = minSignals == 0 ? total
+          : msmsData.values().stream().filter(signals -> signals >= minSignals).count();
+      // count in distance
+      int[] distIIN = countInDist(graph, matches, msmsData, minSignals, maxDist, false);
+
+      distance.append(minSignals + del + msmsSpectra);
+      for (int i = 0; i <= maxDist; i++)
+        distance.append(del + distIIN[i]);
+      for (int i = 0; i <= maxDist; i++)
+        distance.append(del + (perc.format(distIIN[i] / (double) msmsSpectra * 100.0)));
+      distance.append(nl);
+    }
+
+    appendSeparator(distance);
+
+    // #####################################################################
+    // adduct analysis
+    appendLine(adduct, "Ion identities", ions);
+    appendLine(adduct);
+
+    appendLine(adduct, "Adduct distribution,,,,,,Adduct distribution (sorted by n)");
+    appendLine(adduct, "ion type", "n", "", "", "", "", "", "ion type", "n");
+    List<Entry<String, Integer>> byName = streamSorted(adductCount).collect(Collectors.toList());
+    List<Entry<String, Integer>> byN = streamSortedByN(adductCount).collect(Collectors.toList());
+
+    for (int i = 0; i < byName.size(); i++) {
+      appendLine(adduct, byName.get(i).getKey(), byName.get(i).getValue(), "", "", "", "", "",
+          byN.get(i).getKey(), byN.get(i).getValue());
+    }
+
+
+    System.out.println(general.toString());
+    System.out.println(nl + nl + distance.toString());
+    System.out.println(nl + nl + adduct.toString());
+
+    writeToFile(output, general, distance, adduct);
+  }
+
+  private void writeToFile(File output, StringBuilder general, StringBuilder distance,
+      StringBuilder adduct) {
+
+    Path path = Paths.get(output.getAbsolutePath());
+    try {
+      List<String> text = new ArrayList<>();
+      text.add(general.toString());
+      text.add(distance.toString());
+      text.add(adduct.toString());
+      Files.write(path, text);
+      logger.info("Exported all to " + output.getAbsolutePath());
+    } catch (IOException e) {
+      logger.log(Level.SEVERE, "Cannot export to: " + output.getAbsolutePath(), e);
+      setErrorMessage("Cannot export to: " + output.getAbsolutePath());
+      setStatus(TaskStatus.ERROR);
+      cancel();
+    }
+  }
+
+
+  /**
+   * Count all library matches with an ion identity based on MS1
+   * 
+   * @param matches
+   * @param graph
+   * @return
+   */
+  private long countIonsWithLibraryMatch(HashMap<Integer, GNPSResultsIdentity> matches,
+      Graph graph) {
+    return matches.keySet().stream().map(Object::toString)
+        .filter(id -> getIonIdentity(graph.getNode(id)) != null).count();
+  }
+
+
+  private void appendSeparator(StringBuilder distance) {
+    distance
+        .append(nl + "###################################################################" + nl);
+  }
+
+
+  private Stream<Map.Entry<String, Integer>> streamSorted(HashMap<String, Integer> adductCount) {
+    return adductCount.entrySet().stream().sorted((a, b) -> a.getKey().compareTo(b.getKey()));
+  }
+
+  private Stream<Map.Entry<String, Integer>> streamSortedByN(HashMap<String, Integer> adductCount) {
+    return adductCount.entrySet().stream()
+        .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()));
+  }
+
+
+  private HashMap<String, Integer> countAdducts(Graph graph) {
+    HashMap<String, Integer> map = new HashMap<>();
+    graph.nodes().map(n -> getIonIdentity(n)).filter(Objects::nonNull).filter(s -> !s.isEmpty())
+        .forEach(ion -> {
+          Integer count = map.get(ion);
+          map.put(ion, count == null ? 1 : count + 1);
+        });
+    return map;
+  }
+
+
+  private String getIonIdentity(Node n) {
+    Object o = n.getAttribute(NodeAtt.IIN_ADDUCT.key);
+    return o == null || o.toString().isEmpty() ? null : o.toString();
+  }
+
+
+  /**
+   * count nodes with MSMS that have identified compounds in distance
+   * 
+   * @param graph
+   * @param matches
+   * @param msmsData
+   * @param minSignals
+   * @return
+   */
+  private int[] countInDist(Graph graph, HashMap<Integer, GNPSResultsIdentity> matches,
+      HashMap<Integer, Integer> msmsData, int minSignals, int maxDist, boolean onlyCosineEdges) {
+
+    int[] indist = new int[maxDist + 1];
+    indist[0] = matches.size();
+    for (int i = 1; i <= maxDist; i++) {
+      // list of nodes in distance to ID
+      List<Integer> list = new ArrayList<>();
+      list.addAll(matches.keySet());
+
+      final int dist = i;
+      matches.keySet().stream().forEach(index -> addAllInDistance(list, graph, index, msmsData,
+          minSignals, dist, onlyCosineEdges));
+      indist[i] = list.size();
+    }
+
+    return indist;
+  }
+
+
+  /**
+   * Adds all nodes in distance to list
+   * 
+   * @param list
+   * @param graph
+   * @param matches
+   * @param msmsData
+   * @param minSignals
+   * @param i
+   * @param b
+   */
+  private void addAllInDistance(List<Integer> list, Graph graph, Integer index,
+      HashMap<Integer, Integer> msmsData, int minSignals, int dist, boolean onlyCosineEdges) {
+    Node n = graph.getNode(index.toString());
+    // no need to check for MSMS data here - later when add to list
+    if (n != null) {
+      // stream only cosine edges (FBMN) or all edges (IIN FBMN)
+      Stream<Edge> edges;
+      if (onlyCosineEdges)
+        edges = streamCosineEdges(n);
+      else
+        edges = streamEdges(n);
+
+      // add all neighbours to the list
+      edges.forEach(e -> {
+        Node next = e.getNode0().getId().equals(n.getId()) ? e.getNode1() : e.getNode0();
+        // not already inserted
+        Integer id = Integer.parseInt(next.getId());
+        if (!list.contains(id)) {
+          // only add features with MSMS scan to be comparable to FBMN
+          if (hasMSMS(next, msmsData, minSignals))
+            list.add(id);
+          // add nodes next to next
+          if (dist >= 2) {
+            addAllInDistance(list, graph, id, msmsData, minSignals, dist - 1, onlyCosineEdges);
+          }
+        }
+      });
+    }
+  }
+
+
+  private long[] countSingletons(Graph graph, HashMap<Integer, Integer> msmsData, int minSignals) {
+    // 0 count all FBMN singletons (no IIN edges, with msms data)
+    // 1 count all IIN FBMN singletons (with msms data)
+    return new long[] {
+        graph.nodes().filter(n -> !hasCosineEdges(n) && hasMSMS(n, msmsData, minSignals)).count(),
+        // count IIN FBMN singletons
+        graph.nodes().filter(n -> !hasEdges(n) && hasMSMS(n, msmsData, minSignals)).count()};
+  }
+
+  /**
+   * Stream cosine edges without selfloops
+   * 
+   * @param n
+   * @return
+   */
+  private Stream<Edge> streamCosineEdges(Node n) {
+    return n.edges()
+        .filter(e -> e.getAttribute(EdgeAtt.EDGE_TYPE.getKey()).equals(EdgeType.COSINE.key))
+        .filter(e -> !e.getNode0().getId().equals(e.getNode1().getId()));
+  }
+
+  /**
+   * Stream edges without selfloops
+   * 
+   * @param n
+   * @return
+   */
+  private Stream<Edge> streamEdges(Node n) {
+    return n.edges().filter(e -> !e.getNode0().getId().equals(e.getNode1().getId()));
+  }
+
+  private boolean hasMSMS(Node n, HashMap<Integer, Integer> msmsData, int minSignals) {
+    Integer signals = msmsData.get(Integer.parseInt(n.getId()));
+    return signals != null && signals >= minSignals;
+  }
+
+  private boolean hasEdges(Node n) {
+    return streamEdges(n).count() > 0l;
+  }
+
+  private boolean hasCosineEdges(Node n) {
+    return streamCosineEdges(n).count() > 0l;
+  }
+
+
+  private void appendLine(StringBuilder b, Object... s) {
+    if (s != null)
+      b.append(Arrays.stream(s).map(o -> o.toString()).collect(Collectors.joining(del)));
+    b.append(nl);
+  }
+
+  private void logImportResults(Graph graph, HashMap<Integer, GNPSResultsIdentity> matches,
+      HashMap<Integer, Integer> msmsData) {
+    logger.info(MessageFormat.format("Results: nodes={0}  edges={1}", graph.getNodeCount(),
+        graph.getEdgeCount()));
+    logger.info(MessageFormat.format("library matches={0}", matches.size()));
+    logger.info(MessageFormat.format("features with MS/MS scan {0} (of {1})", msmsData.size(),
+        graph.getNodeCount()));
+
+    long min4 = msmsData.values().stream().filter(signals -> signals >= 4).count();
+    long min6 = msmsData.values().stream().filter(signals -> signals >= 6).count();
+
+    logger.info(MessageFormat.format("features with MS/MS scan and min 4 signals  {0} (of {1})",
+        min4, graph.getNodeCount()));
+    logger.info(MessageFormat.format("features with MS/MS scan and min 6 signals  {0} (of {1})",
+        min6, graph.getNodeCount()));
+  }
+
+  /**
+   * All
+   * 
+   * @param file an mgf file that was used for GNPS feature based molecular networking
+   * @return Map<featureID, signals in MS/MS>
+   */
+  private HashMap<Integer, Integer> importMSMSfromMgf(File file) {
+    HashMap<Integer, Integer> msmsData = new HashMap<>();
+    Path path = Paths.get(file.getAbsolutePath());
+    try (Stream<String> lines = Files.lines(path)) {
+      AtomicInteger featureID = new AtomicInteger(-1);
+      AtomicInteger signals = new AtomicInteger(0);
+
+      lines.forEach(line -> {
+        // find next FEATURE_ID=1
+        if (featureID.get() == -1 && line.startsWith("FEATURE_ID=")) {
+          featureID.set(Integer.parseInt(line.split("=")[1]));
+        } else if (line.startsWith("MSLEVEL")) {
+          // start counting signals (only counts signals if signals!=-1
+          signals.set(0);
+        } else if (line.startsWith("END IONS")) {
+          // create
+          if (signals.get() >= 0) {
+            msmsData.put(featureID.get(), signals.get());
+          }
+          // reset
+          signals.set(-1);
+          featureID.set(-1);
+        } else if (signals.get() != -1) {
+          signals.getAndIncrement();
+        }
+      });
+      return msmsData;
+    } catch (IOException e) {
+      logger.log(Level.SEVERE, "graphml NOT LOADED: " + file.getAbsolutePath(), e);
+      setErrorMessage("Cannot load graphml file: " + file.getAbsolutePath());
+      setStatus(TaskStatus.ERROR);
+      cancel();
+      return null;
+    }
+  }
+
+  /**
+   * All edges have id=0 - this causes an exception. Replace all zero ids and save the file
+   * 
+   * @param file2
+   */
+  private void removeZeroIDFromEdge(File file) {
+    AtomicLong counter = new AtomicLong(1);
+    logger.info("replacing zero ids in graphml");
+    Path path = Paths.get(file.getAbsolutePath());
+    try (Stream<String> lines = Files.lines(path)) {
+      List<String> replaced = lines.map(line -> {
+        line = line.replaceAll("edge id=\"0\"", "edge id=\"" + counter.getAndIncrement() + "\"");
+        line = line.replaceAll("edge id=\"1\"", "edge id=\"" + counter.getAndIncrement() + "\"");
+        return line;
+      }).collect(Collectors.toList());
+      Files.write(path, replaced);
+      lines.close();
+      logger.info("zero ids in graphml replaces");
+    } catch (IOException e) {
+      logger.log(Level.SEVERE, "graphml NOT LOADED: " + file.getAbsolutePath(), e);
+      setErrorMessage("Cannot load graphml file: " + file.getAbsolutePath());
+      setStatus(TaskStatus.ERROR);
+      cancel();
+    }
+  }
+
+
+  private HashMap<Integer, GNPSResultsIdentity> importLibraryMatches(Graph graph) {
+    HashMap<Integer, GNPSResultsIdentity> matches = new HashMap<>();
+
+    // go through all nodes and add info
+    final int size = graph.getNodeCount();
+    AtomicInteger done = new AtomicInteger(0);
+    graph.nodes().forEach(node -> {
+      int id = Integer.parseInt(node.getId());
+      // has library match?
+      String compoundName = (String) node.getAttribute(ATT.COMPOUND_NAME.getKey());
+      if (compoundName != null && !compoundName.isEmpty()) {
+        String adduct = (String) node.getAttribute(ATT.ADDUCT.getKey());
+
+        // find all results
+        HashMap<String, Object> results = new HashMap<>();
+        for (ATT att : ATT.values()) {
+          Object result = node.getAttribute(att.getKey());
+          if (result != null) {
+            results.put(att.getKey(), result);
+          }
+        }
+
+        // add identity
+        GNPSResultsIdentity identity = new GNPSResultsIdentity(results, compoundName, adduct);
+        matches.put(id, identity);
+      }
+
+      // increment
+      done.getAndIncrement();
+      progress.set(done.get() / (double) size);
+    });
+
+    logger.info(matches.size() + " rows found with library matches");
+    return matches;
+  }
+
+  private boolean importGraphData(Graph graph, File file) {
+    boolean result = true;
+    FileSource fs = null;
+    logger.info("Importing graphml data");
+    try {
+      fs = new FileSourceGraphML();
+      fs.addSink(graph);
+      fs.readAll(file.getAbsolutePath());
+      logger.info(() -> MessageFormat.format("GNPS results: nodes={0} edges={1}",
+          graph.getNodeCount(), graph.getEdgeCount()));
+    } catch (IOException e) {
+      logger.log(Level.SEVERE, "NOT LOADED", e);
+      setErrorMessage("Cannot load graphml file: " + file.getAbsolutePath());
+      setStatus(TaskStatus.ERROR);
+      cancel();
+      result = false;
+    } finally {
+      if (fs != null)
+        fs.removeSink(graph);
+    }
+    return result;
+  }
+
+}
