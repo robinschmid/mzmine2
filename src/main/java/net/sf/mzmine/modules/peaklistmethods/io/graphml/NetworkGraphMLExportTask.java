@@ -33,15 +33,24 @@ import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
 import net.sf.mzmine.util.files.FileAndPathUtil;
 
-class NetworkGraphMLExportTask extends AbstractTask {
+/**
+ * Export a network (graphstream graph) to graphml, which is a widely used format
+ * 
+ * @author Robin Schmid (robinschmid@uni-muenster.de)
+ *
+ */
+public class NetworkGraphMLExportTask extends AbstractTask {
 
   private Logger logger = Logger.getLogger(this.getClass().getName());
 
-  private final MZmineProject project;
+  private MZmineProject project;
   private PeakList peakList;
   private File fileCollapsed;
   private File fileFull;
   private AtomicDouble progress = new AtomicDouble(0);
+
+  private Graph graph;
+  private File graphFile;
 
   NetworkGraphMLExportTask(MZmineProject project, ParameterSet parameters) {
 
@@ -53,6 +62,11 @@ class NetworkGraphMLExportTask extends AbstractTask {
     String name = FileAndPathUtil.eraseFormat(fileFull.getName());
     fileCollapsed =
         FileAndPathUtil.getRealFilePath(fileFull.getParentFile(), name + "_collapsed", "graphml");
+  }
+
+  public NetworkGraphMLExportTask(Graph graph, File file) {
+    this.graph = graph;
+    this.graphFile = file;
   }
 
   @Override
@@ -68,29 +82,44 @@ class NetworkGraphMLExportTask extends AbstractTask {
   @Override
   public void run() {
     setStatus(TaskStatus.PROCESSING);
-    logger.info("Generating graphml for  " + peakList.getName());
+    // direct graphml export
+    if (graph != null) {
+      logger.info("Exporting graphml to " + graphFile.getAbsolutePath());
 
-    FileSinkGraphML saveGraphML = new FileSinkGraphML();
-    try {
-      AnnotationNetworkGenerator generator = new AnnotationNetworkGenerator();
-      Graph graph = new MultiGraph("IIN networking");
-      generator.createNewGraph(peakList.getRows(), graph, true, peakList.getR2RSimilarityMap());
+      FileSinkGraphML saveGraphML = new FileSinkGraphML();
+      try {
+        if (graph.getNodeCount() > 0)
+          saveGraphML.writeAll(graph, graphFile.getAbsolutePath());
 
-      if (graph.getNodeCount() > 0)
-        saveGraphML.writeAll(graph, fileFull.getAbsolutePath());
+        logger.info("Finished exporting graphml to " + graphFile.getAbsolutePath());
+        setStatus(TaskStatus.FINISHED);
+      } catch (IOException e) {
+        setStatus(TaskStatus.ERROR);
+        setErrorMessage(e.getMessage());
+      }
+    } else {
+      logger.info("Generating graphml for  " + peakList.getName());
 
-      generator.deleteAllCollapsedNodes();
-      if (graph.getNodeCount() > 0)
-        saveGraphML.writeAll(graph, fileCollapsed.getAbsolutePath());
+      FileSinkGraphML saveGraphML = new FileSinkGraphML();
+      try {
+        AnnotationNetworkGenerator generator = new AnnotationNetworkGenerator();
+        Graph graph = new MultiGraph("IIN networking");
+        generator.createNewGraph(peakList.getRows(), graph, true, peakList.getR2RSimilarityMap());
 
-      logger.info("Finished generating graphml for  " + peakList.getName());
-    } catch (IOException e) {
-      setStatus(TaskStatus.ERROR);
-      setErrorMessage(e.getMessage());
+        if (graph.getNodeCount() > 0)
+          saveGraphML.writeAll(graph, fileFull.getAbsolutePath());
+
+        generator.deleteAllCollapsedNodes();
+        if (graph.getNodeCount() > 0)
+          saveGraphML.writeAll(graph, fileCollapsed.getAbsolutePath());
+
+        logger.info("Finished generating graphml for  " + peakList.getName());
+        setStatus(TaskStatus.FINISHED);
+      } catch (IOException e) {
+        setStatus(TaskStatus.ERROR);
+        setErrorMessage(e.getMessage());
+      }
     }
-
-    setStatus(TaskStatus.FINISHED);
-
   }
 
 }
