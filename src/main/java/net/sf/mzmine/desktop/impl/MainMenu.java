@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.JMenu;
@@ -460,5 +462,38 @@ public class MainMenu extends JMenuBar implements ActionListener {
       new Thread(NVC).start();
     }
 
+  }
+
+
+  /**
+   * start modules code sided
+   * 
+   * @param name name of module
+   * @return
+   */
+  public MZmineRunnableModule startModuleCodeSided(String name) {
+    Set<Entry<JMenuItem, MZmineRunnableModule>> s = moduleMenuItems.entrySet();
+    for (Entry<JMenuItem, MZmineRunnableModule> entry : s) {
+      if (entry.getValue().getName().equals(name)) {
+        entry.getKey().doClick();
+        return entry.getValue();
+      }
+    }
+    return null;
+  }
+
+  /**
+   * 
+   * @param name name of module
+   * @return
+   */
+  public MZmineRunnableModule getModuleByName(String name) {
+    Set<Entry<JMenuItem, MZmineRunnableModule>> s = moduleMenuItems.entrySet();
+    for (Entry<JMenuItem, MZmineRunnableModule> entry : s) {
+      if (entry.getValue().getName().equals(name)) {
+        return entry.getValue();
+      }
+    }
+    return null;
   }
 }
