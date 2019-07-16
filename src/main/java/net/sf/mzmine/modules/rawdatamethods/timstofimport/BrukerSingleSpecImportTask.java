@@ -91,8 +91,9 @@ public class BrukerSingleSpecImportTask extends AbstractTask {
           File out = f.getParentFile().getParentFile().getParentFile();
           // rename file
           File mzml = FileAndPathUtil.getRealFilePath(out, f.getName(), "mzML");
-          File renamed =
-              new File(out, out.getName() + "_" + f.getParentFile().getParentFile().getName() + "_"
+          File renamed = new File(out,
+              out.getParentFile().getName() + "_" + out.getName() + "_"
+                  + f.getParentFile().getParentFile().getName() + "_"
                   + FileAndPathUtil.eraseFormat(mzml.getName() + ".mzML"));
 
           if (renamed.exists()) {
