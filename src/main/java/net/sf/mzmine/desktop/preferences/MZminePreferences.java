@@ -58,6 +58,9 @@ public class MZminePreferences extends SimpleParameterSet {
   public static final FileNameParameter rExecPath = new FileNameParameter("R executable path",
       "Full R executable file path (If left blank, MZmine will try to find out automatically). On Windows, this should point to your R.exe file.");
 
+  public static final FileNameParameter msconvertPath = new FileNameParameter("msconvert.exe path",
+      "Download msconvert.exe as part of ProteoWizzard and link to the path");
+
   public static final BooleanParameter sendStatistics =
       new BooleanParameter("Send anonymous statistics",
           "Allow MZmine to send anonymous statistics on the module usage?", true);
@@ -70,7 +73,7 @@ public class MZminePreferences extends SimpleParameterSet {
 
   public MZminePreferences() {
     super(new Parameter[] {colorPalettes, mzFormat, rtFormat, intensityFormat, numOfThreads,
-        proxySettings, rExecPath, sendStatistics, windowSetttings, sendErrorEMail});
+        proxySettings, rExecPath, msconvertPath, sendStatistics, windowSetttings, sendErrorEMail});
   }
 
   @Override

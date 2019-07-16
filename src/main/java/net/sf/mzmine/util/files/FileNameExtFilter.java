@@ -30,15 +30,22 @@ import java.io.Serializable;
 public class FileNameExtFilter implements FilenameFilter, Serializable {
   private static final long serialVersionUID = 1L;
   private String startsWith, ext;
+  private boolean allowFolders;
 
   public FileNameExtFilter(String startsWith, String ext) {
+    this(startsWith, ext, false);
+  }
+
+  public FileNameExtFilter(String startsWith, String ext, boolean allowFolders) {
+    this.allowFolders = allowFolders;
     this.startsWith = startsWith.toLowerCase();
     this.ext = ext.toLowerCase();
   }
 
   @Override
   public boolean accept(File f, String name) {
-    return ((new File(f, name)).isFile() && (ext.equals("") || name.toLowerCase().endsWith(ext))
+    return (((allowFolders || new File(f, name).isFile()))
+        && (ext.equals("") || name.toLowerCase().endsWith(ext))
         && (startsWith.equals("") || name.toLowerCase().startsWith(startsWith)));
   }
 
