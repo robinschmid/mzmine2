@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.modules.rawdatamethods.exportscans;
+package net.sf.mzmine.modules.rawdatamethods.extractscans;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -29,12 +29,13 @@ import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.MassList;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
+import net.sf.mzmine.modules.rawdatamethods.exportscans.ExtractAllScansParameters;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
 import net.sf.mzmine.util.files.FileAndPathUtil;
 
-class ExtractScansTask extends AbstractTask {
+public class ExtractScansTask extends AbstractTask {
 
   private double perc = 0;
   private int scans, scanMaxTIC = -1;
@@ -56,7 +57,7 @@ class ExtractScansTask extends AbstractTask {
    * 
    * @param parameters
    */
-  ExtractScansTask(ParameterSet parameters) {
+  public ExtractScansTask(ParameterSet parameters) {
     if (parameters instanceof ExtractAllScansParameters) {
       dataFiles = Arrays.asList(parameters.getParameter(ExtractAllScansParameters.dataFiles)
           .getValue().getMatchingRawDataFiles());
