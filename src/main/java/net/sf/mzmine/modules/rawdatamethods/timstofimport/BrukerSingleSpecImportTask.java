@@ -41,13 +41,6 @@ public class BrukerSingleSpecImportTask extends AbstractTask {
   private File file;
   private File msConvert;
 
-  public static void main(String[] args) {
-    String pathname;
-    File f = new File("D:\\Daten2\\coco\\Carina\\Pigments\\PR146copy\\2019_07_09neg");
-    BrukerSingleSpecImportTask task = new BrukerSingleSpecImportTask(f);
-    task.run();
-  }
-
   /**
    * ExtractAllScansParameters or ExtractScansParameters
    * 
@@ -96,39 +89,43 @@ public class BrukerSingleSpecImportTask extends AbstractTask {
         try {
           // output file
           File out = f.getParentFile().getParentFile().getParentFile();
-
-
-          Process process = new ProcessBuilder(msConvert.getAbsolutePath(), f.getAbsolutePath())
-              .directory(out).start();
-          process.waitFor();
-          // Process process = Runtime.getRuntime().exec("msconvert.exe",
-          // new String[] {"msconvert", "--help"}, msConvert.getParentFile());
-          String line;
-          BufferedReader input =
-              new BufferedReader(new InputStreamReader(process.getInputStream()));
-          while ((line = input.readLine()) != null) {
-            System.out.println(line);
-          }
-          input.close();
-          BufferedReader err = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-          while ((line = err.readLine()) != null) {
-            System.out.println(line);
-          }
-          input.close();
-
           // rename file
           File mzml = FileAndPathUtil.getRealFilePath(out, f.getName(), "mzML");
           File renamed =
               new File(out, out.getName() + "_" + f.getParentFile().getParentFile().getName() + "_"
                   + FileAndPathUtil.eraseFormat(mzml.getName() + ".mzML"));
-          if (mzml.exists()) {
-            mzml.renameTo(renamed);
 
-            if (renamed.exists()) {
-              result.add(renamed);
+          if (renamed.exists()) {
+            result.add(renamed);
+          } else {
+            // convert and import
+            Process process = new ProcessBuilder(msConvert.getAbsolutePath(), f.getAbsolutePath())
+                .directory(out).start();
+            process.waitFor();
+            // Process process = Runtime.getRuntime().exec("msconvert.exe",
+            // new String[] {"msconvert", "--help"}, msConvert.getParentFile());
+            String line;
+            BufferedReader input =
+                new BufferedReader(new InputStreamReader(process.getInputStream()));
+            while ((line = input.readLine()) != null) {
+              System.out.println(line);
+            }
+            input.close();
+            BufferedReader err =
+                new BufferedReader(new InputStreamReader(process.getErrorStream()));
+            while ((line = err.readLine()) != null) {
+              System.out.println(line);
+            }
+            input.close();
+
+            if (mzml.exists()) {
+              mzml.renameTo(renamed);
+
+              if (renamed.exists()) {
+                result.add(renamed);
+              }
             }
           }
-
         } catch (IOException e) {
           e.printStackTrace();
         } catch (InterruptedException e) {
