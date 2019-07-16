@@ -137,6 +137,7 @@ public class ScanSelectPanel extends JPanel implements ActionListener {
     this.row = row;
     // create chart with current sort mode
     setSortMode(sort);
+    createSortedScanList();
     createChart();
     setMZandChargeFromScan();
   }
@@ -147,6 +148,7 @@ public class ScanSelectPanel extends JPanel implements ActionListener {
     this.scansEntry = scansEntry;
     // create chart with current sort mode
     setSortMode(sort);
+    createSortedScanList();
     createChart();
     setMZandChargeFromScan();
   }
