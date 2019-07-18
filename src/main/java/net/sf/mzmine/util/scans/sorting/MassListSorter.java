@@ -43,6 +43,8 @@ public class MassListSorter implements Comparator<DataPoint[]> {
           return result;
       case MAX_TIC:
         return Double.compare(getTIC(a), getTIC(b));
+      case ORIGINAL:
+        return 0;
     }
     throw new IllegalArgumentException("Should not reach. Not all cases of sort are considered");
   }
