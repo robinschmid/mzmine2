@@ -163,8 +163,8 @@ public class SpectraPlot extends EChartPanel {
     // set the X axis (retention time) properties
     NumberAxis xAxis = (NumberAxis) plot.getDomainAxis();
     xAxis.setNumberFormatOverride(mzFormat);
-    xAxis.setUpperMargin(0.001);
-    xAxis.setLowerMargin(0.001);
+    xAxis.setUpperMargin(0.01);
+    xAxis.setLowerMargin(0.01);
     xAxis.setTickLabelInsets(new RectangleInsets(0, 0, 20, 20));
 
     // set the Y axis (intensity) properties
@@ -516,9 +516,8 @@ public class SpectraPlot extends EChartPanel {
     if (dataSet instanceof ScanDataSet) {
       Scan scan = ((ScanDataSet) dataSet).getScan();
       MSLevel mslevel = inst.decideMSLevel(scan);
-      controller =
-          new DataPointProcessingController(inst.getProcessingQueue(mslevel), this,
-              getMainScanDataSet().getDataPoints());
+      controller = new DataPointProcessingController(inst.getProcessingQueue(mslevel), this,
+          getMainScanDataSet().getDataPoints());
       inst.addController(controller);
     }
   }
