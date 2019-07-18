@@ -58,12 +58,14 @@ import net.sf.mzmine.chartbasics.gui.swing.EChartPanel;
 import net.sf.mzmine.chartbasics.gui.wrapper.ChartViewWrapper;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.datamodel.PolarityType;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.identities.ms2.interf.AbstractMSMSIdentity;
 import net.sf.mzmine.framework.listener.DelayedDocumentListener;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.LibrarySubmitModule;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.LibrarySubmitTask;
+import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.formats.GnpsValues.Polarity;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibraryMetaDataParameters;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibrarySubmitIonParameters;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibrarySubmitParameters;
@@ -575,6 +577,12 @@ public class SpectralLibrarySubmissionWindow extends JFrame {
         } else {
           message += " (MS1)";
         }
+        // scan polarity matches?
+        if (!allScansMatchPolarity(
+            paramMeta.getParameter(LibraryMetaDataParameters.IONMODE).getValue())) {
+          message += " (POLARITY does not match scan polarity)";
+        }
+
         // show accept dialog
         if (DialogLoggerUtil.showDialogYesNo(this, "Submission?", message)) {
           // create library / submit to GNPS
@@ -598,6 +606,12 @@ public class SpectralLibrarySubmissionWindow extends JFrame {
         }
       }
     }
+  }
+
+  private boolean allScansMatchPolarity(Polarity polarity) {
+    return streamSelection().filter(ScanSelectPanel::isValidAndSelected).allMatch(
+        pn -> (polarity == Polarity.Positive && pn.getScanPolarity() == PolarityType.POSITIVE)
+            || (polarity == Polarity.Negative && pn.getScanPolarity() == PolarityType.NEGATIVE));
   }
 
   public int countSelectedIons() {

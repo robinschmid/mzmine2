@@ -54,6 +54,7 @@ import net.sf.mzmine.chartbasics.gui.swing.EChartPanel;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.MassList;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.datamodel.PolarityType;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.framework.documentfilter.DocumentSizeFilter;
 import net.sf.mzmine.main.MZmineCore;
@@ -714,6 +715,17 @@ public class ScanSelectPanel extends JPanel implements ActionListener {
   public void actionPerformed(ActionEvent e) {
     // TODO Auto-generated method stub
 
+  }
+
+  public PolarityType getScanPolarity() {
+    return getSelectedScan() == null ? null : getSelectedScan().getPolarity();
+  }
+
+  private Scan getSelectedScan() {
+    if (scans != null && !scans.isEmpty() && selectedScanI >= 0 && selectedScanI < scans.size())
+      return scans.get(selectedScanI);
+    else
+      return null;
   }
 
 }

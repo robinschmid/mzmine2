@@ -30,6 +30,7 @@
 
 package net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param;
 
+import java.util.Collection;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
@@ -81,5 +82,25 @@ public class LibrarySubmitParameters extends SimpleParameterSet {
         LOCALFILE, EXPORT_GNPS_JSON, EXPORT_MSP,
         // submit to online library
         SUBMIT_GNPS});
+  }
+
+  @Override
+  public boolean checkParameterValues(Collection<String> errorMessages) {
+    boolean check = super.checkParameterValues(errorMessages);
+
+    // at least one has to be selected: GNPS submit or local
+    if (!getParameter(LOCALFILE).getValue() && !getParameter(SUBMIT_GNPS).getValue()) {
+      errorMessages.add("Select at least one: Local library generation or GNPS submission");
+      check = false;
+    }
+    // either select one export format if local file is selected
+    if (getParameter(LOCALFILE).getValue()
+        && !(getParameter(EXPORT_GNPS_JSON).getValue() || getParameter(EXPORT_MSP).getValue())) {
+      errorMessages.add(
+          "Select at least one file format for local library: (better->) GNPS json or msp format");
+      check = false;
+    }
+
+    return check;
   }
 }
