@@ -66,7 +66,7 @@ public class GnpsValues {
   }
 
   public enum IonSource {
-    LC_ESI("LC-ESI"), DI_ESI("DI-ESI"), EI, APCI, ESI;
+    LC_ESI("LC-ESI"), DI_ESI("DI-ESI"), EI, APCI, ESI, MALDI, LDI, SIMS;
 
     private final String value;
 
