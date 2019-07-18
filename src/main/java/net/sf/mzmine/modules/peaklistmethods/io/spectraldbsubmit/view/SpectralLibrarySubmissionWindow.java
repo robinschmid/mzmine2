@@ -523,6 +523,11 @@ public class SpectralLibrarySubmissionWindow extends JFrame {
     }
   }
 
+  /**
+   * Stream all selection panel
+   * 
+   * @return
+   */
   private Stream<ScanSelectPanel> streamSelection() {
     if (pnScanSelect == null)
       return Stream.empty();
@@ -706,7 +711,7 @@ public class SpectralLibrarySubmissionWindow extends JFrame {
 
   public void setShowTitle(boolean showTitle) {
     this.showTitle = showTitle;
-    forAllCharts(c -> c.getTitle().setVisible(showTitle));
+    streamSelection().forEach(pn -> pn.setShowTitle(showTitle));
   }
 
   public void setOnlyShowOneAxis(boolean onlyShowOneAxis) {

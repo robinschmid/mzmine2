@@ -442,6 +442,8 @@ public class ScanSelectPanel extends JPanel implements ActionListener {
       case MAX_TIC:
         btnMaxTic.setSelected(true);
         break;
+      case ORIGINAL:
+        break;
     }
     createSortedScanList();
   }
