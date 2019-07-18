@@ -27,6 +27,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.text.MessageFormat;
+import java.text.NumberFormat;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -47,6 +48,7 @@ import javax.swing.UIManager;
 import javax.swing.border.LineBorder;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.Document;
+import com.google.common.base.Strings;
 import net.miginfocom.swing.MigLayout;
 import net.sf.mzmine.chartbasics.gui.swing.EChartPanel;
 import net.sf.mzmine.datamodel.DataPoint;
@@ -127,6 +129,7 @@ public class ScanSelectPanel extends JPanel implements ActionListener {
   private Scan[] scansEntry;
   private JLabel lblAdduct;
   private JPanel pnData;
+  private boolean showTitle = true;
 
   /**
    * Create the panel.
@@ -309,7 +312,7 @@ public class ScanSelectPanel extends JPanel implements ActionListener {
     if (!isFragmentScan)
       return;
 
-    if (scans != null && !scans.isEmpty()) {
+    if (scans != null && !scans.isEmpty() && selectedScanI >= 0 && selectedScanI < scans.size()) {
       Scan scan = scans.get(selectedScanI);
       double mz = scan.getPrecursorMZ();
       if (mz == 0) {
@@ -326,6 +329,39 @@ public class ScanSelectPanel extends JPanel implements ActionListener {
       // set as text
       txtCharge.setText(String.valueOf(charge));
       txtPrecursorMZ.setText(MZmineCore.getConfiguration().getMZFormat().format(mz));
+    }
+  }
+
+  public void setShowTitle(boolean showTitle) {
+    this.showTitle = showTitle;
+    addTitleToChart();
+  }
+
+  public void addTitleToChart() {
+    if (spectrumPlot == null)
+      return;
+    if (!showTitle) {
+      spectrumPlot.setTitle("", "");
+      return;
+    }
+
+    if (scans != null && !scans.isEmpty() && selectedScanI >= 0 && selectedScanI < scans.size()) {
+      NumberFormat mzFormat = MZmineCore.getConfiguration().getMZFormat();
+      NumberFormat intensityFormat = MZmineCore.getConfiguration().getIntensityFormat();
+      Scan scan = scans.get(selectedScanI);
+
+      String spectrumTitle = ScanUtils.scanToString(scan, true);
+
+      DataPoint basePeak = scan.getHighestDataPoint();
+      if (basePeak != null) {
+        spectrumTitle += ", base peak: " + mzFormat.format(basePeak.getMZ()) + " m/z ("
+            + intensityFormat.format(basePeak.getIntensity()) + ")";
+      }
+      String spectrumSubtitle = null;
+      if (!Strings.isNullOrEmpty(scan.getScanDefinition())) {
+        spectrumSubtitle = "Scan definition: " + scan.getScanDefinition();
+      }
+      spectrumPlot.setTitle(spectrumTitle, spectrumSubtitle);
     }
   }
 
@@ -515,6 +551,8 @@ public class ScanSelectPanel extends JPanel implements ActionListener {
       spectrumPlot.setMaximumSize(new Dimension(chartSize.width, 10000));
       spectrumPlot.setPreferredSize(chartSize);
       pnChart.add(spectrumPlot, BorderLayout.CENTER);
+
+      addTitleToChart();
 
       Scan scan = scans.get(selectedScanI);
       analyzeScan(scan);
