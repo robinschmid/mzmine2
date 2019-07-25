@@ -60,23 +60,22 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
   private static String del = ",";
   private static String nl = "\n";
 
-  // public static void main(String[] args) {
-  // new GNPSResultsAnalysisTask(new File(
-  // "D:\\Daten2\\UCSD\\IIN
-  // paper\\20190709_bile_acids\\FBMN_IINwithcorr\\FEATURE-BASED-MOLECULAR-NETWORKING-9103d908-download_cytoscape_data-main.graphml"),
-  // new File(
-  // "D:\\Daten2\\UCSD\\IIN
-  // paper\\20190709_bile_acids\\FBMN_IINwithcorr\\20190709_bile_acid_standards_IIN.mgf"),
-  // new File("D:\\Daten2\\UCSD\\IIN paper\\20190709_bile_acids\\FBMN_IINwithcorr\\test1.csv"))
-  // .run();
-  // }
   public static void main(String[] args) {
     new GNPSResultsAnalysisTask(new File(
-        "D:\\Dropbox\\IIN_PAPER\\Data\\Statistics test\\FEATURE-BASED-MOLECULAR-NETWORKING-9103d908-download_cytoscape_data-main.graphml"),
+        "D:\\Daten2\\UCSD\\IIN_paper\\20190709_bile_acids\\FBMN_IINwithcorr\\FEATURE-BASED-MOLECULAR-NETWORKING-9103d908-download_cytoscape_data-main.graphml"),
         new File(
-            "D:\\Dropbox\\IIN_PAPER\\Data\\Statistics test\\20190709_bile_acid_standards_IIN.mgf"),
-        new File("D:\\Dropbox\\IIN_PAPER\\Data\\Statistics test\\test2.csv")).run();
+            "D:\\Daten2\\UCSD\\IIN_paper\\20190709_bile_acids\\FBMN_IINwithcorr\\20190709_bile_acid_standards_IIN.mgf"),
+        new File("D:\\Daten2\\UCSD\\IIN_paper\\20190709_bile_acids\\FBMN_IINwithcorr\\test1.csv"))
+            .run();
   }
+  // public static void main(String[] args) {
+  // new GNPSResultsAnalysisTask(new File(
+  // "D:\\Dropbox\\IIN_PAPER\\Data\\Statistics
+  // test\\FEATURE-BASED-MOLECULAR-NETWORKING-9103d908-download_cytoscape_data-main.graphml"),
+  // new File(
+  // "D:\\Dropbox\\IIN_PAPER\\Data\\Statistics test\\20190709_bile_acid_standards_IIN.mgf"),
+  // new File("D:\\Dropbox\\IIN_PAPER\\Data\\Statistics test\\test2.csv")).run();
+  // }
 
   private File file;
   private File fileMGF;
@@ -526,8 +525,8 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
    * @param g
    * @return
    */
-  private HashMap<Integer, List<Node>> getIonNetworksByEdges(Graph g) {
-    HashMap<Integer, List<Node>> nets = new HashMap<>();
+  private HashMap<Integer, IonIdentityNetworkResult> getIonNetworksByEdges(Graph g) {
+    HashMap<Integer, IonIdentityNetworkResult> nets = new HashMap<>();
     List<Node> done = new ArrayList<>();
 
     g.nodes().forEach(n -> {
@@ -544,18 +543,19 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
    * @param done
    * @param n
    */
-  private void addAllToIonNetworks(HashMap<Integer, List<Node>> nets, List<Node> done, Node n) {
+  private void addAllToIonNetworks(HashMap<Integer, IonIdentityNetworkResult> nets, List<Node> done,
+      Node n) {
     // add to done list
     done.add(n);
 
     Integer netID = getIonNetworkID(n);
     if (netID != null) {
-      List<Node> net;
+      IonIdentityNetworkResult net;
       if (nets.containsKey(netID)) {
         net = nets.get(netID);
         net.add(n);
       } else {
-        net = new ArrayList<>();
+        net = new IonIdentityNetworkResult();
         nets.put(netID, net);
         net.add(n);
       }
