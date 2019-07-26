@@ -19,7 +19,7 @@
 package net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis;
 
 import java.util.HashMap;
-import java.util.logging.Level;
+import java.util.Map;
 import java.util.stream.Stream;
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Graph;
@@ -32,14 +32,14 @@ import net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis.GNPSResultsAnalys
 public class GnpsResults {
 
   private final Graph graph;
-  private final Graph reducedGraph;
-  private final HashMap<Integer, Integer> msmsData;
-  private final HashMap<Integer, GNPSResultsIdentity> matches;
+  private final Map<Integer, Integer> msmsData;
+  private final Map<Integer, GNPSResultsIdentity> matches;
+  private Map<Integer, IonIdentityNetworkResult> nets;
 
-  public GnpsResults(Graph graph, Graph reducedg, HashMap<Integer, Integer> msmsData,
-      HashMap<Integer, GNPSResultsIdentity> matches) {
+  public GnpsResults(Graph graph, Map<Integer, IonIdentityNetworkResult> nets,
+      Map<Integer, Integer> msmsData, Map<Integer, GNPSResultsIdentity> matches) {
     this.graph = graph;
-    this.reducedGraph = reducedg;
+    this.nets = nets;
     this.msmsData = msmsData;
     this.matches = matches;
   }
@@ -48,37 +48,22 @@ public class GnpsResults {
     return graph;
   }
 
-  public HashMap<Integer, GNPSResultsIdentity> getMatches() {
+  public Map<Integer, GNPSResultsIdentity> getMatches() {
     return matches;
   }
 
-  public HashMap<Integer, Integer> getMsmsData() {
+  public Map<Integer, Integer> getMsmsData() {
     return msmsData;
   }
 
   /**
-   * Reduced by ion identity edges
+   * ion identity networks
    * 
    * @return
    */
-  public Graph getReducedGraph() {
-    return reducedGraph;
+  public Map<Integer, IonIdentityNetworkResult> getNets() {
+    return nets;
   }
-
-
-
-  private Graph reduceGraph(Graph g) {
-    // reduce all IIN to one neutral M node
-    // NAME: M (netID)
-    // connect all GNPS edges of all nodes to the neutral M node
-
-    while (hasIINEdges(g)) {
-    }
-    graph.nodes().filter(n -> getIonIdentity(n) == null).forEach(n -> g.addNode(n));
-
-    return null;
-  }
-
 
   private Integer getIonNetworkID(Node n) {
     Object o = n.getAttribute(NodeAtt.NET_ID.key);
@@ -88,7 +73,6 @@ public class GnpsResults {
       double d = Double.valueOf(o.toString());
       return Integer.valueOf((int) d);
     } catch (Exception e) {
-      logger.log(Level.WARNING, "Cannot convert net id to int", e);
     }
     return null;
   }

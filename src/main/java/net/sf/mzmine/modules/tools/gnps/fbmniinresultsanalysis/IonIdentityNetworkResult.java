@@ -9,18 +9,35 @@ import net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis.GNPSResultsAnalys
 
 public class IonIdentityNetworkResult extends ArrayList<Node> {
 
-
+  /**
+   * Count the nodes with MS/MS which are reduced by this network to 1 neutral node
+   * 
+   * @param msmsData
+   * @param minSignals
+   * @return nodes with MS/MS - 1 (for the neutral node) (min=0)
+   */
   public int getReducedNumber(HashMap<Integer, Integer> msmsData, int minSignals) {
     if (!hasMSMS(msmsData, minSignals))
       return 0;
 
+    // count with MS/MS -1
+    return (int) Math.max(0, stream().filter(n -> hasMSMS(n, msmsData, minSignals)).count() - 1);
   }
 
+  public boolean hasMSMS(Node n, HashMap<Integer, Integer> msmsData, int minSignals) {
+    Integer signals = msmsData.get(Integer.parseInt(n.getId()));
+    return signals != null && signals >= minSignals;
+  }
+
+  /**
+   * Any node with MS/MS?
+   * 
+   * @param msmsData
+   * @param minSignals
+   * @return
+   */
   public boolean hasMSMS(HashMap<Integer, Integer> msmsData, int minSignals) {
-    return stream().anyMatch(n -> {
-      Integer signals = msmsData.get(Integer.parseInt(n.getId()));
-      return signals != null && signals >= minSignals;
-    });
+    return stream().anyMatch(n -> hasMSMS(n, msmsData, minSignals));
   }
 
   /**
