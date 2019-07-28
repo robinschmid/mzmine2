@@ -52,6 +52,12 @@ import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
 
+/**
+ * Extract statistics from GNPS IIN and FBMN results
+ * 
+ * @author Robin Schmid (robinschmid@uni-muenster.de)
+ *
+ */
 public class GNPSResultsAnalysisTask extends AbstractTask {
   private Logger logger = Logger.getLogger(this.getClass().getName());
   private static String del = ",";

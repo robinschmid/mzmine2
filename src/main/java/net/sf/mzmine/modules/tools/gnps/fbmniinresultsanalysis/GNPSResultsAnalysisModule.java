@@ -27,6 +27,13 @@ import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.Task;
 import net.sf.mzmine.util.ExitCode;
 
+/**
+ * A Module to extract statistics from ion identity networking X feature based molecular networking
+ * results (GNPS)
+ * 
+ * @author Robin Schmid (robinschmid@uni-muenster.de)
+ *
+ */
 public class GNPSResultsAnalysisModule implements MZmineProcessingModule {
 
   private static final String MODULE_NAME = "GNPS results analysis (FBMN + IIN)";

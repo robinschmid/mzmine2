@@ -22,6 +22,12 @@ import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.filenames.FileNameParameter;
 
+/**
+ * Extract statistics from gnps results
+ * 
+ * @author Robin Schmid (robinschmid@uni-muenster.de)
+ *
+ */
 public class GNPSResultsAnalysisParameters extends SimpleParameterSet {
 
   public static final FileNameParameter FILE_MGF =

@@ -29,6 +29,12 @@ import net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis.GNPSResultsAnalys
 import net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis.GNPSResultsAnalysisTask.EdgeType;
 import net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis.GNPSResultsAnalysisTask.NodeAtt;
 
+/**
+ * GNPS results from Ion Identity networking and feature based molecular networking
+ * 
+ * @author Robin Schmid (robinschmid@uni-muenster.de)
+ *
+ */
 public class GnpsResults {
 
   private final Graph graph;
