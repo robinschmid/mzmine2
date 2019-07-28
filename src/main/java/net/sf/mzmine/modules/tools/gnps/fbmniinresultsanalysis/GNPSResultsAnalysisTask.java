@@ -24,8 +24,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.MessageFormat;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -57,26 +57,26 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
   private static String del = ",";
   private static String nl = "\n";
 
-  public static void main(String[] args) {
-    new GNPSResultsAnalysisTask(new File(
-        "D:\\Daten2\\UCSD\\IIN_paper\\20190709_bile_acids\\FBMN_IINwithcorr\\FEATURE-BASED-MOLECULAR-NETWORKING-9103d908-download_cytoscape_data-main.graphml"),
-        new File(
-            "D:\\Daten2\\UCSD\\IIN_paper\\20190709_bile_acids\\FBMN_IINwithcorr\\20190709_bile_acid_standards_IIN.mgf"),
-        new File("D:\\Daten2\\UCSD\\IIN_paper\\20190709_bile_acids\\FBMN_IINwithcorr\\test2.csv"))
-            .run();
-  }
   // public static void main(String[] args) {
   // new GNPSResultsAnalysisTask(new File(
-  // "D:\\Dropbox\\IIN_PAPER\\Data\\Statistics
-  // test\\FEATURE-BASED-MOLECULAR-NETWORKING-9103d908-download_cytoscape_data-main.graphml"),
+  // "D:\\Daten2\\UCSD\\IIN_paper\\20190709_bile_acids\\FBMN_IINwithcorr\\FEATURE-BASED-MOLECULAR-NETWORKING-9103d908-download_cytoscape_data-main.graphml"),
   // new File(
-  // "D:\\Dropbox\\IIN_PAPER\\Data\\Statistics test\\20190709_bile_acid_standards_IIN.mgf"),
-  // new File("D:\\Dropbox\\IIN_PAPER\\Data\\Statistics test\\test2.csv")).run();
+  // "D:\\Daten2\\UCSD\\IIN_paper\\20190709_bile_acids\\FBMN_IINwithcorr\\20190709_bile_acid_standards_IIN.mgf"),
+  // new File("D:\\Daten2\\UCSD\\IIN_paper\\20190709_bile_acids\\FBMN_IINwithcorr\\test2.csv"))
+  // .run();
   // }
+  public static void main(String[] args) {
+    new GNPSResultsAnalysisTask(new File(
+        "D:\\Dropbox\\IIN_PAPER\\Data (old)\\Statistics test\\FEATURE-BASED-MOLECULAR-NETWORKING-9103d908-download_cytoscape_data-main.graphml"),
+        new File(
+            "D:\\Dropbox\\IIN_PAPER\\Data (old)\\Statistics test\\20190709_bile_acid_standards_IIN.mgf"),
+        new File("D:\\Dropbox\\IIN_PAPER\\Data (old)\\Statistics test\\test6.csv")).run();
+  }
 
   private File file;
   private File fileMGF;
   private File output;
+  private File outputLibrary;
 
   private AtomicDouble progress = new AtomicDouble(0);
   private ParameterSet parameters;
@@ -84,7 +84,7 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
 
 
   public enum NodeAtt {
-    IIN_ADDUCT("Best Ion", String.class), NET_ID("Annotated Adduct Feature ID",
+    IIN_ADDUCT("Best Ion", String.class), NET_ID("Annotated Adduct Features ID",
         Double.class), MS2_VERIFICATION("MS2 Verification Comment",
             String.class), NEUTRAL_MASS("neutral M mass", Double.class),;
 
@@ -218,11 +218,15 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
     Map<Integer, Integer> msmsData = res.getMsmsData();
     Map<Integer, IonIdentityNetworkResult> nets = res.getNets();
 
+    DecimalFormat perc = new DecimalFormat("0.0");
+    DecimalFormatSymbols dfs = perc.getDecimalFormatSymbols();
+    dfs.setDecimalSeparator('.');
+    perc.setDecimalFormatSymbols(dfs);
 
-    NumberFormat perc = new DecimalFormat("0.0");
     StringBuilder general = new StringBuilder();
     StringBuilder distance = new StringBuilder();
     StringBuilder adduct = new StringBuilder();
+    StringBuilder iin = new StringBuilder();
 
     Map<String, Integer> adductCount = mapAdducts(graph);
     long ions = adductCount.values().stream().mapToInt(i -> i).sum();
@@ -244,15 +248,20 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
     appendLine(general, "library matches with ion identity", ionsWithLibraryMatch);
     appendLine(general, "library matches with ion identity %",
         perc.format(ionsWithLibraryMatch / (double) ident * 100.0));
+    appendLine(general, "Ion Identity Networks", nets.size());
 
     appendLine(general);
     // write all percentages for different min signals MS/MS scan cut off
     appendLine(general,
         "Percentage of identified compounds per feature with a minimum of X signals in MS/MS spectrum");
+    appendLine(general,
+        "Nodes reduced by IIN = All nodes (with MS/MS) in a ion identity network reduced to 1 neutral molecule node");
     // MS/MS signals 0, 1,4,6
     int[] min = new int[] {0, 1, 4, 6};
     appendLine(general, "min signals", "MS/MS scans", "identified", "identified  %",
-        "singletons FBMN", "singletons IIN+FBMN", "% singletons FBMN", "% singletons IIN+FBMN");
+        "singletons FBMN", "singletons IIN+FBMN", "% singletons FBMN", "% singletons IIN+FBMN",
+        "Nodes reduced by IIN", "% nodes reduced by IIN", "Remaining nodes after IIN reduction",
+        "Possible new library spectra by IIN");
     for (int minSignals : min) {
       long msmsSpectra = minSignals == 0 ? total
           : msmsData.values().stream().filter(signals -> signals >= minSignals).count();
@@ -264,9 +273,19 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
       String ratioFBMNSingle = perc.format(singletons[0] / (double) msmsSpectra * 100.0);
       String ratioIINSingle = perc.format(singletons[1] / (double) msmsSpectra * 100.0);
 
+      // percentage of nodes reduced by iin
+      int reducedByIIN =
+          nets.values().stream().mapToInt(net -> net.getReducedNumber(msmsData, minSignals)).sum();
+      String ratioIINreduced = perc.format(reducedByIIN / (double) msmsSpectra * 100.0);
+
+      // possible new library entries
+      int newLibraryEntries = nets.values().stream()
+          .mapToInt(net -> net.countPossibleNewLibraryEntries(msmsData, minSignals, matches)).sum();
+
       // add data line
       appendLine(general, minSignals, msmsSpectra, identified, ratio, singletons[0], singletons[1],
-          ratioFBMNSingle, ratioIINSingle);
+          ratioFBMNSingle, ratioIINSingle, reducedByIIN, ratioIINreduced,
+          msmsSpectra - reducedByIIN, newLibraryEntries);
     }
 
     // #####################################################################
@@ -353,12 +372,51 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
           byN.get(i).getKey(), byN.get(i).getValue());
     }
 
+    appendSeparator(adduct);
+
+    appendLine(iin, "Ion identity networks");
+    appendLine(iin, "", "", "", "", "", "", "", "Possible library entries with n signals", "", "",
+        "");
+    appendLine(iin, "NetID", "net size", "nodes with MSMS", "identified", "all ions",
+        "ions matched library", "Reduction by", "n=3", "ions n=3", "n=4", "ions n=4", "n=6",
+        "ions n=6");
+
+    // start with largest network
+    nets.entrySet().stream()
+        .sorted((a, b) -> Integer.compare(b.getValue().size(), a.getValue().size())).forEach(e -> {
+          IonIdentityNetworkResult net = e.getValue();
+          Integer netID = e.getKey();
+          int withMSMS = net.countWithMSMS(msmsData, 0);
+          int identified = net.countIdentified(matches);
+          String matchedIons =
+              net.streamIdentifiedIonStrings(matches).sorted().collect(Collectors.joining(" | "));
+          String allIons = net.stream().map(IonIdentityNetworkResult::getIonString).sorted()
+              .collect(Collectors.joining(" | "));
+          int reduction = net.getReducedNumber(msmsData, 0);
+          int new3 = net.countPossibleNewLibraryEntries(msmsData, 3, matches);
+          int new4 = net.countPossibleNewLibraryEntries(msmsData, 4, matches);
+          int new6 = net.countPossibleNewLibraryEntries(msmsData, 6, matches);
+          String ions3 = net.streamPossibleNewLibraryEntries(msmsData, 3, matches)
+              .map(IonIdentityNetworkResult::getIonString).sorted()
+              .collect(Collectors.joining(" | "));
+          String ions4 = net.streamPossibleNewLibraryEntries(msmsData, 4, matches)
+              .map(IonIdentityNetworkResult::getIonString).sorted()
+              .collect(Collectors.joining(" | "));
+          String ions6 = net.streamPossibleNewLibraryEntries(msmsData, 6, matches)
+              .map(IonIdentityNetworkResult::getIonString).sorted()
+              .collect(Collectors.joining(" | "));
+
+          appendLine(iin, netID, net.size(), withMSMS, identified, allIons, matchedIons, reduction,
+              new3, ions3, new4, ions4, new6, ions6);
+        });
+
 
     System.out.println(general.toString());
     System.out.println(nl + nl + distance.toString());
     System.out.println(nl + nl + adduct.toString());
+    System.out.println(nl + nl + iin.toString());
 
-    writeToFile(output, general, distance, adduct);
+    writeToFile(output, general, distance, adduct, iin);
   }
 
   private Stream<Node> streamNodesWithMSMS(Graph graph, Map<Integer, Integer> msmsData,
@@ -470,7 +528,7 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
    */
   private Integer getIonNetworkID(Node n) {
     Object o = n.getAttribute(NodeAtt.NET_ID.key);
-    if (o == null)
+    if (o == null || o.toString().isEmpty())
       return null;
     try {
       double d = Double.valueOf(o.toString());
@@ -521,6 +579,7 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
     g.nodes().forEach(n -> {
       addAllToIonNetworks(nets, done, n);
     });
+    logger.info("Found " + nets.size() + " IIN");
     return nets;
   }
 
@@ -534,30 +593,33 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
    */
   private void addAllToIonNetworks(HashMap<Integer, IonIdentityNetworkResult> nets, List<Node> done,
       Node n) {
-    // add to done list
-    done.add(n);
+    // check every node only once
+    if (!done.contains(n)) {
+      // add to done list
+      done.add(n);
 
-    Integer netID = getIonNetworkID(n);
-    if (netID != null) {
-      IonIdentityNetworkResult net;
-      if (nets.containsKey(netID)) {
-        net = nets.get(netID);
-        net.add(n);
-      } else {
-        net = new IonIdentityNetworkResult();
-        nets.put(netID, net);
-        net.add(n);
-      }
-
-      // add all linked nodes and perform the same
-      streamIINLinkedNodes(n).forEach(next -> {
-        addAllToIonNetworks(nets, done, next);
-        // also add to this network if id is different...
-        Integer nextID = getIonNetworkID(n);
-        if (nextID != null && !netID.equals(nextID)) {
-          net.add(next);
+      Integer netID = getIonNetworkID(n);
+      if (netID != null) {
+        IonIdentityNetworkResult net;
+        if (nets.containsKey(netID)) {
+          net = nets.get(netID);
+          net.add(n);
+        } else {
+          net = new IonIdentityNetworkResult();
+          nets.put(netID, net);
+          net.add(n);
         }
-      });
+
+        // add all linked nodes and perform the same
+        streamIINLinkedNodes(n).forEach(next -> {
+          addAllToIonNetworks(nets, done, next);
+          // also add to this network if id is different...
+          Integer nextID = getIonNetworkID(next);
+          if (nextID != null && !netID.equals(nextID)) {
+            net.add(next);
+          }
+        });
+      }
     }
   }
 
@@ -762,7 +824,6 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
    */
   private GnpsResults importResults(File file, File fileMGF) {
     Graph graph = new MultiGraph("GNPS");
-    Graph reducedg = new MultiGraph("GNPS");
     if (importGraphData(graph, file)) {
       progress.set(0d);
       step = "Importing library matches";
@@ -915,7 +976,7 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
   // ##################################################################################
   // WRITING
   private void writeToFile(File output, StringBuilder general, StringBuilder distance,
-      StringBuilder adduct) {
+      StringBuilder adduct, StringBuilder iin) {
 
     Path path = Paths.get(output.getAbsolutePath());
     try {
@@ -923,6 +984,7 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
       text.add(general.toString());
       text.add(distance.toString());
       text.add(adduct.toString());
+      text.add(iin.toString());
       Files.write(path, text);
       logger.info("Exported all to " + output.getAbsolutePath());
     } catch (IOException e) {
