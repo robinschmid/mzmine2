@@ -243,6 +243,17 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
 
     // #####################################################################
     // identified compounds
+    // check if dataset is valid
+    long identWithMSMS =
+        matches.entrySet().stream().filter(e -> msmsData.get(e.getKey()) != null).count();
+    appendLine(general, "Valid dataset (mgf fits graphml)?", identWithMSMS == ident);
+    appendLine(general, "All library hits have MSMS in mgf", identWithMSMS == ident);
+    appendLine(general, "Library hits with MSMS in mgf %",
+        perc.format((identWithMSMS / (double) ident) * 100.0),
+        "(should be 100 %; otherwise check if graphml was result of this mgf)");
+
+
+    appendLine(general);
     appendLine(general, "total nodes", graph.getNodeCount(),
         "All nodes (might include some nodes without MS/MS scan but ion identity)");
     appendLine(general, "total nodes with MS/MS", total, "All nodes with MS/MS scan");

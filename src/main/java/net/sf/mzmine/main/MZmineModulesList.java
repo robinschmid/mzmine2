@@ -105,6 +105,8 @@ import net.sf.mzmine.modules.rawdatamethods.peakpicking.targetedpeakdetection.Ta
 import net.sf.mzmine.modules.rawdatamethods.rawdataexport.RawDataExportModule;
 import net.sf.mzmine.modules.rawdatamethods.rawdataimport.RawDataImportModule;
 import net.sf.mzmine.modules.rawdatamethods.sortdatafiles.SortDataFilesModule;
+import net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis.GNPSResultsAnalysisModule;
+import net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis.GNPSResultsMetaAnalysisModule;
 import net.sf.mzmine.modules.tools.isotopepatternpreview.IsotopePatternPreviewModule;
 import net.sf.mzmine.modules.tools.msmsspectramerge.MsMsSpectraMergeModule;
 import net.sf.mzmine.modules.tools.mzrangecalculator.MzRangeFormulaCalculatorModule;
@@ -216,6 +218,7 @@ public class MZmineModulesList {
       // Tools
       MzRangeMassCalculatorModule.class, MzRangeFormulaCalculatorModule.class,
       IsotopePatternPreviewModule.class, MsMsSpectraMergeModule.class,
+      GNPSResultsAnalysisModule.class, GNPSResultsMetaAnalysisModule.class,
 
       // all other regular MZmineModule (not MZmineRunnableModule) NOT LISTED IN MENU
       SpectraIdentificationSpectralDatabaseModule.class, LibrarySubmitModule.class,
