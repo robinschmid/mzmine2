@@ -55,7 +55,7 @@ public class GNPSResultsMetaAnalysisModule implements MZmineProcessingModule {
   public ExitCode runModule(@Nonnull MZmineProject project, @Nonnull ParameterSet parameters,
       @Nonnull Collection<Task> tasks) {
 
-    Task newTask = new GNPSResultsAnalysisTask(parameters);
+    Task newTask = new GNPSResultsMetaAnalysisTask(parameters);
     tasks.add(newTask);
 
     return ExitCode.OK;
@@ -68,7 +68,7 @@ public class GNPSResultsMetaAnalysisModule implements MZmineProcessingModule {
 
   @Override
   public @Nonnull Class<? extends ParameterSet> getParameterSetClass() {
-    return GNPSResultsAnalysisParameters.class;
+    return GNPSResultsMetaAnalysisParameters.class;
   }
 
 }

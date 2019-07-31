@@ -428,11 +428,6 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
         });
 
 
-    System.out.println(general.toString());
-    System.out.println(nl + nl + distance.toString());
-    System.out.println(nl + nl + adduct.toString());
-    System.out.println(nl + nl + iin.toString());
-
     writeToFile(output, general, distance, adduct, iin);
   }
 
@@ -917,16 +912,18 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
       List<String> replaced = lines.map(line -> {
         line = line.replaceAll("edge id=\"0\"", "edge id=\"" + counter.getAndIncrement() + "\"");
         line = line.replaceAll("edge id=\"1\"", "edge id=\"" + counter.getAndIncrement() + "\"");
+        line = line.replaceAll("edge id=\"2\"", "edge id=\"" + counter.getAndIncrement() + "\"");
+        line = line.replaceAll("edge id=\"3\"", "edge id=\"" + counter.getAndIncrement() + "\"");
+        line = line.replaceAll("edge id=\"4\"", "edge id=\"" + counter.getAndIncrement() + "\"");
         return line;
       }).collect(Collectors.toList());
       Files.write(path, replaced);
       lines.close();
-      logger.info("zero ids in graphml replaces");
+      logger.info("zero ids in graphml replaced");
     } catch (IOException e) {
       logger.log(Level.SEVERE, "graphml NOT LOADED: " + file.getAbsolutePath(), e);
       setErrorMessage("Cannot load graphml file: " + file.getAbsolutePath());
       setStatus(TaskStatus.ERROR);
-      cancel();
     }
   }
 
@@ -977,15 +974,21 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
       fs.readAll(file.getAbsolutePath());
       logger.info(() -> MessageFormat.format("GNPS results: nodes={0} edges={1}",
           graph.getNodeCount(), graph.getEdgeCount()));
-    } catch (IOException e) {
+    } catch (Exception e) {
       logger.log(Level.SEVERE, "NOT LOADED", e);
       setErrorMessage("Cannot load graphml file: " + file.getAbsolutePath());
       setStatus(TaskStatus.ERROR);
-      cancel();
       result = false;
     } finally {
-      if (fs != null)
-        fs.removeSink(graph);
+      try {
+        if (fs != null)
+          fs.removeSink(graph);
+      } catch (Exception e2) {
+        logger.log(Level.SEVERE, "NOT LOADED", e2);
+        setErrorMessage(
+            "Cannot close file sink while loading graphml file: " + file.getAbsolutePath());
+        setStatus(TaskStatus.ERROR);
+      }
     }
     return result;
   }

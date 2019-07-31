@@ -119,6 +119,11 @@ public class GNPSResultsMetaAnalysisTask extends AbstractTask {
           // run import for these files
           // target:
           File target = FileAndPathUtil.getRealFilePath(folder, sub[i].getName() + "_stats", "csv");
+          if (target.exists()) {
+            logger.info("Skipped: Results file already exists: " + target.getAbsolutePath());
+            continue;
+          }
+
           logger.info("From ... to ... " + graphml.get(0) + "  to  " + target.getAbsolutePath());
           GNPSResultsAnalysisTask task =
               new GNPSResultsAnalysisTask(new File(graphml.get(0)), new File(mgf.get(0)), target);
