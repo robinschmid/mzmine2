@@ -23,7 +23,7 @@ package net.sf.mzmine.modules.masslistmethods.ADAPchromatogrambuilder;
 import com.google.common.collect.TreeRangeSet;
 import com.google.common.collect.RangeSet;
 
-import java.util.Arrays;
+import java.util.*;
 import java.util.logging.Logger;
 
 import net.sf.mzmine.datamodel.DataPoint;
@@ -34,6 +34,7 @@ import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimplePeakList;
 import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
+import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.qualityparameters.QualityParameters;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelection;
@@ -46,10 +47,7 @@ import net.sf.mzmine.util.SortingProperty;
 
 import net.sf.mzmine.util.DataPointSorter;
 import com.google.common.collect.Range;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
+
 import java.lang.*;
 
 
@@ -67,7 +65,8 @@ public class ADAPChromatogramBuilderTask extends AbstractTask {
   private RawDataFile dataFile;
 
   // scan counter
-  private int processedPoints = 0, totalPoints;
+//  private int processedPoints = 0, totalPoints;
+  private double progress = 0.0;
   private ScanSelection scanSelection;
   private int newPeakID = 1;
   private Scan[] scans;
@@ -103,7 +102,7 @@ public class ADAPChromatogramBuilderTask extends AbstractTask {
     this.mzTolerance =
         parameters.getParameter(ADAPChromatogramBuilderParameters.mzTolerance).getValue();
     this.minimumScanSpan = parameters
-        .getParameter(ADAPChromatogramBuilderParameters.minimumScanSpan).getValue().intValue();
+        .getParameter(ADAPChromatogramBuilderParameters.minimumScanSpan).getValue();
     // this.minimumHeight = parameters
     // .getParameter(ChromatogramBuilderParameters.minimumHeight)
     // .getValue();
@@ -130,10 +129,7 @@ public class ADAPChromatogramBuilderTask extends AbstractTask {
    * @see net.sf.mzmine.taskcontrol.Task#getFinishedPercentage()
    */
   public double getFinishedPercentage() {
-    if (totalPoints == 0)
-      return 0;
-    else
-      return (double) processedPoints / totalPoints;
+    return progress;
   }
 
   public RawDataFile getDataFile() {
@@ -178,8 +174,26 @@ public class ADAPChromatogramBuilderTask extends AbstractTask {
       prevRT = s.getRetentionTime();
     }
 
+    // Check if the scans are MS1-only or MS2-only.
+    int minMsLevel = Arrays.stream(scans)
+            .mapToInt(Scan::getMSLevel)
+            .min()
+            .orElseThrow(() -> new IllegalStateException("Cannot find the minimum MS level"));
 
-    // Create new peak list
+    int maxMsLevel = Arrays.stream(scans)
+            .mapToInt(Scan::getMSLevel)
+            .max()
+            .orElseThrow(() -> new IllegalStateException("Cannot find the maximum MS level"));
+
+    if (minMsLevel != maxMsLevel) {
+      MZmineCore.getDesktop().displayMessage(null,
+              "MZmine thinks that you are running ADAP Chromatogram builder on both MS1- and MS2-scans. " +
+                      "This will likely produce wrong results. " +
+                      "Please, set the scan filter parameter to a specific MS level");
+    }
+
+
+    // Create new feature list
     newPeakList = new SimplePeakList(dataFile + " " + suffix, dataFile);
 
     // make a list of all the data points
@@ -247,19 +261,18 @@ public class ADAPChromatogramBuilderTask extends AbstractTask {
     // Stopwatch stopwatch3 = Stopwatch.createUnstarted();
 
 
-    processedPoints = 0;
-    totalPoints = simpleAllMzVals.length;
+    progress = 0.0;
+    double progressStep = (simpleAllMzVals.length > 0) ? 0.5 / simpleAllMzVals.length : 0.0;
 
     for (ExpandedDataPoint mzPeak : simpleAllMzVals) {
 
-      processedPoints++;
+      progress += progressStep;
 
       if (isCanceled()) {
         return;
       }
 
       if (mzPeak == null || Double.isNaN(mzPeak.getMZ()) || Double.isNaN(mzPeak.getIntensity())) {
-        // System.out.println("null Peak");
         continue;
       }
 
@@ -351,14 +364,18 @@ public class ADAPChromatogramBuilderTask extends AbstractTask {
     // System.out.println("making new chrom (ms): " + stopwatch2.elapsed(TimeUnit.MILLISECONDS));
 
     // finish chromatograms
-    Iterator<Range<Double>> RangeIterator = rangeSet.asRanges().iterator();
+    Set<Range<Double>> ranges = rangeSet.asRanges();
+    Iterator<Range<Double>> RangeIterator = ranges.iterator();
 
     List<ADAPChromatogram> buildingChromatograms = new ArrayList<ADAPChromatogram>();
 
+    progressStep = (ranges.size() > 0) ? 0.5 / ranges.size() : 0.0;
     while (RangeIterator.hasNext()) {
       if (isCanceled()) {
         return;
       }
+
+      progress += progressStep;
 
       Range<Double> curRangeKey = RangeIterator.next();
 
@@ -387,7 +404,7 @@ public class ADAPChromatogramBuilderTask extends AbstractTask {
     Arrays.sort(chromatograms, new PeakSorter(SortingProperty.MZ, SortingDirection.Ascending));
 
 
-    // Add the chromatograms to the new peak list
+    // Add the chromatograms to the new feature list
     for (Feature finishedPeak : chromatograms) {
       SimplePeakListRow newRow = new SimplePeakListRow(newPeakID);
       newPeakID++;
@@ -402,6 +419,8 @@ public class ADAPChromatogramBuilderTask extends AbstractTask {
 
     // Add quality parameters to peaks
     QualityParameters.calculateQualityParameters(newPeakList);
+
+    progress = 1.0;
 
     setStatus(TaskStatus.FINISHED);
 
