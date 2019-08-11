@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.modules.peaklistmethods.normalization.rtnormalizer;
+package net.sf.mzmine.modules.peaklistmethods.normalization.rtcalibration;
 
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.Parameter;
@@ -28,12 +28,12 @@ import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.RTToleranceParameter;
 
-public class RTNormalizerParameters extends SimpleParameterSet {
+public class RTCalibrationParameters extends SimpleParameterSet {
 
   public static final PeakListsParameter peakLists = new PeakListsParameter(2);
 
   public static final StringParameter suffix =
-      new StringParameter("Name suffix", "Suffix to be added to peak list name", "normalized");
+      new StringParameter("Name suffix", "Suffix to be added to feature list name", "normalized");
 
   public static final MZToleranceParameter MZTolerance = new MZToleranceParameter();
 
@@ -44,10 +44,10 @@ public class RTNormalizerParameters extends SimpleParameterSet {
       MZmineCore.getConfiguration().getIntensityFormat());
 
   public static final BooleanParameter autoRemove =
-      new BooleanParameter("Remove original peak list",
-          "If checked, original peak list will be removed and only normalized version remains");
+      new BooleanParameter("Remove original feature list",
+          "If checked, original feature list will be removed and only normalized version remains");
 
-  public RTNormalizerParameters() {
+  public RTCalibrationParameters() {
     super(new Parameter[] {peakLists, suffix, MZTolerance, RTTolerance, minHeight, autoRemove});
   }
 

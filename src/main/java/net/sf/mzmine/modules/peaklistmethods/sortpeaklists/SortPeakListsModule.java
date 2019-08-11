@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.modules.peaklistmethods.orderpeaklists;
+package net.sf.mzmine.modules.peaklistmethods.sortpeaklists;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,15 +42,15 @@ import net.sf.mzmine.taskcontrol.Task;
 import net.sf.mzmine.util.ExitCode;
 
 /**
- * This is a very simple module which reorders peak lists alphabetically
+ * This is a very simple module which reorders feature lists alphabetically
  * 
  */
-public class OrderPeakListsModule implements MZmineProcessingModule {
+public class SortPeakListsModule implements MZmineProcessingModule {
 
   private Logger logger = Logger.getLogger(this.getClass().getName());
 
-  private static final String MODULE_NAME = "Order peak lists";
-  private static final String MODULE_DESCRIPTION = "Order selected peak lists alphabetically";
+  private static final String MODULE_NAME = "Sort feature lists";
+  private static final String MODULE_DESCRIPTION = "Sort selected feature lists alphabetically";
 
   @Override
   public @Nonnull String getName() {
@@ -68,7 +68,7 @@ public class OrderPeakListsModule implements MZmineProcessingModule {
       @Nonnull Collection<Task> tasks) {
 
     List<PeakList> peakLists = Arrays.asList(parameters
-        .getParameter(OrderPeakListsParameters.peakLists).getValue().getMatchingPeakLists());
+        .getParameter(SortPeakListsParameters.peakLists).getValue().getMatchingPeakLists());
 
 
     PeakListTreeModel model = null;
@@ -81,11 +81,11 @@ public class OrderPeakListsModule implements MZmineProcessingModule {
 
     if (model == null)
       throw new MSDKRuntimeException(
-          "Cannot find peak list tree model for sorting. Different MZmine project impl?");
+          "Cannot find feature list tree model for sorting. Different MZmine project impl?");
 
     final DefaultMutableTreeNode rootNode = model.getRoot();
 
-    // Get all tree nodes that represent selected peak lists, and remove
+    // Get all tree nodes that represent selected feature lists, and remove
     // them from
     final ArrayList<DefaultMutableTreeNode> selectedNodes = new ArrayList<DefaultMutableTreeNode>();
 
@@ -108,7 +108,7 @@ public class OrderPeakListsModule implements MZmineProcessingModule {
       return ExitCode.ERROR;
     int insertPosition = Collections.min(positions);
 
-    // Sort the peak lists by name
+    // Sort the feature lists by name
     Collections.sort(selectedNodes, new Comparator<DefaultMutableTreeNode>() {
       @Override
       public int compare(DefaultMutableTreeNode o1, DefaultMutableTreeNode o2) {
@@ -133,7 +133,7 @@ public class OrderPeakListsModule implements MZmineProcessingModule {
 
   @Override
   public @Nonnull Class<? extends ParameterSet> getParameterSetClass() {
-    return OrderPeakListsParameters.class;
+    return SortPeakListsParameters.class;
   }
 
 }
