@@ -62,10 +62,7 @@ public class SpectraIdentificationResultsWindow extends JFrame {
   private boolean isCouplingZoomY;
 
   private JLabel noMatchesFound;
-
   private Font chartFont = new Font("Verdana", Font.PLAIN, 11);
-
-  private JLabel noMatchesFound;
 
   public SpectraIdentificationResultsWindow() {
     setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
