@@ -24,6 +24,7 @@ import java.util.stream.Stream;
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
+import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsIdentity;
 import net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis.GNPSResultsAnalysisTask.EdgeAtt;
 import net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis.GNPSResultsAnalysisTask.EdgeType;
@@ -38,12 +39,12 @@ import net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis.GNPSResultsAnalys
 public class GnpsResults {
 
   private final Graph graph;
-  private final Map<Integer, Integer> msmsData;
+  private final Map<Integer, DataPoint[]> msmsData;
   private final Map<Integer, GNPSResultsIdentity> matches;
   private Map<Integer, IonIdentityNetworkResult> nets;
 
   public GnpsResults(Graph graph, Map<Integer, IonIdentityNetworkResult> nets,
-      Map<Integer, Integer> msmsData, Map<Integer, GNPSResultsIdentity> matches) {
+      Map<Integer, DataPoint[]> msmsData, Map<Integer, GNPSResultsIdentity> matches) {
     this.graph = graph;
     this.nets = nets;
     this.msmsData = msmsData;
@@ -58,7 +59,7 @@ public class GnpsResults {
     return matches;
   }
 
-  public Map<Integer, Integer> getMsmsData() {
+  public Map<Integer, DataPoint[]> getMsmsData() {
     return msmsData;
   }
 
@@ -133,9 +134,9 @@ public class GnpsResults {
     return n.edges().filter(e -> !e.getNode0().getId().equals(e.getNode1().getId()));
   }
 
-  private boolean hasMSMS(Node n, HashMap<Integer, Integer> msmsData, int minSignals) {
-    Integer signals = msmsData.get(Integer.parseInt(n.getId()));
-    return signals != null && signals >= minSignals;
+  private boolean hasMSMS(Node n, HashMap<Integer, DataPoint[]> msmsData, int minSignals) {
+    DataPoint[] pds = msmsData.get(Integer.parseInt(n.getId()));
+    return pds != null && pds.length >= minSignals;
   }
 
   private boolean isIdentified(Node n, HashMap<Integer, GNPSResultsIdentity> matches) {

@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -46,11 +47,16 @@ import org.graphstream.graph.implementations.MultiGraph;
 import org.graphstream.stream.file.FileSource;
 import org.graphstream.stream.file.FileSourceGraphML;
 import com.google.common.util.concurrent.AtomicDouble;
+import net.sf.mzmine.datamodel.DataPoint;
+import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsIdentity.ATT;
+import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.formats.GnpsJsonGenerator;
+import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibrarySubmitIonParameters;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
+import net.sf.mzmine.util.files.FileAndPathUtil;
 
 /**
  * Extract statistics from GNPS IIN and FBMN results
@@ -149,6 +155,8 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
     file = parameters.getParameter(GNPSResultsAnalysisParameters.FILE).getValue();
     fileMGF = parameters.getParameter(GNPSResultsAnalysisParameters.FILE_MGF).getValue();
     output = parameters.getParameter(GNPSResultsAnalysisParameters.OUTPUT).getValue();
+    outputLibrary =
+        FileAndPathUtil.getRealFilePath(output.getParentFile(), output.getName(), ".json");
   }
 
 
@@ -157,6 +165,8 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
     this.file = file;
     this.fileMGF = fileMGF;
     this.output = output;
+    outputLibrary =
+        FileAndPathUtil.getRealFilePath(output.getParentFile(), output.getName(), ".json");
   }
 
 
@@ -189,9 +199,14 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
 
     GnpsResults res = importResults(file, fileMGF);
 
+
     if (res != null) {
+      // create library in GNPS format
+      createLibraryForGNPS(outputLibrary, res);
+
+      // TODO remove comment mode to export
       // analyse and write files
-      analyse(output, res);
+      // analyse(output, res);
 
 
       //
@@ -211,6 +226,50 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
 
 
   /**
+   * Find all IIN with identity (spectral match) and export conneted nodes as new library entries
+   * 
+   * @param outputLibrary
+   * @param res
+   */
+  private void createLibraryForGNPS(File outputLibrary, GnpsResults res) {
+    Graph graph = res.getGraph();
+    Map<Integer, GNPSResultsIdentity> matches = res.getMatches();
+    Map<Integer, DataPoint[]> msmsData = res.getMsmsData();
+    Map<Integer, IonIdentityNetworkResult> nets = res.getNets();
+    AtomicInteger totalNew = new AtomicInteger(0);
+
+    for (IonIdentityNetworkResult net : nets.values()) {
+      // has identity
+      GNPSResultsIdentity bestMatch = net.getBestLibraryMatch(matches);
+      if (bestMatch != null) {
+        net.streamPossibleNewLibraryEntries(msmsData, 0, matches)
+            .filter(node -> hasMSMS(node, msmsData, 3, 0.001)).forEach(node -> {
+              // export to library
+              int id = toIndex(node);
+              DataPoint[] signals = msmsData.get(id);
+              totalNew.getAndIncrement();
+              logger.log(Level.INFO,
+                  "new lib:" + totalNew.get() + "  Exporting node " + id + " with signals="
+                      + signals.length + "  for entry: " + bestMatch.getName() + "("
+                      + bestMatch.getResult(ATT.ADDUCT) + ")");
+              //
+              exportLibraryEntry(id, signals, bestMatch);
+            });
+      }
+    }
+  }
+
+
+  private void exportLibraryEntry(int id, DataPoint[] signals, GNPSResultsIdentity bestMatch) {
+    LibrarySubmitIonParameters param = new LibrarySubmitIonParameters();
+    
+    param.getParameter(parameter)
+    
+    GnpsJsonGenerator.generateJSON(param, signals);
+  }
+
+
+  /**
    * Analyse and output file
    * 
    * @param output
@@ -221,7 +280,7 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
   private void analyse(File output, GnpsResults res) {
     Graph graph = res.getGraph();
     Map<Integer, GNPSResultsIdentity> matches = res.getMatches();
-    Map<Integer, Integer> msmsData = res.getMsmsData();
+    Map<Integer, DataPoint[]> msmsData = res.getMsmsData();
     Map<Integer, IonIdentityNetworkResult> nets = res.getNets();
 
     DecimalFormat perc = new DecimalFormat("0.0");
@@ -281,7 +340,7 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
         "Possible new library spectra by IIN");
     for (int minSignals : min) {
       long msmsSpectra = minSignals == 0 ? total
-          : msmsData.values().stream().filter(signals -> signals >= minSignals).count();
+          : msmsData.values().stream().filter(signals -> signals.length >= minSignals).count();
 
       long identified = countIdentified(matches, msmsData, minSignals);
       String ratio = perc.format(identified / (double) msmsSpectra * 100.0);
@@ -329,7 +388,7 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
 
     for (int minSignals : min) {
       long msmsSpectra = minSignals == 0 ? total
-          : msmsData.values().stream().filter(signals -> signals >= minSignals).count();
+          : msmsData.values().stream().filter(signals -> signals.length >= minSignals).count();
       // count in distance
       int[] dist = countInDist(graph, matches, msmsData, minSignals, maxDist, true);
 
@@ -360,7 +419,7 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
 
     for (int minSignals : min) {
       long msmsSpectra = minSignals == 0 ? total
-          : msmsData.values().stream().filter(signals -> signals >= minSignals).count();
+          : msmsData.values().stream().filter(signals -> signals.length >= minSignals).count();
       // count in distance
       int[] distIIN = countInDist(graph, matches, msmsData, minSignals, maxDist, false);
 
@@ -431,20 +490,20 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
     writeToFile(output, general, distance, adduct, iin);
   }
 
-  private Stream<Node> streamNodesWithMSMS(Graph graph, Map<Integer, Integer> msmsData,
+  private Stream<Node> streamNodesWithMSMS(Graph graph, Map<Integer, DataPoint[]> msmsData,
       int minSignals) {
     return graph.nodes().filter(n -> hasMSMS(n, msmsData, minSignals));
   }
 
   private Stream<Node> streamIdentifiedNodes(Graph graph, Map<Integer, GNPSResultsIdentity> matches,
-      Map<Integer, Integer> msmsData, int minSignals) {
+      Map<Integer, DataPoint[]> msmsData, int minSignals) {
     return streamNodesWithMSMS(graph, msmsData, minSignals).filter(n -> isIdentified(n, matches));
   }
 
   private long countIdentified(Map<Integer, GNPSResultsIdentity> matches,
-      Map<Integer, Integer> msmsData, int minSignals) {
+      Map<Integer, DataPoint[]> msmsData, int minSignals) {
     return matches.entrySet().stream().map(e -> msmsData.get(e.getKey())).filter(Objects::nonNull)
-        .filter(signals -> signals >= minSignals).count();
+        .filter(signals -> signals.length >= minSignals).count();
   }
 
 
@@ -508,7 +567,7 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
    * @param minSignals
    * @return
    */
-  private Map<String, Integer> mapAdductsWithMSMS(Graph graph, Map<Integer, Integer> msmsData,
+  private Map<String, Integer> mapAdductsWithMSMS(Graph graph, Map<Integer, DataPoint[]> msmsData,
       int minSignals) {
     Map<String, Integer> map = new HashMap<>();
     graph.nodes().filter(n -> hasMSMS(n, msmsData, minSignals)).map(n -> getIonIdentity(n))
@@ -527,7 +586,8 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
    * @param minSignals
    * @return
    */
-  private int countAdductsWithMSMS(Graph graph, Map<Integer, Integer> msmsData, int minSignals) {
+  private int countAdductsWithMSMS(Graph graph, Map<Integer, DataPoint[]> msmsData,
+      int minSignals) {
     return mapAdductsWithMSMS(graph, msmsData, minSignals).values().stream().mapToInt(i -> i).sum();
   }
 
@@ -646,7 +706,7 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
    * @return
    */
   private int[] countInDist(Graph graph, Map<Integer, GNPSResultsIdentity> matches,
-      Map<Integer, Integer> msmsData, int minSignals, int maxDist, boolean onlyCosineEdges) {
+      Map<Integer, DataPoint[]> msmsData, int minSignals, int maxDist, boolean onlyCosineEdges) {
 
     int[] indist = new int[maxDist + 1];
     indist[0] = matches.size();
@@ -688,7 +748,7 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
    * @param b
    */
   private void addAllInDistance(List<Integer> list, Graph graph, Node n,
-      Map<Integer, Integer> msmsData, int minSignals, int dist, boolean onlyCosineEdges) {
+      Map<Integer, DataPoint[]> msmsData, int minSignals, int dist, boolean onlyCosineEdges) {
     // no need to check for MSMS data here - later when add to list
     if (n != null) {
       // stream only cosine edges (FBMN) or all edges (IIN FBMN)
@@ -716,7 +776,7 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
   }
 
 
-  private long[] countSingletons(Graph graph, Map<Integer, Integer> msmsData, int minSignals) {
+  private long[] countSingletons(Graph graph, Map<Integer, DataPoint[]> msmsData, int minSignals) {
     // 0 count all FBMN singletons (no IIN edges, with msms data)
     // 1 count all IIN FBMN singletons (with msms data)
     return new long[] {
@@ -790,9 +850,29 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
     return n.edges().filter(e -> !e.getNode0().getId().equals(e.getNode1().getId()));
   }
 
-  private boolean hasMSMS(Node n, Map<Integer, Integer> msmsData, int minSignals) {
-    Integer signals = msmsData.get(Integer.parseInt(n.getId()));
-    return signals != null && signals >= minSignals;
+  /**
+   * minimum signals above cutOffFromMaxIntensity
+   * 
+   * @param n
+   * @param msmsData
+   * @param minSignals
+   * @param cutOffFromMaxIntensity 0.01 is 1 % of max intensity
+   * @return
+   */
+  private boolean hasMSMS(Node n, Map<Integer, DataPoint[]> msmsData, int minSignals,
+      final double cutOffFromMaxIntensity) {
+    DataPoint[] signals = msmsData.get(Integer.parseInt(n.getId()));
+    if (signals == null)
+      return false;
+    final double max = Arrays.stream(signals).mapToDouble(DataPoint::getIntensity).max().orElse(0);
+    long dp = Arrays.stream(signals).mapToDouble(DataPoint::getIntensity)
+        .filter(intensity -> intensity >= max * cutOffFromMaxIntensity).count();
+    return dp >= minSignals;
+  }
+
+  private boolean hasMSMS(Node n, Map<Integer, DataPoint[]> msmsData, int minSignals) {
+    DataPoint[] signals = msmsData.get(Integer.parseInt(n.getId()));
+    return signals != null && signals.length >= minSignals;
   }
 
   private boolean isIdentified(Node n, Map<Integer, GNPSResultsIdentity> matches) {
@@ -808,15 +888,15 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
   }
 
   private void logImportResults(Graph graph, Map<Integer, GNPSResultsIdentity> matches,
-      Map<Integer, Integer> msmsData) {
+      Map<Integer, DataPoint[]> msmsData) {
     logger.info(MessageFormat.format("Results: nodes={0}  edges={1}", graph.getNodeCount(),
         graph.getEdgeCount()));
     logger.info(MessageFormat.format("library matches={0}", matches.size()));
     logger.info(MessageFormat.format("features with MS/MS scan {0} (of {1})", msmsData.size(),
         graph.getNodeCount()));
 
-    long min4 = msmsData.values().stream().filter(signals -> signals >= 4).count();
-    long min6 = msmsData.values().stream().filter(signals -> signals >= 6).count();
+    long min4 = msmsData.values().stream().filter(signals -> signals.length >= 4).count();
+    long min6 = msmsData.values().stream().filter(signals -> signals.length >= 6).count();
 
     logger.info(MessageFormat.format("features with MS/MS scan and min 4 signals  {0} (of {1})",
         min4, graph.getNodeCount()));
@@ -844,7 +924,7 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
       HashMap<Integer, GNPSResultsIdentity> matches = importLibraryMatches(graph);
 
       logger.info("Starting to import MS2 data from mgf");
-      HashMap<Integer, Integer> msmsData = importMSMSfromMgf(fileMGF);
+      HashMap<Integer, DataPoint[]> msmsData = importMSMSfromMgf(fileMGF);
 
       //
       HashMap<Integer, IonIdentityNetworkResult> nets = getIonNetworksByEdges(graph);
@@ -863,30 +943,34 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
    * @param file an mgf file that was used for GNPS feature based molecular networking
    * @return Map<featureID, signals in MS/MS>
    */
-  private HashMap<Integer, Integer> importMSMSfromMgf(File file) {
-    HashMap<Integer, Integer> msmsData = new HashMap<>();
+  private HashMap<Integer, DataPoint[]> importMSMSfromMgf(File file) {
+    HashMap<Integer, DataPoint[]> msmsData = new HashMap<>();
     Path path = Paths.get(file.getAbsolutePath());
     try (Stream<String> lines = Files.lines(path)) {
       AtomicInteger featureID = new AtomicInteger(-1);
-      AtomicInteger signals = new AtomicInteger(0);
+      List<DataPoint> spec = new ArrayList<>();
+      AtomicBoolean readSignals = new AtomicBoolean(false);
 
       lines.forEach(line -> {
         // find next FEATURE_ID=1
         if (featureID.get() == -1 && line.startsWith("FEATURE_ID=")) {
           featureID.set(Integer.parseInt(line.split("=")[1]));
         } else if (line.startsWith("MSLEVEL")) {
-          // start counting signals (only counts signals if signals!=-1
-          signals.set(0);
+          // restart array
+          spec.clear();
+          readSignals.getAndSet(true);
         } else if (line.startsWith("END IONS")) {
           // create
-          if (signals.get() >= 0) {
-            msmsData.put(featureID.get(), signals.get());
+          msmsData.put(featureID.get(), spec.toArray(new DataPoint[0]));
+          readSignals.getAndSet(false);
+        } else if (readSignals.get()) {
+          try {
+            String[] split = line.split(" ");
+            spec.add(
+                new SimpleDataPoint(Double.parseDouble(split[0]), Double.parseDouble(split[1])));
+          } catch (Exception e) {
+            logger.log(Level.WARNING, "Cannot read mz / intensity from mgf: " + line, e);
           }
-          // reset
-          signals.set(-1);
-          featureID.set(-1);
-        } else if (signals.get() != -1) {
-          signals.getAndIncrement();
         }
       });
       return msmsData;

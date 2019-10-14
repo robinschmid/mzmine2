@@ -22,9 +22,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.stream.Stream;
 import org.graphstream.graph.Node;
+import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsIdentity.ATT;
 import net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis.GNPSResultsAnalysisTask.NodeAtt;
 
 /**
@@ -42,7 +45,7 @@ public class IonIdentityNetworkResult extends ArrayList<Node> {
    * @param minSignals
    * @return nodes with MS/MS - 1 (for the neutral node) (min=0)
    */
-  public int getReducedNumber(Map<Integer, Integer> msmsData, int minSignals) {
+  public int getReducedNumber(Map<Integer, DataPoint[]> msmsData, int minSignals) {
     if (!hasMSMS(msmsData, minSignals))
       return 0;
 
@@ -58,7 +61,7 @@ public class IonIdentityNetworkResult extends ArrayList<Node> {
    * @param matches
    * @return count of nodes which were not identified but are connected to an identity via IIN
    */
-  public int countPossibleNewLibraryEntries(Map<Integer, Integer> msmsData, int minSignals,
+  public int countPossibleNewLibraryEntries(Map<Integer, DataPoint[]> msmsData, int minSignals,
       Map<Integer, GNPSResultsIdentity> matches) {
     return (int) streamPossibleNewLibraryEntries(msmsData, minSignals, matches).count();
   }
@@ -71,7 +74,7 @@ public class IonIdentityNetworkResult extends ArrayList<Node> {
    * @param matches
    * @return nodes which were not identified but are connected to an identity via IIN
    */
-  public Stream<Node> streamPossibleNewLibraryEntries(Map<Integer, Integer> msmsData,
+  public Stream<Node> streamPossibleNewLibraryEntries(Map<Integer, DataPoint[]> msmsData,
       int minSignals, Map<Integer, GNPSResultsIdentity> matches) {
     if (!hasMSMS(msmsData, minSignals) || !hasLibraryMatch(matches))
       return Stream.empty();
@@ -91,6 +94,19 @@ public class IonIdentityNetworkResult extends ArrayList<Node> {
     return stream().map(n -> toIndex(n)).anyMatch(id -> matches.get(id) != null);
   }
 
+  /**
+   * get highest matching library match
+   * 
+   * @param matches
+   * @return
+   */
+  public GNPSResultsIdentity getBestLibraryMatch(Map<Integer, GNPSResultsIdentity> matches) {
+    return stream().map(n -> toIndex(n)).map(id -> matches.get(id)).filter(Objects::nonNull)
+        .max((a, b) -> Double.compare((double) a.getResult(ATT.LIBRARY_MATCH_SCORE),
+            (double) b.getResult(ATT.LIBRARY_MATCH_SCORE)))
+        .orElse(null);
+  }
+
   public int countIdentified(Map<Integer, GNPSResultsIdentity> matches) {
     return (int) streamIdentified(matches).count();
   }
@@ -103,11 +119,11 @@ public class IonIdentityNetworkResult extends ArrayList<Node> {
     return stream().filter(n -> matches.get(toIndex(n)) != null);
   }
 
-  public Stream<Node> streamWithMSMS(Map<Integer, Integer> msmsData, int minSignals) {
+  public Stream<Node> streamWithMSMS(Map<Integer, DataPoint[]> msmsData, int minSignals) {
     return stream().filter(n -> hasMSMS(n, msmsData, minSignals));
   }
 
-  public int countWithMSMS(Map<Integer, Integer> msmsData, int minSignals) {
+  public int countWithMSMS(Map<Integer, DataPoint[]> msmsData, int minSignals) {
     return (int) streamWithMSMS(msmsData, minSignals).count();
   }
 
@@ -131,9 +147,9 @@ public class IonIdentityNetworkResult extends ArrayList<Node> {
     return Integer.parseInt(n.getId());
   }
 
-  public static boolean hasMSMS(Node n, Map<Integer, Integer> msmsData, int minSignals) {
-    Integer signals = msmsData.get(Integer.parseInt(n.getId()));
-    return signals != null && signals >= minSignals;
+  public static boolean hasMSMS(Node n, Map<Integer, DataPoint[]> msmsData, int minSignals) {
+    DataPoint[] signals = msmsData.get(Integer.parseInt(n.getId()));
+    return signals != null && signals.length >= minSignals;
   }
 
   /**
@@ -143,7 +159,7 @@ public class IonIdentityNetworkResult extends ArrayList<Node> {
    * @param minSignals
    * @return
    */
-  public boolean hasMSMS(Map<Integer, Integer> msmsData, int minSignals) {
+  public boolean hasMSMS(Map<Integer, DataPoint[]> msmsData, int minSignals) {
     return stream().anyMatch(n -> hasMSMS(n, msmsData, minSignals));
   }
 
