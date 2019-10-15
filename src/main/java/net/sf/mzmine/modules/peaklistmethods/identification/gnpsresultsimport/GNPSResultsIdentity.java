@@ -36,6 +36,7 @@ public class GNPSResultsIdentity extends SimplePeakIdentity {
     ADDUCT("Adduct", String.class), // from GNPS library match
     PRECURSOR_MASS("precursor mass", Double.class), // precursor
     MASS_DIFF("MassDiff", Double.class), // absolute diff from gnps
+    NEUTRAL_M_MASS("neutral M mass", Double.class), // neutral mass by ion identity networking
     LIBRARY_MATCH_SCORE("MQScore", Double.class), // cosine score to library spec
     SHARED_SIGNALS("SharedPeaks", String.class), // shared signals library <-> query
     INCHI("INCHI", String.class), //

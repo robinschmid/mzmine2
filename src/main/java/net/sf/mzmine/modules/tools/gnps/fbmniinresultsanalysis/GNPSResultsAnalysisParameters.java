@@ -18,9 +18,11 @@
 
 package net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis;
 
+import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibraryMethodeMetaDataParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.filenames.FileNameParameter;
+import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
 
 /**
  * Extract statistics from gnps results
@@ -37,8 +39,13 @@ public class GNPSResultsAnalysisParameters extends SimpleParameterSet {
   public static final FileNameParameter OUTPUT =
       new FileNameParameter("Results file", "Results file", "csv");
 
+  public static final OptionalModuleParameter<LibraryMethodeMetaDataParameters> CREATE_SPECTRAL_LIB =
+      new OptionalModuleParameter<>("Create spectral library",
+          "Creates a spectral library for all nodes in an Ion Identity Network with a spectral match identity",
+          new LibraryMethodeMetaDataParameters(), true);
+
   public GNPSResultsAnalysisParameters() {
-    super(new Parameter[] {OUTPUT, FILE, FILE_MGF});
+    super(new Parameter[] {OUTPUT, FILE, FILE_MGF, CREATE_SPECTRAL_LIB});
   }
 
 }

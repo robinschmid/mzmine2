@@ -52,6 +52,8 @@ import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsIdentity.ATT;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.formats.GnpsJsonGenerator;
+import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibraryMetaDataParameters;
+import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibraryMethodeMetaDataParameters;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibrarySubmitIonParameters;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
@@ -93,12 +95,15 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
   private AtomicDouble progress = new AtomicDouble(0);
   private ParameterSet parameters;
   private String step = "Importing GNPS results for";
+  private Boolean createSpecLib;
 
 
   public enum NodeAtt {
-    IIN_ADDUCT("Best Ion", String.class), NET_ID("Annotated Adduct Features ID",
-        Double.class), MS2_VERIFICATION("MS2 Verification Comment",
-            String.class), NEUTRAL_MASS("neutral M mass", Double.class),;
+    IIN_ADDUCT("Best Ion", String.class), //
+    NET_ID("Annotated Adduct Features ID", Double.class), //
+    MS2_VERIFICATION("MS2 Verification Comment", String.class), //
+    NEUTRAL_MASS("neutral M mass", Double.class), //
+    PRECURSOR_MASS("precursor mass", Double.class);
 
     public final String key;
     public final Class c;
@@ -152,6 +157,8 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
    */
   public GNPSResultsAnalysisTask(ParameterSet parameters) {
     this.parameters = parameters;
+    createSpecLib =
+        parameters.getParameter(GNPSResultsAnalysisParameters.CREATE_SPECTRAL_LIB).getValue();
     file = parameters.getParameter(GNPSResultsAnalysisParameters.FILE).getValue();
     fileMGF = parameters.getParameter(GNPSResultsAnalysisParameters.FILE_MGF).getValue();
     output = parameters.getParameter(GNPSResultsAnalysisParameters.OUTPUT).getValue();
@@ -202,7 +209,12 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
 
     if (res != null) {
       // create library in GNPS format
-      createLibraryForGNPS(outputLibrary, res);
+      if (createSpecLib) {
+        LibraryMethodeMetaDataParameters methodParam =
+            parameters.getParameter(GNPSResultsAnalysisParameters.CREATE_SPECTRAL_LIB)
+                .getEmbeddedParameters();
+        createLibraryForGNPS(methodParam, outputLibrary, res);
+      }
 
       // TODO remove comment mode to export
       // analyse and write files
@@ -228,20 +240,30 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
   /**
    * Find all IIN with identity (spectral match) and export conneted nodes as new library entries
    * 
+   * @param methodParam
+   * 
    * @param outputLibrary
    * @param res
    */
-  private void createLibraryForGNPS(File outputLibrary, GnpsResults res) {
-    Graph graph = res.getGraph();
+  private void createLibraryForGNPS(LibraryMethodeMetaDataParameters methodParam,
+      File outputLibrary, GnpsResults res) {
+    // open file output
+
     Map<Integer, GNPSResultsIdentity> matches = res.getMatches();
     Map<Integer, DataPoint[]> msmsData = res.getMsmsData();
     Map<Integer, IonIdentityNetworkResult> nets = res.getNets();
     AtomicInteger totalNew = new AtomicInteger(0);
+    // create parameters:
+    LibraryMetaDataParameters meta = new LibraryMetaDataParameters(methodParam);
+    LibrarySubmitIonParameters param = new LibrarySubmitIonParameters();
+    param.getParameter(LibrarySubmitIonParameters.META_PARAM).setValue(meta);
 
+    // for all networks
     for (IonIdentityNetworkResult net : nets.values()) {
       // has identity
       GNPSResultsIdentity bestMatch = net.getBestLibraryMatch(matches);
       if (bestMatch != null) {
+        // all possible new library entries of this ion network
         net.streamPossibleNewLibraryEntries(msmsData, 0, matches)
             .filter(node -> hasMSMS(node, msmsData, 3, 0.001)).forEach(node -> {
               // export to library
@@ -253,18 +275,41 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
                       + signals.length + "  for entry: " + bestMatch.getName() + "("
                       + bestMatch.getResult(ATT.ADDUCT) + ")");
               //
-              exportLibraryEntry(id, signals, bestMatch);
+              exportLibraryEntry(node, id, signals, bestMatch, net, meta, param);
             });
       }
     }
+
+    // close file output
   }
 
+  private void exportLibraryEntry(Node node, int id, DataPoint[] signals,
+      GNPSResultsIdentity bestMatch, IonIdentityNetworkResult net, LibraryMetaDataParameters meta,
+      LibrarySubmitIonParameters param) {
 
-  private void exportLibraryEntry(int id, DataPoint[] signals, GNPSResultsIdentity bestMatch) {
-    LibrarySubmitIonParameters param = new LibrarySubmitIonParameters();
-    
-    param.getParameter(parameter)
-    
+    // By Library match
+    meta.getParameter(LibraryMetaDataParameters.COMPOUND_NAME)
+        .setValue(bestMatch.getResult(ATT.COMPOUND_NAME).toString());
+    meta.getParameter(LibraryMetaDataParameters.SMILES)
+        .setValue(bestMatch.getResult(ATT.SMILES).toString());
+    meta.getParameter(LibraryMetaDataParameters.INCHI)
+        .setValue(bestMatch.getResult(ATT.INCHI).toString());
+    // not given in GNPS output (graphml)
+    meta.getParameter(LibraryMetaDataParameters.FORMULA).setValue("");
+    meta.getParameter(LibraryMetaDataParameters.INCHI_AUX).setValue("");
+    meta.getParameter(LibraryMetaDataParameters.CAS).setValue("");
+    meta.getParameter(LibraryMetaDataParameters.PUBMED).setValue("");
+
+    // by IIN
+    double neutralMass = (double) bestMatch.getResult(ATT.NEUTRAL_M_MASS);
+    meta.getParameter(LibraryMetaDataParameters.EXACT_MASS).setValue(neutralMass);
+    param.getParameter(LibrarySubmitIonParameters.ADDUCT)
+        .setValue(IonIdentityNetworkResult.getIonString(node));
+    param.getParameter(LibrarySubmitIonParameters.MZ)
+        .setValue((double) node.getAttribute(NodeAtt.PRECURSOR_MASS.key));
+    param.getParameter(LibrarySubmitIonParameters.CHARGE).setValue(0);
+
+    // write
     GnpsJsonGenerator.generateJSON(param, signals);
   }
 

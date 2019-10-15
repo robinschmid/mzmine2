@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.graphstream.graph.Node;
 import net.sf.mzmine.datamodel.DataPoint;
@@ -37,6 +39,8 @@ import net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis.GNPSResultsAnalys
  *
  */
 public class IonIdentityNetworkResult extends ArrayList<Node> {
+
+  private Logger logger = Logger.getLogger(this.getClass().getName());
 
   /**
    * Count the nodes with MS/MS which are reduced by this network to 1 neutral node
@@ -101,10 +105,23 @@ public class IonIdentityNetworkResult extends ArrayList<Node> {
    * @return
    */
   public GNPSResultsIdentity getBestLibraryMatch(Map<Integer, GNPSResultsIdentity> matches) {
-    return stream().map(n -> toIndex(n)).map(id -> matches.get(id)).filter(Objects::nonNull)
+    GNPSResultsIdentity result = stream().map(n -> matches.get(toIndex(n))).filter(Objects::nonNull)
         .max((a, b) -> Double.compare((double) a.getResult(ATT.LIBRARY_MATCH_SCORE),
             (double) b.getResult(ATT.LIBRARY_MATCH_SCORE)))
         .orElse(null);
+    if (result == null)
+      return null;
+    else {
+      StringBuilder s = new StringBuilder();
+      s.append(
+          "Best: " + String.format("0.000", (double) result.getResult(ATT.LIBRARY_MATCH_SCORE)));
+      s.append(" of: ");
+      s.append(stream().map(n -> matches.get(toIndex(n))).filter(Objects::nonNull)
+          .map(res -> String.format("0.000", (double) res.getResult(ATT.LIBRARY_MATCH_SCORE)))
+          .collect(Collectors.joining(",")));
+      logger.info(s.toString());
+      return result;
+    }
   }
 
   public int countIdentified(Map<Integer, GNPSResultsIdentity> matches) {

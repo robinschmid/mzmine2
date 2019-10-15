@@ -98,9 +98,10 @@ public class LibraryMetaDataParameters extends SimpleParameterSet {
       new DoubleParameter("RT", "Retention time", MZmineCore.getConfiguration().getRTFormat(), 0d),
       false);
 
-  // is not used: this would override MZ (the precursor MZ)
-  // public static final DoubleParameter MOLECULE_MASS = new DoubleParameter("MOLECULEMASS",
-  // "Exact precursor m/z", MZmineCore.getConfiguration().getMZFormat(), 0d);
+  protected LibraryMetaDataParameters(Parameter<?> parameters[]) {
+    super(parameters);
+  }
+
   public LibraryMetaDataParameters() {
     super(new Parameter[] {
         // Always set
@@ -111,4 +112,26 @@ public class LibraryMetaDataParameters extends SimpleParameterSet {
         // optional
         SMILES, INCHI, INCHI_AUX, CAS, PUBMED});
   }
+
+  /**
+   * Create full parameter set and copy values
+   * 
+   * @param methodParam
+   */
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  public LibraryMetaDataParameters(LibraryMetaDataParameters methodParam) {
+    this();
+    // copy all values
+    for (Parameter p : getParameters()) {
+      try {
+        if (methodParam.getParameter(p) != null) {
+          Parameter p2 = methodParam.getParameter(p);
+          p.setValue(p2.getValue());
+        }
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+  }
+
 }
