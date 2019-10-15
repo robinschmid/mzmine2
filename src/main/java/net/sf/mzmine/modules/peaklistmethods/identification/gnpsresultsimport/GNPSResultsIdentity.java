@@ -27,18 +27,27 @@ import net.sf.mzmine.datamodel.impl.SimplePeakIdentity;
  */
 public class GNPSResultsIdentity extends SimplePeakIdentity {
   public enum ATT {
+    COMPOUND_SOURCE("Compound_Source", String.class), // isolated, ...
+    DATA_COLLECTOR("Data_Collector", String.class), //
+    PI("PI", String.class), //
+    COMPONENT_INDEX("componentindex", Integer.class), //
     CLUSTER_INDEX("cluster index", Integer.class), // GNPS cluster - similarity
     COMPOUND_NAME("Compound_Name", String.class), // library match
     ADDUCT("Adduct", String.class), // from GNPS library match
+    PRECURSOR_MASS("precursor mass", Double.class), // precursor
     MASS_DIFF("MassDiff", Double.class), // absolute diff from gnps
     LIBRARY_MATCH_SCORE("MQScore", Double.class), // cosine score to library spec
     SHARED_SIGNALS("SharedPeaks", String.class), // shared signals library <-> query
-    INCHI("INCHI", String.class), SMILES("Smiles", String.class), // structures
-    IONSOURCE("Ion_Source", String.class), IONMODE("IonMode",
-        String.class), INSTRUMENT("Instrument", String.class), // instrument
+    INCHI("INCHI", String.class), //
+    SMILES("Smiles", String.class), // structures
+    IONSOURCE("Ion_Source", String.class), //
+    IONMODE("IonMode", String.class), //
+    INSTRUMENT("Instrument", String.class), // instrument
+    LIBRARY_CLASS("Library_Class", String.class), //
     GNPS_LIBRARY_URL("GNPSLibraryURL", String.class), // link to library entry
     GNPS_NETWORK_URL("GNPSLinkout_Network", String.class), // link to network
-    GNPS_CLUSTER_URL("GNPSLinkout_Cluster", String.class); // link to cluster
+    GNPS_CLUSTER_URL("GNPSLinkout_Cluster", String.class), // link to cluster
+    SPECTRUM_ID("SpectrumID", String.class); // spectrum id
 
     private String key;
     private Class c;
