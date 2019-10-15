@@ -18,7 +18,9 @@
 
 package net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -247,8 +249,6 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
    */
   private void createLibraryForGNPS(LibraryMethodeMetaDataParameters methodParam,
       File outputLibrary, GnpsResults res) {
-    // open file output
-
     Map<Integer, GNPSResultsIdentity> matches = res.getMatches();
     Map<Integer, DataPoint[]> msmsData = res.getMsmsData();
     Map<Integer, IonIdentityNetworkResult> nets = res.getNets();
@@ -258,32 +258,50 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
     LibrarySubmitIonParameters param = new LibrarySubmitIonParameters();
     param.getParameter(LibrarySubmitIonParameters.META_PARAM).setValue(meta);
 
-    // for all networks
-    for (IonIdentityNetworkResult net : nets.values()) {
-      // has identity
-      GNPSResultsIdentity bestMatch = net.getBestLibraryMatch(matches);
-      if (bestMatch != null) {
-        // all possible new library entries of this ion network
-        net.streamPossibleNewLibraryEntries(msmsData, 0, matches)
-            .filter(node -> hasMSMS(node, msmsData, 3, 0.001)).forEach(node -> {
-              // export to library
-              int id = toIndex(node);
-              DataPoint[] signals = msmsData.get(id);
-              totalNew.getAndIncrement();
-              logger.log(Level.INFO,
-                  "new lib:" + totalNew.get() + "  Exporting node " + id + " with signals="
-                      + signals.length + "  for entry: " + bestMatch.getName() + "("
-                      + bestMatch.getResult(ATT.ADDUCT) + ")");
-              //
-              exportLibraryEntry(node, id, signals, bestMatch, net, meta, param);
-            });
-      }
+    try {
+      if (!outputLibrary.getParentFile().exists())
+        outputLibrary.getParentFile().mkdirs();
+    } catch (Exception e) {
+      logger.log(Level.SEVERE, "Cannot create folder " + file.getParent(), e);
     }
 
-    // close file output
+    // open file output
+    try (BufferedWriter writer = new BufferedWriter((new FileWriter(outputLibrary, false)))) {
+
+      // for all networks
+      for (IonIdentityNetworkResult net : nets.values()) {
+        // has identity
+        GNPSResultsIdentity bestMatch = net.getBestLibraryMatch(matches);
+        if (bestMatch != null) {
+          // all possible new library entries of this ion network
+          net.streamPossibleNewLibraryEntries(msmsData, 0, matches)
+              .filter(node -> hasMSMS(node, msmsData, 3, 0.001)).forEach(node -> {
+                // export to library
+                int id = toIndex(node);
+                DataPoint[] signals = msmsData.get(id);
+                totalNew.getAndIncrement();
+                logger.log(Level.INFO,
+                    "new lib:" + totalNew.get() + "  Exporting node " + id + " with signals="
+                        + signals.length + "  for entry: " + bestMatch.getName() + "("
+                        + bestMatch.getResult(ATT.ADDUCT) + ")");
+                //
+                String entry = exportLibraryEntry(node, id, signals, bestMatch, net, meta, param);
+                try {
+                  writer.write(entry);
+                } catch (IOException e) {
+                  logger.log(Level.SEVERE,
+                      "Error while writing " + entry + " to " + outputLibrary.getAbsolutePath(), e);
+                }
+              });
+        }
+      }
+      // close file output automatically
+    } catch (Exception e) {
+      logger.log(Level.SEVERE, "Error while writing to " + outputLibrary.getAbsolutePath(), e);
+    }
   }
 
-  private void exportLibraryEntry(Node node, int id, DataPoint[] signals,
+  private String exportLibraryEntry(Node node, int id, DataPoint[] signals,
       GNPSResultsIdentity bestMatch, IonIdentityNetworkResult net, LibraryMetaDataParameters meta,
       LibrarySubmitIonParameters param) {
 
@@ -310,7 +328,7 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
     param.getParameter(LibrarySubmitIonParameters.CHARGE).setValue(0);
 
     // write
-    GnpsJsonGenerator.generateJSON(param, signals);
+    return GnpsJsonGenerator.generateJSON(param, signals);
   }
 
 
