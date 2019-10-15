@@ -70,6 +70,7 @@ import net.sf.mzmine.util.files.FileAndPathUtil;
  */
 public class GNPSResultsAnalysisTask extends AbstractTask {
   private Logger logger = Logger.getLogger(this.getClass().getName());
+  private static final DecimalFormat scoreFormat = new DecimalFormat("0.000");
   private static String del = ",";
   private static String nl = "\n";
 
@@ -98,6 +99,8 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
   private ParameterSet parameters;
   private String step = "Importing GNPS results for";
   private Boolean createSpecLib;
+  private double minMatchScoreGNPS;
+  private Boolean createSummary;
 
 
   public enum NodeAtt {
@@ -159,6 +162,10 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
    */
   public GNPSResultsAnalysisTask(ParameterSet parameters) {
     this.parameters = parameters;
+    minMatchScoreGNPS =
+        parameters.getParameter(GNPSResultsAnalysisParameters.MIN_MATCH_SCORE).getValue();
+    createSummary =
+        parameters.getParameter(GNPSResultsAnalysisParameters.CREATE_SUMMARY).getValue();
     createSpecLib =
         parameters.getParameter(GNPSResultsAnalysisParameters.CREATE_SPECTRAL_LIB).getValue();
     file = parameters.getParameter(GNPSResultsAnalysisParameters.FILE).getValue();
@@ -218,9 +225,9 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
         createLibraryForGNPS(methodParam, outputLibrary, res);
       }
 
-      // TODO remove comment mode to export
       // analyse and write files
-      // analyse(output, res);
+      if (createSummary)
+        analyse(output, res);
 
 
       //
@@ -272,7 +279,8 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
       for (IonIdentityNetworkResult net : nets.values()) {
         // has identity
         GNPSResultsIdentity bestMatch = net.getBestLibraryMatch(matches);
-        if (bestMatch != null) {
+        // >min match score
+        if (bestMatch != null && bestMatch.getMatchScore() >= minMatchScoreGNPS) {
           // all possible new library entries of this ion network
           net.streamPossibleNewLibraryEntries(msmsData, 0, matches)
               .filter(node -> hasMSMS(node, msmsData, 3, 0.001)).forEach(node -> {
@@ -311,6 +319,14 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
       GNPSResultsIdentity bestMatch, IonIdentityNetworkResult net, LibraryMetaDataParameters meta,
       LibrarySubmitIonParameters param) {
 
+    String description = meta.getParameter(LibraryMetaDataParameters.DESCRIPTION).getValue();
+
+    String combinedDescription =
+        "created by [IIN] (GNPS score=" + scoreFormat.format(bestMatch.getMatchScore()) + ", "
+            + bestMatch.getResult(ATT.ADDUCT) + "), " + description + ", original lib entry: "
+            + bestMatch.getResult(ATT.GNPS_LIBRARY_URL);
+    meta.getParameter(LibraryMetaDataParameters.DESCRIPTION).setValue(combinedDescription);
+
     // By Library match
     meta.getParameter(LibraryMetaDataParameters.COMPOUND_NAME)
         .setValue(bestMatch.getResult(ATT.COMPOUND_NAME).toString());
@@ -334,7 +350,12 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
     param.getParameter(LibrarySubmitIonParameters.CHARGE).setValue(0);
 
     // write
-    return GnpsJsonGenerator.generateJSON(param, signals);
+    String json = GnpsJsonGenerator.generateJSON(param, signals);
+
+    // reset
+    meta.getParameter(LibraryMetaDataParameters.DESCRIPTION).setValue(description);
+
+    return json;
   }
 
 
