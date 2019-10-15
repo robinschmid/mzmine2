@@ -43,7 +43,7 @@ public class LibraryMethodeMetaDataParameters extends LibraryMetaDataParameters 
   public LibraryMethodeMetaDataParameters() {
     super(new Parameter[] {
         // Always set
-        MS_LEVEL, PI, DATA_COLLECTOR, DESCRIPTION, COMPOUND_NAME, EXACT_MASS, EXPORT_RT,
-        INSTRUMENT_NAME, INSTRUMENT, ION_SOURCE, ACQUISITION, IONMODE, FRAGMENTATION_METHOD});
+        MS_LEVEL, PI, DATA_COLLECTOR, DESCRIPTION, EXPORT_RT, INSTRUMENT_NAME, INSTRUMENT,
+        ION_SOURCE, ACQUISITION, IONMODE, FRAGMENTATION_METHOD});
   }
 }

@@ -282,22 +282,28 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
                 totalNew.getAndIncrement();
                 logger.log(Level.INFO,
                     "new lib:" + totalNew.get() + "  Exporting node " + id + " with signals="
-                        + signals.length + "  for entry: " + bestMatch.getName() + "("
-                        + bestMatch.getResult(ATT.ADDUCT) + ")");
+                        + signals.length + "  for entry: " + bestMatch.getName() + " old->new ("
+                        + bestMatch.getResult(ATT.ADDUCT) + "->"
+                        + IonIdentityNetworkResult.getIonString(node) + ")");
                 //
                 String entry = exportLibraryEntry(node, id, signals, bestMatch, net, meta, param);
                 try {
                   writer.write(entry);
+                  writer.write(System.lineSeparator());
                 } catch (IOException e) {
                   logger.log(Level.SEVERE,
                       "Error while writing " + entry + " to " + outputLibrary.getAbsolutePath(), e);
+                  e.printStackTrace();
                 }
               });
         }
       }
+
+      logger.info(totalNew.get() + " added new entries to " + outputLibrary.getAbsolutePath());
       // close file output automatically
     } catch (Exception e) {
       logger.log(Level.SEVERE, "Error while writing to " + outputLibrary.getAbsolutePath(), e);
+      e.printStackTrace();
     }
   }
 
@@ -924,7 +930,7 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
    */
   private boolean hasMSMS(Node n, Map<Integer, DataPoint[]> msmsData, int minSignals,
       final double cutOffFromMaxIntensity) {
-    DataPoint[] signals = msmsData.get(Integer.parseInt(n.getId()));
+    DataPoint[] signals = msmsData.get(toIndex(n));
     if (signals == null)
       return false;
     final double max = Arrays.stream(signals).mapToDouble(DataPoint::getIntensity).max().orElse(0);
@@ -1016,7 +1022,7 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
 
       lines.forEach(line -> {
         // find next FEATURE_ID=1
-        if (featureID.get() == -1 && line.startsWith("FEATURE_ID=")) {
+        if (line.startsWith("FEATURE_ID=")) {
           featureID.set(Integer.parseInt(line.split("=")[1]));
         } else if (line.startsWith("MSLEVEL")) {
           // restart array

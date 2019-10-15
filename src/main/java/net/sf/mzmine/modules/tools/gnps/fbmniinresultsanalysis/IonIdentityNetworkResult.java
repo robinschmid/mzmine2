@@ -18,6 +18,7 @@
 
 package net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,7 +30,6 @@ import java.util.stream.Stream;
 import org.graphstream.graph.Node;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsIdentity;
-import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsIdentity.ATT;
 import net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis.GNPSResultsAnalysisTask.NodeAtt;
 
 /**
@@ -41,6 +41,7 @@ import net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis.GNPSResultsAnalys
 public class IonIdentityNetworkResult extends ArrayList<Node> {
 
   private Logger logger = Logger.getLogger(this.getClass().getName());
+  private static final DecimalFormat f = new DecimalFormat("0.000");
 
   /**
    * Count the nodes with MS/MS which are reduced by this network to 1 neutral node
@@ -106,19 +107,15 @@ public class IonIdentityNetworkResult extends ArrayList<Node> {
    */
   public GNPSResultsIdentity getBestLibraryMatch(Map<Integer, GNPSResultsIdentity> matches) {
     GNPSResultsIdentity result = stream().map(n -> matches.get(toIndex(n))).filter(Objects::nonNull)
-        .max((a, b) -> Double.compare((double) a.getResult(ATT.LIBRARY_MATCH_SCORE),
-            (double) b.getResult(ATT.LIBRARY_MATCH_SCORE)))
-        .orElse(null);
+        .max((a, b) -> Double.compare(a.getMatchScore(), b.getMatchScore())).orElse(null);
     if (result == null)
       return null;
     else {
       StringBuilder s = new StringBuilder();
-      s.append(
-          "Best: " + String.format("0.000", (double) result.getResult(ATT.LIBRARY_MATCH_SCORE)));
+      s.append("Best: " + f.format(result.getMatchScore()));
       s.append(" of: ");
       s.append(stream().map(n -> matches.get(toIndex(n))).filter(Objects::nonNull)
-          .map(res -> String.format("0.000", (double) res.getResult(ATT.LIBRARY_MATCH_SCORE)))
-          .collect(Collectors.joining(",")));
+          .map(res -> f.format(res.getMatchScore())).collect(Collectors.joining(",")));
       logger.info(s.toString());
       return result;
     }
