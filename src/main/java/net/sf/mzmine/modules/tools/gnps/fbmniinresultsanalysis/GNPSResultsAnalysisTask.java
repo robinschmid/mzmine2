@@ -282,7 +282,7 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
         // >min match score
         if (bestMatch != null && bestMatch.getMatchScore() >= minMatchScoreGNPS) {
           // all possible new library entries of this ion network
-          net.streamPossibleNewLibraryEntries(msmsData, 0, matches)
+          net.stream().filter(node -> !node.equals(bestMatch))
               .filter(node -> hasMSMS(node, msmsData, 3, 0.001)).forEach(node -> {
                 // export to library
                 int id = toIndex(node);
@@ -328,8 +328,8 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
     meta.getParameter(LibraryMetaDataParameters.DESCRIPTION).setValue(combinedDescription);
 
     // By Library match
-    meta.getParameter(LibraryMetaDataParameters.COMPOUND_NAME)
-        .setValue(bestMatch.getResult(ATT.COMPOUND_NAME).toString());
+    String newName = bestMatch.getResult(ATT.COMPOUND_NAME).toString() + " [IIN based]";
+    meta.getParameter(LibraryMetaDataParameters.COMPOUND_NAME).setValue(newName);
     meta.getParameter(LibraryMetaDataParameters.SMILES)
         .setValue(bestMatch.getResult(ATT.SMILES).toString());
     meta.getParameter(LibraryMetaDataParameters.INCHI)
@@ -596,7 +596,6 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
         .filter(signals -> signals.length >= minSignals).count();
   }
 
-
   /**
    * Count all library matches with an ion identity based on MS1
    * 
@@ -608,8 +607,6 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
     return matches.keySet().stream().map(Object::toString)
         .filter(id -> getIonIdentity(graph.getNode(id)) != null).count();
   }
-
-
 
   /**
    * sorted by name
@@ -631,7 +628,6 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
     return adductCount.entrySet().stream()
         .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()));
   }
-
 
   /**
    * Count adducts of different ion identities
