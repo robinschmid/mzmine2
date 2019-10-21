@@ -18,9 +18,7 @@
 
 package net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -51,12 +49,10 @@ import org.graphstream.stream.file.FileSourceGraphML;
 import com.google.common.util.concurrent.AtomicDouble;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
+import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsIdentity.ATT;
-import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.formats.GnpsJsonGenerator;
-import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibraryMetaDataParameters;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibraryMethodeMetaDataParameters;
-import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibrarySubmitIonParameters;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
@@ -222,7 +218,9 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
         LibraryMethodeMetaDataParameters methodParam =
             parameters.getParameter(GNPSResultsAnalysisParameters.CREATE_SPECTRAL_LIB)
                 .getEmbeddedParameters();
-        createLibraryForGNPS(methodParam, outputLibrary, res);
+        GNPSLibraryBatchExportTask libTask =
+            new GNPSLibraryBatchExportTask(methodParam, outputLibrary, res, minMatchScoreGNPS);
+        MZmineCore.getTaskController().addTask(libTask);
       }
 
       // analyse and write files
@@ -245,118 +243,6 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
     }
   }
 
-
-  /**
-   * Find all IIN with identity (spectral match) and export conneted nodes as new library entries
-   * 
-   * @param methodParam
-   * 
-   * @param outputLibrary
-   * @param res
-   */
-  private void createLibraryForGNPS(LibraryMethodeMetaDataParameters methodParam,
-      File outputLibrary, GnpsResults res) {
-    Map<Integer, GNPSResultsIdentity> matches = res.getMatches();
-    Map<Integer, DataPoint[]> msmsData = res.getMsmsData();
-    Map<Integer, IonIdentityNetworkResult> nets = res.getNets();
-    AtomicInteger totalNew = new AtomicInteger(0);
-    // create parameters:
-    LibraryMetaDataParameters meta = new LibraryMetaDataParameters(methodParam);
-    LibrarySubmitIonParameters param = new LibrarySubmitIonParameters();
-    param.getParameter(LibrarySubmitIonParameters.META_PARAM).setValue(meta);
-
-    try {
-      if (!outputLibrary.getParentFile().exists())
-        outputLibrary.getParentFile().mkdirs();
-    } catch (Exception e) {
-      logger.log(Level.SEVERE, "Cannot create folder " + file.getParent(), e);
-    }
-
-    // open file output
-    try (BufferedWriter writer = new BufferedWriter((new FileWriter(outputLibrary, false)))) {
-
-      // for all networks
-      for (IonIdentityNetworkResult net : nets.values()) {
-        // has identity
-        GNPSResultsIdentity bestMatch = net.getBestLibraryMatch(matches);
-        // >min match score
-        if (bestMatch != null && bestMatch.getMatchScore() >= minMatchScoreGNPS) {
-          // all possible new library entries of this ion network
-          net.stream().filter(node -> !node.equals(bestMatch))
-              .filter(node -> hasMSMS(node, msmsData, 3, 0.001)).forEach(node -> {
-                // export to library
-                int id = toIndex(node);
-                DataPoint[] signals = msmsData.get(id);
-                totalNew.getAndIncrement();
-                logger.log(Level.INFO,
-                    "new lib:" + totalNew.get() + "  Exporting node " + id + " with signals="
-                        + signals.length + "  for entry: " + bestMatch.getName() + " old->new ("
-                        + bestMatch.getResult(ATT.ADDUCT) + "->"
-                        + IonIdentityNetworkResult.getIonString(node) + ")");
-                //
-                String entry = exportLibraryEntry(node, id, signals, bestMatch, net, meta, param);
-                try {
-                  writer.write(entry);
-                  writer.write(System.lineSeparator());
-                } catch (IOException e) {
-                  logger.log(Level.SEVERE,
-                      "Error while writing " + entry + " to " + outputLibrary.getAbsolutePath(), e);
-                  e.printStackTrace();
-                }
-              });
-        }
-      }
-
-      logger.info(totalNew.get() + " added new entries to " + outputLibrary.getAbsolutePath());
-      // close file output automatically
-    } catch (Exception e) {
-      logger.log(Level.SEVERE, "Error while writing to " + outputLibrary.getAbsolutePath(), e);
-      e.printStackTrace();
-    }
-  }
-
-  private String exportLibraryEntry(Node node, int id, DataPoint[] signals,
-      GNPSResultsIdentity bestMatch, IonIdentityNetworkResult net, LibraryMetaDataParameters meta,
-      LibrarySubmitIonParameters param) {
-
-    String description = meta.getParameter(LibraryMetaDataParameters.DESCRIPTION).getValue();
-
-    String combinedDescription =
-        "created by [IIN] (GNPS score=" + scoreFormat.format(bestMatch.getMatchScore()) + ", "
-            + bestMatch.getResult(ATT.ADDUCT) + "), " + description + ", original lib entry: "
-            + bestMatch.getResult(ATT.GNPS_LIBRARY_URL);
-    meta.getParameter(LibraryMetaDataParameters.DESCRIPTION).setValue(combinedDescription);
-
-    // By Library match
-    String newName = bestMatch.getResult(ATT.COMPOUND_NAME).toString() + " [IIN based]";
-    meta.getParameter(LibraryMetaDataParameters.COMPOUND_NAME).setValue(newName);
-    meta.getParameter(LibraryMetaDataParameters.SMILES)
-        .setValue(bestMatch.getResult(ATT.SMILES).toString());
-    meta.getParameter(LibraryMetaDataParameters.INCHI)
-        .setValue(bestMatch.getResult(ATT.INCHI).toString());
-    // not given in GNPS output (graphml)
-    meta.getParameter(LibraryMetaDataParameters.FORMULA).setValue("");
-    meta.getParameter(LibraryMetaDataParameters.INCHI_AUX).setValue("");
-    meta.getParameter(LibraryMetaDataParameters.CAS).setValue("");
-    meta.getParameter(LibraryMetaDataParameters.PUBMED).setValue("");
-
-    // by IIN
-    double neutralMass = (double) bestMatch.getResult(ATT.NEUTRAL_M_MASS);
-    meta.getParameter(LibraryMetaDataParameters.EXACT_MASS).setValue(neutralMass);
-    param.getParameter(LibrarySubmitIonParameters.ADDUCT)
-        .setValue(IonIdentityNetworkResult.getIonString(node));
-    param.getParameter(LibrarySubmitIonParameters.MZ)
-        .setValue((double) node.getAttribute(NodeAtt.PRECURSOR_MASS.key));
-    param.getParameter(LibrarySubmitIonParameters.CHARGE).setValue(0);
-
-    // write
-    String json = GnpsJsonGenerator.generateJSON(param, signals);
-
-    // reset
-    meta.getParameter(LibraryMetaDataParameters.DESCRIPTION).setValue(description);
-
-    return json;
-  }
 
 
   /**
