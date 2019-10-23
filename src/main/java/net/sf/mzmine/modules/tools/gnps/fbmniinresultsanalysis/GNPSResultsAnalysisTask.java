@@ -40,6 +40,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.io.FileUtils;
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
@@ -218,9 +219,21 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
         LibraryMethodeMetaDataParameters methodParam =
             parameters.getParameter(GNPSResultsAnalysisParameters.CREATE_SPECTRAL_LIB)
                 .getEmbeddedParameters();
-        GNPSLibraryBatchExportTask libTask =
-            new GNPSLibraryBatchExportTask(methodParam, outputLibrary, res, minMatchScoreGNPS);
+        GNPSLibraryBatchExportTask libTask = new GNPSLibraryBatchExportTask(methodParam,
+            fileMGF.getName(), outputLibrary, res, minMatchScoreGNPS);
         MZmineCore.getTaskController().addTask(libTask);
+
+        // copy mgf to new folder
+        if (!fileMGF.getParentFile().equals(outputLibrary.getParentFile())) {
+          File source = fileMGF;
+          File dest = FileAndPathUtil.getRealFilePath(outputLibrary.getParentFile(),
+              source.getName(), ".mgf");
+          try {
+            FileUtils.copyDirectory(source, dest);
+          } catch (IOException e) {
+            logger.log(Level.WARNING, "Cannot copy mgf to new folder", e);
+          }
+        }
       }
 
       // analyse and write files

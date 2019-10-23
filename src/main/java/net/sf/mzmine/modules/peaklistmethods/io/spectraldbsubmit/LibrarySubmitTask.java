@@ -51,7 +51,7 @@ import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
 import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.DataPoint;
-import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.formats.GnpsJsonGenerator;
+import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.formats.GnpsLibraryGenerator;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.formats.MSPEntryGenerator;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.GnpsLibrarySubmitParameters;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibrarySubmitIonParameters;
@@ -148,7 +148,7 @@ public class LibrarySubmitTask extends AbstractTask {
       if (dps != null && dps.length > 2) {
         // export / submit json?
         if (fileJson != null || submitGNPS) {
-          String json = GnpsJsonGenerator.generateJSON(param, dps);
+          String json = GnpsLibraryGenerator.generateJSON(param, dps);
           log.info(json);
           if (saveLocal && fileJson != null) {
             if (writeToLocalGnpsJsonFile(fileJson, json))

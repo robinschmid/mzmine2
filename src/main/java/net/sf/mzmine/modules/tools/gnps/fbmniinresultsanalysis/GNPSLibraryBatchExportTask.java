@@ -14,22 +14,23 @@ import org.graphstream.graph.Node;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsIdentity.ATT;
-import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.formats.GnpsJsonGenerator;
+import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.formats.GnpsLibraryGenerator;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibraryMetaDataParameters;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibraryMethodeMetaDataParameters;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibrarySubmitIonParameters;
 import net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis.GNPSResultsAnalysisTask.NodeAtt;
 import net.sf.mzmine.taskcontrol.AbstractTask;
+import net.sf.mzmine.util.files.FileAndPathUtil;
 
 public class GNPSLibraryBatchExportTask extends AbstractTask {
   private Logger logger = Logger.getLogger(this.getClass().getName());
   private static final DecimalFormat scoreFormat = new DecimalFormat("0.000");
-  private static String del = "\t";
+  private static String tab = "\t";
   private static String nl = "\n";
 
   // batch import header
   // tab separated
-  public static final String HEADER =
+  public static final String HEADER_BATCH =
       "FILENAME,SEQ,COMPOUND_NAME,MOLECULEMASS,INSTRUMENT,IONSOURCE,EXTRACTSCAN,SMILES,INCHI,INCHIAUX,CHARGE,IONMODE,PUBMED,ACQUISITION,EXACTMASS,DATACOLLECTOR,ADDUCT,INTEREST,LIBQUALITY,GENUS,SPECIES,STRAIN,CASNUMBER,PI";
 
 
@@ -37,11 +38,15 @@ public class GNPSLibraryBatchExportTask extends AbstractTask {
   private File outputLibrary;
   private GnpsResults res;
   private double minMatchScoreGNPS;
+  private File outputLibraryBatch;
+  private String mgfName;
 
-  public GNPSLibraryBatchExportTask(LibraryMethodeMetaDataParameters methodParam,
+  public GNPSLibraryBatchExportTask(LibraryMethodeMetaDataParameters methodParam, String mgfName,
       File outputLibrary, GnpsResults res, double minMatchScoreGNPS) {
     this.methodParam = methodParam;
+    this.mgfName = mgfName;
     this.outputLibrary = outputLibrary;
+    outputLibraryBatch = FileAndPathUtil.getRealFilePath(outputLibrary, "tsv");
     this.res = res;
     this.minMatchScoreGNPS = minMatchScoreGNPS;
   }
@@ -73,6 +78,7 @@ public class GNPSLibraryBatchExportTask extends AbstractTask {
     AtomicInteger totalNew = new AtomicInteger(0);
     // create parameters:
     LibraryMetaDataParameters meta = new LibraryMetaDataParameters(methodParam);
+    String description = meta.getParameter(LibraryMetaDataParameters.DESCRIPTION).getValue();
     LibrarySubmitIonParameters param = new LibrarySubmitIonParameters();
     param.getParameter(LibrarySubmitIonParameters.META_PARAM).setValue(meta);
 
@@ -84,7 +90,11 @@ public class GNPSLibraryBatchExportTask extends AbstractTask {
     }
 
     // open file output
-    try (BufferedWriter writer = new BufferedWriter((new FileWriter(outputLibrary, false)))) {
+    try (BufferedWriter json = new BufferedWriter((new FileWriter(outputLibrary, false)));
+        BufferedWriter gnpsBatch = new BufferedWriter(new FileWriter(outputLibraryBatch, true))) {
+      // export batch header
+      gnpsBatch.write(HEADER_BATCH.replaceAll(",", tab));
+      gnpsBatch.write(nl);
 
       // for all networks
       for (IonIdentityNetworkResult net : nets.values()) {
@@ -104,16 +114,17 @@ public class GNPSLibraryBatchExportTask extends AbstractTask {
                         + signals.length + "  for entry: " + bestMatch.getName() + " old->new ("
                         + bestMatch.getResult(ATT.ADDUCT) + "->"
                         + IonIdentityNetworkResult.getIonString(node) + ")");
-                //
-                String entry = exportLibraryEntry(node, id, signals, bestMatch, net, meta, param);
-                try {
-                  writer.write(entry);
-                  writer.write(System.lineSeparator());
-                } catch (IOException e) {
-                  logger.log(Level.SEVERE,
-                      "Error while writing " + entry + " to " + outputLibrary.getAbsolutePath(), e);
-                  e.printStackTrace();
-                }
+
+                // map all parameters
+                createEntryParameters(node, bestMatch, meta, param);
+                // json export
+                exportJsonLibraryEntry(json, param, signals);
+                // GNPS batch library export file:
+                exportGNPSBatchLibraryEntry(gnpsBatch, param, mgfName, toIndex(node));
+
+
+                // reset description as it is changed for every entry
+                meta.getParameter(LibraryMetaDataParameters.DESCRIPTION).setValue(description);
               });
         }
       }
@@ -126,9 +137,52 @@ public class GNPSLibraryBatchExportTask extends AbstractTask {
     }
   }
 
-  private String exportLibraryEntry(Node node, int id, DataPoint[] signals,
-      GNPSResultsIdentity bestMatch, IonIdentityNetworkResult net, LibraryMetaDataParameters meta,
-      LibrarySubmitIonParameters param) {
+  private String exportGNPSBatchLibraryEntry(BufferedWriter writer,
+      LibrarySubmitIonParameters param, String mgfName, int specIndex) {
+
+    // write
+    String batchRow = GnpsLibraryGenerator.generateBatchRow(param, mgfName, specIndex);
+
+    // write it
+    try {
+      writer.write(batchRow);
+      writer.write(nl);
+    } catch (IOException e) {
+      logger.log(Level.SEVERE, "Error while writing GNPS batch row " + batchRow + " to "
+          + outputLibraryBatch.getAbsolutePath(), e);
+      e.printStackTrace();
+    }
+    return batchRow;
+  }
+
+  private String exportJsonLibraryEntry(BufferedWriter writer, LibrarySubmitIonParameters param,
+      DataPoint[] signals) {
+    // write
+    String json = GnpsLibraryGenerator.generateJSON(param, signals);
+
+    // write it
+    try {
+      writer.write(json);
+      writer.write(nl);
+    } catch (IOException e) {
+      logger.log(Level.SEVERE,
+          "Error while writing " + json + " to " + outputLibrary.getAbsolutePath(), e);
+      e.printStackTrace();
+    }
+    return json;
+  }
+
+  /**
+   * Create the entries parameters for export
+   * 
+   * @param node
+   * @param bestMatch
+   * @param meta
+   * @param param is changed and also the return value
+   * @return
+   */
+  private LibrarySubmitIonParameters createEntryParameters(Node node, GNPSResultsIdentity bestMatch,
+      LibraryMetaDataParameters meta, LibrarySubmitIonParameters param) {
 
     String description = meta.getParameter(LibraryMetaDataParameters.DESCRIPTION).getValue();
 
@@ -159,14 +213,7 @@ public class GNPSLibraryBatchExportTask extends AbstractTask {
     param.getParameter(LibrarySubmitIonParameters.MZ)
         .setValue((double) node.getAttribute(NodeAtt.PRECURSOR_MASS.key));
     param.getParameter(LibrarySubmitIonParameters.CHARGE).setValue(0);
-
-    // write
-    String json = GnpsJsonGenerator.generateJSON(param, signals);
-
-    // reset
-    meta.getParameter(LibraryMetaDataParameters.DESCRIPTION).setValue(description);
-
-    return json;
+    return param;
   }
 
 

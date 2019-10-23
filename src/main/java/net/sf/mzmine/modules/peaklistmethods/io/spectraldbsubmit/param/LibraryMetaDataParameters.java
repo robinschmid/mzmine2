@@ -72,15 +72,13 @@ public class LibraryMetaDataParameters extends SimpleParameterSet {
       new StringParameter("COMPOUND_NAME", "", "", true);
   public static final StringParameter PI =
       new StringParameter("PI", "Principal investigator", "", true);
-  public static final StringParameter DATACOLLECTOR =
+  public static final StringParameter DATA_COLLECTOR =
       new StringParameter("DATACOLLECTOR", "", "", true);
 
   public static final StringParameter FRAGMENTATION_METHOD =
       new StringParameter("FRAGMENTATION_METHOD", "", "", false);
   public static final StringParameter INSTRUMENT_NAME =
       new StringParameter("INSTRUMENT_NAME", "", "", false);
-  public static final StringParameter DATA_COLLECTOR =
-      new StringParameter("DATACOLLECTOR", "", "", false);
   public static final StringParameter PUBMED = new StringParameter("PUBMED", "", "", false);
   public static final StringParameter INCHI_AUX = new StringParameter("INCHIAUX", "", "", false);
   public static final StringParameter INCHI =
