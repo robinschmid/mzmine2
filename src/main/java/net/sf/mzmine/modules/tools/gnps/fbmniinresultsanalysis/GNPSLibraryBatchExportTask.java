@@ -94,9 +94,12 @@ public class GNPSLibraryBatchExportTask extends AbstractTask {
     // open file output
     try (BufferedWriter json = new BufferedWriter((new FileWriter(outputLibrary, false)));
         BufferedWriter gnpsBatch = new BufferedWriter(new FileWriter(outputLibraryBatch, true))) {
-      // export batch header
-      gnpsBatch.write(HEADER_BATCH.replaceAll(",", tab));
-      gnpsBatch.write(nl);
+      // export batch header only if file does not exist
+      // otherwise append
+      if (!outputLibraryBatch.exists()) {
+        gnpsBatch.write(HEADER_BATCH.replaceAll(",", tab));
+        gnpsBatch.write(nl);
+      }
 
       // for all networks
       for (IonIdentityNetworkResult net : nets.values()) {
