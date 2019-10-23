@@ -161,9 +161,10 @@ public class GnpsLibraryGenerator {
             : v);
     s.append(tab);
     // MOLECULEMASS = exact ion m/z
-    s.append((v =
-        mzForm.format(param.getParameter(LibrarySubmitIonParameters.MZ).getValue()).isEmpty() ? "0"
-            : v));
+    s.append(
+        (v = mzForm.format(param.getParameter(LibrarySubmitIonParameters.MZ).getValue())).isEmpty()
+            ? "0"
+            : v);
     s.append(tab);
     s.append((v = meta.getParameter(LibraryMetaDataParameters.INSTRUMENT).getValue().toString())
         .isEmpty() ? NA : v);
@@ -227,7 +228,6 @@ public class GnpsLibraryGenerator {
     s.append((v = meta.getParameter(LibraryMetaDataParameters.CAS).getValue()).isEmpty() ? NA : v);
     s.append(tab);
     s.append((v = meta.getParameter(LibraryMetaDataParameters.PI).getValue()).isEmpty() ? NA : v);
-    s.append(tab);
 
     return s.toString();
   }

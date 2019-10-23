@@ -228,10 +228,12 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
           File source = fileMGF;
           File dest = FileAndPathUtil.getRealFilePath(outputLibrary.getParentFile(),
               source.getName(), ".mgf");
-          try {
-            FileUtils.copyDirectory(source, dest);
-          } catch (IOException e) {
-            logger.log(Level.WARNING, "Cannot copy mgf to new folder", e);
+          if (!dest.exists()) {
+            try {
+              FileUtils.copyFile(source, dest);
+            } catch (IOException e) {
+              logger.log(Level.WARNING, "Cannot copy mgf to new folder", e);
+            }
           }
         }
       }

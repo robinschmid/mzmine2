@@ -20,6 +20,7 @@ import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibraryMe
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibrarySubmitIonParameters;
 import net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis.GNPSResultsAnalysisTask.NodeAtt;
 import net.sf.mzmine.taskcontrol.AbstractTask;
+import net.sf.mzmine.taskcontrol.TaskStatus;
 import net.sf.mzmine.util.files.FileAndPathUtil;
 
 public class GNPSLibraryBatchExportTask extends AbstractTask {
@@ -53,7 +54,7 @@ public class GNPSLibraryBatchExportTask extends AbstractTask {
 
   @Override
   public String getTaskDescription() {
-    return "";
+    return "json and batch export of GNPS library from FBMNxIIN results";
   }
 
   @Override
@@ -71,6 +72,7 @@ public class GNPSLibraryBatchExportTask extends AbstractTask {
    */
   @Override
   public void run() {
+    setStatus(TaskStatus.PROCESSING);
 
     Map<Integer, GNPSResultsIdentity> matches = res.getMatches();
     Map<Integer, DataPoint[]> msmsData = res.getMsmsData();
@@ -134,7 +136,12 @@ public class GNPSLibraryBatchExportTask extends AbstractTask {
     } catch (Exception e) {
       logger.log(Level.SEVERE, "Error while writing to " + outputLibrary.getAbsolutePath(), e);
       e.printStackTrace();
+      setStatus(TaskStatus.ERROR);
+      setErrorMessage("Error while writing to " + outputLibrary.getAbsolutePath());
+      return;
     }
+
+    setStatus(TaskStatus.FINISHED);
   }
 
   private String exportGNPSBatchLibraryEntry(BufferedWriter writer,
