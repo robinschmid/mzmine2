@@ -120,11 +120,11 @@ public class LibraryMetaDataParameters extends SimpleParameterSet {
   public LibraryMetaDataParameters(LibraryMetaDataParameters methodParam) {
     this();
     // copy all values
-    for (Parameter p : getParameters()) {
+    for (Parameter p : methodParam.getParameters()) {
       try {
-        if (methodParam.getParameter(p) != null) {
-          Parameter p2 = methodParam.getParameter(p);
-          p.setValue(p2.getValue());
+        if (this.getParameter(p) != null) {
+          Parameter targetP = this.getParameter(p);
+          targetP.setValue(p.getValue());
         }
       } catch (Exception e) {
         e.printStackTrace();

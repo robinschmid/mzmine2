@@ -108,29 +108,28 @@ public class GNPSLibraryBatchExportTask extends AbstractTask {
         // >min match score
         if (bestMatch != null && bestMatch.getMatchScore() >= minMatchScoreGNPS) {
           // all possible new library entries of this ion network
-          net.stream().filter(node -> !node.equals(bestMatch))
-              .filter(node -> hasMSMS(node, msmsData, 3, 0.001)).forEach(node -> {
-                // export to library
-                int id = toIndex(node);
-                DataPoint[] signals = msmsData.get(id);
-                totalNew.getAndIncrement();
-                logger.log(Level.INFO,
-                    "new lib:" + totalNew.get() + "  Exporting node " + id + " with signals="
-                        + signals.length + "  for entry: " + bestMatch.getName() + " old->new ("
-                        + bestMatch.getResult(ATT.ADDUCT) + "->"
-                        + IonIdentityNetworkResult.getIonString(node) + ")");
+          net.stream().filter(node -> hasMSMS(node, msmsData, 3, 0.001)).forEach(node -> {
+            // export to library
+            int id = toIndex(node);
+            DataPoint[] signals = msmsData.get(id);
+            totalNew.getAndIncrement();
+            logger.log(Level.INFO,
+                "new lib:" + totalNew.get() + "  Exporting node " + id + " with signals="
+                    + signals.length + "  for entry: " + bestMatch.getName() + " old->new ("
+                    + bestMatch.getResult(ATT.ADDUCT) + "->"
+                    + IonIdentityNetworkResult.getIonString(node) + ")");
 
-                // map all parameters
-                createEntryParameters(node, bestMatch, meta, param);
-                // json export
-                exportJsonLibraryEntry(json, param, signals);
-                // GNPS batch library export file:
-                exportGNPSBatchLibraryEntry(gnpsBatch, param, mgfName, toIndex(node));
+            // map all parameters
+            createEntryParameters(node, bestMatch, meta, param);
+            // json export
+            exportJsonLibraryEntry(json, param, signals);
+            // GNPS batch library export file:
+            exportGNPSBatchLibraryEntry(gnpsBatch, param, mgfName, toIndex(node));
 
 
-                // reset description as it is changed for every entry
-                meta.getParameter(LibraryMetaDataParameters.DESCRIPTION).setValue(description);
-              });
+            // reset description as it is changed for every entry
+            meta.getParameter(LibraryMetaDataParameters.DESCRIPTION).setValue(description);
+          });
         }
       }
 
@@ -203,7 +202,10 @@ public class GNPSLibraryBatchExportTask extends AbstractTask {
     meta.getParameter(LibraryMetaDataParameters.DESCRIPTION).setValue(combinedDescription);
 
     // By Library match
-    String newName = bestMatch.getResult(ATT.COMPOUND_NAME).toString() + " [IIN based]";
+    boolean isMatchedNode = Integer.compare(bestMatch.getNodeID(), toIndex(node)) == 0;
+    String nameAddition = isMatchedNode ? " [IIN-based: Match]"
+        : " [IIN-based on: " + bestMatch.getResult(ATT.SPECTRUM_ID) + "]";
+    String newName = bestMatch.getResult(ATT.COMPOUND_NAME).toString() + nameAddition;
     meta.getParameter(LibraryMetaDataParameters.COMPOUND_NAME).setValue(newName);
     meta.getParameter(LibraryMetaDataParameters.SMILES)
         .setValue(bestMatch.getResult(ATT.SMILES).toString());

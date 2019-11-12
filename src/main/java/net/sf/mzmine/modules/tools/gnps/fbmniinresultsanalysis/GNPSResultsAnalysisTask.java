@@ -1022,7 +1022,7 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
         }
 
         // add identity
-        GNPSResultsIdentity identity = new GNPSResultsIdentity(results, compoundName, adduct);
+        GNPSResultsIdentity identity = new GNPSResultsIdentity(results, compoundName, adduct, id);
         matches.put(id, identity);
       }
 
