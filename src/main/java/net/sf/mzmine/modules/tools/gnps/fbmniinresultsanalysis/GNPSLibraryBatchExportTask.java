@@ -91,12 +91,13 @@ public class GNPSLibraryBatchExportTask extends AbstractTask {
       logger.log(Level.SEVERE, "Cannot create folder " + outputLibrary.getParent(), e);
     }
 
+    boolean writeHeader = !outputLibraryBatch.exists();
     // open file output
     try (BufferedWriter json = new BufferedWriter((new FileWriter(outputLibrary, false)));
         BufferedWriter gnpsBatch = new BufferedWriter(new FileWriter(outputLibraryBatch, true))) {
       // export batch header only if file does not exist
       // otherwise append
-      if (!outputLibraryBatch.exists()) {
+      if (writeHeader) {
         gnpsBatch.write(HEADER_BATCH.replaceAll(",", tab));
         gnpsBatch.write(nl);
       }
