@@ -432,8 +432,12 @@ public enum DBEntryField {
       return Double.parseDouble(content);
     if (getObjectClass() == Float.class)
       return Float.parseFloat(content);
-    if (getObjectClass() == Integer.class)
+    if (getObjectClass() == Integer.class) {
+      // 1+ or 1-
+      if (content.endsWith("+") || content.endsWith("-"))
+        content = content.substring(0, content.length() - 1);
       return Integer.parseInt(content);
+    }
     return content;
   }
 

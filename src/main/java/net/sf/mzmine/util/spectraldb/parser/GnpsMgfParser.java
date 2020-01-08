@@ -30,7 +30,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
-import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.AdductParser;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.util.spectraldb.entry.DBEntryField;
 import net.sf.mzmine.util.spectraldb.entry.SpectralDBEntry;
@@ -48,6 +47,8 @@ public class GnpsMgfParser extends SpectralDBParser {
   }
 
   private static Logger logger = Logger.getLogger(GnpsMgfParser.class.getName());
+  private static final String SPACE = "\\s+";
+  private static final String TAB = "\t";
 
   private enum State {
     WAIT_FOR_META, META, DATA;
@@ -106,7 +107,10 @@ public class GnpsMgfParser extends SpectralDBParser {
                     // wait for next entry
                     break;
                   case DATA:
-                    String[] data = l.split("\t");
+                    String[] data = l.split(TAB);
+                    if (data.length < 2) {
+                      data = l.split(SPACE);
+                    }
                     dps.add(new SimpleDataPoint(Double.parseDouble(data[0]),
                         Double.parseDouble(data[1])));
                     break;
@@ -128,7 +132,9 @@ public class GnpsMgfParser extends SpectralDBParser {
                                 String adductCandidate = name.substring(lastSpace + 1);
                                 // check for valid adduct with the adduct parser from export
                                 // use as adduct
-                                String adduct = AdductParser.parse(adductCandidate);
+                                // String adduct = AdductParser.parse(adductCandidate);
+                                // skip check
+                                String adduct = adductCandidate;
                                 if (adduct != null && !adduct.isEmpty())
                                   fields.put(DBEntryField.ION_TYPE, adduct);
                               }

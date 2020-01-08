@@ -21,14 +21,16 @@ package net.sf.mzmine.modules.tools.analyzelibraries;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.filenames.FileNameParameter;
+import net.sf.mzmine.parameters.parametertypes.filenames.FileNamesParameter;
 
 public class AnalyzeSpectralLibraryParameters extends SimpleParameterSet {
 
   public static final FileNameParameter output =
       new FileNameParameter("Output directory", "csv", "csv");
-  public static final FileNameParameter dataBaseFile = new FileNameParameter(
+  public static final FileNamesParameter dataBaseFile = new FileNamesParameter(
       "Spectral database file",
-      "(GNPS json, MONA json, NIST msp, JCAMP-DX jdx) Name of file that contains information for peak identification");
+      "(GNPS json, MONA json, NIST msp, JCAMP-DX jdx) Name of file that contains information for peak identification",
+      null);
 
   public AnalyzeSpectralLibraryParameters() {
     super(new Parameter[] {dataBaseFile, output});

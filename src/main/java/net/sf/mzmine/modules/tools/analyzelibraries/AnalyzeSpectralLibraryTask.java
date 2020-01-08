@@ -24,12 +24,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import net.sf.mzmine.desktop.Desktop;
 import net.sf.mzmine.desktop.impl.HeadLessDesktop;
 import net.sf.mzmine.main.MZmineCore;
@@ -47,7 +49,7 @@ class AnalyzeSpectralLibraryTask extends AbstractTask {
 
   private Logger logger = Logger.getLogger(this.getClass().getName());
 
-  private final File dataBaseFile;
+  private final File[] dataBaseFiles;
   private File output;
   private ParameterSet parameters;
   private List<AnazyleSpectralLibrarySubTask> tasks;
@@ -56,7 +58,7 @@ class AnalyzeSpectralLibraryTask extends AbstractTask {
 
   public AnalyzeSpectralLibraryTask(ParameterSet parameters) {
     this.parameters = parameters;
-    dataBaseFile =
+    dataBaseFiles =
         parameters.getParameter(AnalyzeSpectralLibraryParameters.dataBaseFile).getValue();
     output = parameters.getParameter(AnalyzeSpectralLibraryParameters.output).getValue();
     output = FileAndPathUtil.getRealFilePath(output, "csv");
@@ -78,7 +80,8 @@ class AnalyzeSpectralLibraryTask extends AbstractTask {
    */
   @Override
   public String getTaskDescription() {
-    return "Analyzing spectral library file: " + dataBaseFile;
+    return "Analyzing spectral library files: "
+        + Arrays.stream(dataBaseFiles).map(File::getName).collect(Collectors.joining(", "));
   }
 
   /**
@@ -89,7 +92,7 @@ class AnalyzeSpectralLibraryTask extends AbstractTask {
     setStatus(TaskStatus.PROCESSING);
     int count = 0;
     try {
-      tasks = parseFile(dataBaseFile);
+      tasks = parseFile(dataBaseFiles);
       totalTasks = tasks.size();
       if (!tasks.isEmpty()) {
         // wait for the tasks to finish
@@ -114,11 +117,15 @@ class AnalyzeSpectralLibraryTask extends AbstractTask {
         }
       } else {
         setStatus(TaskStatus.ERROR);
-        setErrorMessage("DB file was empty - or error while parsing " + dataBaseFile);
+        setErrorMessage("DB file was empty - or error while parsing "
+            + Arrays.stream(dataBaseFiles).map(File::getName).collect(Collectors.joining(", ")));
         return;
       }
     } catch (Exception e) {
-      logger.log(Level.SEVERE, "Could not read file " + dataBaseFile, e);
+      logger.log(Level.SEVERE,
+          "Could not read file "
+              + Arrays.stream(dataBaseFiles).map(File::getName).collect(Collectors.joining(", ")),
+          e);
       setStatus(TaskStatus.ERROR);
       setErrorMessage(e.toString());
       return;
@@ -165,48 +172,52 @@ class AnalyzeSpectralLibraryTask extends AbstractTask {
    * @param dataBaseFile
    * @return
    */
-  private List<AnazyleSpectralLibrarySubTask> parseFile(File dataBaseFile)
+  private List<AnazyleSpectralLibrarySubTask> parseFile(File[] dataBaseFiles)
       throws UnsupportedFormatException, IOException {
     //
     List<AnazyleSpectralLibrarySubTask> tasks = new ArrayList<>();
-    AutoLibraryParser parser = new AutoLibraryParser(100, new LibraryEntryProcessor() {
-      @Override
-      public void processNextEntries(List<SpectralDBEntry> list, int alreadyProcessed) {
-        // start last task
-        AnazyleSpectralLibrarySubTask task =
-            new AnazyleSpectralLibrarySubTask(dataBaseFile, alreadyProcessed + 1, list) {
 
-              @Override
-              public void anaylzeLibraryEntry(SpectralDBEntry e) {
-                String adductName = getAdductString(e);
-                // already inserted?
-                AtomicInteger counter = adducts.get(adductName);
-                if (counter == null) {
-                  adducts.put(adductName, new AtomicInteger(1));
-                } else {
-                  counter.getAndIncrement();
+    // Merge multiple files
+    for (File dbFile : dataBaseFiles) {
+      AutoLibraryParser parser = new AutoLibraryParser(100, new LibraryEntryProcessor() {
+        @Override
+        public void processNextEntries(List<SpectralDBEntry> list, int alreadyProcessed) {
+          // start last task
+          AnazyleSpectralLibrarySubTask task =
+              new AnazyleSpectralLibrarySubTask(dbFile, alreadyProcessed + 1, list) {
+
+                @Override
+                public void anaylzeLibraryEntry(SpectralDBEntry e) {
+                  String adductName = getAdductString(e);
+                  // already inserted?
+                  AtomicInteger counter = adducts.get(adductName);
+                  if (counter == null) {
+                    adducts.put(adductName, new AtomicInteger(1));
+                  } else {
+                    counter.getAndIncrement();
+                  }
                 }
-              }
 
-              private String getAdductString(SpectralDBEntry e) {
-                Optional<Object> optional = e.getField(DBEntryField.ION_TYPE);
-                String adduct = optional.map(Object::toString).orElse("");
-                // no spaces
-                adduct = adduct.replaceAll("\\s+", "");
+                private String getAdductString(SpectralDBEntry e) {
+                  Optional<Object> optional = e.getField(DBEntryField.ION_TYPE);
+                  String adduct = optional.map(Object::toString).orElse("");
+                  // no spaces
+                  adduct = adduct.replaceAll("\\s+", "");
 
-                if (adduct.isEmpty())
-                  return "NONE";
+                  if (adduct.isEmpty())
+                    return "NONE";
 
-                return adduct;
-              }
-            };
-        MZmineCore.getTaskController().addTask(task);
-        tasks.add(task);
-      }
-    });
+                  return adduct;
+                }
+              };
+          MZmineCore.getTaskController().addTask(task);
+          tasks.add(task);
+        }
+      });
 
-    // return tasks
-    parser.parse(this, dataBaseFile);
+      // return tasks
+      parser.parse(this, dbFile);
+    }
     return tasks;
   }
 
