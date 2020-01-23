@@ -12,6 +12,7 @@
 
 package net.sf.mzmine.modules.peaklistmethods.io.siriusexport;
 
+import java.awt.Window;
 import net.sf.mzmine.modules.tools.msmsspectramerge.MsMsSpectraMergeParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
@@ -24,23 +25,22 @@ import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParamete
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
 import net.sf.mzmine.util.ExitCode;
 
-import java.awt.*;
-
 
 public class SiriusExportParameters extends SimpleParameterSet {
 
   public SiriusExportParameters() {
     super(new Parameter[] {PEAK_LISTS, FILENAME, MASS_LIST, MERGE_PARAMETER, MZ_TOL, RENUMBER_ID,
         // metaMSEcorrelate or MS annotate parameters
-        NEED_ANNOTATION, EXCLUDE_MULTICHARGE, EXCLUDE_MULTIMERS, EXCLUDE_INSOURCE_FRAGMENTS,
-        // TODO experimental
-        EXPORT_CORRMS1_ONLY_ONCE});
+        NEED_ANNOTATION, EXCLUDE_MULTICHARGE, EXCLUDE_MULTIMERS, EXCLUDE_INSOURCE_FRAGMENTS});
   }
 
   // PARAMETER
 
 
-  public static final OptionalModuleParameter<MsMsSpectraMergeParameters> MERGE_PARAMETER = new OptionalModuleParameter<>("Merge MS/MS", "Merge high qualitative MS/MS into one spectrum instead of exporting all MS/MS separately.", new MsMsSpectraMergeParameters(), true);
+  public static final OptionalModuleParameter<MsMsSpectraMergeParameters> MERGE_PARAMETER =
+      new OptionalModuleParameter<>("Merge MS/MS",
+          "Merge high qualitative MS/MS into one spectrum instead of exporting all MS/MS separately.",
+          new MsMsSpectraMergeParameters(), true);
 
 
   public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter();
@@ -80,11 +80,6 @@ public class SiriusExportParameters extends SimpleParameterSet {
       "Do not export rows that were annotated as in-source fragments (run MS annotate or metaMSEcorrelate)",
       true);
 
-
-  public static final BooleanParameter EXPORT_CORRMS1_ONLY_ONCE = new BooleanParameter(
-      "EXPERIMENTAL: export corr. MS1 only once",
-      "Export correlated pseudo MS1 spectrum only once per correlation group and link to all MS2 spectra of all correlated features (run metaMSEcorrelate)",
-      false);
 
   // public static final BooleanParameter FRACTIONAL_MZ = new BooleanParameter(
   // "Fractional m/z values", "If checked, write fractional m/z values",

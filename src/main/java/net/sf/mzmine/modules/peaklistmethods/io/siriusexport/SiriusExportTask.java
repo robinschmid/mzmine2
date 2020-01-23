@@ -105,12 +105,6 @@ public class SiriusExportTask extends AbstractTask {
   private final MsMsSpectraMergeModule mergeMethod;
   private final MsMsSpectraMergeParameters mergeParameters;
 
-  /**
-   * Experimental: Export correlated MS1 only once per MS annotation network and link to all MS2 Use
-   * NetID
-   */
-  private boolean exportCorrMSOnce;
-
   // to exclude duplicates in correlated spectrum
   private MZTolerance mzTol;
 
@@ -145,8 +139,6 @@ public class SiriusExportTask extends AbstractTask {
     excludeMultimers = parameters.getParameter(SiriusExportParameters.EXCLUDE_MULTIMERS).getValue();
     needAnnotation = parameters.getParameter(SiriusExportParameters.NEED_ANNOTATION).getValue();
     // experimental
-    exportCorrMSOnce =
-        parameters.getParameter(SiriusExportParameters.EXPORT_CORRMS1_ONLY_ONCE).getValue();
     renumberID = parameters.getParameter(SiriusExportParameters.RENUMBER_ID).getValue();
 
     OptionalModuleParameter<MsMsSpectraMergeParameters> parameter =
@@ -322,7 +314,7 @@ public class SiriusExportTask extends AbstractTask {
     setStatus(TaskStatus.PROCESSING);
     try (final BufferedWriter bw = new BufferedWriter(new FileWriter(fileName, true))) {
       for (PeakListRow row : rows)
-        exportPeakListRow(row, bw, getFragmentScans(row.getRawDataFiles()));
+        exportPeakListRow(row, bw);
     } catch (IOException e) {
       setStatus(TaskStatus.ERROR);
       setErrorMessage("Could not open file " + fileName + " for writing.");
@@ -339,8 +331,6 @@ public class SiriusExportTask extends AbstractTask {
    */
   private int exportPeakList(PeakList peakList, BufferedWriter writer) throws IOException {
     // Raw data file, scan numbers
-    final HashMap<String, int[]> fragmentScans = getFragmentScans(peakList.getRawDataFiles());
-
     int exported = 0;
     for (PeakListRow row : peakList.getRows()) {
       boolean fitCharge = !excludeMultiCharge || row.getRowCharge() <= 1;
@@ -351,7 +341,7 @@ public class SiriusExportTask extends AbstractTask {
       boolean fitFragments =
           !excludeInsourceFrag || adduct == null || !adduct.getIonType().hasMods();
       if (fitAnnotation && fitCharge && fitMol && fitFragments) {
-        if (exportPeakListRow(row, writer, fragmentScans))
+        if (exportPeakListRow(row, writer))
           exported++;
       }
       progress++;
@@ -362,26 +352,7 @@ public class SiriusExportTask extends AbstractTask {
     return exported;
   }
 
-  private HashMap<String, int[]> getFragmentScans(RawDataFile[] rawDataFiles) {
-    final HashMap<String, int[]> fragmentScans = new HashMap<>();
-    for (RawDataFile r : rawDataFiles) {
-      int[] scans = new int[0];
-      for (int msLevel : r.getMSLevels()) {
-        if (msLevel > 1) {
-          int[] concat = r.getScanNumbers(msLevel);
-          int offset = scans.length;
-          scans = Arrays.copyOf(scans, scans.length + concat.length);
-          System.arraycopy(concat, 0, scans, offset, concat.length);
-        }
-      }
-      Arrays.sort(scans);
-      fragmentScans.put(r.getName(), scans);
-    }
-    return fragmentScans;
-  }
-
-  private boolean exportPeakListRow(PeakListRow row, BufferedWriter writer,
-      final HashMap<String, int[]> fragmentScans) throws IOException {
+  private boolean exportPeakListRow(PeakListRow row, BufferedWriter writer) throws IOException {
     if (isSkipRow(row))
       return false;
     // get row charge and polarity
@@ -405,19 +376,44 @@ public class SiriusExportTask extends AbstractTask {
 
     MergeMode mergeMode = mergeParameters == null ? null
         : mergeParameters.getParameter(MsMsSpectraMergeParameters.MERGE_MODE).getValue();
-    if ((mergeMode != MergeMode.ACROSS_SAMPLES)) {
+
+    if ((mergeMode == MergeMode.ACROSS_SAMPLES)) {
+      // merge everything into one
+      MergedSpectrum spectrum = mergeMethod.mergeAcrossSamples(row, massListName)
+          .filterByRelativeNumberOfScans(mergeParameters
+              .getParameter(MsMsSpectraMergeParameters.PEAK_COUNT_PARAMETER).getValue());
+      if (spectrum.data.length <= 0)
+        return false;
+
+      // write correlation spectrum
+      writeHeader(writer, row, row.getBestPeak().getDataFile(), polarity, MsType.CORRELATED, -1,
+          msAnnotationsFlags);
+      writeCorrelationSpectrum(writer, row);
+
+      // MS2 merged
+      writeHeader(writer, row, row.getBestPeak().getDataFile(), polarity, MsType.MSMS, spectrum,
+          msAnnotationsFlags);
+      writeSpectrum(writer, spectrum.data);
+    } else {
+      // isCorrelatedExported
+      boolean correlatedWasExported = false;
       for (Feature f : row.getPeaks()) {
         if (f.getFeatureStatus() == Feature.FeatureStatus.DETECTED
             && f.getMostIntenseFragmentScanNumber() >= 0) {
-          // write correlation spectrum
-          writeHeader(writer, row, f.getDataFile(), polarity, MsType.CORRELATED, -1,
-              msAnnotationsFlags);
-          writeCorrelationSpectrum(writer, row);
+
           if (mergeMode == MergeMode.CONSECUTIVE_SCANS) {
             // merge MS/MS
             List<MergedSpectrum> spectra =
                 new MsMsSpectraMergeModule(mergeParameters).mergeConsecutiveScans(f, massListName);
             for (MergedSpectrum spectrum : spectra) {
+              if (!correlatedWasExported) {
+                // write correlation spectrum
+                writeHeader(writer, row, f.getDataFile(), polarity, MsType.CORRELATED, -1,
+                    msAnnotationsFlags);
+                writeCorrelationSpectrum(writer, row);
+                correlatedWasExported = true;
+              }
+
               writeHeader(writer, row, f.getDataFile(), polarity, MsType.MSMS,
                   spectrum.filterByRelativeNumberOfScans(mergeParameters
                       .getParameter(MsMsSpectraMergeParameters.PEAK_COUNT_PARAMETER).getValue()),
@@ -429,34 +425,38 @@ public class SiriusExportTask extends AbstractTask {
                 .filterByRelativeNumberOfScans(mergeParameters
                     .getParameter(MsMsSpectraMergeParameters.PEAK_COUNT_PARAMETER).getValue());
             if (spectrum.data.length > 0) {
+              if (!correlatedWasExported) {
+                // write correlation spectrum
+                writeHeader(writer, row, f.getDataFile(), polarity, MsType.CORRELATED, -1,
+                    msAnnotationsFlags);
+                writeCorrelationSpectrum(writer, row);
+                correlatedWasExported = true;
+              }
+
               writeHeader(writer, row, f.getDataFile(), polarity, MsType.MSMS, spectrum,
                   msAnnotationsFlags);
               writeSpectrum(writer, spectrum.data);
             }
-          } else {
+          }
+          // NO MERGING
+          else {
             final Scan s = f.getDataFile().getScan(f.getMostIntenseFragmentScanNumber());
             final DataPoint[] dps = s.getMassList(massListName).getDataPoints();
             if (dps.length > 0) {
+              if (!correlatedWasExported) {
+                // write correlation spectrum
+                writeHeader(writer, row, f.getDataFile(), polarity, MsType.CORRELATED, -1,
+                    msAnnotationsFlags);
+                writeCorrelationSpectrum(writer, row);
+                correlatedWasExported = true;
+              }
+
               writeHeader(writer, row, f.getDataFile(), polarity, MsType.MSMS,
                   f.getMostIntenseFragmentScanNumber(), msAnnotationsFlags);
               writeSpectrum(writer, dps);
             }
           }
         }
-      }
-    } else {
-      // write correlation spectrum
-      writeHeader(writer, row, row.getBestPeak().getDataFile(), polarity, MsType.CORRELATED, -1,
-          msAnnotationsFlags);
-      writeCorrelationSpectrum(writer, row);
-      // merge everything into one
-      MergedSpectrum spectrum = mergeMethod.mergeAcrossSamples(row, massListName)
-          .filterByRelativeNumberOfScans(mergeParameters
-              .getParameter(MsMsSpectraMergeParameters.PEAK_COUNT_PARAMETER).getValue());
-      if (spectrum.data.length > 0) {
-        writeHeader(writer, row, row.getBestPeak().getDataFile(), polarity, MsType.MSMS, spectrum,
-            msAnnotationsFlags);
-        writeSpectrum(writer, spectrum.data);
       }
     }
 
@@ -508,11 +508,9 @@ public class SiriusExportTask extends AbstractTask {
   private boolean isSkipRow(PeakListRow row) {
     // skip rows which have no isotope pattern and no MS/MS spectrum
     for (Feature f : row.getPeaks()) {
-      if (f.getFeatureStatus() == Feature.FeatureStatus.DETECTED) {
-        if ((f.getIsotopePattern() != null && f.getIsotopePattern().getDataPoints().length > 1)
-            || f.getMostIntenseFragmentScanNumber() >= 0)
-          return false;
-      }
+      if ((f.getIsotopePattern() != null && f.getIsotopePattern().getDataPoints().length > 1)
+          || f.getMostIntenseFragmentScanNumber() >= 0)
+        return false;
     }
     return true;
   }
