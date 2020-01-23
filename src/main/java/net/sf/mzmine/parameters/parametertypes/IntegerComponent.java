@@ -24,6 +24,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.text.JTextComponent;
+import net.sf.mzmine.framework.listener.DelayedDocumentListener;
 
 public class IntegerComponent extends JPanel {
 
@@ -105,5 +106,14 @@ public class IntegerComponent extends JPanel {
 
       return verified;
     }
+  }
+
+  /**
+   * Add a document listener to the underlying textfield (see {@link DelayedDocumentListener}
+   * 
+   * @param dl
+   */
+  public void addDocumentListener(DelayedDocumentListener dl) {
+    textField.getDocument().addDocumentListener(dl);
   }
 }

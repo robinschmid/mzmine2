@@ -14,37 +14,32 @@
  * You should have received a copy of the GNU General Public License along with MZmine 2; if not,
  * write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
  * USA
- */package net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.pseudospectra;
+ */
 
-import java.text.NumberFormat;
-import org.jfree.chart.ChartPanel;
+package net.sf.mzmine.modules.visualization.spectra.simplespectra.spectraidentification;
+
 import org.jfree.chart.labels.XYItemLabelGenerator;
 import org.jfree.data.xy.XYDataset;
-import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.visualization.spectra.SpectraPlot;
 
 /**
- * Label generator for spectra visualizer. Only used to generate labels for the raw data
- * (ScanDataSet)
+ * Item label generator annotated peaks in spectra
+ * 
+ * @author Ansgar Korf (ansgar.korf@uni-muenster.de)
  */
-public class PseudoSpectraItemLabelGenerator implements XYItemLabelGenerator {
+public class SpectraDatabaseSearchLabelGenerator implements XYItemLabelGenerator {
 
-  /*
-   * Number of screen pixels to reserve for each label, so that the labels do not overlap
-   */
   public static final int POINTS_RESERVE_X = 100;
 
-  private ChartPanel plot;
+  private SpectraPlot plot;
 
-  private NumberFormat mzFormat = MZmineCore.getConfiguration().getMZFormat();
+  private String[] annotations;
 
-  public PseudoSpectraItemLabelGenerator(ChartPanel plot) {
+  public SpectraDatabaseSearchLabelGenerator(String[] annotations, SpectraPlot plot) {
+    this.annotations = annotations;
     this.plot = plot;
   }
 
-  /**
-   * @see org.jfree.chart.labels.XYItemLabelGenerator#generateLabel(org.jfree.data.xy.XYDataset,
-   *      int, int)
-   */
   @Override
   public String generateLabel(XYDataset dataset, int series, int item) {
 
@@ -53,7 +48,7 @@ public class PseudoSpectraItemLabelGenerator implements XYItemLabelGenerator {
     double originalY = dataset.getY(series, item).doubleValue();
 
     // Calculate data size of 1 screen pixel
-    double xLength = plot.getChart().getXYPlot().getDomainAxis().getRange().getLength();
+    double xLength = plot.getXYPlot().getDomainAxis().getRange().getLength();
     double pixelX = xLength / plot.getWidth();
 
     // Size of data set
@@ -87,21 +82,12 @@ public class PseudoSpectraItemLabelGenerator implements XYItemLabelGenerator {
 
     // Create label
     String label = null;
-    if (dataset instanceof PseudoSpectrumDataSet) {
-      double mzValue = dataset.getXValue(series, item);
-      label = mzFormat.format(mzValue);
-      String ann = ((PseudoSpectrumDataSet) dataset).getAnnotation(series, item);
-      if (ann != null)
-        label = label + "\n" + ann;
-      return label;
+    if (dataset.getSeriesKey(1).equals("Detected compounds")) {
+      label = annotations[item];
+    } else {
+      label = "";
     }
-    if (label == null) {
-      double mzValue = dataset.getXValue(series, item);
-      label = mzFormat.format(mzValue);
-    }
-
     return label;
-
   }
 
 }

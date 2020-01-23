@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2015 The MZmine 2 Development Team
+ * Copyright 2006-2018 The MZmine 2 Development Team
  * 
  * This file is part of MZmine 2.
  * 
@@ -14,9 +14,7 @@
  * You should have received a copy of the GNU General Public License along with MZmine 2; if not,
  * write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
  * USA
- */
-
-package net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.pseudospectra;
+ */package net.sf.mzmine.modules.visualization.metamsecorrelate.visual.sub.pseudospectra;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
@@ -80,7 +78,7 @@ public class PseudoSpectraRenderer extends XYBarRenderer {
       public void paintBar(Graphics2D g2, XYBarRenderer renderer, int row, int column,
           RectangularShape bar, RectangleEdge base) {
         super.paintBar(g2, renderer, row, column, new Rectangle2D.Double(
-            bar.getX() + (bar.getWidth() - 2) / 2, bar.getY(), 2, bar.getHeight()), base);
+            bar.getX() + (bar.getWidth() - 1.5) / 2, bar.getY(), 1.5, bar.getHeight()), base);
       }
     });
   }

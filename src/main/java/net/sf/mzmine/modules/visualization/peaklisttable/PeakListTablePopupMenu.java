@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -49,6 +50,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.si
 import net.sf.mzmine.modules.peaklistmethods.identification.nist.NistMsSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.onlinedbsearch.OnlineDBSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.sirius.SiriusProcessingModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.spectraldbsearch.LocalSpectralDBSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.io.siriusexport.SiriusExportModule;
 import net.sf.mzmine.modules.rawdatamethods.peakpicking.manual.ManualPeakPickerModule;
 import net.sf.mzmine.modules.visualization.intensityplot.IntensityPlotModule;
@@ -59,6 +61,8 @@ import net.sf.mzmine.modules.visualization.peaklisttable.table.CommonColumnType;
 import net.sf.mzmine.modules.visualization.peaklisttable.table.DataFileColumnType;
 import net.sf.mzmine.modules.visualization.peaksummary.PeakSummaryVisualizerModule;
 import net.sf.mzmine.modules.visualization.spectra.SpectraVisualizerModule;
+import net.sf.mzmine.modules.visualization.spectra.spectralmatchresults.MirrorScanWindow;
+import net.sf.mzmine.modules.visualization.spectra.spectralmatchresults.SpectraIdentificationResultsWindow;
 import net.sf.mzmine.modules.visualization.threed.ThreeDVisualizerModule;
 import net.sf.mzmine.modules.visualization.tic.TICPlotType;
 import net.sf.mzmine.modules.visualization.tic.TICVisualizerModule;
@@ -67,6 +71,7 @@ import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelection;
 import net.sf.mzmine.util.GUIUtils;
 import net.sf.mzmine.util.SortingDirection;
 import net.sf.mzmine.util.SortingProperty;
+import net.sf.mzmine.util.spectraldb.entry.SpectralDBPeakIdentity;
 
 /**
  * Peak-list table pop-up menu.
@@ -91,6 +96,8 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
   private final JMenuItem showXICItem;
   private final JMenuItem showXICSetupItem;
   private final JMenuItem showMSMSItem;
+  private final JMenuItem showMSMSMirrorItem;
+  private final JMenuItem showSpectralDBResults;
   private final JMenuItem showIsotopePatternItem;
   private final JMenuItem show2DItem;
   private final JMenuItem show3DItem;
@@ -103,6 +110,7 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
   private final JMenuItem manuallyDefineItem;
   private final JMenuItem showPeakRowSummaryItem;
   private final JMenuItem clearIdsItem;
+  private final JMenuItem spectralDbSearchItem;
   private final JMenuItem dbSearchItem;
   private final JMenuItem formulaItem;
   private final JMenuItem siriusItem;
@@ -141,12 +149,15 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
     show2DItem = GUIUtils.addMenuItem(showMenu, "Peak in 2D", this);
     show3DItem = GUIUtils.addMenuItem(showMenu, "Peak in 3D", this);
     showMSMSItem = GUIUtils.addMenuItem(showMenu, "MS/MS", this);
+    showMSMSMirrorItem = GUIUtils.addMenuItem(showMenu, "MS/MS mirror (select 2 rows)", this);
+    showSpectralDBResults = GUIUtils.addMenuItem(showMenu, "Spectral DB search results", this);
     showIsotopePatternItem = GUIUtils.addMenuItem(showMenu, "Isotope pattern", this);
     showPeakRowSummaryItem = GUIUtils.addMenuItem(showMenu, "Peak row summary", this);
 
     searchMenu = new JMenu("Search");
     add(searchMenu);
     dbSearchItem = GUIUtils.addMenuItem(searchMenu, "Search online database", this);
+    spectralDbSearchItem = GUIUtils.addMenuItem(searchMenu, "Search local spectral database", this);
     nistSearchItem = GUIUtils.addMenuItem(searchMenu, "NIST MS Search", this);
     formulaItem = GUIUtils.addMenuItem(searchMenu, "Predict molecular formula", this);
     siriusItem = GUIUtils.addMenuItem(searchMenu, "SIRIUS structure prediction", this);
@@ -188,6 +199,8 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
     show3DItem.setEnabled(false);
     manuallyDefineItem.setEnabled(false);
     showMSMSItem.setEnabled(false);
+    showMSMSMirrorItem.setEnabled(false);
+    showSpectralDBResults.setEnabled(false);
     showIsotopePatternItem.setEnabled(false);
     showPeakRowSummaryItem.setEnabled(false);
     exportIsotopesItem.setEnabled(false);
@@ -206,6 +219,9 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
     exportIsotopesItem.setEnabled(rowsSelected);
     exportToSirius.setEnabled(rowsSelected);
     exportMenu.setEnabled(rowsSelected);
+
+    // search methods for single and multiple rows
+    spectralDbSearchItem.setEnabled(true);
 
     final boolean oneRowSelected = selectedRows.length == 1;
     searchMenu.setEnabled(oneRowSelected);
@@ -263,6 +279,17 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
         // always show for multi MSMS window
         showMSMSItem.setEnabled(!oneRowSelected || getSelectedPeakForMSMS() != null);
       }
+
+
+      long nRowsWithFragmentation = Arrays.stream(allClickedPeakListRows)
+          .filter(r -> r.getBestFragmentation() != null).count();
+      // only show if selected rows == 2 and both have MS2
+      boolean bothMS2 = selectedRows.length == 2 && nRowsWithFragmentation == 2;
+      showMSMSMirrorItem.setEnabled(bothMS2);
+
+      // has identity of spectral database match
+      showSpectralDBResults.setEnabled(hasSpectralDBIdentities(clickedPeakListRow));
+
     }
 
     copyIdsItem
@@ -278,6 +305,20 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
    */
   protected PeakListRow getPeakListRow(int modelIndex) {
     return peakList.getRow(modelIndex);
+  }
+
+  /**
+   * 
+   * @param clickedRow
+   * @return true if any peakidentity is instance of {@link SpectralDBPeakIdentity}
+   */
+  private boolean hasSpectralDBIdentities(PeakListRow clickedRow) {
+    if (clickedRow == null)
+      return false;
+    for (PeakIdentity pi : clickedRow.getPeakIdentities())
+      if (pi instanceof SpectralDBPeakIdentity)
+        return true;
+    return false;
   }
 
   @Override
@@ -481,6 +522,36 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
       }
     }
 
+    // mirror of the two best fragment scans
+    if (showMSMSMirrorItem.equals(src)) {
+      if (allClickedPeakListRows != null && allClickedPeakListRows.length == 2) {
+        PeakListRow a = allClickedPeakListRows[0];
+        PeakListRow b = allClickedPeakListRows[1];
+        Scan scan = a.getBestFragmentation();
+        Scan mirror = b.getBestFragmentation();
+        if (scan != null && mirror != null) {
+          // show mirror msms window of two rows
+          MirrorScanWindow mirrorWindow = new MirrorScanWindow();
+          mirrorWindow.setScans(scan, mirror);
+          mirrorWindow.setVisible(true);
+        }
+      }
+    }
+    // show spectral db matches
+    if (showSpectralDBResults.equals(src)) {
+      List<SpectralDBPeakIdentity> spectralID =
+          Arrays.stream(clickedPeakListRow.getPeakIdentities())
+              .filter(pi -> pi instanceof SpectralDBPeakIdentity)
+              .map(pi -> ((SpectralDBPeakIdentity) pi)).collect(Collectors.toList());
+      if (!spectralID.isEmpty()) {
+        SpectraIdentificationResultsWindow window = new SpectraIdentificationResultsWindow();
+        window.addMatches(spectralID);
+        window.setTitle("Matched " + spectralID.size() + " compounds for feature list row"
+            + clickedPeakListRow.getID());
+        window.setVisible(true);
+      }
+    }
+
     if (showIsotopePatternItem.equals(src)) {
 
       final Feature showPeak = getSelectedPeak();
@@ -527,6 +598,18 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
         @Override
         public void run() {
           OnlineDBSearchModule.showSingleRowIdentificationDialog(clickedPeakListRow);
+        }
+      });
+
+    }
+
+    if (spectralDbSearchItem != null && spectralDbSearchItem.equals(src)) {
+
+      SwingUtilities.invokeLater(new Runnable() {
+        @Override
+        public void run() {
+          LocalSpectralDBSearchModule.showSelectedRowsIdentificationDialog(allClickedPeakListRows,
+              table);
         }
       });
 

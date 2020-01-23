@@ -57,6 +57,7 @@ import net.sf.mzmine.modules.visualization.spectra.datasets.IsotopesDataSet;
 import net.sf.mzmine.modules.visualization.spectra.datasets.PeakListDataSet;
 import net.sf.mzmine.modules.visualization.spectra.datasets.ScanDataSet;
 import net.sf.mzmine.modules.visualization.spectra.datasets.SinglePeakDataSet;
+import net.sf.mzmine.modules.visualization.spectra.simplespectra.spectraidentification.spectraldatabase.SpectraIdentificationSpectralDatabaseModule;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.WindowSettingsParameter;
 import net.sf.mzmine.util.dialogs.AxesSetupDialog;
@@ -420,6 +421,16 @@ public class SpectraVisualizerWindow extends JFrame implements ActionListener {
     if (command.equals("SETUP_AXES")) {
       AxesSetupDialog dialog = new AxesSetupDialog(this, spectrumPlot.getXYPlot());
       dialog.setVisible(true);
+    }
+
+    if (command.equals("SPECTRALDATABASESEARCH")) {
+      SwingUtilities.invokeLater(new Runnable() {
+        @Override
+        public void run() {
+          SpectraIdentificationSpectralDatabaseModule.showSpectraIdentificationDialog(currentScan,
+              spectrumPlot);
+        }
+      });
     }
 
     if (command.equals("EXPORT_SPECTRA")) {

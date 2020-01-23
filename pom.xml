@@ -129,6 +129,13 @@
     <artifactId>json</artifactId>
     <version>20180813</version>
 </dependency>
+<!-- https://mvnrepository.com/artifact/org.drjekyll/fontchooser -->
+<dependency>
+    <groupId>org.drjekyll</groupId>
+    <artifactId>fontchooser</artifactId>
+    <version>2.4</version>
+</dependency>
+
 	
 		<!-- https://mvnrepository.com/artifact/org.graphstream/gs-core 
 		Networks visualisation-->

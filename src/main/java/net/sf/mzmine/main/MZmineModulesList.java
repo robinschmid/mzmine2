@@ -66,6 +66,7 @@ import net.sf.mzmine.modules.peaklistmethods.identification.ms2search.Ms2SearchM
 import net.sf.mzmine.modules.peaklistmethods.identification.nist.NistMsSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.onlinedbsearch.OnlineDBSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.sirius.SiriusProcessingModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.spectraldbsearch.LocalSpectralDBSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.io.casmiimport.CasmiImportModule;
 import net.sf.mzmine.modules.peaklistmethods.io.csvexport.CSVExportModule;
 import net.sf.mzmine.modules.peaklistmethods.io.gnpsexport.GNPSExportModule;
@@ -135,6 +136,8 @@ import net.sf.mzmine.modules.visualization.peaklisttable.export.IsotopePatternEx
 import net.sf.mzmine.modules.visualization.peaklisttable.export.MSMSExportModule;
 import net.sf.mzmine.modules.visualization.scatterplot.ScatterPlotVisualizerModule;
 import net.sf.mzmine.modules.visualization.spectra.SpectraVisualizerModule;
+import net.sf.mzmine.modules.visualization.spectra.simplespectra.spectraidentification.spectraldatabase.SpectraIdentificationSpectralDatabaseModule;
+import net.sf.mzmine.modules.visualization.spectra.spectralmatchresults.SpectraIdentificationResultsModule;
 import net.sf.mzmine.modules.visualization.threed.ThreeDVisualizerModule;
 import net.sf.mzmine.modules.visualization.tic.TICVisualizerModule;
 import net.sf.mzmine.modules.visualization.twod.TwoDVisualizerModule;
@@ -212,11 +215,12 @@ public class MZmineModulesList {
       FormulaPredictionIonNetworkModule.class, CreateAvgNetworkFormulasModule.class,
 
       // Identification
-      FormulaPredictionModule.class, FormulaPredictionPeakListModule.class, FormulaSortModule.class,
-      CustomDBSearchModule.class, FragmentSearchModule.class, AdductSearchModule.class,
-      ComplexSearchModule.class, OnlineDBSearchModule.class, LipidSearchModule.class,
-      CameraSearchModule.class, NistMsSearchModule.class, Ms2SearchModule.class,
-      SiriusProcessingModule.class, MS2SimilarityModule.class, GNPSResultsImportModule.class,
+      LocalSpectralDBSearchModule.class, FormulaPredictionModule.class,
+      FormulaPredictionPeakListModule.class, FormulaSortModule.class, CustomDBSearchModule.class,
+      FragmentSearchModule.class, AdductSearchModule.class, ComplexSearchModule.class,
+      OnlineDBSearchModule.class, LipidSearchModule.class, CameraSearchModule.class,
+      NistMsSearchModule.class, Ms2SearchModule.class, SiriusProcessingModule.class,
+      MS2SimilarityModule.class, GNPSResultsImportModule.class,
 
       // Visualizers
       TICVisualizerModule.class, SpectraVisualizerModule.class, TwoDVisualizerModule.class,
@@ -231,5 +235,8 @@ public class MZmineModulesList {
       // Tools
       MzRangeMassCalculatorModule.class, MzRangeFormulaCalculatorModule.class,
       IsotopePatternPreviewModule.class, GNPSResultsAnalysisModule.class,
-      GNPSResultsMetaAnalysisModule.class, AnalyzeSpectralLibraryModule.class};
+      GNPSResultsMetaAnalysisModule.class, AnalyzeSpectralLibraryModule.class,
+
+      //
+      SpectraIdentificationSpectralDatabaseModule.class, SpectraIdentificationResultsModule.class};
 }
