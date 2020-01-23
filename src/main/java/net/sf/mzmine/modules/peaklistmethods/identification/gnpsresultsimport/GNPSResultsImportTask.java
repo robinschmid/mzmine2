@@ -258,7 +258,7 @@ public class GNPSResultsImportTask extends AbstractTask {
           }
 
           // add identity
-          GNPSResultsIdentity identity = new GNPSResultsIdentity(results, compoundName, adduct);
+          GNPSResultsIdentity identity = new GNPSResultsIdentity(results, compoundName, adduct, id);
           row.addPeakIdentity(identity, true);
           // Notify the GUI about the change in the project
           MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row, false);

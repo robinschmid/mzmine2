@@ -112,6 +112,9 @@ import net.sf.mzmine.modules.rawdatamethods.peakpicking.msms.MsMsPeakPickerModul
 import net.sf.mzmine.modules.rawdatamethods.peakpicking.targetedpeakdetection.TargetedPeakDetectionModule;
 import net.sf.mzmine.modules.rawdatamethods.rawdataexport.RawDataExportModule;
 import net.sf.mzmine.modules.rawdatamethods.rawdataimport.RawDataImportModule;
+import net.sf.mzmine.modules.tools.analyzelibraries.AnalyzeSpectralLibraryModule;
+import net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis.GNPSResultsAnalysisModule;
+import net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis.GNPSResultsMetaAnalysisModule;
 import net.sf.mzmine.modules.tools.isotopepatternpreview.IsotopePatternPreviewModule;
 import net.sf.mzmine.modules.tools.mzrangecalculator.MzRangeFormulaCalculatorModule;
 import net.sf.mzmine.modules.tools.mzrangecalculator.MzRangeMassCalculatorModule;
@@ -227,5 +230,6 @@ public class MZmineModulesList {
 
       // Tools
       MzRangeMassCalculatorModule.class, MzRangeFormulaCalculatorModule.class,
-      IsotopePatternPreviewModule.class};
+      IsotopePatternPreviewModule.class, GNPSResultsAnalysisModule.class,
+      GNPSResultsMetaAnalysisModule.class, AnalyzeSpectralLibraryModule.class};
 }

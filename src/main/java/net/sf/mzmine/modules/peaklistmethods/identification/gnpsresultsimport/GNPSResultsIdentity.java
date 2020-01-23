@@ -24,18 +24,28 @@ import net.sf.mzmine.datamodel.impl.SimplePeakIdentity;
 
 public class GNPSResultsIdentity extends SimplePeakIdentity {
   public enum ATT {
+    COMPOUND_SOURCE("Compound_Source", String.class), // isolated, ...
+    DATA_COLLECTOR("Data_Collector", String.class), //
+    PI("PI", String.class), //
+    COMPONENT_INDEX("componentindex", Integer.class), //
     CLUSTER_INDEX("cluster index", Integer.class), // GNPS cluster - similarity
     COMPOUND_NAME("Compound_Name", String.class), // library match
     ADDUCT("Adduct", String.class), // from GNPS library match
+    PRECURSOR_MASS("precursor mass", Double.class), // precursor
     MASS_DIFF("MassDiff", Double.class), // absolute diff from gnps
-    LIBRARY_MATCH_SCORE("MQScore", Double.class), // cosine score to library spec
+    NEUTRAL_M_MASS("neutral M mass", Double.class), // neutral mass by ion identity networking
+    LIBRARY_MATCH_SCORE("MQScore", String.class), // cosine score to library spec
     SHARED_SIGNALS("SharedPeaks", String.class), // shared signals library <-> query
-    INCHI("INCHI", String.class), SMILES("Smiles", String.class), // structures
-    IONSOURCE("Ion_Source", String.class), IONMODE("IonMode",
-        String.class), INSTRUMENT("Instrument", String.class), // instrument
+    INCHI("INCHI", String.class), //
+    SMILES("Smiles", String.class), // structures
+    IONSOURCE("Ion_Source", String.class), //
+    IONMODE("IonMode", String.class), //
+    INSTRUMENT("Instrument", String.class), // instrument
+    LIBRARY_CLASS("Library_Class", String.class), //
     GNPS_LIBRARY_URL("GNPSLibraryURL", String.class), // link to library entry
     GNPS_NETWORK_URL("GNPSLinkout_Network", String.class), // link to network
-    GNPS_CLUSTER_URL("GNPSLinkout_Cluster", String.class); // link to cluster
+    GNPS_CLUSTER_URL("GNPSLinkout_Cluster", String.class), // link to cluster
+    SPECTRUM_ID("SpectrumID", String.class); // spectrum id
 
     private String key;
     private Class c;
@@ -55,11 +65,19 @@ public class GNPSResultsIdentity extends SimplePeakIdentity {
   }
 
   private HashMap<String, Object> results;
+  private int nodeID;
 
-  public GNPSResultsIdentity(HashMap<String, Object> results, String compound, String adduct) {
+  public GNPSResultsIdentity(HashMap<String, Object> results, String compound, String adduct,
+      int nodeID) {
     super(MessageFormat.format("{0} ({1})", compound, adduct));
     this.results = results;
     setPropertyValue(PROPERTY_METHOD, "GNPS results import");
+    setPropertyValue(PROPERTY_URL, results.get(ATT.GNPS_LIBRARY_URL.getKey()).toString());
+    this.nodeID = nodeID;
+  }
+
+  public int getNodeID() {
+    return nodeID;
   }
 
   public HashMap<String, Object> getResults() {
@@ -67,6 +85,16 @@ public class GNPSResultsIdentity extends SimplePeakIdentity {
   }
 
   public Object getResult(ATT att) {
-    return results.get(att.toString());
+    return results.get(att.key);
+  }
+
+  public double getMatchScore() {
+    String s = getResult(ATT.LIBRARY_MATCH_SCORE).toString();
+    return Double.parseDouble(s);
+  }
+
+  public int getSharedSignals() {
+    String s = getResult(ATT.SHARED_SIGNALS).toString();
+    return Integer.parseInt(s);
   }
 }
