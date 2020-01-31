@@ -233,7 +233,7 @@ public class GNPSExportAndSubmitTask extends AbstractTask {
     AbstractTask extraEdgeExport = new ExportCorrAnnotationTask(
         parameters.getParameter(GNPSExportParameters.PEAK_LISTS).getValue()
             .getMatchingPeakLists()[0], //
-        full, 0, filter, exAnn, false);
+        full, 0, filter, exAnn, false, false);
     if (tasks != null)
       tasks.add(extraEdgeExport);
     return extraEdgeExport;

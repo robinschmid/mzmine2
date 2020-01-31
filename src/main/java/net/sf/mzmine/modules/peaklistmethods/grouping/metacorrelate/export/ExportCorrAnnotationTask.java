@@ -23,6 +23,7 @@ import java.text.DecimalFormat;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,8 +35,11 @@ import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
-import net.sf.mzmine.datamodel.impl.RowGroupList;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
+import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
+import net.sf.mzmine.datamodel.identities.iontype.networks.IonNetworkRelationInterf;
 import net.sf.mzmine.datamodel.impl.RowGroup;
+import net.sf.mzmine.datamodel.impl.RowGroupList;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.MetaCorrelateModule;
 import net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.datastructure.MS2SimilarityProviderGroup;
@@ -67,6 +71,7 @@ public class ExportCorrAnnotationTask extends AbstractTask {
    * by {@link MetaCorrelateModule}
    */
   private boolean exportAnnotationEdges = true, exportCorrelationEdges = false;
+  private boolean exportIinRelationships = false;
   private boolean exportMS2SimilarityEdges = false;
   private boolean exportMS2DiffSimilarityEdges = false;
   private double minR;
@@ -92,6 +97,8 @@ public class ExportCorrAnnotationTask extends AbstractTask {
     minR = parameterSet.getParameter(ExportCorrAnnotationParameters.MIN_R).getValue();
     exportAnnotationEdges =
         parameterSet.getParameter(ExportCorrAnnotationParameters.EX_ANNOT).getValue();
+    exportIinRelationships =
+        parameterSet.getParameter(ExportCorrAnnotationParameters.EX_IIN_RELATIONSHIP).getValue();
     exportCorrelationEdges =
         parameterSet.getParameter(ExportCorrAnnotationParameters.EX_CORR).getValue();
     exportMS2DiffSimilarityEdges =
@@ -108,13 +115,15 @@ public class ExportCorrAnnotationTask extends AbstractTask {
    * @param list peak list.
    */
   public ExportCorrAnnotationTask(PeakList peakList, File filename, double minR, RowFilter filter,
-      boolean exportAnnotationEdges, boolean exportCorrelationEdges) {
+      boolean exportAnnotationEdges, boolean exportCorrelationEdges,
+      boolean exportIinRelationships) {
     this.peakList = peakList;
     this.filename = filename;
     this.minR = minR;
     this.filter = filter;
     this.exportAnnotationEdges = exportAnnotationEdges;
     this.exportCorrelationEdges = exportCorrelationEdges;
+    this.exportIinRelationships = exportIinRelationships;
   }
 
   @Override
@@ -136,6 +145,11 @@ public class ExportCorrAnnotationTask extends AbstractTask {
       // export edges of annotations
       if (exportAnnotationEdges)
         exportAnnotationEdges(peakList, filename, filter.equals(RowFilter.ONLY_WITH_MS2), progress,
+            this);
+
+      // relationships between ion identity networks (+O) ...
+      if (exportIinRelationships)
+        exportIINRelationships(peakList, filename, filter.equals(RowFilter.ONLY_WITH_MS2), progress,
             this);
 
       // export MS2Similarity edges
@@ -220,6 +234,96 @@ public class ExportCorrAnnotationTask extends AbstractTask {
     } catch (Exception e) {
       throw new MSDKRuntimeException(e);
     }
+  }
+
+
+  public static boolean exportIINRelationships(PeakList pkl, File filename, boolean limitToMSMS,
+      Double progress, AbstractTask task) {
+    LOG.info("Export IIN relationships edge file");
+    NumberFormat mzForm = MZmineCore.getConfiguration().getMZFormat();
+    NumberFormat corrForm = new DecimalFormat("0.000");
+
+    try {
+      StringBuilder ann = new StringBuilder();
+
+      // add header
+      ann.append(StringUtils.join(EDGES.values(), ','));
+      ann.append("\n");
+
+      AtomicInteger added = new AtomicInteger(0);
+
+      IonNetwork[] nets = IonNetworkLogic.getAllNetworks(pkl, true);
+      for (IonNetwork n : nets) {
+        Map<IonNetwork, IonNetworkRelationInterf> relations = n.getRelations();
+        if (relations != null && !relations.isEmpty()) {
+          for (Entry<IonNetwork, IonNetworkRelationInterf> rel : relations.entrySet()) {
+            // export all relations where n.id is smaller than the related network
+            if (rel.getValue().isLowestIDNetwork(n)) {
+              // relationship can be between multiple nets
+              for (IonNetwork net2 : rel.getValue().getAllNetworks()) {
+                if (net2.equals(n))
+                  continue;
+
+                // find best two nodes
+                PeakListRow[] rows = getBestRelatedRows(n, net2, limitToMSMS);
+                // export lowest mz -> highest mz
+                if (rows[0].getAverageMZ() > rows[1].getAverageMZ()) {
+                  exportEdge(ann, "IIN M relationship", rows[1].getID(), rows[0].getID(), "0", //
+                      rel.getValue().getName(net2));
+                } else {
+                  exportEdge(ann, "IIN M relationship", rows[0].getID(), rows[1].getID(), "0", //
+                      rel.getValue().getName(n));
+                }
+
+                added.incrementAndGet();
+              }
+            }
+          }
+        }
+      }
+      LOG.info("IIN relationship edges exported " + added.get() + "");
+
+      // export ann edges
+      // Filename
+      if (added.get() > 0) {
+        writeToFile(ann.toString(), filename, "_edges_iin_relations", ".csv");
+        return true;
+      } else
+        return false;
+    } catch (Exception e) {
+      throw new MSDKRuntimeException(e);
+    }
+  }
+
+  private static PeakListRow[] getBestRelatedRows(IonNetwork a, IonNetwork b, boolean limitToMSMS) {
+    PeakListRow[] rows = new PeakListRow[2];
+    double sumIntensity = 0;
+    for (Entry<PeakListRow, IonIdentity> entryA : a.entrySet()) {
+      if (!limitToMSMS || entryA.getKey().getBestFragmentation() != null) {
+        IonIdentity iinA = entryA.getValue();
+        for (Entry<PeakListRow, IonIdentity> entryB : b.entrySet()) {
+          if (!limitToMSMS || entryB.getKey().getBestFragmentation() != null) {
+            IonIdentity iinB = entryB.getValue();
+            if (iinA.getAdduct().equals(iinB.getAdduct())) {
+              double sum = entryA.getKey().getAverageHeight() + entryB.getKey().getAverageHeight();
+              if (sum >= sumIntensity) {
+                sumIntensity = sum;
+                rows[0] = entryA.getKey();
+                rows[1] = entryB.getKey();
+              }
+            }
+          }
+        }
+      }
+    }
+    if (rows[0] == null) {
+      try {
+        rows[0] = a.keySet().iterator().next();
+        rows[1] = b.keySet().iterator().next();
+      } catch (Exception ex) {
+      }
+    }
+    return rows;
   }
 
   public static boolean exportMS2SimilarityEdges(PeakList pkl, File filename, RowFilter filter,

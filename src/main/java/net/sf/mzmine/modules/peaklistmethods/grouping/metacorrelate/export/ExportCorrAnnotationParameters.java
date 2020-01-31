@@ -36,9 +36,11 @@ public class ExportCorrAnnotationParameters extends SimpleParameterSet {
   public static final FileNameParameter FILENAME =
       new FileNameParameter("Filename", "File name", "csv");
   public static final BooleanParameter EX_ANNOT =
-      new BooleanParameter("Export MS1 annotation edges", "", true);
+      new BooleanParameter("Export ion identity networking (IIN) edges", "", true);
   public static final BooleanParameter EX_CORR =
       new BooleanParameter("Export correlation edges", "", false);
+  public static final BooleanParameter EX_IIN_RELATIONSHIP =
+      new BooleanParameter("Export IIN relationship edges", "", false);
   public static final BooleanParameter EX_MS2_SIMILARITY =
       new BooleanParameter("Export MS2 similarity edges", "", false);
   public static final BooleanParameter EX_MS2_DIFF_SIMILARITY =
@@ -55,8 +57,8 @@ public class ExportCorrAnnotationParameters extends SimpleParameterSet {
 
   // Constructor
   public ExportCorrAnnotationParameters() {
-    super(new Parameter[] {PEAK_LISTS, FILENAME, EX_ANNOT, EX_CORR, EX_MS2_SIMILARITY,
-        EX_MS2_DIFF_SIMILARITY, FILTER, MIN_R});
+    super(new Parameter[] {PEAK_LISTS, FILENAME, EX_ANNOT, EX_CORR, EX_IIN_RELATIONSHIP,
+        EX_MS2_SIMILARITY, EX_MS2_DIFF_SIMILARITY, FILTER, MIN_R});
   }
 
 }
