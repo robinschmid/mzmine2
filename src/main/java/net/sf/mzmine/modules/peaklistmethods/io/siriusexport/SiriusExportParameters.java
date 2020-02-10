@@ -30,6 +30,7 @@ public class SiriusExportParameters extends SimpleParameterSet {
 
   public SiriusExportParameters() {
     super(new Parameter[] {PEAK_LISTS, FILENAME, MASS_LIST, MERGE_PARAMETER, MZ_TOL, RENUMBER_ID,
+        EXCLUDE_EMPTY_MSMS,
         // metaMSEcorrelate or MS annotate parameters
         NEED_ANNOTATION, EXCLUDE_MULTICHARGE, EXCLUDE_MULTIMERS, EXCLUDE_INSOURCE_FRAGMENTS});
   }
@@ -67,9 +68,13 @@ public class SiriusExportParameters extends SimpleParameterSet {
   public static final BooleanParameter NEED_ANNOTATION =
       new BooleanParameter("Only rows with annotation",
           "Only export rows with an annotation (run MS annotate or metaMSEcorrelate)", true);
-
+  public static final BooleanParameter EXCLUDE_EMPTY_MSMS = new BooleanParameter(
+      "Exclude empty MS/MS spectra",
+      "Do not export empty MS/MS spectra (only features with MS/MS spectrum with at least 1 signal are exported)",
+      true);
   public static final BooleanParameter EXCLUDE_MULTICHARGE =
       new BooleanParameter("Exclude multiple charge", "Do not export multiply charged rows", true);
+
 
   public static final BooleanParameter EXCLUDE_MULTIMERS = new BooleanParameter("Exclude multimers",
       "Do not export rows that were annotated as multimers (2M) (run MS annotate or metaMSEcorrelate)",
