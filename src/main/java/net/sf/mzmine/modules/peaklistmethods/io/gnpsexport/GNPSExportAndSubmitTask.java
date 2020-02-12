@@ -109,51 +109,48 @@ public class GNPSExportAndSubmitTask extends AbstractTask {
     list.add(addExtraEdgesTask(parameters, null));
 
     // finish listener to submit
-    if (submit || openFolder) {
-      final File fileName = file;
-      final File folder = file.getParentFile();
-      new AllTasksFinishedListener(list, true,
-          // succeed
-          l -> {
-            try {
-              LOG.info("succeed" + thistask.getStatus().toString());
-              if (submit) {
-                GNPSSubmitParameters param =
-                    parameters.getParameter(GNPSExportParameters.SUBMIT).getEmbeddedParameters();
-                submit(fileName, param);
-              }
-
-              // open folder
-              try {
-                if (Desktop.isDesktopSupported()) {
-                  if (openFolder)
-                    Desktop.getDesktop().open(folder);
-                }
-              } catch (Exception ex) {
-              }
-            } finally {
-              LOG.info("status is " + thistask.getStatus().toString());
-              // finish task
-              if (thistask.getStatus() == TaskStatus.PROCESSING)
-                thistask.setStatus(TaskStatus.FINISHED);
-              LOG.info("status is " + thistask.getStatus().toString());
+    final File fileName = file;
+    final File folder = file.getParentFile();
+    new AllTasksFinishedListener(list, true,
+        // succeed
+        l -> {
+          try {
+            LOG.info("succeed" + thistask.getStatus().toString());
+            if (submit) {
+              GNPSSubmitParameters param =
+                  parameters.getParameter(GNPSExportParameters.SUBMIT).getEmbeddedParameters();
+              submit(fileName, param);
             }
-          }, lerror -> {
-            setErrorMessage("GNPS submit was not started due too errors while file export");
-            thistask.setStatus(TaskStatus.ERROR);
-            throw new MSDKRuntimeException(
-                "GNPS submit was not started due too errors while file export");
-          },
-          // cancel if one was cancelled
-          listCancelled -> cancel()) {
-        @Override
-        public void taskStatusChanged(Task task, TaskStatus newStatus, TaskStatus oldStatus) {
-          super.taskStatusChanged(task, newStatus, oldStatus);
-          // show progress
-          progress.getAndSet(getProgress());
-        }
-      };
-    }
+
+            // open folder
+            try {
+              if (openFolder && Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().open(folder);
+              }
+            } catch (Exception ex) {
+            }
+          } finally {
+            LOG.info("status is " + thistask.getStatus().toString());
+            // finish task
+            if (thistask.getStatus() == TaskStatus.PROCESSING)
+              thistask.setStatus(TaskStatus.FINISHED);
+            LOG.info("status is " + thistask.getStatus().toString());
+          }
+        }, lerror -> {
+          setErrorMessage("GNPS submit was not started due too errors while file export");
+          thistask.setStatus(TaskStatus.ERROR);
+          throw new MSDKRuntimeException(
+              "GNPS submit was not started due too errors while file export");
+        },
+        // cancel if one was cancelled
+        listCancelled -> cancel()) {
+      @Override
+      public void taskStatusChanged(Task task, TaskStatus newStatus, TaskStatus oldStatus) {
+        super.taskStatusChanged(task, newStatus, oldStatus);
+        // show progress
+        progress.getAndSet(getProgress());
+      }
+    };
 
     MZmineCore.getTaskController().addTasks(list.toArray(new AbstractTask[list.size()]));
 
