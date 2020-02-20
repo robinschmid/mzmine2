@@ -19,7 +19,6 @@
 package net.sf.mzmine.parameters;
 
 import java.util.Collection;
-
 import org.w3c.dom.Element;
 
 /**
@@ -50,4 +49,7 @@ public interface Parameter<ValueType> {
    */
   public Parameter<ValueType> cloneParameter();
 
+  default boolean isSensitive() {
+    return false;
+  }
 }

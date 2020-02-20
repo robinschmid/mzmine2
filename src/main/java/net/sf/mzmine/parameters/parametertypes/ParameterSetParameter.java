@@ -18,19 +18,21 @@ package net.sf.mzmine.parameters.parametertypes;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.parameters.Parameter;
-import net.sf.mzmine.parameters.ParameterSet;
-import net.sf.mzmine.parameters.UserParameter;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.parameters.Parameter;
+import net.sf.mzmine.parameters.ParameterContainer;
+import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.parameters.UserParameter;
 
 /**
  *
  * @author aleksandrsmirnov
  */
-public class ParameterSetParameter implements UserParameter<ParameterSet, ParameterSetComponent> {
+public class ParameterSetParameter
+    implements UserParameter<ParameterSet, ParameterSetComponent>, ParameterContainer {
   private static Logger LOG = Logger.getLogger(MZmineCore.class.getName());
 
   private String name;
@@ -50,10 +52,12 @@ public class ParameterSetParameter implements UserParameter<ParameterSet, Parame
     this.value = parameters;
   }
 
+  @Override
   public ParameterSet getValue() {
     return value;
   }
 
+  @Override
   public void setValue(final ParameterSet parameters) {
     this.value = parameters;
   }
@@ -131,5 +135,11 @@ public class ParameterSetParameter implements UserParameter<ParameterSet, Parame
       result &= p.checkValue(errorMessages);
 
     return result;
+  }
+
+  @Override
+  public void setSkipSensitiveParameters(boolean skipSensitiveParameters) {
+    // delegate skipSensitiveParameters embedded ParameterContainers
+    value.setSkipSensitiveParameters(skipSensitiveParameters);
   }
 }

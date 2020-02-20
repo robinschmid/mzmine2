@@ -42,8 +42,10 @@ import net.sf.mzmine.parameters.parametertypes.StringParameter;
  */
 public class GnpsLibrarySubmitParameters extends SimpleParameterSet {
 
-  public static StringParameter user = new StringParameter("Username", "GNPS username");
-  public static PasswordParameter pass = new PasswordParameter("Password", "GNPS password");
+  public static StringParameter user =
+      new StringParameter("Username", "GNPS username", null, false, true);
+  public static PasswordParameter pass = new PasswordParameter("Password",
+      "GNPS password is sent unencripted (until server is moved to final location)");
 
   public GnpsLibrarySubmitParameters() {
     super(new Parameter[] {user, pass});

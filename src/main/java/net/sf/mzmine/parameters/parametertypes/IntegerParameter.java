@@ -19,11 +19,8 @@
 package net.sf.mzmine.parameters.parametertypes;
 
 import java.util.Collection;
-
 import javax.swing.BorderFactory;
-
 import org.w3c.dom.Element;
-
 import net.sf.mzmine.parameters.UserParameter;
 
 /**
@@ -41,6 +38,7 @@ public class IntegerParameter implements UserParameter<Integer, IntegerComponent
   private final Integer minimum, maximum;
   private Integer value;
   private final boolean valueRequired;
+  private final boolean sensitive;
 
   public IntegerParameter(final String aName, final String aDescription) {
     this(aName, aDescription, null, true, null, null);
@@ -63,12 +61,22 @@ public class IntegerParameter implements UserParameter<Integer, IntegerComponent
 
   public IntegerParameter(final String aName, final String aDescription, final Integer defaultValue,
       final boolean valueRequired, final Integer min, final Integer max) {
+    this(aName, aDescription, defaultValue, valueRequired, min, max, false);
+  }
+
+  public IntegerParameter(final String aName, final String aDescription, boolean isSensitive) {
+    this(aName, aDescription, null, true, null, null, isSensitive);
+  }
+
+  public IntegerParameter(final String aName, final String aDescription, final Integer defaultValue,
+      final boolean valueRequired, final Integer min, final Integer max, boolean isSensitive) {
     this.name = aName;
     this.description = aDescription;
     this.value = defaultValue;
     this.valueRequired = valueRequired;
     this.minimum = min;
     this.maximum = max;
+    this.sensitive = isSensitive;
   }
 
   @Override
@@ -165,5 +173,10 @@ public class IntegerParameter implements UserParameter<Integer, IntegerComponent
 
   private boolean checkBounds(final int number) {
     return (minimum == null || number >= minimum) && (maximum == null || number <= maximum);
+  }
+
+  @Override
+  public boolean isSensitive() {
+    return sensitive;
   }
 }

@@ -19,11 +19,8 @@
 package net.sf.mzmine.parameters.parametertypes;
 
 import java.util.Collection;
-
 import javax.swing.BorderFactory;
-
 import org.w3c.dom.Element;
-
 import net.sf.mzmine.parameters.UserParameter;
 
 public class StringParameter implements UserParameter<String, StringComponent> {
@@ -31,6 +28,7 @@ public class StringParameter implements UserParameter<String, StringComponent> {
   private String name, description, value;
   private int inputsize = 20;
   private boolean valueRequired = true;
+  private final boolean sensitive;
 
   public StringParameter(String name, String description) {
     this(name, description, null);
@@ -40,21 +38,31 @@ public class StringParameter implements UserParameter<String, StringComponent> {
     this.name = name;
     this.description = description;
     this.inputsize = inputsize;
+    this.sensitive = false;
+  }
+
+  public StringParameter(String name, String description, boolean isSensitive) {
+    this(name, description, null, true, isSensitive);
   }
 
   public StringParameter(String name, String description, String defaultValue) {
-    this.name = name;
-    this.description = description;
-    this.value = defaultValue;
+    this(name, description, defaultValue, true, false);
   }
 
   public StringParameter(String name, String description, String defaultValue,
       boolean valueRequired) {
+    this(name, description, defaultValue, valueRequired, false);
+  }
+
+  public StringParameter(String name, String description, String defaultValue,
+      boolean valueRequired, boolean isSensitive) {
     this.name = name;
     this.description = description;
     this.value = defaultValue;
     this.valueRequired = valueRequired;
+    this.sensitive = isSensitive;
   }
+
 
   /**
    * @see net.sf.mzmine.data.Parameter#getName()
@@ -62,6 +70,11 @@ public class StringParameter implements UserParameter<String, StringComponent> {
   @Override
   public String getName() {
     return name;
+  }
+
+  @Override
+  public boolean isSensitive() {
+    return sensitive;
   }
 
   /**
@@ -80,6 +93,7 @@ public class StringParameter implements UserParameter<String, StringComponent> {
     return stringComponent;
   }
 
+  @Override
   public String getValue() {
     return value;
   }

@@ -21,17 +21,17 @@ package net.sf.mzmine.main;
 import java.io.File;
 import java.io.IOException;
 import java.text.NumberFormat;
-
 import net.sf.mzmine.desktop.preferences.MZminePreferences;
 import net.sf.mzmine.modules.MZmineModule;
 import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.util.StringCrypter;
 
 /**
  * MZmine configuration interface
  */
 public interface MZmineConfiguration {
 
-  public static final File CONFIG_FILE = new File("conf/config.xml");
+  public static final File CONFIG_FILE = new File(System.getProperty("user.home"), ".mzmine.conf");
 
   public ParameterSet getModuleParameters(Class<? extends MZmineModule> module);
 
@@ -52,5 +52,7 @@ public interface MZmineConfiguration {
   public String getRexecPath();
 
   public Boolean getSendStatistics();
+
+  public StringCrypter getEncrypter();
 
 }

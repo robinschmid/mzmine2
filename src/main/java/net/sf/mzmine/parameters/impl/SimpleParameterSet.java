@@ -23,16 +23,15 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import net.sf.mzmine.main.MZmineCore;
-import net.sf.mzmine.parameters.Parameter;
-import net.sf.mzmine.parameters.ParameterSet;
-import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
-import net.sf.mzmine.util.ExitCode;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.parameters.Parameter;
+import net.sf.mzmine.parameters.ParameterContainer;
+import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.parameters.dialogs.ParameterSetupDialog;
+import net.sf.mzmine.util.ExitCode;
 
 /**
  * Simple storage for the parameters. A typical MZmine module will inherit this class and define the
@@ -46,6 +45,7 @@ public class SimpleParameterSet implements ParameterSet {
   private static final String nameAttribute = "name";
 
   private Parameter<?> parameters[];
+  private boolean skipSensitiveParameters = false;
 
   public SimpleParameterSet() {
     this.parameters = new Parameter<?>[0];
@@ -55,10 +55,21 @@ public class SimpleParameterSet implements ParameterSet {
     this.parameters = parameters;
   }
 
+  @Override
   public Parameter<?>[] getParameters() {
     return parameters;
   }
 
+  @Override
+  public void setSkipSensitiveParameters(boolean skipSensitiveParameters) {
+    this.skipSensitiveParameters = skipSensitiveParameters;
+    for (Parameter<?> parameter : parameters) {
+      if (parameter instanceof ParameterContainer)
+        ((ParameterContainer) parameter).setSkipSensitiveParameters(skipSensitiveParameters);
+    }
+  }
+
+  @Override
   public void loadValuesFromXML(Element xmlElement) {
     NodeList list = xmlElement.getElementsByTagName(parameterElement);
     for (int i = 0; i < list.getLength(); i++) {
@@ -77,9 +88,12 @@ public class SimpleParameterSet implements ParameterSet {
     }
   }
 
+  @Override
   public void saveValuesToXML(Element xmlElement) {
     Document parentDocument = xmlElement.getOwnerDocument();
     for (Parameter<?> param : parameters) {
+      if (skipSensitiveParameters && param.isSensitive())
+        continue;
       Element paramElement = parentDocument.createElement(parameterElement);
       paramElement.setAttribute(nameAttribute, param.getName());
       xmlElement.appendChild(paramElement);
@@ -90,6 +104,7 @@ public class SimpleParameterSet implements ParameterSet {
   /**
    * Represent method's parameters and their values in human-readable format
    */
+  @Override
   public String toString() {
 
     StringBuilder s = new StringBuilder();
@@ -117,6 +132,7 @@ public class SimpleParameterSet implements ParameterSet {
   /**
    * Make a deep copy
    */
+  @Override
   public ParameterSet cloneParameterSet() {
 
     // Make a deep copy of the parameters
@@ -133,6 +149,7 @@ public class SimpleParameterSet implements ParameterSet {
 
       SimpleParameterSet newSet = this.getClass().newInstance();
       newSet.parameters = newParameters;
+      newSet.setSkipSensitiveParameters(skipSensitiveParameters);
       return newSet;
     } catch (Exception e) {
       e.printStackTrace();
@@ -140,6 +157,7 @@ public class SimpleParameterSet implements ParameterSet {
     }
   }
 
+  @Override
   @SuppressWarnings("unchecked")
   public <T extends Parameter<?>> T getParameter(T parameter) {
     for (Parameter<?> p : parameters) {
