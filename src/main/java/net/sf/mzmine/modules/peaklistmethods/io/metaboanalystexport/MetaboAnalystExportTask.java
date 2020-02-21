@@ -21,15 +21,16 @@ package net.sf.mzmine.modules.peaklistmethods.io.metaboanalystexport;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.regex.Pattern;
-
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.PeakIdentity;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.UserParameter;
@@ -61,6 +62,7 @@ class MetaboAnalystExportTask extends AbstractTask {
 
   }
 
+  @Override
   public double getFinishedPercentage() {
     if (totalRows == 0) {
       return 0;
@@ -68,10 +70,12 @@ class MetaboAnalystExportTask extends AbstractTask {
     return (double) processedRows / (double) totalRows;
   }
 
+  @Override
   public String getTaskDescription() {
     return "Exporting peak list(s) " + Arrays.toString(peakLists) + " to MetaboAnalyst CSV file(s)";
   }
 
+  @Override
   public void run() {
 
     setStatus(TaskStatus.PROCESSING);
@@ -109,10 +113,6 @@ class MetaboAnalystExportTask extends AbstractTask {
 
         // Open file
         FileWriter writer = new FileWriter(curFile);
-
-        // Get number of rows
-        totalRows = peakList.getNumberOfRows();
-
         exportPeakList(peakList, writer);
 
         // Close file
@@ -234,28 +234,36 @@ class MetaboAnalystExportTask extends AbstractTask {
    * Generates a unique name for each peak list row
    */
   private String generateUniquePeakListRowName(PeakListRow row) {
-
     final double mz = row.getAverageMZ();
     final double rt = row.getAverageRT();
     final int rowId = row.getID();
-
-    String generatedName = rowId + "/" + MZmineCore.getConfiguration().getMZFormat().format(mz)
-        + "mz/" + MZmineCore.getConfiguration().getRTFormat().format(rt) + "min";
+    IonIdentity ion = row.getBestIonIdentity();
+    final Integer net = ion == null ? null : ion.getNetID();
+    final Integer gid = row.getGroupID() == -1 ? null : row.getGroupID();
     PeakIdentity peakIdentity = row.getPreferredPeakIdentity();
+
+    String generatedName = MessageFormat.format("{0}/{1}mz/{2}min", rowId,
+        MZmineCore.getConfiguration().getMZFormat().format(mz),
+        MZmineCore.getConfiguration().getRTFormat().format(rt));
+    if (net != null && gid != null) {
+      generatedName += MessageFormat.format(" (net{0}/gid{1})", net, gid);
+    } else {
+      generatedName += MessageFormat.format(" ({0}{1})", net != null ? "net" + net : "",
+          gid != null ? "gid" + gid : "");
+    }
+    if (ion != null) {
+      generatedName += "/" + ion.getAdduct();
+      generatedName = generatedName.replaceAll("+", "_");
+    }
 
     if (peakIdentity == null)
       return generatedName;
 
     String idName = peakIdentity.getPropertyValue(PeakIdentity.PROPERTY_NAME);
 
-    if (idName == null)
-      return generatedName;
-
     idName = idName.replace('"', '\'');
     generatedName = generatedName + " (" + idName + ")";
-
     return generatedName;
-
   }
 
 }
