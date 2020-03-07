@@ -41,12 +41,23 @@ public class GNPSLibraryBatchExportTask extends AbstractTask {
   private double minMatchScoreGNPS;
   private File outputLibraryBatch;
   private String mgfName;
+  private boolean matchAdductAndIIN;
+  private String filterPI;
+  private String filterDataCollector;
+  private double minRelativeIntensity;
+  private int minSignals;
 
   public GNPSLibraryBatchExportTask(LibraryMethodeMetaDataParameters methodParam, String mgfName,
-      File outputLibrary, GnpsResults res, double minMatchScoreGNPS) {
+      File outputLibrary, GnpsResults res, double minMatchScoreGNPS, boolean matchAdductAndIIN,
+      String filterPI, String filterDataCollector, int minSignals, double minRelativeIntensity) {
     this.methodParam = methodParam;
     this.mgfName = mgfName;
     this.outputLibrary = outputLibrary;
+    this.matchAdductAndIIN = matchAdductAndIIN;
+    this.filterPI = filterPI;
+    this.filterDataCollector = filterDataCollector;
+    this.minSignals = minSignals;
+    this.minRelativeIntensity = minRelativeIntensity;
     outputLibraryBatch = FileAndPathUtil.getRealFilePath(outputLibrary, "tsv");
     this.res = res;
     this.minMatchScoreGNPS = minMatchScoreGNPS;
@@ -105,32 +116,34 @@ public class GNPSLibraryBatchExportTask extends AbstractTask {
       // for all networks
       for (IonIdentityNetworkResult net : nets.values()) {
         // has identity
-        GNPSResultsIdentity bestMatch = net.getBestLibraryMatch(matches);
+        GNPSResultsIdentity bestMatch =
+            net.getBestLibraryMatch(matches, matchAdductAndIIN, filterPI, filterDataCollector);
         // >min match score
         if (bestMatch != null && bestMatch.getMatchScore() >= minMatchScoreGNPS) {
           // all possible new library entries of this ion network
-          net.stream().filter(node -> hasMSMS(node, msmsData, 3, 0.001)).forEach(node -> {
-            // export to library
-            int id = toIndex(node);
-            DataPoint[] signals = msmsData.get(id);
-            totalNew.getAndIncrement();
-            logger.log(Level.INFO,
-                "new lib:" + totalNew.get() + "  Exporting node " + id + " with signals="
-                    + signals.length + "  for entry: " + bestMatch.getName() + " old->new ("
-                    + bestMatch.getResult(ATT.ADDUCT) + "->"
-                    + IonIdentityNetworkResult.getIonString(node) + ")");
+          net.stream().filter(node -> hasMSMS(node, msmsData, minSignals, minRelativeIntensity))
+              .forEach(node -> {
+                // export to library
+                int id = toIndex(node);
+                DataPoint[] signals = msmsData.get(id);
+                totalNew.getAndIncrement();
+                logger.log(Level.INFO,
+                    "new lib:" + totalNew.get() + "  Exporting node " + id + " with signals="
+                        + signals.length + "  for entry: " + bestMatch.getName() + " old->new ("
+                        + bestMatch.getResult(ATT.ADDUCT) + "->"
+                        + IonIdentityNetworkResult.getIonString(node) + ")");
 
-            // map all parameters
-            createEntryParameters(node, bestMatch, meta, param);
-            // json export
-            exportJsonLibraryEntry(json, param, signals);
-            // GNPS batch library export file:
-            exportGNPSBatchLibraryEntry(gnpsBatch, param, mgfName, toIndex(node));
+                // map all parameters
+                createEntryParameters(node, bestMatch, meta, param);
+                // json export
+                exportJsonLibraryEntry(json, param, signals);
+                // GNPS batch library export file:
+                exportGNPSBatchLibraryEntry(gnpsBatch, param, mgfName, toIndex(node));
 
 
-            // reset description as it is changed for every entry
-            meta.getParameter(LibraryMetaDataParameters.DESCRIPTION).setValue(description);
-          });
+                // reset description as it is changed for every entry
+                meta.getParameter(LibraryMetaDataParameters.DESCRIPTION).setValue(description);
+              });
         }
       }
 

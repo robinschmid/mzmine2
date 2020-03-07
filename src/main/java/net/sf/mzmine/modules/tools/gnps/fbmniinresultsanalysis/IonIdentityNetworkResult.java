@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 import org.graphstream.graph.Node;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsIdentity;
+import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsIdentity.ATT;
 import net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis.GNPSResultsAnalysisTask.NodeAtt;
 
 /**
@@ -105,8 +106,10 @@ public class IonIdentityNetworkResult extends ArrayList<Node> {
    * @param matches
    * @return
    */
-  public GNPSResultsIdentity getBestLibraryMatch(Map<Integer, GNPSResultsIdentity> matches) {
-    GNPSResultsIdentity result = stream().map(n -> matches.get(toIndex(n))).filter(Objects::nonNull)
+  public GNPSResultsIdentity getBestLibraryMatch(Map<Integer, GNPSResultsIdentity> matches,
+      boolean matchAdductAndIIN, String filterPI, String filterDataCollector) {
+    GNPSResultsIdentity result = stream().map(n -> getMatch(n, matches, matchAdductAndIIN))
+        .filter(Objects::nonNull).filter(res -> filterMatch(res, filterPI, filterDataCollector))
         .max((a, b) -> Double.compare(a.getMatchScore(), b.getMatchScore())).orElse(null);
     if (result == null)
       return null;
@@ -119,6 +122,50 @@ public class IonIdentityNetworkResult extends ArrayList<Node> {
       logger.info(s.toString());
       return result;
     }
+  }
+
+  /**
+   * Match names
+   * 
+   * @param res
+   * @param filterPI
+   * @param filterDataCollector
+   * @return
+   */
+  private boolean filterMatch(GNPSResultsIdentity res, String filterPI,
+      String filterDataCollector) {
+    if (filterPI.isEmpty() && filterDataCollector.isEmpty())
+      return true;
+
+    String datacollector = res.getResult(ATT.DATA_COLLECTOR).toString().toLowerCase();
+    String pi = res.getResult(ATT.PI).toString().toLowerCase();
+
+    return ((filterPI.isEmpty() || pi.contains(filterPI))
+        && (filterDataCollector.isEmpty() || filterDataCollector.contains(datacollector)));
+  }
+
+  private GNPSResultsIdentity getMatch(Node n, Map<Integer, GNPSResultsIdentity> matches,
+      boolean matchAdductAndIIN) {
+    GNPSResultsIdentity res = matches.get(toIndex(n));
+
+    if (!matchAdductAndIIN || res == null)
+      return res;
+
+    String iin = getIonString(n);
+    if (iin == null || !checkMatchAdductIIN(iin, res.getResult(ATT.ADDUCT).toString())) {
+      return null;
+    }
+    return res;
+  }
+
+  private boolean checkMatchAdductIIN(String iin, String adduct) {
+    System.out.println(cleanAdduct(iin) + " " + cleanAdduct(adduct) + "="
+        + cleanAdduct(iin).equals(cleanAdduct(adduct)));
+    return cleanAdduct(iin).equals(cleanAdduct(adduct));
+  }
+
+  private String cleanAdduct(String a) {
+    return a.replace("[", "").replace("]", "").replace(" ", "").replace("+", "");
   }
 
   public int countIdentified(Map<Integer, GNPSResultsIdentity> matches) {

@@ -98,6 +98,11 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
   private Boolean createSpecLib;
   private double minMatchScoreGNPS;
   private Boolean createSummary;
+  private Boolean matchAdductAndIIN;
+  private String filterDataCollector;
+  private String filterPI;
+  private Integer minSignals;
+  private Double minRelativeIntensity;
 
 
   public enum NodeAtt {
@@ -161,8 +166,18 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
     this.parameters = parameters;
     minMatchScoreGNPS =
         parameters.getParameter(GNPSResultsAnalysisParameters.MIN_MATCH_SCORE).getValue();
+    matchAdductAndIIN =
+        parameters.getParameter(GNPSResultsAnalysisParameters.MATCH_ADDUCT_IIN).getValue();
     createSummary =
         parameters.getParameter(GNPSResultsAnalysisParameters.CREATE_SUMMARY).getValue();
+    filterPI = parameters.getParameter(GNPSResultsAnalysisParameters.FILTER_PI).getValue();
+    filterDataCollector =
+        parameters.getParameter(GNPSResultsAnalysisParameters.FILTER_DATA_COLLECTOR).getValue();
+
+    minSignals = parameters.getParameter(GNPSResultsAnalysisParameters.MIN_SIGNALS).getValue();
+    minRelativeIntensity =
+        parameters.getParameter(GNPSResultsAnalysisParameters.MIN_REL_INTENSITY).getValue();
+
     createSpecLib =
         parameters.getParameter(GNPSResultsAnalysisParameters.CREATE_SPECTRAL_LIB).getValue();
     file = parameters.getParameter(GNPSResultsAnalysisParameters.FILE).getValue();
@@ -220,7 +235,8 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
             parameters.getParameter(GNPSResultsAnalysisParameters.CREATE_SPECTRAL_LIB)
                 .getEmbeddedParameters();
         GNPSLibraryBatchExportTask libTask = new GNPSLibraryBatchExportTask(methodParam,
-            fileMGF.getName(), outputLibrary, res, minMatchScoreGNPS);
+            fileMGF.getName(), outputLibrary, res, minMatchScoreGNPS, matchAdductAndIIN, filterPI,
+            filterDataCollector, minSignals, minRelativeIntensity);
         MZmineCore.getTaskController().addTask(libTask);
 
         // copy mgf to new folder
