@@ -203,9 +203,12 @@ public class GNPSExportAndSubmitTask extends AbstractTask {
 
     RowFilter filter = parameters.getParameter(GNPSExportParameters.FILTER).getValue();
 
+    boolean mergeLists =
+        parameters.getParameter(GNPSExportParameters.MERGE_FEATURE_LISTS).getValue();
+
     CSVExportTask quanExport = new CSVExportTask(
         parameters.getParameter(GNPSExportParameters.PEAK_LISTS).getValue().getMatchingPeakLists(), //
-        full, ",", common, rawdata, false, ";", filter);
+        full, ",", common, rawdata, false, ";", filter, mergeLists);
     if (tasks != null)
       tasks.add(quanExport);
     return quanExport;
@@ -220,6 +223,8 @@ public class GNPSExportAndSubmitTask extends AbstractTask {
   private AbstractTask addExtraEdgesTask(ParameterSet parameters, Collection<Task> tasks) {
     File full = parameters.getParameter(GNPSExportParameters.FILENAME).getValue();
     RowFilter filter = parameters.getParameter(GNPSExportParameters.FILTER).getValue();
+    boolean mergeLists =
+        parameters.getParameter(GNPSExportParameters.MERGE_FEATURE_LISTS).getValue();
 
     boolean exAnn = true;
     if (parameters.getParameter(GNPSExportParameters.SUBMIT).getValue()) {
@@ -228,9 +233,9 @@ public class GNPSExportAndSubmitTask extends AbstractTask {
     }
 
     AbstractTask extraEdgeExport = new ExportCorrAnnotationTask(
-        parameters.getParameter(GNPSExportParameters.PEAK_LISTS).getValue()
-            .getMatchingPeakLists()[0], //
-        full, 0, filter, exAnn, false, false);
+        parameters.getParameter(GNPSExportParameters.PEAK_LISTS).getValue().getMatchingPeakLists(), //
+        full, 0, filter, exAnn, false, false, mergeLists);
+
     if (tasks != null)
       tasks.add(extraEdgeExport);
     return extraEdgeExport;

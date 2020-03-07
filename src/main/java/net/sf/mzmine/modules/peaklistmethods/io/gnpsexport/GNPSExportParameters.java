@@ -29,6 +29,7 @@
 
 package net.sf.mzmine.modules.peaklistmethods.io.gnpsexport;
 
+import java.awt.Window;
 import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.modules.tools.msmsspectramerge.MsMsSpectraMergeParameters;
 import net.sf.mzmine.parameters.Parameter;
@@ -42,8 +43,6 @@ import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
 import net.sf.mzmine.util.ExitCode;
 
-import java.awt.*;
-
 
 public class GNPSExportParameters extends SimpleParameterSet {
 
@@ -54,7 +53,7 @@ public class GNPSExportParameters extends SimpleParameterSet {
    *
    */
   public enum RowFilter {
-  ALL, ONLY_WITH_MS2, ONLY_WITH_MS2_OR_ANNOTATION, ONLY_WITH_MS2_AND_ANNOTATION;
+    ALL, ONLY_WITH_MS2, ONLY_WITH_MS2_OR_ANNOTATION, ONLY_WITH_MS2_AND_ANNOTATION;
 
     @Override
     public String toString() {
@@ -94,7 +93,10 @@ public class GNPSExportParameters extends SimpleParameterSet {
   public static final MassListParameter MASS_LIST = new MassListParameter();
 
 
-  public static final OptionalModuleParameter<MsMsSpectraMergeParameters> MERGE_PARAMETER = new OptionalModuleParameter<>("Merge MS/MS", "Merge high qualitative MS/MS instead of exporting just the most intensive one.", new MsMsSpectraMergeParameters(), true);
+  public static final OptionalModuleParameter<MsMsSpectraMergeParameters> MERGE_PARAMETER =
+      new OptionalModuleParameter<>("Merge MS/MS",
+          "Merge high qualitative MS/MS instead of exporting just the most intensive one.",
+          new MsMsSpectraMergeParameters(), true);
 
 
   public static final OptionalModuleParameter<GNPSSubmitParameters> SUBMIT =
@@ -109,11 +111,15 @@ public class GNPSExportParameters extends SimpleParameterSet {
   // "Opens the super quick start of GNPS feature based networking in the standard browser.",
   // false);
 
+  public static final BooleanParameter MERGE_FEATURE_LISTS =
+      new BooleanParameter("Merge all exports", "Merge all feature lists in export", false);
+
   public static final BooleanParameter OPEN_FOLDER =
       new BooleanParameter("Open folder", "Opens the export folder", false);
 
   public GNPSExportParameters() {
-    super(new Parameter[] {PEAK_LISTS, FILENAME, MASS_LIST, MERGE_PARAMETER, FILTER, SUBMIT, OPEN_FOLDER});
+    super(new Parameter[] {PEAK_LISTS, FILENAME, MASS_LIST, MERGE_PARAMETER, FILTER, SUBMIT,
+        MERGE_FEATURE_LISTS, OPEN_FOLDER});
   }
 
   @Override

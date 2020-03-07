@@ -23,6 +23,7 @@ import java.text.DecimalFormat;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -30,10 +31,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import io.github.msdk.MSDKRuntimeException;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.identities.iontype.IonIdentity;
 import net.sf.mzmine.datamodel.identities.iontype.IonNetwork;
 import net.sf.mzmine.datamodel.identities.iontype.IonNetworkLogic;
@@ -75,11 +78,14 @@ public class ExportCorrAnnotationTask extends AbstractTask {
   private boolean exportMS2SimilarityEdges = false;
   private boolean exportMS2DiffSimilarityEdges = false;
   private double minR;
-  private final PeakList peakList;
+  private final PeakList[] peakLists;
   private File filename;
 
 
   private RowFilter filter;
+
+
+  private boolean mergeLists = false;
 
 
 
@@ -89,8 +95,8 @@ public class ExportCorrAnnotationTask extends AbstractTask {
    * @param parameterSet the parameters.
    * @param list peak list.
    */
-  public ExportCorrAnnotationTask(final ParameterSet parameterSet, final PeakList peakLists) {
-    this.peakList = peakLists;
+  public ExportCorrAnnotationTask(final ParameterSet parameterSet, final PeakList[] peakLists) {
+    this.peakLists = peakLists;
 
     // tolerances
     filename = parameterSet.getParameter(ExportCorrAnnotationParameters.FILENAME).getValue();
@@ -114,16 +120,17 @@ public class ExportCorrAnnotationTask extends AbstractTask {
    * @param parameterSet the parameters.
    * @param list peak list.
    */
-  public ExportCorrAnnotationTask(PeakList peakList, File filename, double minR, RowFilter filter,
-      boolean exportAnnotationEdges, boolean exportCorrelationEdges,
-      boolean exportIinRelationships) {
-    this.peakList = peakList;
+  public ExportCorrAnnotationTask(PeakList[] peakLists, File filename, double minR,
+      RowFilter filter, boolean exportAnnotationEdges, boolean exportCorrelationEdges,
+      boolean exportIinRelationships, boolean mergeLists) {
+    this.peakLists = peakLists;
     this.filename = filename;
     this.minR = minR;
     this.filter = filter;
     this.exportAnnotationEdges = exportAnnotationEdges;
     this.exportCorrelationEdges = exportCorrelationEdges;
     this.exportIinRelationships = exportIinRelationships;
+    this.mergeLists = mergeLists;
   }
 
   @Override
@@ -133,15 +140,36 @@ public class ExportCorrAnnotationTask extends AbstractTask {
 
   @Override
   public String getTaskDescription() {
-    return "Export adducts and correlation networks " + peakList.getName() + " ";
+    if (peakLists != null && peakLists.length > 0)
+      return "Export adducts and correlation networks " + peakLists[0].getName() + " ";
+    else
+      return "";
   }
 
   @Override
   public void run() {
+    setStatus(TaskStatus.PROCESSING);
     try {
-      setStatus(TaskStatus.PROCESSING);
-      LOG.info("Starting export of adduct and correlation networks" + peakList.getName());
 
+      if (mergeLists) {
+        exportMergedLists();
+      } else {
+        exportLists();
+      }
+    } catch (Exception t) {
+      LOG.log(Level.SEVERE, "Export of correlation and MS annotation results error", t);
+      setStatus(TaskStatus.ERROR);
+      setErrorMessage(t.getMessage());
+    }
+
+    if (getStatus() == TaskStatus.PROCESSING)
+      setStatus(TaskStatus.FINISHED);
+  }
+
+
+  private void exportLists() {
+    for (PeakList peakList : peakLists) {
+      LOG.info("Starting export of adduct and correlation networks" + peakList.getName());
       // export edges of annotations
       if (exportAnnotationEdges)
         exportAnnotationEdges(peakList, filename, filter.equals(RowFilter.ONLY_WITH_MS2), progress,
@@ -161,16 +189,119 @@ public class ExportCorrAnnotationTask extends AbstractTask {
       // export edges of corr
       if (exportCorrelationEdges)
         exportCorrelationEdges(peakList, filename, progress, this, minR, filter);
-
-    } catch (Exception t) {
-      LOG.log(Level.SEVERE, "Export of correlation and MS annotation results error", t);
-      setStatus(TaskStatus.ERROR);
-      setErrorMessage(t.getMessage());
     }
-
-    setStatus(TaskStatus.FINISHED);
   }
 
+  private void exportMergedLists() {
+    LOG.info("Starting export of adduct and correlation networks (merged) for n(peaklists)="
+        + peakLists.length);
+    // export edges of annotations
+    if (exportAnnotationEdges)
+      exportAnnotationEdgesMerged(peakLists, filename, filter.equals(RowFilter.ONLY_WITH_MS2),
+          progress, this);
+  }
+
+  /**
+   * Merged peak lists
+   * 
+   * @param pkl
+   * @param filename
+   * @param limitToMSMS
+   * @param progress
+   * @param task
+   * @return
+   */
+  public boolean exportAnnotationEdgesMerged(PeakList[] peakLists, File filename,
+      boolean limitToMSMS, Double progress, AbstractTask task) {
+    LOG.info("Export annotation edge file");
+
+    HashMap<String, Integer> renumbered = new HashMap<>();
+    int lastID = 0;
+    for (PeakList pkl : peakLists) {
+      for (PeakListRow r : pkl.getRows()) {
+        if (!filter.filter(r))
+          continue;
+        renumbered.put(getRowMapKey(r), lastID);
+        lastID++;
+      }
+    }
+
+    NumberFormat mzForm = MZmineCore.getConfiguration().getMZFormat();
+    NumberFormat corrForm = new DecimalFormat("0.000");
+    try {
+      StringBuilder ann = new StringBuilder();
+      // add header
+      ann.append(StringUtils.join(EDGES.values(), ','));
+      ann.append("\n");
+
+      AtomicInteger added = new AtomicInteger(0);
+
+      for (PeakList pkl : peakLists) {
+        PeakListRow[] rows = pkl.getRows();
+        Arrays.sort(rows, new PeakListRowSorter(SortingProperty.ID, SortingDirection.Ascending));
+
+
+        // for all rows
+        for (PeakListRow r : rows) {
+          if (!filter.filter(r))
+            continue;
+
+          if (task != null && task.isCanceled()) {
+            return false;
+          }
+          // row1
+          int rowID = r.getID();
+
+          //
+          if (r.hasIonIdentity()) {
+            r.getIonIdentities().forEach(adduct -> {
+              ConcurrentHashMap<PeakListRow, IonIdentity> links = adduct.getPartner();
+
+              // add all connection for ids>rowID
+              links.entrySet().stream().filter(Objects::nonNull)
+                  .filter(e -> e.getKey().getID() > rowID).forEach(e -> {
+                    PeakListRow link = e.getKey();
+                    if (!limitToMSMS || link.getBestFragmentation() != null) {
+                      IonIdentity id = e.getValue();
+                      double dmz = Math.abs(r.getAverageMZ() - link.getAverageMZ());
+
+                      // convert ids for merging
+                      Integer id1 = renumbered.get(getRowMapKey(r));
+                      Integer id2 = renumbered.get(getRowMapKey(e.getKey()));
+
+                      // the data
+                      exportEdge(ann, "MS1 annotation", id1, id2,
+                          corrForm.format((id.getScore() + adduct.getScore()) / 2d), //
+                          id.getAdduct() + " " + adduct.getAdduct() + " dm/z="
+                              + mzForm.format(dmz));
+                      added.incrementAndGet();
+                    }
+                  });
+            });
+          }
+        }
+
+        LOG.info("Annotation edges exported " + added.get() + "");
+      }
+
+      // export ann edges
+      // Filename
+      if (added.get() > 0) {
+        writeToFile(ann.toString(), filename, "_edges_msannotation", ".csv");
+        return true;
+      } else
+        return false;
+    } catch (Exception e) {
+      throw new MSDKRuntimeException(e);
+    }
+  }
+
+
+  private String getRowMapKey(PeakListRow r) {
+    String rawnames = Arrays.stream(r.getRawDataFiles()).map(RawDataFile::getName)
+        .collect(Collectors.joining(","));
+    return rawnames + r.getID();
+  }
 
   public static boolean exportAnnotationEdges(PeakList pkl, File filename, boolean limitToMSMS,
       Double progress, AbstractTask task) {

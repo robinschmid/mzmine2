@@ -29,8 +29,22 @@
 
 package net.sf.mzmine.modules.peaklistmethods.io.gnpsexport;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.MessageFormat;
+import java.text.NumberFormat;
+import java.util.Arrays;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import io.github.msdk.MSDKRuntimeException;
-import net.sf.mzmine.datamodel.*;
+import net.sf.mzmine.datamodel.DataPoint;
+import net.sf.mzmine.datamodel.Feature;
+import net.sf.mzmine.datamodel.MassList;
+import net.sf.mzmine.datamodel.PeakList;
+import net.sf.mzmine.datamodel.PeakListRow;
+import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimpleFeature;
 import net.sf.mzmine.datamodel.impl.SimplePeakListRow;
 import net.sf.mzmine.main.MZmineCore;
@@ -44,16 +58,6 @@ import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
 import net.sf.mzmine.util.PeakUtils;
 import net.sf.mzmine.util.files.FileAndPathUtil;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.text.DecimalFormat;
-import java.text.MessageFormat;
-import java.text.NumberFormat;
-import java.util.Arrays;
-import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 /**
  * Exports all files needed for GNPS
@@ -81,18 +85,22 @@ public class GNPSmgfExportTask extends AbstractTask {
   private NumberFormat rtsForm = new DecimalFormat("0.###");
   // correlation
   private NumberFormat corrForm = new DecimalFormat("0.0000");
+  private boolean mergeLists = false;
 
   private RowFilter filter;
+  private int lastID = -1;
 
   GNPSmgfExportTask(ParameterSet parameters) {
     this.peakLists =
         parameters.getParameter(GNPSExportParameters.PEAK_LISTS).getValue().getMatchingPeakLists();
 
+    this.mergeLists = parameters.getParameter(GNPSExportParameters.MERGE_FEATURE_LISTS).getValue();
     this.fileName = parameters.getParameter(GNPSExportParameters.FILENAME).getValue();
     this.massListName = parameters.getParameter(GNPSExportParameters.MASS_LIST).getValue();
     this.filter = parameters.getParameter(GNPSExportParameters.FILTER).getValue();
     if (parameters.getParameter(GNPSExportParameters.MERGE_PARAMETER).getValue()) {
-      mergeParameters = parameters.getParameter(GNPSExportParameters.MERGE_PARAMETER).getEmbeddedParameters();
+      mergeParameters =
+          parameters.getParameter(GNPSExportParameters.MERGE_PARAMETER).getEmbeddedParameters();
       merger = new MsMsSpectraMergeModule(mergeParameters);
     } else {
       mergeParameters = null;
@@ -112,15 +120,25 @@ public class GNPSmgfExportTask extends AbstractTask {
   public void run() {
     setStatus(TaskStatus.PROCESSING);
 
+    if (mergeLists) {
+      exportMergedLists();
+    } else {
+      exportLists();
+    }
+
+    if (getStatus() == TaskStatus.PROCESSING)
+      setStatus(TaskStatus.FINISHED);
+  }
+
+  private void exportLists() {
     // Shall export several files?
     boolean substitute = fileName.getPath().contains(plNamePattern);
-
+    // Filename
+    File curFile = fileName;
+    FileWriter writer = null;
     // Process peak lists
     for (PeakList peakList : peakLists) {
       currentIndex++;
-
-      // Filename
-      File curFile = fileName;
       if (substitute) {
         // Cleanup from illegal filename characters
         String cleanPlName = peakList.getName().replaceAll("[^a-zA-Z0-9.-]", "_");
@@ -132,7 +150,6 @@ public class GNPSmgfExportTask extends AbstractTask {
       curFile = FileAndPathUtil.getRealFilePath(curFile, "mgf");
 
       // Open file
-      FileWriter writer;
       try {
         writer = new FileWriter(curFile);
       } catch (Exception e) {
@@ -151,6 +168,11 @@ public class GNPSmgfExportTask extends AbstractTask {
 
       // Cancel?
       if (isCanceled()) {
+        // Close file
+        try {
+          writer.close();
+        } catch (Exception e) {
+        }
         return;
       }
 
@@ -168,9 +190,53 @@ public class GNPSmgfExportTask extends AbstractTask {
       if (!substitute)
         break;
     }
+  }
 
-    if (getStatus() == TaskStatus.PROCESSING)
-      setStatus(TaskStatus.FINISHED);
+  private void exportMergedLists() {
+    // Filename
+    FileWriter writer = null;
+    File curFile = fileName;
+    curFile = FileAndPathUtil.getRealFilePath(curFile, "mgf");
+    // Open file
+    try {
+      writer = new FileWriter(curFile);
+    } catch (Exception e) {
+      setStatus(TaskStatus.ERROR);
+      setErrorMessage("Could not open file " + curFile + " for writing.");
+      return;
+    }
+
+    // Process peak lists
+    for (PeakList peakList : peakLists) {
+      currentIndex++;
+
+      try {
+        export(peakList, writer, curFile);
+      } catch (IOException e) {
+        setStatus(TaskStatus.ERROR);
+        setErrorMessage("Error while writing into file " + curFile + ": " + e.getMessage());
+        return;
+      }
+
+      // Cancel?
+      if (isCanceled()) {
+        // Close file
+        try {
+          writer.close();
+        } catch (Exception e) {
+        }
+        return;
+      }
+
+    }
+    // Close file
+    try {
+      writer.close();
+    } catch (Exception e) {
+      setStatus(TaskStatus.ERROR);
+      setErrorMessage("Could not close file " + curFile);
+      return;
+    }
   }
 
   private int export(PeakList peakList, FileWriter writer, File curFile) throws IOException {
@@ -185,6 +251,11 @@ public class GNPSmgfExportTask extends AbstractTask {
         continue;
 
       String rowID = Integer.toString(row.getID());
+      if (mergeLists) {
+        // starts with 0
+        lastID++;
+        rowID = Integer.toString(lastID);
+      }
       double retTimeInSeconds = ((row.getAverageRT() * 60 * 100.0) / 100.);
 
       // find ion species by annotation (can be null)
@@ -265,7 +336,7 @@ public class GNPSmgfExportTask extends AbstractTask {
         DataPoint[] dataPoints = massList.getDataPoints();
         if (merger != null) {
           MergedSpectrum spectrum = merger.getBestMergedSpectrum(row, massListName);
-          if (spectrum!=null) {
+          if (spectrum != null) {
             dataPoints = spectrum.data;
             writer.write("MERGED_STATS=");
             writer.write(spectrum.getMergeStatsDescription());
@@ -273,8 +344,8 @@ public class GNPSmgfExportTask extends AbstractTask {
           }
         }
         for (DataPoint peak : dataPoints) {
-            writer.write(mzForm.format(peak.getMZ()) + " " + intensityForm.format(peak.getIntensity())
-                    + newLine);
+          writer.write(mzForm.format(peak.getMZ()) + " " + intensityForm.format(peak.getIntensity())
+              + newLine);
         }
 
         writer.write("END IONS" + newLine);

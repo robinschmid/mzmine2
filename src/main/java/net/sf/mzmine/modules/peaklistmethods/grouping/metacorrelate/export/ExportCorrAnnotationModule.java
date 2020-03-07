@@ -21,7 +21,6 @@ package net.sf.mzmine.modules.peaklistmethods.grouping.metacorrelate.export;
 import java.util.Collection;
 import javax.annotation.Nonnull;
 import net.sf.mzmine.datamodel.MZmineProject;
-import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.modules.MZmineModuleCategory;
 import net.sf.mzmine.modules.MZmineProcessingModule;
 import net.sf.mzmine.parameters.ParameterSet;
@@ -62,10 +61,9 @@ public class ExportCorrAnnotationModule implements MZmineProcessingModule {
   public ExitCode runModule(@Nonnull MZmineProject project, @Nonnull final ParameterSet parameters,
       @Nonnull final Collection<Task> tasks) {
 
-    PeakList[] pkl = parameters.getParameter(ExportCorrAnnotationParameters.PEAK_LISTS).getValue()
-        .getMatchingPeakLists();
-    for (PeakList p : pkl)
-      tasks.add(new ExportCorrAnnotationTask(parameters, p));
+    tasks.add(new ExportCorrAnnotationTask(parameters,
+        parameters.getParameter(ExportCorrAnnotationParameters.PEAK_LISTS).getValue()
+            .getMatchingPeakLists()));
 
     return ExitCode.OK;
   }

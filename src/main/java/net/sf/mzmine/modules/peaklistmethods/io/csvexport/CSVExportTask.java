@@ -22,11 +22,13 @@ import java.io.File;
 import java.io.FileWriter;
 import java.text.NumberFormat;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import com.google.common.collect.Lists;
@@ -59,6 +61,8 @@ public class CSVExportTask extends AbstractTask {
   private Boolean exportAllPeakInfo;
   private String idSeparator;
   private RowFilter filter;
+  private boolean mergeLists = false;
+  private int lastID = -1;
 
   public CSVExportTask(ParameterSet parameters) {
     this.peakLists =
@@ -88,7 +92,7 @@ public class CSVExportTask extends AbstractTask {
    */
   public CSVExportTask(PeakList[] peakLists, File fileName, String fieldSeparator,
       ExportRowCommonElement[] commonElements, ExportRowDataFileElement[] dataFileElements,
-      Boolean exportAllPeakInfo, String idSeparator, RowFilter filter) {
+      Boolean exportAllPeakInfo, String idSeparator, RowFilter filter, boolean mergeLists) {
     super();
     this.peakLists = peakLists;
     this.fileName = fileName;
@@ -98,7 +102,7 @@ public class CSVExportTask extends AbstractTask {
     this.exportAllPeakInfo = exportAllPeakInfo;
     this.idSeparator = idSeparator;
     this.filter = filter;
-
+    this.mergeLists = mergeLists;
 
     // if best annotation and best annotation plus support was selected - deselect
     refineCommonElements();
@@ -131,9 +135,19 @@ public class CSVExportTask extends AbstractTask {
 
   @Override
   public void run() {
-
     setStatus(TaskStatus.PROCESSING);
 
+    if (mergeLists) {
+      exportMergedLists();
+    } else {
+      exportLists();
+    }
+
+    if (getStatus() == TaskStatus.PROCESSING)
+      setStatus(TaskStatus.FINISHED);
+  }
+
+  private void exportLists() {
     // Shall export several files?
     boolean substitute = fileName.getPath().contains(plNamePattern);
 
@@ -187,14 +201,114 @@ public class CSVExportTask extends AbstractTask {
       if (!substitute)
         break;
     }
+  }
 
-    if (getStatus() == TaskStatus.PROCESSING)
-      setStatus(TaskStatus.FINISHED);
+  private void exportMergedLists() {
+    // Total number of rows
+    for (PeakList peakList : peakLists) {
+      totalRows += peakList.getNumberOfRows();
+    }
 
+    // Filename
+    File curFile = fileName;
+    // Open file
+    FileWriter writer;
+    try {
+      writer = new FileWriter(curFile);
+    } catch (Exception e) {
+      setStatus(TaskStatus.ERROR);
+      setErrorMessage("Could not open file " + curFile + " for writing.");
+      return;
+    }
+
+    // all raw data files
+    HashMap<String, RawDataFile> raws = new HashMap<>();
+    Arrays.stream(peakLists).flatMap(pkl -> Arrays.stream(pkl.getRawDataFiles())).forEach(r -> {
+      raws.put(r.getName(), r);
+    });
+    RawDataFile rawDataFiles[] = raws.values().toArray(RawDataFile[]::new);
+
+    HashMap<String, Integer> renumbered = new HashMap<>();
+    int lastID = 0;
+    for (PeakList pkl : peakLists) {
+      for (PeakListRow r : pkl.getRows()) {
+        if (!filter.filter(r))
+          continue;
+        renumbered.put(getRowMapKey(r), lastID);
+        lastID++;
+      }
+    }
+
+    // renumber networks
+    HashMap<String, Integer> netIDs = new HashMap<>();
+    lastID = 0;
+    for (PeakList pkl : peakLists) {
+      for (PeakListRow r : pkl.getRows()) {
+        if (!filter.filter(r))
+          continue;
+
+        if (r.getBestIonIdentity() != null) {
+          String key = r.getBestIonIdentity().getNetIDString() + pkl.getName();
+          if (!netIDs.containsKey(key)) {
+            netIDs.put(key, lastID);
+            lastID++;
+          }
+        }
+      }
+    }
+
+    // peak Information
+    Set<String> peakInformationFields = new HashSet<>();
+
+    for (PeakList pkl : peakLists) {
+      for (PeakListRow row : pkl.getRows()) {
+        if (!filter.filter(row))
+          continue;
+        if (row.getPeakInformation() != null) {
+          for (String key : row.getPeakInformation().getAllProperties().keySet()) {
+            peakInformationFields.add(key);
+          }
+        }
+      }
+    }
+
+    // write header
+    writeMergedHeader(writer, curFile, rawDataFiles, renumbered, peakInformationFields);
+    // Process peak lists
+    for (PeakList peakList : peakLists) {
+      exportMergedPeakList(peakList, writer, curFile, rawDataFiles, renumbered,
+          peakInformationFields, netIDs);
+
+      // Cancel?
+      if (isCanceled()) {
+        // Close file
+        try {
+          writer.close();
+        } catch (Exception e) {
+        }
+        return;
+      }
+    }
+    // Close file
+    try {
+      writer.close();
+    } catch (Exception e) {
+      setStatus(TaskStatus.ERROR);
+      setErrorMessage("Could not close file " + curFile);
+      return;
+    }
+  }
+
+  private String getRowMapKey(PeakListRow r) {
+    String rawnames = Arrays.stream(r.getRawDataFiles()).map(RawDataFile::getName)
+        .collect(Collectors.joining(","));
+    return rawnames + r.getID();
   }
 
   private void exportPeakList(PeakList peakList, FileWriter writer, File fileName) {
     NumberFormat mzForm = MZmineCore.getConfiguration().getMZFormat();
+
+    // all raw data files
     RawDataFile rawDataFiles[] = peakList.getRawDataFiles();
 
     // Buffer for writing
@@ -280,7 +394,11 @@ public class CSVExportTask extends AbstractTask {
       for (int i = 0; i < length; i++) {
         switch (commonElements[i]) {
           case ROW_ID:
-            line.append(peakListRow.getID() + fieldSeparator);
+            // starts with 0 when merged
+            if (mergeLists)
+              lastID++;
+            int id = mergeLists ? lastID : peakListRow.getID();
+            line.append(id + fieldSeparator);
             break;
           case ROW_MZ:
             line.append(peakListRow.getAverageMZ() + fieldSeparator);
@@ -337,8 +455,8 @@ public class CSVExportTask extends AbstractTask {
             line.append(numDetected + fieldSeparator);
             break;
           case ROW_CORR_GROUP_ID:
-            int id = peakListRow.getGroupID();
-            line.append((id == -1 ? "" : id) + fieldSeparator);
+            int gid = peakListRow.getGroupID();
+            line.append((gid == -1 ? "" : gid) + fieldSeparator);
             break;
           case ROW_BEST_ANNOTATION:
             IonIdentity adduct = peakListRow.getBestIonIdentity();
@@ -372,6 +490,296 @@ public class CSVExportTask extends AbstractTask {
               line.append(fieldSeparator);
             else
               line.append(ad2.getNetwork().getID() + fieldSeparator);
+            break;
+          case ROW_NEUTRAL_MASS:
+            IonIdentity ad3 = peakListRow.getBestIonIdentity();
+            if (ad3 == null || ad3.getNetwork() == null)
+              line.append(fieldSeparator);
+            else
+              line.append(mzForm.format(ad3.getNetwork().calcNeutralMass()) + fieldSeparator);
+            break;
+        }
+      }
+
+      // peak Information
+      if (exportAllPeakInfo) {
+        if (peakListRow.getPeakInformation() != null) {
+          Map<String, String> allPropertiesMap =
+              peakListRow.getPeakInformation().getAllProperties();
+
+          for (String key : peakInformationFields) {
+            String value = allPropertiesMap.get(key);
+            if (value == null)
+              value = "";
+            line.append(value + fieldSeparator);
+          }
+        }
+      }
+
+      // Data file elements
+      length = dataFileElements.length;
+      for (RawDataFile dataFile : rawDataFiles) {
+        for (int i = 0; i < length; i++) {
+          Feature peak = peakListRow.getPeak(dataFile);
+          if (peak != null) {
+            switch (dataFileElements[i]) {
+              case PEAK_STATUS:
+                line.append(peak.getFeatureStatus() + fieldSeparator);
+                break;
+              case PEAK_MZ:
+                line.append(peak.getMZ() + fieldSeparator);
+                break;
+              case PEAK_RT:
+                line.append(peak.getRT() + fieldSeparator);
+                break;
+              case PEAK_RT_START:
+                line.append(peak.getRawDataPointsRTRange().lowerEndpoint() + fieldSeparator);
+                break;
+              case PEAK_RT_END:
+                line.append(peak.getRawDataPointsRTRange().upperEndpoint() + fieldSeparator);
+                break;
+              case PEAK_DURATION:
+                line.append(
+                    RangeUtils.rangeLength(peak.getRawDataPointsRTRange()) + fieldSeparator);
+                break;
+              case PEAK_HEIGHT:
+                line.append(peak.getHeight() + fieldSeparator);
+                break;
+              case PEAK_AREA:
+                line.append(peak.getArea() + fieldSeparator);
+                break;
+              case PEAK_CHARGE:
+                line.append(peak.getCharge() + fieldSeparator);
+                break;
+              case PEAK_DATAPOINTS:
+                line.append(peak.getScanNumbers().length + fieldSeparator);
+                break;
+              case PEAK_FWHM:
+                line.append(peak.getFWHM() + fieldSeparator);
+                break;
+              case PEAK_TAILINGFACTOR:
+                line.append(peak.getTailingFactor() + fieldSeparator);
+                break;
+              case PEAK_ASYMMETRYFACTOR:
+                line.append(peak.getAsymmetryFactor() + fieldSeparator);
+                break;
+              case PEAK_MZMIN:
+                line.append(peak.getRawDataPointsMZRange().lowerEndpoint() + fieldSeparator);
+                break;
+              case PEAK_MZMAX:
+                line.append(peak.getRawDataPointsMZRange().upperEndpoint() + fieldSeparator);
+                break;
+            }
+          } else {
+            switch (dataFileElements[i]) {
+              case PEAK_STATUS:
+                line.append(FeatureStatus.UNKNOWN + fieldSeparator);
+                break;
+              default:
+                line.append("0" + fieldSeparator);
+                break;
+            }
+          }
+        }
+      }
+
+      line.append("\n");
+
+      try {
+        writer.write(line.toString());
+      } catch (Exception e) {
+        setStatus(TaskStatus.ERROR);
+        setErrorMessage("Could not write to file " + fileName);
+        return;
+      }
+
+      processedRows++;
+    }
+  }
+
+
+  private void writeMergedHeader(FileWriter writer, File fileName, RawDataFile[] rawDataFiles,
+      HashMap<String, Integer> renumbered, Set<String> peakInformationFields) {
+    // Buffer for writing
+    StringBuffer line = new StringBuffer();
+    // Write column headers
+    // Common elements
+    int length = commonElements.length;
+    String name;
+    for (int i = 0; i < length; i++) {
+      if (commonElements[i].equals(ExportRowCommonElement.ROW_BEST_ANNOTATION_AND_SUPPORT)) {
+        line.append("best ion" + fieldSeparator);
+        line.append("auto MS2 verify" + fieldSeparator);
+        line.append("identified by n=" + fieldSeparator);
+        line.append("partners" + fieldSeparator);
+      } else if (commonElements[i].equals(ExportRowCommonElement.ROW_BEST_ANNOTATION)) {
+        line.append("best ion" + fieldSeparator);
+      } else {
+        name = commonElements[i].toString();
+        name = name.replace("Export ", "");
+        name = escapeStringForCSV(name);
+        line.append(name + fieldSeparator);
+      }
+    }
+
+    if (exportAllPeakInfo)
+      for (String field : peakInformationFields)
+        line.append(field + fieldSeparator);
+
+    // Data file elements
+    length = dataFileElements.length;
+    for (int df = 0; df < rawDataFiles.length; df++) {
+      for (int i = 0; i < length; i++) {
+        name = rawDataFiles[df].getName();
+        name = name + " " + dataFileElements[i].toString();
+        name = escapeStringForCSV(name);
+        line.append(name + fieldSeparator);
+      }
+    }
+
+    line.append("\n");
+
+    try {
+      writer.write(line.toString());
+    } catch (Exception e) {
+      setStatus(TaskStatus.ERROR);
+      setErrorMessage("Could not write to file " + fileName);
+      return;
+    }
+  }
+
+  private void exportMergedPeakList(PeakList peakList, FileWriter writer, File fileName,
+      RawDataFile[] rawDataFiles, HashMap<String, Integer> renumbered,
+      Set<String> peakInformationFields, HashMap<String, Integer> netIDs) {
+    NumberFormat mzForm = MZmineCore.getConfiguration().getMZFormat();
+
+    StringBuffer line = new StringBuffer();
+    int length = 0;
+    // Write data rows
+    for (PeakListRow peakListRow : peakList.getRows()) {
+
+      if (!filter.filter(peakListRow)) {
+        processedRows++;
+        continue;
+      }
+
+      // Cancel?
+      if (isCanceled()) {
+        return;
+      }
+
+      // Reset the buffer
+      line.setLength(0);
+
+      // Common elements
+      length = commonElements.length;
+      for (int i = 0; i < length; i++) {
+        switch (commonElements[i]) {
+          case ROW_ID:
+            // starts with 0 when merged
+            if (mergeLists)
+              lastID++;
+            int id = mergeLists ? lastID : peakListRow.getID();
+            line.append(id + fieldSeparator);
+            break;
+          case ROW_MZ:
+            line.append(peakListRow.getAverageMZ() + fieldSeparator);
+            break;
+          case ROW_RT:
+            line.append(peakListRow.getAverageRT() + fieldSeparator);
+            break;
+          case ROW_IDENTITY:
+            // Identity elements
+            PeakIdentity peakId = peakListRow.getPreferredPeakIdentity();
+            if (peakId == null) {
+              line.append(fieldSeparator);
+              break;
+            }
+            String propertyValue = peakId.toString();
+            propertyValue = escapeStringForCSV(propertyValue);
+            line.append(propertyValue + fieldSeparator);
+            break;
+          case ROW_IDENTITY_ALL:
+            // Identity elements
+            PeakIdentity[] peakIdentities = peakListRow.getPeakIdentities();
+            propertyValue = "";
+            for (int x = 0; x < peakIdentities.length; x++) {
+              if (x > 0)
+                propertyValue += idSeparator;
+              propertyValue += peakIdentities[x].toString();
+            }
+            propertyValue = escapeStringForCSV(propertyValue);
+            line.append(propertyValue + fieldSeparator);
+            break;
+          case ROW_IDENTITY_DETAILS:
+            peakId = peakListRow.getPreferredPeakIdentity();
+            if (peakId == null) {
+              line.append(fieldSeparator);
+              break;
+            }
+            propertyValue = peakId.getDescription();
+            if (propertyValue != null)
+              propertyValue = propertyValue.replaceAll("\\n", ";");
+            propertyValue = escapeStringForCSV(propertyValue);
+            line.append(propertyValue + fieldSeparator);
+            break;
+          case ROW_COMMENT:
+            String comment = escapeStringForCSV(peakListRow.getComment());
+            line.append(comment + fieldSeparator);
+            break;
+          case ROW_PEAK_NUMBER:
+            int numDetected = 0;
+            for (Feature p : peakListRow.getPeaks()) {
+              if (p.getFeatureStatus() == FeatureStatus.DETECTED) {
+                numDetected++;
+              }
+            }
+            line.append(numDetected + fieldSeparator);
+            break;
+          case ROW_CORR_GROUP_ID:
+            int gid = peakListRow.getGroupID();
+            line.append((gid == -1 ? "" : gid) + fieldSeparator);
+            break;
+          case ROW_BEST_ANNOTATION:
+            IonIdentity adduct = peakListRow.getBestIonIdentity();
+            if (adduct == null)
+              line.append(fieldSeparator);
+            else {
+              line.append(adduct.getIonType().toString(false) + fieldSeparator);
+            }
+            break;
+          case ROW_BEST_ANNOTATION_AND_SUPPORT:
+            IonIdentity ad = peakListRow.getBestIonIdentity();
+            if (ad == null)
+              line.append(fieldSeparator + fieldSeparator + fieldSeparator + fieldSeparator);
+            else {
+              String msms = "";
+              if (ad.getMSMSModVerify() > 0)
+                msms = "MS/MS verified: nloss";
+              if (ad.getMSMSMultimerCount() > 0)
+                msms += msms.isEmpty() ? "MS/MS verified: xmer" : (idSeparator + " xmer");
+
+              int[] pid = ad.getPartnerRowsID();
+              Integer[] mergedpid = new Integer[pid.length];
+              for (int y = 0; y < pid.length; y++) {
+                mergedpid[y] = renumbered.get(getRowMapKey(peakList.findRowByID(pid[y])));
+              }
+
+              String partners = StringUtils.join(mergedpid, idSeparator);
+              line.append(ad.getIonType().toString(false) + fieldSeparator //
+                  + msms + fieldSeparator //
+                  + ad.getPartnerRowsID().length + fieldSeparator //
+                  + partners + fieldSeparator);
+            }
+            break;
+          case ROW_MOL_NETWORK_ID:
+            IonIdentity ad2 = peakListRow.getBestIonIdentity();
+            if (ad2 == null || ad2.getNetwork() == null)
+              line.append(fieldSeparator);
+            else {
+              String key = peakListRow.getBestIonIdentity().getNetIDString() + peakList.getName();
+              line.append(netIDs.get(key) + fieldSeparator);
+            }
             break;
           case ROW_NEUTRAL_MASS:
             IonIdentity ad3 = peakListRow.getBestIonIdentity();

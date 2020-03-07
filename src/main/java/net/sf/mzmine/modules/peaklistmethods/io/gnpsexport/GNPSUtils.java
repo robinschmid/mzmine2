@@ -50,7 +50,7 @@ public class GNPSUtils {
   // Logger.
   private static final Logger LOG = Logger.getLogger(GNPSUtils.class.getName());
   public static final String URL =
-      "http://dorresteinappshub.ucsd.edu:5050/uploadanalyzefeaturenetworking";
+      "https://gnps-quickstart.ucsd.edu/uploadanalyzefeaturenetworking";
 
   /**
    * Submit job to GNPS
@@ -138,7 +138,8 @@ public class GNPSUtils {
           if (edgeAnn != null && edgeAnn.exists())
             entity.addPart("additionalpairs", new FileBody(edgeAnn));
 
-          HttpPost httppost = new HttpPost(URL);
+          HttpPost httppost =
+              new HttpPost("https://gnps-quickstart.ucsd.edu/uploadanalyzefeaturenetworking");
           httppost.setEntity(entity);
 
           LOG.info("Submitting GNPS job " + httppost.getRequestLine());
