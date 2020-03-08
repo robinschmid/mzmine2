@@ -51,10 +51,10 @@ public class GNPSResultsAnalysisParameters extends SimpleParameterSet {
       "Match adduct to IIN", "Match adduct (library match) to best ion (IIN) for export", false);
 
   public static final StringParameter FILTER_PI = new StringParameter("PI filter",
-      "Filter library matches by PI (not case sensitive, contains)", "");
+      "Filter library matches by PI (not case sensitive, contains)", "", false);
   public static final StringParameter FILTER_DATA_COLLECTOR =
       new StringParameter("Data collector filter",
-          "Filter library matches by data collector (not case sensitive, contains)", "");
+          "Filter library matches by data collector (not case sensitive, contains)", "", false);
 
   public static final OptionalModuleParameter<LibraryMethodeMetaDataParameters> CREATE_SPECTRAL_LIB =
       new OptionalModuleParameter<>("Create spectral library",
