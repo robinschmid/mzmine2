@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.ArrayUtils;
@@ -48,7 +49,7 @@ import net.sf.mzmine.util.RangeUtils;
 
 public class CSVExportTask extends AbstractTask {
 
-
+  private final Logger logger = Logger.getLogger(this.getClass().getName());
   private PeakList[] peakLists;
   private int processedRows = 0, totalRows = 0;
 
@@ -228,6 +229,9 @@ public class CSVExportTask extends AbstractTask {
     });
     RawDataFile rawDataFiles[] = raws.values().toArray(RawDataFile[]::new);
 
+
+    // peak Information
+    Set<String> peakInformationFields = new HashSet<>();
     HashMap<String, Integer> renumbered = new HashMap<>();
     int lastID = 0;
     for (PeakList pkl : peakLists) {
@@ -236,6 +240,12 @@ public class CSVExportTask extends AbstractTask {
           continue;
         renumbered.put(getRowMapKey(r), lastID);
         lastID++;
+
+        if (r.getPeakInformation() != null) {
+          for (String key : r.getPeakInformation().getAllProperties().keySet()) {
+            peakInformationFields.add(key);
+          }
+        }
       }
     }
 
@@ -247,8 +257,8 @@ public class CSVExportTask extends AbstractTask {
         if (!filter.filter(r))
           continue;
 
-        if (r.getBestIonIdentity() != null) {
-          String key = r.getBestIonIdentity().getNetIDString() + pkl.getName();
+        if (r.getBestIonIdentity() != null && r.getBestIonIdentity().getNetwork() != null) {
+          String key = getNetKey(pkl, r);
           if (!netIDs.containsKey(key)) {
             netIDs.put(key, lastID);
             lastID++;
@@ -256,21 +266,7 @@ public class CSVExportTask extends AbstractTask {
         }
       }
     }
-
-    // peak Information
-    Set<String> peakInformationFields = new HashSet<>();
-
-    for (PeakList pkl : peakLists) {
-      for (PeakListRow row : pkl.getRows()) {
-        if (!filter.filter(row))
-          continue;
-        if (row.getPeakInformation() != null) {
-          for (String key : row.getPeakInformation().getAllProperties().keySet()) {
-            peakInformationFields.add(key);
-          }
-        }
-      }
-    }
+    logger.info("nets=" + netIDs.size());
 
     // write header
     writeMergedHeader(writer, curFile, rawDataFiles, renumbered, peakInformationFields);
@@ -297,6 +293,10 @@ public class CSVExportTask extends AbstractTask {
       setErrorMessage("Could not close file " + curFile);
       return;
     }
+  }
+
+  private String getNetKey(PeakList pkl, PeakListRow r) {
+    return r.getBestIonIdentity().getNetID() + "netid_" + pkl.getName();
   }
 
   private String getRowMapKey(PeakListRow r) {
@@ -777,7 +777,7 @@ public class CSVExportTask extends AbstractTask {
             if (ad2 == null || ad2.getNetwork() == null)
               line.append(fieldSeparator);
             else {
-              String key = peakListRow.getBestIonIdentity().getNetIDString() + peakList.getName();
+              String key = getNetKey(peakList, peakListRow);
               line.append(netIDs.get(key) + fieldSeparator);
             }
             break;
