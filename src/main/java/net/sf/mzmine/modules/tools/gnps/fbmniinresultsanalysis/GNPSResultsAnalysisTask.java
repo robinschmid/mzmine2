@@ -53,7 +53,6 @@ import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsIdentity;
 import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsIdentity.ATT;
-import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibraryMethodeMetaDataParameters;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
@@ -95,12 +94,8 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
   private AtomicDouble progress = new AtomicDouble(0);
   private ParameterSet parameters;
   private String step = "Importing GNPS results for";
-  private Boolean createSpecLib;
-  private double minMatchScoreGNPS;
-  private Boolean createSummary;
-  private Boolean matchAdductAndIIN;
-  private String filterDataCollector;
-  private String filterPI;
+  private final Boolean createSpecLib;
+  private final Boolean createSummary;
   private Integer minSignals;
   private Double minRelativeIntensity;
 
@@ -164,15 +159,8 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
    */
   public GNPSResultsAnalysisTask(ParameterSet parameters) {
     this.parameters = parameters;
-    minMatchScoreGNPS =
-        parameters.getParameter(GNPSResultsAnalysisParameters.MIN_MATCH_SCORE).getValue();
-    matchAdductAndIIN =
-        parameters.getParameter(GNPSResultsAnalysisParameters.MATCH_ADDUCT_IIN).getValue();
     createSummary =
         parameters.getParameter(GNPSResultsAnalysisParameters.CREATE_SUMMARY).getValue();
-    filterPI = parameters.getParameter(GNPSResultsAnalysisParameters.FILTER_PI).getValue();
-    filterDataCollector =
-        parameters.getParameter(GNPSResultsAnalysisParameters.FILTER_DATA_COLLECTOR).getValue();
 
     minSignals = parameters.getParameter(GNPSResultsAnalysisParameters.MIN_SIGNALS).getValue();
     minRelativeIntensity =
@@ -195,6 +183,8 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
     this.output = output;
     outputLibrary =
         FileAndPathUtil.getRealFilePath(output.getParentFile(), output.getName(), ".json");
+    createSpecLib = false;
+    createSummary = true;
   }
 
 
@@ -231,12 +221,18 @@ public class GNPSResultsAnalysisTask extends AbstractTask {
     if (res != null) {
       // create library in GNPS format
       if (createSpecLib) {
-        LibraryMethodeMetaDataParameters methodParam =
+        IINLibraryCreationParameters methodParam =
             parameters.getParameter(GNPSResultsAnalysisParameters.CREATE_SPECTRAL_LIB)
                 .getEmbeddedParameters();
-        GNPSLibraryBatchExportTask libTask = new GNPSLibraryBatchExportTask(methodParam,
-            fileMGF.getName(), outputLibrary, res, minMatchScoreGNPS, matchAdductAndIIN, filterPI,
-            filterDataCollector, minSignals, minRelativeIntensity);
+        GNPSLibraryBatchExportTask libTask;
+        try {
+          libTask = new GNPSLibraryBatchExportTask(methodParam, fileMGF.getName(), outputLibrary,
+              res, minSignals, minRelativeIntensity);
+        } catch (IOException e1) {
+          setErrorMessage("Could not configure or import sample list filter");
+          setStatus(TaskStatus.ERROR);
+          return;
+        }
         MZmineCore.getTaskController().addTask(libTask);
 
         // copy mgf to new folder

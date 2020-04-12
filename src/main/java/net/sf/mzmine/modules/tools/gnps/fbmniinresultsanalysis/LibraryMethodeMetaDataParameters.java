@@ -28,8 +28,9 @@
  * Credit to the Du-Lab development team for the initial commitment to the MGF export module.
  */
 
-package net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param;
+package net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis;
 
+import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibraryMetaDataParameters;
 import net.sf.mzmine.parameters.Parameter;
 
 /**
@@ -40,10 +41,12 @@ import net.sf.mzmine.parameters.Parameter;
  */
 public class LibraryMethodeMetaDataParameters extends LibraryMetaDataParameters {
 
+
   public LibraryMethodeMetaDataParameters() {
     super(new Parameter[] {
         // Always set
         MS_LEVEL, PI, DATA_COLLECTOR, DESCRIPTION, EXPORT_RT, INSTRUMENT_NAME, INSTRUMENT,
         ION_SOURCE, ACQUISITION, IONMODE, FRAGMENTATION_METHOD});
   }
+
 }

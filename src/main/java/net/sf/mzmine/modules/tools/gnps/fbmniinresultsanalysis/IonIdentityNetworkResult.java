@@ -104,13 +104,16 @@ public class IonIdentityNetworkResult extends ArrayList<Node> {
    * get highest matching library match
    * 
    * @param matches
+   * @param sampleFilter
    * @return
    */
   public GNPSResultsIdentity getBestLibraryMatch(Map<Integer, GNPSResultsIdentity> matches,
-      boolean matchAdductAndIIN, String filterPI, String filterDataCollector) {
-    GNPSResultsIdentity result = stream().map(n -> getMatch(n, matches, matchAdductAndIIN))
-        .filter(Objects::nonNull).filter(res -> filterMatch(res, filterPI, filterDataCollector))
-        .max((a, b) -> Double.compare(a.getMatchScore(), b.getMatchScore())).orElse(null);
+      SampleListFilter sampleFilter, boolean matchAdductAndIIN, String filterPI,
+      String filterDataCollector) {
+    GNPSResultsIdentity result =
+        stream().map(n -> getMatch(n, matches, matchAdductAndIIN)).filter(Objects::nonNull)
+            .filter(res -> filterMatch(res, sampleFilter, filterPI, filterDataCollector))
+            .max((a, b) -> Double.compare(a.getMatchScore(), b.getMatchScore())).orElse(null);
     if (result == null)
       return null;
     else {
@@ -128,12 +131,13 @@ public class IonIdentityNetworkResult extends ArrayList<Node> {
    * Match names
    * 
    * @param res
+   * @param sampleFilter
    * @param filterPI
    * @param filterDataCollector
    * @return
    */
-  private boolean filterMatch(GNPSResultsIdentity res, String filterPI,
-      String filterDataCollector) {
+  private boolean filterMatch(GNPSResultsIdentity res, SampleListFilter sampleFilter,
+      String filterPI, String filterDataCollector) {
     if (filterPI.isEmpty() && filterDataCollector.isEmpty())
       return true;
 

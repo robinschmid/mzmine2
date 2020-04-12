@@ -16,7 +16,6 @@ import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GN
 import net.sf.mzmine.modules.peaklistmethods.identification.gnpsresultsimport.GNPSResultsIdentity.ATT;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.formats.GnpsLibraryGenerator;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibraryMetaDataParameters;
-import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibraryMethodeMetaDataParameters;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibrarySubmitIonParameters;
 import net.sf.mzmine.modules.tools.gnps.fbmniinresultsanalysis.GNPSResultsAnalysisTask.NodeAtt;
 import net.sf.mzmine.taskcontrol.AbstractTask;
@@ -34,7 +33,7 @@ public class GNPSLibraryBatchExportTask extends AbstractTask {
   public static final String HEADER_BATCH =
       "FILENAME,SEQ,COMPOUND_NAME,MOLECULEMASS,INSTRUMENT,IONSOURCE,EXTRACTSCAN,SMILES,INCHI,INCHIAUX,CHARGE,IONMODE,PUBMED,ACQUISITION,EXACTMASS,DATACOLLECTOR,ADDUCT,INTEREST,LIBQUALITY,GENUS,SPECIES,STRAIN,CASNUMBER,PI";
 
-
+  private IINLibraryCreationParameters libParam;
   private LibraryMethodeMetaDataParameters methodParam;
   private File outputLibrary;
   private GnpsResults res;
@@ -46,21 +45,33 @@ public class GNPSLibraryBatchExportTask extends AbstractTask {
   private String filterDataCollector;
   private double minRelativeIntensity;
   private int minSignals;
+  private FilterLibraryMatchesBySampleListParameters sListParam;
+  private SampleListFilter sampleFilter;
+  private boolean useSampleList;
 
-  public GNPSLibraryBatchExportTask(LibraryMethodeMetaDataParameters methodParam, String mgfName,
-      File outputLibrary, GnpsResults res, double minMatchScoreGNPS, boolean matchAdductAndIIN,
-      String filterPI, String filterDataCollector, int minSignals, double minRelativeIntensity) {
-    this.methodParam = methodParam;
+  public GNPSLibraryBatchExportTask(IINLibraryCreationParameters libParam, String mgfName,
+      File outputLibrary, GnpsResults res, int minSignals, double minRelativeIntensity)
+      throws IOException {
+    this.libParam = libParam;
+    this.methodParam =
+        libParam.getParameter(IINLibraryCreationParameters.METADATA).getEmbeddedParameters();
     this.mgfName = mgfName;
     this.outputLibrary = outputLibrary;
-    this.matchAdductAndIIN = matchAdductAndIIN;
-    this.filterPI = filterPI;
-    this.filterDataCollector = filterDataCollector;
     this.minSignals = minSignals;
     this.minRelativeIntensity = minRelativeIntensity;
     outputLibraryBatch = FileAndPathUtil.getRealFilePath(outputLibrary, "tsv");
     this.res = res;
-    this.minMatchScoreGNPS = minMatchScoreGNPS;
+
+    minMatchScoreGNPS =
+        libParam.getParameter(IINLibraryCreationParameters.MIN_MATCH_SCORE).getValue();
+    matchAdductAndIIN =
+        libParam.getParameter(IINLibraryCreationParameters.MATCH_ADDUCT_IIN).getValue();
+    filterPI = libParam.getParameter(IINLibraryCreationParameters.FILTER_PI).getValue();
+    filterDataCollector =
+        libParam.getParameter(IINLibraryCreationParameters.FILTER_DATA_COLLECTOR).getValue();
+
+    useSampleList =
+        libParam.getParameter(IINLibraryCreationParameters.FILTER_SAMPLE_LIST).getValue();
   }
 
   @Override
@@ -95,6 +106,32 @@ public class GNPSLibraryBatchExportTask extends AbstractTask {
     LibrarySubmitIonParameters param = new LibrarySubmitIonParameters();
     param.getParameter(LibrarySubmitIonParameters.META_PARAM).setValue(meta);
 
+
+    if (useSampleList) {
+      sListParam = libParam.getParameter(IINLibraryCreationParameters.FILTER_SAMPLE_LIST)
+          .getEmbeddedParameters();
+      File sampleList = sListParam
+          .getParameter(FilterLibraryMatchesBySampleListParameters.SAMPLE_LIST).getValue();
+      File quantTable =
+          sListParam.getParameter(FilterLibraryMatchesBySampleListParameters.QUANT_LIST).getValue();
+      String separator =
+          sListParam.getParameter(FilterLibraryMatchesBySampleListParameters.SEPARATOR).getValue();
+      String compoundHeader = sListParam
+          .getParameter(FilterLibraryMatchesBySampleListParameters.COMPOUND_NAME_HEADER).getValue();
+      boolean usePlate = sListParam
+          .getParameter(FilterLibraryMatchesBySampleListParameters.PLATE_NUMBER_HEADER).getValue();
+      boolean useSample = sListParam
+          .getParameter(FilterLibraryMatchesBySampleListParameters.SAMPLE_HEADER).getValue();
+      String plateHeader = !usePlate ? ""
+          : sListParam.getParameter(FilterLibraryMatchesBySampleListParameters.PLATE_NUMBER_HEADER)
+              .getEmbeddedParameter().getValue();
+      String sampleHeader = !useSample ? ""
+          : sListParam.getParameter(FilterLibraryMatchesBySampleListParameters.SAMPLE_HEADER)
+              .getEmbeddedParameter().getValue();
+      sampleFilter = new SampleListFilter(sampleList, quantTable, compoundHeader, plateHeader,
+          sampleHeader, separator);
+    }
+
     try {
       if (!outputLibrary.getParentFile().exists())
         outputLibrary.getParentFile().mkdirs();
@@ -116,8 +153,8 @@ public class GNPSLibraryBatchExportTask extends AbstractTask {
       // for all networks
       for (IonIdentityNetworkResult net : nets.values()) {
         // has identity
-        GNPSResultsIdentity bestMatch =
-            net.getBestLibraryMatch(matches, matchAdductAndIIN, filterPI, filterDataCollector);
+        GNPSResultsIdentity bestMatch = net.getBestLibraryMatch(matches, sampleFilter,
+            matchAdductAndIIN, filterPI, filterDataCollector);
         // >min match score
         if (bestMatch != null && bestMatch.getMatchScore() >= minMatchScoreGNPS) {
           // all possible new library entries of this ion network
