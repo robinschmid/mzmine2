@@ -128,8 +128,13 @@ public class GNPSLibraryBatchExportTask extends AbstractTask {
       String sampleHeader = !useSample ? ""
           : sListParam.getParameter(FilterLibraryMatchesBySampleListParameters.SAMPLE_HEADER)
               .getEmbeddedParameter().getValue();
-      sampleFilter = new SampleListFilter(sampleList, quantTable, compoundHeader, plateHeader,
-          sampleHeader, separator);
+      try {
+        sampleFilter = new SampleListFilter(sampleList, quantTable, compoundHeader, plateHeader,
+            sampleHeader, separator);
+      } catch (IOException e) {
+        setErrorMessage("Cannot create sample filter. might be an error with importing the files");
+        setStatus(TaskStatus.ERROR);
+      }
     }
 
     try {

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import com.google.common.io.Files;
@@ -18,6 +19,7 @@ import com.google.common.io.Files;
  *
  */
 public class SampleListFilter {
+  public final Logger logger = Logger.getLogger(getClass().getName());
 
   private String compoundHeader;
   private File sampleList;
@@ -108,9 +110,57 @@ public class SampleListFilter {
   private void readQuantTable(File quantTable) throws IOException {
     quantMap = new HashMap<>();
     List<String> lines = Files.readLines(quantTable, StandardCharsets.UTF_8);
-    lines.
+
+    String first = lines.remove(0);
+    String[] sep = first.split(",");
+    //
+    int rowIdIndex = -1;
+    int startSampleIndex = -1;
+    int sub = " Peak area".length();
+    List<String> sampleList = new ArrayList<>();
+    for (int i = 0; i < sep.length; i++) {
+      if (sep[i].equalsIgnoreCase("row ID")) {
+        rowIdIndex = i;
+      }
+      if (sep[i].endsWith("Peak area")) {
+        if (startSampleIndex == -1)
+          startSampleIndex = i;
+
+        String sample = sep[i].substring(0, sep[i].length() - sub);
+        sampleList.add(sample);
+        logger.info(sample);
+      }
+    }
+    if (startSampleIndex == -1 || rowIdIndex == -1)
+      return;
+
+    for (String s : lines) {
+      sep = s.split(",");
+      String rowid = sep[rowIdIndex];
+      List<String> samples = new ArrayList<String>();
+      for (int i = startSampleIndex; i < sep.length; i++) {
+        if (Double.parseDouble(sep[i]) > 0d) {
+          samples.add(sampleList.get(i - startSampleIndex));
+        }
+      }
+      // add row
+      quantMap.put(rowid, samples);
+    }
   }
 
+
+
+  /**
+   * row with compound match was detected in the sample from the sample list
+   * 
+   * @param rowID
+   * @param compound
+   * @return
+   */
+  public boolean rowWithCompoundDetectedInSample(String rowID, String compound) {
+    List<String> samples = quantMap.get(rowID);
+    return samples.stream().anyMatch(s -> matchesCompoundInSample(s, compound));
+  }
 
   public boolean matchesCompoundInSample(String rawName, String compound) {
     String key = rawName;
@@ -133,9 +183,12 @@ public class SampleListFilter {
     Matcher m = p.matcher(rawName);
     while (m.find()) {
       // 01 will be 1
-      int plate = Math.abs(Integer.parseInt(m.group()));
-      if (plate <= 1000)
-        return String.valueOf(plate);
+      try {
+        long plate = Math.abs(Long.parseLong(m.group()));
+        if (plate <= 1000)
+          return String.valueOf(plate);
+      } catch (Exception e) {
+      }
     }
     return "";
   }

@@ -111,8 +111,8 @@ public class IonIdentityNetworkResult extends ArrayList<Node> {
       SampleListFilter sampleFilter, boolean matchAdductAndIIN, String filterPI,
       String filterDataCollector) {
     GNPSResultsIdentity result =
-        stream().map(n -> getMatch(n, matches, matchAdductAndIIN)).filter(Objects::nonNull)
-            .filter(res -> filterMatch(res, sampleFilter, filterPI, filterDataCollector))
+        stream().map(n -> getMatch(n, sampleFilter, matches, matchAdductAndIIN))
+            .filter(Objects::nonNull).filter(res -> filterMatch(res, filterPI, filterDataCollector))
             .max((a, b) -> Double.compare(a.getMatchScore(), b.getMatchScore())).orElse(null);
     if (result == null)
       return null;
@@ -136,8 +136,8 @@ public class IonIdentityNetworkResult extends ArrayList<Node> {
    * @param filterDataCollector
    * @return
    */
-  private boolean filterMatch(GNPSResultsIdentity res, SampleListFilter sampleFilter,
-      String filterPI, String filterDataCollector) {
+  private boolean filterMatch(GNPSResultsIdentity res, String filterPI,
+      String filterDataCollector) {
     if (filterPI.isEmpty() && filterDataCollector.isEmpty())
       return true;
 
@@ -148,18 +148,22 @@ public class IonIdentityNetworkResult extends ArrayList<Node> {
         && (filterDataCollector.isEmpty() || filterDataCollector.contains(datacollector)));
   }
 
-  private GNPSResultsIdentity getMatch(Node n, Map<Integer, GNPSResultsIdentity> matches,
-      boolean matchAdductAndIIN) {
+  private GNPSResultsIdentity getMatch(Node n, SampleListFilter sampleFilter,
+      Map<Integer, GNPSResultsIdentity> matches, boolean matchAdductAndIIN) {
     GNPSResultsIdentity res = matches.get(toIndex(n));
-
-    if (!matchAdductAndIIN || res == null)
-      return res;
-
-    String iin = getIonString(n);
-    if (iin == null || !checkMatchAdductIIN(iin, res.getResult(ATT.ADDUCT).toString())) {
+    if (res == null)
       return null;
-    }
-    return res;
+
+    // rowID was detected in the standards sample (sample list match)
+    String rowID = n.getId();
+    // ion identity matches adduct of library match
+    String iin = getIonString(n);
+    if ((sampleFilter == null || sampleFilter.rowWithCompoundDetectedInSample(rowID,
+        res.getResult(ATT.COMPOUND_NAME).toString())) && iin != null
+        && checkMatchAdductIIN(iin, res.getResult(ATT.ADDUCT).toString())) {
+      return res;
+    } else
+      return null;
   }
 
   private boolean checkMatchAdductIIN(String iin, String adduct) {
