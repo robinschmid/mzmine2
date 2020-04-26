@@ -44,6 +44,7 @@ public class ImzMLWindow {
    */
   public static void main(String[] args) {
     EventQueue.invokeLater(new Runnable() {
+      @Override
       public void run() {
         try {
           ImzMLWindow window = new ImzMLWindow();
@@ -87,15 +88,11 @@ public class ImzMLWindow {
   }
 
   private void createTICImage() {
-    try {
-      z = instance.generateTICImage();
-      setZ(z);
+    z = instance.generateTICImage();
+    setZ(z);
 
-      pnImage.revalidate();
-      pnImage.repaint();
-    } catch (FatalParseException ex) {
-      ex.printStackTrace();
-    }
+    pnImage.revalidate();
+    pnImage.repaint();
   }
 
   protected void createMZImage(double centermz, double pm) {
@@ -191,6 +188,7 @@ public class ImzMLWindow {
 
     btnLoad = new JButton("load");
     btnLoad.addActionListener(new ActionListener() {
+      @Override
       public void actionPerformed(ActionEvent e) {
         loadData();
       }
@@ -198,6 +196,7 @@ public class ImzMLWindow {
 
     btnGc = new JButton("GC");
     btnGc.addActionListener(new ActionListener() {
+      @Override
       public void actionPerformed(ActionEvent e) {
         System.gc();
       }
@@ -207,6 +206,7 @@ public class ImzMLWindow {
 
     btnTic = new JButton("TIC");
     btnTic.addActionListener(new ActionListener() {
+      @Override
       public void actionPerformed(ActionEvent e) {
         createTICImage();
       }
@@ -214,6 +214,7 @@ public class ImzMLWindow {
 
     btnLoadbig = new JButton("loadbig");
     btnLoadbig.addActionListener(new ActionListener() {
+      @Override
       public void actionPerformed(ActionEvent e) {
         loadBigData();
       }
@@ -233,6 +234,7 @@ public class ImzMLWindow {
 
     JButton btnCreate = new JButton("create");
     btnCreate.addActionListener(new ActionListener() {
+      @Override
       public void actionPerformed(ActionEvent e) {
         double mz = Double.valueOf(txtMZ.getText());
         double pm = Double.valueOf(txtWidth.getText());
@@ -243,6 +245,7 @@ public class ImzMLWindow {
 
     JButton btnNext = new JButton("next");
     btnNext.addActionListener(new ActionListener() {
+      @Override
       public void actionPerformed(ActionEvent e) {
         double mz = Double.valueOf(txtMZ.getText()) + Double.valueOf(txtWidth.getText());
         txtMZ.setText(String.valueOf(mz));

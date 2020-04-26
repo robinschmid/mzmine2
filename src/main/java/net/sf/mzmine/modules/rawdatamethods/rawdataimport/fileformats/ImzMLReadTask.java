@@ -23,9 +23,11 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.alanmrace.jimzmlparser.exceptions.ImzMLParseException;
 import com.alanmrace.jimzmlparser.imzml.ImzML;
 import com.alanmrace.jimzmlparser.mzml.BinaryDataArray;
 import com.alanmrace.jimzmlparser.mzml.BinaryDataArrayList;
@@ -109,8 +111,15 @@ public class ImzMLReadTask extends AbstractTask {
     logger.info("Started parsing file " + file);
 
     // file = new File("C:/DATA/MALDI Sh/examples/Example_Processed.imzML");
-    ImzML imzml = ImzMLHandler.parseimzML(file.getAbsolutePath());
-
+    ImzML imzml;
+    try {
+      imzml = ImzMLHandler.parseimzML(file.getAbsolutePath());
+    } catch (ImzMLParseException e1) {
+      logger.log(Level.SEVERE, "Error while parsing imzML", e1);
+      setErrorMessage("Cannot load imzML");
+      setStatus(TaskStatus.ERROR);
+      return;
+    }
     SpectrumList spectra = imzml.getRun().getSpectrumList();
     totalScans = spectra.size();
 
@@ -230,9 +239,15 @@ public class ImzMLReadTask extends AbstractTask {
   private int extractMSLevel(Spectrum spectrum) {
     // Browse the spectrum parameters
     // MS level MS:1000511
-    CVParam param = spectrum.getCVParam(Spectrum.msLevel);
-    if (param != null)
-      return param.getValueAsInteger();
+    try {
+      CVParam param = spectrum.getCVParam("MS:1000511");
+      if (param != null) {
+        int level = param.getValueAsInteger();
+        return level > 0 ? level : 0;
+      }
+    } catch (Exception e) {
+      logger.log(Level.SEVERE, "Cannot parse MS level", e);
+    }
     return 1;
   }
 
@@ -244,7 +259,7 @@ public class ImzMLReadTask extends AbstractTask {
     for (Scan scan : scanListElement) {
       try {
         // scan start time correct?
-        CVParam param = scan.getCVParam(Scan.scanStartTimeID);
+        CVParam param = scan.getCVParam(Scan.SCAN_START_TIME_ID);
         if (param != null)
           return param.getValueAsDouble();
       } catch (Exception e) {
@@ -284,9 +299,9 @@ public class ImzMLReadTask extends AbstractTask {
     ScanList list = spectrum.getScanList();
     if (list != null) {
       for (Scan scan : spectrum.getScanList()) {
-        CVParam xValue = scan.getCVParam(Scan.positionXID);
-        CVParam yValue = scan.getCVParam(Scan.positionYID);
-        CVParam zValue = scan.getCVParam(Scan.positionZID);
+        CVParam xValue = scan.getCVParam(Scan.POSITION_X_ID);
+        CVParam yValue = scan.getCVParam(Scan.POSITION_Y_ID);
+        CVParam zValue = scan.getCVParam(Scan.POSITION_Z_ID);
 
         if (xValue != null && yValue != null) {
           int x = xValue.getValueAsInteger() - 1;
@@ -303,6 +318,12 @@ public class ImzMLReadTask extends AbstractTask {
   }
 
 
+  /**
+   * TODO how to get precursor id
+   * 
+   * @param spectrum
+   * @return
+   */
   private int extractParentScanNumber(Spectrum spectrum) {
     PrecursorList precursorListElement = spectrum.getPrecursorList();
     if ((precursorListElement == null) || (precursorListElement.size() == 0))
@@ -310,12 +331,12 @@ public class ImzMLReadTask extends AbstractTask {
 
     for (Precursor parent : precursorListElement) {
       // Get the precursor scan number
-      String precursorScanId = parent.getSpectrumRef().getID();
-      if (precursorScanId == null) {
-        return -1;
-      }
-      int parentScan = convertScanIdToScanNumber(precursorScanId);
-      return parentScan;
+      // String precursorScanId = parent.getRefSpectrumRef().getID();
+      // if (precursorScanId == null) {
+      // return -1;
+      // }
+      // int parentScan = convertScanIdToScanNumber(precursorScanId);
+      // return parentScan;
     }
     return -1;
   }
@@ -369,7 +390,7 @@ public class ImzMLReadTask extends AbstractTask {
   }
 
   private PolarityType extractPolarity(Spectrum spectrum) {
-    CVParam cv = spectrum.getCVParam(Spectrum.scanPolarityID);
+    CVParam cv = spectrum.getCVParam(Spectrum.SCAN_POLARITY_ID);
     if (spectrum.getCVParam("MS:1000130") != null)
       return PolarityType.POSITIVE;
     else if (spectrum.getCVParam("MS:1000129") != null)
