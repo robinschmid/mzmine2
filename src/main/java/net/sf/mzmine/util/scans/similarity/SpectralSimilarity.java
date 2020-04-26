@@ -49,6 +49,9 @@ public class SpectralSimilarity {
   // alinged[library, query][data points]
   private @Nullable DataPoint[][] aligned;
 
+  // options to handle unmatched signals
+  private HandleUnmatchedSignalOptions handleUnmatched;
+
   /**
    * The result of a {@link SpectralSimilarityFunction}.
    * 
@@ -71,20 +74,21 @@ public class SpectralSimilarity {
    * @param librarySpec library spectrum (or other) which was matched to querySpec (may be filtered)
    * @param querySpec query spectrum which was matched to librarySpec (may be filtered)
    * @param alignedDP aligned data points (alignedDP.get(data point index)[library/query spectrum])
+   * @param handleUnmatched
    */
   public SpectralSimilarity(String funcitonName, double score, int overlap,
       @Nullable DataPoint[] librarySpec, @Nullable DataPoint[] querySpec,
-      @Nullable List<DataPoint[]> alignedDP) {
+      @Nullable List<DataPoint[]> alignedDP, HandleUnmatchedSignalOptions handleUnmatched) {
+    this.handleUnmatched = handleUnmatched;
     DataPointSorter sorter = new DataPointSorter(SortingProperty.MZ, SortingDirection.Ascending);
     this.funcitonName = funcitonName;
     this.score = score;
     this.overlap = overlap;
     this.library = librarySpec;
     this.query = querySpec;
-    if (this.library != null)
-      Arrays.sort(this.library, sorter);
-    if (this.query != null)
-      Arrays.sort(this.query, sorter);
+
+
+
     if (alignedDP != null) {
       // filter unaligned
       List<DataPoint[]> filtered = ScanAlignment.removeUnaligned(alignedDP);
@@ -92,7 +96,36 @@ public class SpectralSimilarity {
 
       for (DataPoint[] dp : aligned)
         Arrays.sort(dp, sorter);
+
+      // filter from unmatched
+      switch (handleUnmatched) {
+        case KEEP_ALL_AND_MATCH_TO_ZERO:
+        default:
+          break;
+        case KEEP_EXPERIMENTAL_SIGNALS:
+          library = Arrays.stream(library)
+              .filter(dp -> alignedDP.stream().anyMatch(alDP -> dp.equals(alDP[0])))
+              .toArray(DataPoint[]::new);
+          break;
+        case KEEP_LIBRARY_SIGNALS:
+          query = Arrays.stream(query)
+              .filter(dp -> alignedDP.stream().anyMatch(alDP -> dp.equals(alDP[1])))
+              .toArray(DataPoint[]::new);
+          break;
+        case REMOVE_ALL:
+          library = Arrays.stream(library)
+              .filter(dp -> alignedDP.stream().anyMatch(alDP -> dp.equals(alDP[0])))
+              .toArray(DataPoint[]::new);
+          query = Arrays.stream(query)
+              .filter(dp -> alignedDP.stream().anyMatch(alDP -> dp.equals(alDP[1])))
+              .toArray(DataPoint[]::new);
+          break;
+      }
     }
+    if (this.library != null)
+      Arrays.sort(this.library, sorter);
+    if (this.query != null)
+      Arrays.sort(this.query, sorter);
   }
 
 

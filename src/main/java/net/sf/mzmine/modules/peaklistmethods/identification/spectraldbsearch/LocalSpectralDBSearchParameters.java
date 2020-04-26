@@ -67,6 +67,10 @@ public class LocalSpectralDBSearchParameters extends SimpleParameterSet {
       "Check all scans (only for MS2)",
       "Check all (or only most intense) MS2 scan. This option does not apply to MS1 scans.", false);
 
+  public static final BooleanParameter removePrecursor = new BooleanParameter("Remove precursor",
+      "For MS2 scans, remove precursor signal prior to matching (+- precursor m/z tolerance",
+      false);
+
   public static final OptionalParameter<IntegerParameter> needsIsotopePattern =
       new OptionalParameter<>(new IntegerParameter("Min matched isotope signals",
           "Useful for scans and libraries with isotope pattern. Minimum matched signals of 13C isotopes, distance of H and 2H or Cl isotopes. Can not be applied with deisotoping",
@@ -109,10 +113,13 @@ public class LocalSpectralDBSearchParameters extends SimpleParameterSet {
     super(parameters);
   }
 
+  /**
+   * Init
+   */
   public LocalSpectralDBSearchParameters() {
     super(new Parameter[] {peakLists, massList, dataBaseFile, msLevel, allMS2Spectra,
-        mzTolerancePrecursor, noiseLevel, deisotoping, needsIsotopePattern, cropSpectraToOverlap,
-        mzTolerance, rtTolerance, minMatch, similarityFunction});
+        mzTolerancePrecursor, removePrecursor, noiseLevel, deisotoping, needsIsotopePattern,
+        cropSpectraToOverlap, mzTolerance, rtTolerance, minMatch, similarityFunction});
   }
 
   @Override
@@ -140,14 +147,21 @@ public class LocalSpectralDBSearchParameters extends SimpleParameterSet {
 
     IntegerComponent msLevelComp = (IntegerComponent) dialog.getComponentForParameter(msLevel);
     JComponent mzTolPrecursor = dialog.getComponentForParameter(mzTolerancePrecursor);
+    JComponent cRemovePrec = dialog.getComponentForParameter(removePrecursor);
+    JComponent cAllMS2 = dialog.getComponentForParameter(allMS2Spectra);
     mzTolPrecursor.setEnabled(level > 1);
     msLevelComp.addDocumentListener(new DelayedDocumentListener(e -> {
       try {
         int level2 = Integer.parseInt(msLevelComp.getText());
-        mzTolPrecursor.setEnabled(level2 > 1);
+        boolean isMS2 = level2 > 1;
+        mzTolPrecursor.setEnabled(isMS2);
+        cAllMS2.setEnabled(isMS2);
+        cRemovePrec.setEnabled(isMS2);
       } catch (Exception ex) {
         // do nothing user might be still typing
         mzTolPrecursor.setEnabled(false);
+        cAllMS2.setEnabled(false);
+        cRemovePrec.setEnabled(false);
       }
     }));
 

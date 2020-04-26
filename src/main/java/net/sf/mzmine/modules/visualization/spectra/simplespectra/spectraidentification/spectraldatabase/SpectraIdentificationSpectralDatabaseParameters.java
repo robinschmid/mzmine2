@@ -65,6 +65,10 @@ public class SpectraIdentificationSpectralDatabaseParameters extends SimpleParam
       new MZToleranceParameter("Precursor m/z tolerance",
           "Precursor m/z tolerance is used to filter library entries", 0.001, 5);
 
+  public static final BooleanParameter removePrecursor = new BooleanParameter("Remove precursor",
+      "For MS2 scans, remove precursor signal prior to matching (+- precursor m/z tolerance",
+      false);
+
   public static final DoubleParameter noiseLevel = new DoubleParameter("Minimum ion intensity",
       "Signals below this level will be filtered away from mass lists",
       MZmineCore.getConfiguration().getIntensityFormat(), 0d);
@@ -93,9 +97,9 @@ public class SpectraIdentificationSpectralDatabaseParameters extends SimpleParam
           SpectralSimilarityFunction.FUNCTIONS);
 
   public SpectraIdentificationSpectralDatabaseParameters() {
-    super(new Parameter[] {massList, dataBaseFile, usePrecursorMZ, mzTolerancePrecursor, noiseLevel,
-        deisotoping, needsIsotopePattern, cropSpectraToOverlap, mzTolerance, minMatch,
-        similarityFunction});
+    super(new Parameter[] {massList, dataBaseFile, usePrecursorMZ, mzTolerancePrecursor,
+        removePrecursor, noiseLevel, deisotoping, needsIsotopePattern, cropSpectraToOverlap,
+        mzTolerance, minMatch, similarityFunction});
   }
 
 
@@ -125,9 +129,12 @@ public class SpectraIdentificationSpectralDatabaseParameters extends SimpleParam
     OptionalParameterComponent usePreComp =
         (OptionalParameterComponent) dialog.getComponentForParameter(usePrecursorMZ);
     JComponent mzTolPrecursor = dialog.getComponentForParameter(mzTolerancePrecursor);
+    JComponent cRemovePrec = dialog.getComponentForParameter(removePrecursor);
     mzTolPrecursor.setEnabled(getParameter(usePrecursorMZ).getValue());
+    cRemovePrec.setEnabled(getParameter(usePrecursorMZ).getValue());
     usePreComp.addItemListener(e -> {
       mzTolPrecursor.setEnabled(usePreComp.isSelected());
+      cRemovePrec.setEnabled(usePreComp.isSelected());
     });
 
     dialog.setVisible(true);

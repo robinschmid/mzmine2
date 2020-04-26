@@ -98,6 +98,9 @@ public class SpectralMatchTask extends AbstractTask {
   private boolean removeIsotopes;
   private MassListDeisotoperParameters deisotopeParam;
 
+  // remove precursor from scans
+  private boolean removePrecursor;
+
   // crop to overlapping range (+- mzTol)
   private final boolean cropSpectraToOverlap;
 
@@ -146,6 +149,8 @@ public class SpectralMatchTask extends AbstractTask {
             .getEmbeddedParameter().getValue();
     removeIsotopes = parameters
         .getParameter(SpectraIdentificationSpectralDatabaseParameters.deisotoping).getValue();
+    removePrecursor = parameters
+        .getParameter(SpectraIdentificationSpectralDatabaseParameters.removePrecursor).getValue();
     deisotopeParam =
         parameters.getParameter(SpectraIdentificationSpectralDatabaseParameters.deisotoping)
             .getEmbeddedParameters();
@@ -310,12 +315,31 @@ public class SpectralMatchTask extends AbstractTask {
         query = cropped[1];
       }
 
+      if (usePrecursorMZ && removePrecursor && ident.getPrecursorMZ() != null) {
+        // precursor mz from library entry for signal filtering
+        double precursorMZ = ident.getPrecursorMZ();
+        // remove from both spectra
+        library = removePrecursor(library, precursorMZ);
+        query = removePrecursor(query, precursorMZ);
+      }
+
       // check spectra similarity
       return createSimilarity(library, query);
     }
     return null;
   }
 
+  private DataPoint[] removePrecursor(DataPoint[] masslist, double precursorMZ) {
+    List<DataPoint> filtered = new ArrayList<DataPoint>();
+    for (DataPoint dp : masslist) {
+      double mz = dp.getMZ();
+      // skip precursor mz
+      if (!mzTolerancePrecursor.checkWithinTolerance(mz, precursorMZ)) {
+        filtered.add(dp);
+      }
+    }
+    return filtered.toArray(new DataPoint[filtered.size()]);
+  }
 
   /**
    * Remove 13C isotopes from masslist

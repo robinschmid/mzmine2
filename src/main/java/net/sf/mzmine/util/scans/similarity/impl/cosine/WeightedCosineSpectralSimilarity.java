@@ -26,6 +26,7 @@ import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.util.maths.similarity.Similarity;
 import net.sf.mzmine.util.scans.ScanAlignment;
+import net.sf.mzmine.util.scans.similarity.HandleUnmatchedSignalOptions;
 import net.sf.mzmine.util.scans.similarity.SpectralSimilarity;
 import net.sf.mzmine.util.scans.similarity.SpectralSimilarityFunction;
 import net.sf.mzmine.util.scans.similarity.Weights;
@@ -48,14 +49,12 @@ public class WeightedCosineSpectralSimilarity extends SpectralSimilarityFunction
         parameters.getParameter(WeightedCosineSpectralSimilarityParameters.weight).getValue();
     double minCos =
         parameters.getParameter(WeightedCosineSpectralSimilarityParameters.minCosine).getValue();
-    boolean removeUnmatched = parameters
-        .getParameter(WeightedCosineSpectralSimilarityParameters.removeUnmatched).getValue();
+    HandleUnmatchedSignalOptions handleUnmatched = parameters
+        .getParameter(WeightedCosineSpectralSimilarityParameters.handleUnmatched).getValue();
 
     // align
     List<DataPoint[]> aligned = alignDataPoints(mzTol, library, query);
-    // removes all signals which were not found in both masslists
-    if (removeUnmatched)
-      aligned = removeUnaligned(aligned);
+    aligned = handleUnaligned(aligned, handleUnmatched);
     // overlapping within mass tolerance
     int overlap = calcOverlap(aligned);
 
@@ -65,7 +64,8 @@ public class WeightedCosineSpectralSimilarity extends SpectralSimilarityFunction
           ScanAlignment.toIntensityMatrixWeighted(aligned, weights.getIntensity(), weights.getMz());
       double diffCosine = Similarity.COSINE.calc(diffArray);
       if (diffCosine >= minCos)
-        return new SpectralSimilarity(getName(), diffCosine, overlap, library, query, aligned);
+        return new SpectralSimilarity(getName(), diffCosine, overlap, library, query, aligned,
+            handleUnmatched);
       else
         return null;
     }

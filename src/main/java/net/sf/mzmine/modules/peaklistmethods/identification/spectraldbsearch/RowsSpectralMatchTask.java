@@ -85,6 +85,9 @@ public class RowsSpectralMatchTask extends AbstractTask {
   private int listsize;
   private MZmineProcessingStep<SpectralSimilarityFunction> simFunction;
 
+  // remove precursor dp from scans
+  private boolean removePrecursor;
+
   // remove 13C isotopes
   private boolean removeIsotopes;
   private MassListDeisotoperParameters deisotopeParam;
@@ -100,6 +103,8 @@ public class RowsSpectralMatchTask extends AbstractTask {
   private boolean needsIsotopePattern;
   private int minMatchedIsoSignals;
 
+
+  // init
   public RowsSpectralMatchTask(String description, @Nonnull PeakListRow[] rows,
       ParameterSet parameters, int startEntry, List<SpectralDBEntry> list) {
     this(description, rows, parameters, startEntry, list, null);
@@ -134,6 +139,8 @@ public class RowsSpectralMatchTask extends AbstractTask {
     minMatchedIsoSignals = !needsIsotopePattern ? 0
         : parameters.getParameter(LocalSpectralDBSearchParameters.needsIsotopePattern)
             .getEmbeddedParameter().getValue();
+    removePrecursor =
+        parameters.getParameter(LocalSpectralDBSearchParameters.removePrecursor).getValue();
     removeIsotopes =
         parameters.getParameter(LocalSpectralDBSearchParameters.deisotoping).getValue();
     deisotopeParam = parameters.getParameter(LocalSpectralDBSearchParameters.deisotoping)
@@ -177,7 +184,9 @@ public class RowsSpectralMatchTask extends AbstractTask {
   @Override
   public void run() {
     setStatus(TaskStatus.PROCESSING);
+    // for each row in list rows
     for (PeakListRow row : rows) {
+      // stop if user canceled the task
       if (isCanceled()) {
         logger.info("Added " + count + " spectral library matches (before being cancelled)");
         repaintWindow();
@@ -285,6 +294,14 @@ public class RowsSpectralMatchTask extends AbstractTask {
         query = cropped[1];
       }
 
+      if (msLevel > 1 && removePrecursor && ident.getPrecursorMZ() != null) {
+        // precursor mz from library entry for signal filtering
+        double precursorMZ = ident.getPrecursorMZ();
+        // remove from both spectra
+        library = removePrecursor(library, precursorMZ);
+        query = removePrecursor(query, precursorMZ);
+      }
+
       // check spectra similarity
       SpectralSimilarity sim = createSimilarity(library, query);
       if (sim != null) {
@@ -292,6 +309,19 @@ public class RowsSpectralMatchTask extends AbstractTask {
       }
     }
     return null;
+  }
+
+
+  private DataPoint[] removePrecursor(DataPoint[] masslist, double precursorMZ) {
+    List<DataPoint> filtered = new ArrayList<DataPoint>();
+    for (DataPoint dp : masslist) {
+      double mz = dp.getMZ();
+      // skip precursor mz
+      if (!mzTolerancePrecursor.checkWithinTolerance(mz, precursorMZ)) {
+        filtered.add(dp);
+      }
+    }
+    return filtered.toArray(new DataPoint[filtered.size()]);
   }
 
   /**
@@ -337,7 +367,7 @@ public class RowsSpectralMatchTask extends AbstractTask {
   }
 
   public List<Scan> getScans(PeakListRow row) throws MissingMassListException {
-    if (msLevel == 1) {
+    if (msLevel <= 1) {
       List<Scan> scans = new ArrayList<>();
       scans.add(row.getBestPeak().getRepresentativeScan());
       return scans;

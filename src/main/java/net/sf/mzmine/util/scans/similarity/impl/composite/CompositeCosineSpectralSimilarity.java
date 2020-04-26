@@ -28,9 +28,11 @@ import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.util.maths.similarity.Similarity;
 import net.sf.mzmine.util.scans.ScanAlignment;
+import net.sf.mzmine.util.scans.similarity.HandleUnmatchedSignalOptions;
 import net.sf.mzmine.util.scans.similarity.SpectralSimilarity;
 import net.sf.mzmine.util.scans.similarity.SpectralSimilarityFunction;
 import net.sf.mzmine.util.scans.similarity.Weights;
+import net.sf.mzmine.util.scans.similarity.impl.cosine.WeightedCosineSpectralSimilarityParameters;
 
 /**
  * Similar to NIST search algorithm for GC-MS data with lots of signals (more an identity check than
@@ -52,14 +54,12 @@ public class CompositeCosineSpectralSimilarity extends SpectralSimilarityFunctio
         parameters.getParameter(CompositeCosineSpectralSimilarityParameters.weight).getValue();
     double minCos =
         parameters.getParameter(CompositeCosineSpectralSimilarityParameters.minCosine).getValue();
-    boolean removeUnmatched = parameters
-        .getParameter(CompositeCosineSpectralSimilarityParameters.removeUnmatched).getValue();
+    HandleUnmatchedSignalOptions handleUnmatched = parameters
+        .getParameter(WeightedCosineSpectralSimilarityParameters.handleUnmatched).getValue();
 
     // align
     List<DataPoint[]> aligned = alignDataPoints(mzTol, library, query);
-    // removes all signals which were not found in both masslists
-    if (removeUnmatched)
-      aligned = removeUnaligned(aligned);
+    aligned = handleUnaligned(aligned, handleUnmatched);
 
     int queryN = query.length;
     int overlap = calcOverlap(aligned);
@@ -79,7 +79,8 @@ public class CompositeCosineSpectralSimilarity extends SpectralSimilarityFunctio
 
 
       if (composite >= minCos)
-        return new SpectralSimilarity(getName(), composite, overlap, library, query, aligned);
+        return new SpectralSimilarity(getName(), composite, overlap, library, query, aligned,
+            handleUnmatched);
       else
         return null;
     }

@@ -83,6 +83,50 @@ public abstract class SpectralSimilarityFunction implements MZmineModule {
    * Remove unaligned signals (not present in all masslists)
    * 
    * @param aligned
+   * @param query
+   * @param library
+   * @param handle
+   * @param
+   * @return
+   */
+  protected List<DataPoint[]> handleUnaligned(List<DataPoint[]> aligned,
+      HandleUnmatchedSignalOptions handle) {
+    switch (handle) {
+      case KEEP_ALL_AND_MATCH_TO_ZERO:
+        return aligned;
+      case KEEP_EXPERIMENTAL_SIGNALS:
+        for (int i = 0; i < aligned.size();) {
+          DataPoint[] alDP = aligned.get(i);
+          // experimental
+          if (alDP[1] == null) {
+            aligned.remove(i);
+          } else {
+            i++;
+          }
+        }
+        return aligned;
+      case KEEP_LIBRARY_SIGNALS:
+        for (int i = 0; i < aligned.size();) {
+          DataPoint[] alDP = aligned.get(i);
+          // experimental
+          if (alDP[0] == null) {
+            aligned.remove(i);
+          } else {
+            i++;
+          }
+        }
+        return aligned;
+      case REMOVE_ALL:
+        return removeUnaligned(aligned);
+      default:
+        return aligned;
+    }
+  }
+
+  /**
+   * Remove unaligned signals (not present in all masslists)
+   * 
+   * @param aligned
    * @return
    */
   protected List<DataPoint[]> removeUnaligned(List<DataPoint[]> aligned) {

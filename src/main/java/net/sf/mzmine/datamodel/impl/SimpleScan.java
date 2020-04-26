@@ -18,14 +18,18 @@
 
 package net.sf.mzmine.datamodel.impl;
 
-import com.google.common.collect.Range;
-import com.google.common.primitives.Ints;
-import net.sf.mzmine.datamodel.*;
-import net.sf.mzmine.util.scans.ScanUtils;
-
-import javax.annotation.Nonnull;
 import java.util.TreeSet;
 import java.util.Vector;
+import javax.annotation.Nonnull;
+import com.google.common.collect.Range;
+import com.google.common.primitives.Ints;
+import net.sf.mzmine.datamodel.DataPoint;
+import net.sf.mzmine.datamodel.MassList;
+import net.sf.mzmine.datamodel.MassSpectrumType;
+import net.sf.mzmine.datamodel.PolarityType;
+import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.datamodel.Scan;
+import net.sf.mzmine.util.scans.ScanUtils;
 
 /**
  * Simple implementation of the Scan interface.
@@ -86,6 +90,7 @@ public class SimpleScan implements Scan {
   /**
    * @return Returns scan datapoints
    */
+  @Override
   public @Nonnull DataPoint[] getDataPoints() {
     return dataPoints;
   }
@@ -93,6 +98,7 @@ public class SimpleScan implements Scan {
   /**
    * @return Returns scan datapoints within a given range
    */
+  @Override
   public @Nonnull DataPoint[] getDataPointsByMass(@Nonnull Range<Double> mzRange) {
 
     int startIndex, endIndex;
@@ -117,6 +123,7 @@ public class SimpleScan implements Scan {
   /**
    * @return Returns scan datapoints over certain intensity
    */
+  @Override
   public @Nonnull DataPoint[] getDataPointsOverIntensity(double intensity) {
     int index;
     Vector<DataPoint> points = new Vector<DataPoint>();
@@ -165,6 +172,7 @@ public class SimpleScan implements Scan {
   /**
    * @see net.sf.mzmine.datamodel.Scan#getNumberOfDataPoints()
    */
+  @Override
   public int getNumberOfDataPoints() {
     return dataPoints.length;
   }
@@ -172,6 +180,7 @@ public class SimpleScan implements Scan {
   /**
    * @see net.sf.mzmine.datamodel.Scan#getScanNumber()
    */
+  @Override
   public int getScanNumber() {
     return scanNumber;
   }
@@ -186,6 +195,7 @@ public class SimpleScan implements Scan {
   /**
    * @see net.sf.mzmine.datamodel.Scan#getMSLevel()
    */
+  @Override
   public int getMSLevel() {
     return msLevel;
   }
@@ -200,6 +210,7 @@ public class SimpleScan implements Scan {
   /**
    * @see net.sf.mzmine.datamodel.Scan#getPrecursorMZ()
    */
+  @Override
   public double getPrecursorMZ() {
     return precursorMZ;
   }
@@ -214,6 +225,7 @@ public class SimpleScan implements Scan {
   /**
    * @return Returns the precursorCharge.
    */
+  @Override
   public int getPrecursorCharge() {
     return precursorCharge;
   }
@@ -228,6 +240,7 @@ public class SimpleScan implements Scan {
   /**
    * @see net.sf.mzmine.datamodel.Scan#getScanAcquisitionTime()
    */
+  @Override
   public double getRetentionTime() {
     return retentionTime;
   }
@@ -242,6 +255,7 @@ public class SimpleScan implements Scan {
   /**
    * @see net.sf.mzmine.datamodel.Scan#getMZRangeMax()
    */
+  @Override
   public @Nonnull Range<Double> getDataPointMZRange() {
     return mzRange;
   }
@@ -249,6 +263,7 @@ public class SimpleScan implements Scan {
   /**
    * @see net.sf.mzmine.datamodel.Scan#getBasePeakMZ()
    */
+  @Override
   public DataPoint getHighestDataPoint() {
     return basePeak;
   }
@@ -256,6 +271,7 @@ public class SimpleScan implements Scan {
   /**
    * @see net.sf.mzmine.datamodel.Scan#getFragmentScanNumbers()
    */
+  @Override
   public int[] getFragmentScanNumbers() {
     return fragmentScans;
   }
@@ -280,6 +296,7 @@ public class SimpleScan implements Scan {
   /**
    * @see net.sf.mzmine.datamodel.Scan#getSpectrumType()
    */
+  @Override
   public MassSpectrumType getSpectrumType() {
     return spectrumType;
   }
@@ -291,14 +308,17 @@ public class SimpleScan implements Scan {
     this.spectrumType = spectrumType;
   }
 
+  @Override
   public double getTIC() {
     return totalIonCurrent;
   }
 
+  @Override
   public String toString() {
     return ScanUtils.scanToString(this, false);
   }
 
+  @Override
   public @Nonnull RawDataFile getDataFile() {
     return dataFile;
   }
