@@ -100,15 +100,17 @@ import net.sf.mzmine.modules.rawdatamethods.filtering.baselinecorrection.Baselin
 import net.sf.mzmine.modules.rawdatamethods.filtering.cropper.CropFilterModule;
 import net.sf.mzmine.modules.rawdatamethods.filtering.scanfilters.ScanFiltersModule;
 import net.sf.mzmine.modules.rawdatamethods.filtering.scansmoothing.ScanSmoothingModule;
-import net.sf.mzmine.modules.rawdatamethods.merge.RawFileMergeModule; import net.sf.mzmine.modules.rawdatamethods.peakpicking.gridmass.GridMassModule;
+import net.sf.mzmine.modules.rawdatamethods.merge.RawFileMergeModule;
+import net.sf.mzmine.modules.rawdatamethods.peakpicking.gridmass.GridMassModule;
 import net.sf.mzmine.modules.rawdatamethods.peakpicking.manual.ManualPeakPickerModule;
 import net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.MassDetectionModule;
 import net.sf.mzmine.modules.rawdatamethods.peakpicking.msms.MsMsPeakPickerModule;
 import net.sf.mzmine.modules.rawdatamethods.peakpicking.targetedpeakdetection.TargetedPeakDetectionModule;
+import net.sf.mzmine.modules.rawdatamethods.rawclusteredimport.RawClusteredImportModule;
 import net.sf.mzmine.modules.rawdatamethods.rawdataexport.RawDataExportModule;
 import net.sf.mzmine.modules.rawdatamethods.rawdataimport.RawDataImportModule;
-import net.sf.mzmine.modules.rawdatamethods.timstofimport.BrukerSingleSpecImportModule;
 import net.sf.mzmine.modules.rawdatamethods.sortdatafiles.SortDataFilesModule;
+import net.sf.mzmine.modules.rawdatamethods.timstofimport.BrukerSingleSpecImportModule;
 import net.sf.mzmine.modules.tools.isotopepatternpreview.IsotopePatternPreviewModule;
 import net.sf.mzmine.modules.tools.msmsspectramerge.MsMsSpectraMergeModule;
 import net.sf.mzmine.modules.tools.mzrangecalculator.MzRangeFormulaCalculatorModule;
@@ -156,11 +158,11 @@ public class MZmineModulesList {
       BatchModeModule.class,
 
       // Raw data methods
-      RawDataImportModule.class, BrukerSingleSpecImportModule.class, RawDataExportModule.class,
-      ExportScansFromRawFilesModule.class, RawFileMergeModule.class, ExtractScansModule.class,
-      ExtractAllScansModule.class, MassDetectionModule.class, ShoulderPeaksFilterModule.class,
-      ChromatogramBuilderModule.class, ADAPChromatogramBuilderModule.class,
-      SimpleImageBuilderModule.class, ImageBuilderModule.class,
+      RawDataImportModule.class, RawClusteredImportModule.class, BrukerSingleSpecImportModule.class,
+      RawDataExportModule.class, ExportScansFromRawFilesModule.class, RawFileMergeModule.class,
+      ExtractScansModule.class, ExtractAllScansModule.class, MassDetectionModule.class,
+      ShoulderPeaksFilterModule.class, ChromatogramBuilderModule.class,
+      ADAPChromatogramBuilderModule.class, SimpleImageBuilderModule.class, ImageBuilderModule.class,
       // Not ready for prime time: ADAP3DModule.class,
       GridMassModule.class, ManualPeakPickerModule.class, MsMsPeakPickerModule.class,
       ScanFiltersModule.class, CropFilterModule.class, BaselineCorrectionModule.class,

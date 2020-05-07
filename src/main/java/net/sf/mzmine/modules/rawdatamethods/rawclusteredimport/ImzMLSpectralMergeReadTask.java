@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats;
+package net.sf.mzmine.modules.rawdatamethods.rawclusteredimport;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,6 +56,7 @@ import net.sf.mzmine.datamodel.impl.MergedScan.Result;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 import net.sf.mzmine.datamodel.impl.SimpleImagingScan;
 import net.sf.mzmine.modules.tools.msmsspectramerge.IntensityMergeMode;
+import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.project.impl.ImagingRawDataFileImpl;
 import net.sf.mzmine.taskcontrol.AbstractTask;
@@ -84,16 +85,32 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
   // define by user input
   private double minCosine = 0.90;
   private MZTolerance mzTol = new MZTolerance(0.02, 30);
-  private double noiseLevel = 300;
+  private double noiseLevel = 0;
+  private double minHeight = 0;
   private int minMatch = 5;
-  private double minPercentSpectra = 0.75;
+  private double minPercentSpectra = 0.10;
+  private int minSpectra = 1;
 
 
   public ImzMLSpectralMergeReadTask(MZmineProject project, File fileToOpen,
-      RawDataFileWriter newMZmineFile) {
+      RawDataFileWriter newMZmineFile, ParameterSet parameters) {
     this.project = project;
     this.file = fileToOpen;
     this.newMZmineFile = newMZmineFile;
+
+    minCosine = parameters.getParameter(RawClusteredImportParameters.minCosine).getValue();
+    mzTol = parameters.getParameter(RawClusteredImportParameters.mzTol).getValue();
+    minHeight = parameters.getParameter(RawClusteredImportParameters.minHeight).getValue();
+    noiseLevel = parameters.getParameter(RawClusteredImportParameters.noiseCutoff).getValue();
+    minMatch = parameters.getParameter(RawClusteredImportParameters.minMatch).getValue();
+    boolean usePercent =
+        parameters.getParameter(RawClusteredImportParameters.minPercentSpectra).getValue();
+    minPercentSpectra = !usePercent ? 0d
+        : parameters.getParameter(RawClusteredImportParameters.minPercentSpectra)
+            .getEmbeddedParameter().getValue();
+    minSpectra = parameters.getParameter(RawClusteredImportParameters.minSpectra).getValue();
+    if (minHeight <= noiseLevel)
+      minHeight = 0d;
   }
 
   /**
@@ -169,6 +186,10 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
       for (MergedScan scan : mergedScans) {
         // add merged
         if (scan.getScanCount() > 1) {
+          // clean up
+          scan.clean(minPercentSpectra, minSpectra);
+
+          // add average
           scan.setScanNumber(i);
           newMZmineFile.addScan(scan);
           i++;
@@ -180,26 +201,6 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
 
           // sum
           MergedScan sumScan = new MergedScan(scan, IntensityMergeMode.SUM);
-          sumScan.setScanNumber(i);
-          newMZmineFile.addScan(sumScan);
-          i++;
-
-          // clean up
-          scan = new MergedScan(scan, IntensityMergeMode.AVERAGE);
-          minPercentSpectra = 0.15;
-          scan.clean(minPercentSpectra);
-
-          scan.setScanNumber(i);
-          newMZmineFile.addScan(scan);
-          i++;
-          // add maximum merged scan
-          maxScan = new MergedScan(scan, IntensityMergeMode.MAXIMUM);
-          maxScan.setScanNumber(i);
-          newMZmineFile.addScan(maxScan);
-          i++;
-
-          // sum
-          sumScan = new MergedScan(scan, IntensityMergeMode.SUM);
           sumScan.setScanNumber(i);
           newMZmineFile.addScan(sumScan);
           i++;
@@ -286,12 +287,12 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
    */
   private boolean mergeWithFirst(List<MergedScan> mergedScans, Spectrum spectrum,
       DataPoint[] dataPoints) {
-    double noiseLevel = 250;
-    DataPoint[] filtered = noiseLevel == 0d ? null : ScanUtils.getFiltered(dataPoints, noiseLevel);
+    DataPoint[] filtered =
+        minHeight > noiseLevel ? null : ScanUtils.getFiltered(dataPoints, minHeight);
     for (int m = 0; m < mergedScans.size(); m++) {
       MergedScan scan = mergedScans.get(m);
       // try to merge
-      Result res = scan.merge(dataPoints, filtered, mzTol, noiseLevel, minCosine, minMatch);
+      Result res = scan.merge(dataPoints, filtered, mzTol, minHeight, minCosine, minMatch);
       if (!res.equals(Result.FALSE)) {
         logger.info("MERGED SCANS in list index " + m + "; total: " + scan.getScanCount());
         if (res.equals(Result.MERGED_REPLACE_BEST_SCAN)) {
@@ -387,7 +388,7 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
       List<DataPoint> dataPoints = new ArrayList<>();
       for (int i = 0; i < intensityValues.length; i++) {
         double intensity = intensityValues[i];
-        if (intensity > 0.000001d && intensity > 25) {
+        if (intensity > 0.000001d && intensity > noiseLevel) {
           double mz = mzValues[i];
           dataPoints.add(new SimpleDataPoint(mz, intensity));
         }

@@ -16,7 +16,7 @@
  * USA
  */
 
-package net.sf.mzmine.modules.rawdatamethods.rawdataimport;
+package net.sf.mzmine.modules.rawdatamethods.rawclusteredimport;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,14 +36,8 @@ import net.sf.mzmine.datamodel.RawDataFileWriter;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.MZmineModuleCategory;
 import net.sf.mzmine.modules.MZmineProcessingModule;
-import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.AgilentCsvReadTask;
-import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.ImzMLReadTask;
-import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.MzDataReadTask;
-import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.MzMLReadTask;
-import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.MzXMLReadTask;
-import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.NativeFileReadTask;
-import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.NetCDFReadTask;
-import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.ZipReadTask;
+import net.sf.mzmine.modules.rawdatamethods.rawdataimport.RawDataFileType;
+import net.sf.mzmine.modules.rawdatamethods.rawdataimport.RawDataFileTypeDetector;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.project.impl.ImagingRawDataFileImpl;
 import net.sf.mzmine.taskcontrol.Task;
@@ -52,12 +46,13 @@ import net.sf.mzmine.util.ExitCode;
 /**
  * Raw data import module
  */
-public class RawDataImportModule implements MZmineProcessingModule {
+public class RawClusteredImportModule implements MZmineProcessingModule {
 
   private Logger logger = Logger.getLogger(this.getClass().getName());
 
-  private static final String MODULE_NAME = "Raw data import";
-  private static final String MODULE_DESCRIPTION = "This module imports raw data into the project.";
+  private static final String MODULE_NAME = "Clustered raw data import";
+  private static final String MODULE_DESCRIPTION =
+      "This module imports raw data and creates clustered scans in a project.";
 
   @Override
   public @Nonnull String getName() {
@@ -74,7 +69,7 @@ public class RawDataImportModule implements MZmineProcessingModule {
   public ExitCode runModule(final @Nonnull MZmineProject project, @Nonnull ParameterSet parameters,
       @Nonnull Collection<Task> tasks) {
 
-    File fileNames[] = parameters.getParameter(RawDataImportParameters.fileNames).getValue();
+    File fileNames[] = parameters.getParameter(RawClusteredImportParameters.fileNames).getValue();
 
     // Find common prefix in raw file names if in GUI mode
     String commonPrefix = null;
@@ -165,7 +160,7 @@ public class RawDataImportModule implements MZmineProcessingModule {
         continue;
       }
 
-      Task newTask = createOpeningTask(fileType, project, fileNames[i], newMZmineFile);
+      Task newTask = createOpeningTask(fileType, project, fileNames[i], newMZmineFile, parameters);
 
       if (newTask == null) {
         logger.warning("File type " + fileType + " of file " + fileNames[i] + " is not supported.");
@@ -186,38 +181,31 @@ public class RawDataImportModule implements MZmineProcessingModule {
 
   @Override
   public @Nonnull Class<? extends ParameterSet> getParameterSetClass() {
-    return RawDataImportParameters.class;
+    return RawClusteredImportParameters.class;
   }
 
   public static Task createOpeningTask(RawDataFileType fileType, MZmineProject project,
-      File fileName, RawDataFileWriter newMZmineFile) {
+      File fileName, RawDataFileWriter newMZmineFile, ParameterSet parameters) {
     Task newTask = null;
     switch (fileType) {
       case MZDATA:
-        newTask = new MzDataReadTask(project, fileName, newMZmineFile);
         break;
       case MZML:
-        newTask = new MzMLReadTask(project, fileName, newMZmineFile);
         break;
       case MZXML:
-        newTask = new MzXMLReadTask(project, fileName, newMZmineFile);
         break;
       case IMZML:
-        newTask = new ImzMLReadTask(project, fileName, newMZmineFile);
+        newTask = new ImzMLSpectralMergeReadTask(project, fileName, newMZmineFile, parameters);
         break;
       case NETCDF:
-        newTask = new NetCDFReadTask(project, fileName, newMZmineFile);
         break;
       case AGILENT_CSV:
-        newTask = new AgilentCsvReadTask(project, fileName, newMZmineFile);
         break;
       case THERMO_RAW:
       case WATERS_RAW:
-        newTask = new NativeFileReadTask(project, fileName, fileType, newMZmineFile);
         break;
       case ZIP:
       case GZIP:
-        newTask = new ZipReadTask(project, fileName, fileType);
         break;
 
     }

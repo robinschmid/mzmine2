@@ -66,7 +66,6 @@ public class MergedScan extends SimpleImagingScan {
 
   public Result merge(DataPoint[] dataPoints, DataPoint[] filtered, MZTolerance mzTol,
       double noiseLevel, double minCosine, int minMatch) {
-    mzTol = new MZTolerance(0.002, 5);
     // align
     List<DataPoint[]> aligned = ScanAlignment.align(mzTol, getFilteredDataPoints(noiseLevel),
         filtered == null ? dataPoints : filtered);
@@ -140,11 +139,14 @@ public class MergedScan extends SimpleImagingScan {
     return intensityMergeMode;
   }
 
-  public void clean(double minPercentSpectra) {
+  public void clean(double minPercentSpectra, int minSpectra) {
     if (mergedCount <= 4)
       return;
     filteredMerged = null;
-    merged = Arrays.stream(merged).filter(dp -> dp.getN() > 2).toArray(MergedDataPoint[]::new);
+    merged = Arrays.stream(merged)
+        .filter(dp -> dp.getN() >= minSpectra
+            && minPercentSpectra <= (double) dp.getN() / (double) mergedCount)
+        .toArray(MergedDataPoint[]::new);
   }
 
 }
