@@ -37,7 +37,7 @@ import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.MZmineModuleCategory;
 import net.sf.mzmine.modules.MZmineProcessingModule;
 import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.AgilentCsvReadTask;
-import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.ImzMLReadTask;
+import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.ImzMLSpectralMergeReadTask;
 import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.MzDataReadTask;
 import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.MzMLReadTask;
 import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.MzXMLReadTask;
@@ -203,7 +203,8 @@ public class RawDataImportModule implements MZmineProcessingModule {
         newTask = new MzXMLReadTask(project, fileName, newMZmineFile);
         break;
       case IMZML:
-        newTask = new ImzMLReadTask(project, fileName, newMZmineFile);
+        // TODO change to imzml again add merger
+        newTask = new ImzMLSpectralMergeReadTask(project, fileName, newMZmineFile);
         break;
       case NETCDF:
         newTask = new NetCDFReadTask(project, fileName, newMZmineFile);

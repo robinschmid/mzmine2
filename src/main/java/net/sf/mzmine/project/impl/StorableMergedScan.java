@@ -20,25 +20,30 @@ package net.sf.mzmine.project.impl;
 
 import net.sf.mzmine.datamodel.Coordinates;
 import net.sf.mzmine.datamodel.ImagingScan;
-import net.sf.mzmine.datamodel.Scan;
+import net.sf.mzmine.datamodel.impl.MergedScan;
 import net.sf.mzmine.datamodel.impl.SimpleImagingScan;
+import net.sf.mzmine.modules.tools.msmsspectramerge.IntensityMergeMode;
 
 /**
  * Implementation of the Scan interface which stores raw data points in a temporary file, accessed
  * by RawDataFileImpl.readFromFloatBufferFile()
  */
-public class StorableImagingScan extends StorableScan implements ImagingScan {
+public class StorableMergedScan extends StorableScan implements ImagingScan {
 
   private Coordinates coordinates;
+  private int mergedScans;
+  private IntensityMergeMode intensityMode;
 
   /**
    * Constructor for creating a storable scan from a given scan
    */
-  public StorableImagingScan(Scan originalScan, RawDataFileImpl rawDataFile, int numberOfDataPoints,
-      int storageID) {
+  public StorableMergedScan(MergedScan originalScan, RawDataFileImpl rawDataFile,
+      int numberOfDataPoints, int storageID) {
     super(originalScan, rawDataFile, numberOfDataPoints, storageID);
     if (SimpleImagingScan.class.isInstance(originalScan))
       this.setCoordinates(((SimpleImagingScan) originalScan).getCoordinates());
+    mergedScans = originalScan.getScanCount();
+    intensityMode = originalScan.getIntensityMode();
   }
 
   /**
@@ -55,11 +60,14 @@ public class StorableImagingScan extends StorableScan implements ImagingScan {
     this.coordinates = coordinates;
   }
 
+  public int getMergedScans() {
+    return mergedScans;
+  }
+
+
   @Override
   public String toString() {
-    if (coordinates == null)
-      return super.toString();
-    return super.toString() + " x,y,z:" + coordinates.getX() + ", " + coordinates.getY() + ", "
-        + coordinates.getZ();
+    return super.toString() + " merged scans: " + mergedScans + " (" + intensityMode.toString()
+        + ")";
   }
 }
