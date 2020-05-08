@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import javax.annotation.Nonnull;
 import net.sf.mzmine.datamodel.DataPoint;
+import net.sf.mzmine.datamodel.MergedScan;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.modules.tools.msmsspectramerge.IntensityMergeMode;
 import net.sf.mzmine.modules.tools.msmsspectramerge.MergedDataPoint;
@@ -13,7 +14,7 @@ import net.sf.mzmine.util.maths.similarity.Similarity;
 import net.sf.mzmine.util.scans.ScanAlignment;
 import net.sf.mzmine.util.scans.ScanUtils;
 
-public class MergedScan extends SimpleImagingScan {
+public class SimpleMergedScan extends SimpleImagingScan implements MergedScan {
 
   public enum Result {
     MERGED, MERGED_REPLACE_BEST_SCAN, FALSE;
@@ -28,11 +29,11 @@ public class MergedScan extends SimpleImagingScan {
   private DataPoint[] filteredMerged;
   private double lastNoiseLevel;
 
-  public MergedScan(Scan sc, IntensityMergeMode intensityMergeMode) {
+  public SimpleMergedScan(Scan sc, IntensityMergeMode intensityMergeMode) {
     super(sc);
     this.intensityMergeMode = intensityMergeMode;
-    if (sc instanceof MergedScan) {
-      MergedScan msc = (MergedScan) sc;
+    if (sc instanceof SimpleMergedScan) {
+      SimpleMergedScan msc = (SimpleMergedScan) sc;
       bestScan = msc.getBestScan();
       bestTIC = msc.bestTIC;
       mergedCount = msc.getScanCount();
@@ -53,15 +54,12 @@ public class MergedScan extends SimpleImagingScan {
         bestTIC += d.getIntensity();
       }
     }
+    setDataPoints(merged);
   }
 
   @Override
   public @Nonnull DataPoint[] getDataPoints() {
     return merged;
-  }
-
-  public int getScanCount() {
-    return mergedCount;
   }
 
   public Result merge(DataPoint[] dataPoints, DataPoint[] filtered, MZTolerance mzTol,
@@ -97,7 +95,7 @@ public class MergedScan extends SimpleImagingScan {
         }
         // replace
         merged = newMerged;
-
+        setDataPoints(merged);
         mergedCount++;
         double tic = Arrays.stream(dataPoints).mapToDouble(DataPoint::getIntensity).sum();
         if (bestTIC < tic) {
@@ -121,22 +119,30 @@ public class MergedScan extends SimpleImagingScan {
     return filteredMerged;
   }
 
+  @Override
+  public int getScanCount() {
+    return mergedCount;
+  }
+
   public void setBestScan(Scan scan) {
     bestScan = scan;
   }
 
+  @Override
   public Scan getBestScan() {
     return bestScan;
   }
+
+  @Override
+  public IntensityMergeMode getIntensityMode() {
+    return intensityMergeMode;
+  }
+
 
 
   @Override
   public String toString() {
     return super.toString() + " merged: " + mergedCount;
-  }
-
-  public IntensityMergeMode getIntensityMode() {
-    return intensityMergeMode;
   }
 
   public void clean(double minPercentSpectra, int minSpectra) {

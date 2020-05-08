@@ -45,7 +45,7 @@ import net.sf.mzmine.datamodel.MassList;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.RawDataFileWriter;
 import net.sf.mzmine.datamodel.Scan;
-import net.sf.mzmine.datamodel.impl.MergedScan;
+import net.sf.mzmine.datamodel.impl.SimpleMergedScan;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 
 /**
@@ -423,8 +423,8 @@ public class RawDataFileImpl implements RawDataFile, RawDataFileWriter {
 
     StorableScan storedScan;
     // imaging?
-    if (MergedScan.class.isInstance(newScan))
-      storedScan = new StorableMergedScan((MergedScan) newScan, this, dataPoints.length, storageID);
+    if (SimpleMergedScan.class.isInstance(newScan))
+      storedScan = new StorableMergedScan((SimpleMergedScan) newScan, this, dataPoints.length, storageID);
     else if (ImagingScan.class.isInstance(newScan))
       storedScan = new StorableImagingScan(newScan, this, dataPoints.length, storageID);
     // non imaging (e.g. hplc)

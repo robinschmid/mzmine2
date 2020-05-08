@@ -41,7 +41,7 @@ public class SpectralDBPeakIdentity extends SimplePeakIdentity {
   public SpectralDBPeakIdentity(Scan queryScan, String massListName, SpectralDBEntry entry,
       SpectralSimilarity similarity, String method) {
     super(
-        MessageFormat.format("{0} as {3} ({1}) {2} cos={4}",
+        MessageFormat.format("cos{4} {0} as {3} ({1}) {2}",
             entry.getField(DBEntryField.NAME).orElse("NONAME"), // Name
             entry.getField(DBEntryField.MZ).orElse(""), // precursor m/z
             entry.getField(DBEntryField.FORMULA).orElse(""), // molecular formula

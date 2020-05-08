@@ -20,30 +20,34 @@ package net.sf.mzmine.project.impl;
 
 import net.sf.mzmine.datamodel.Coordinates;
 import net.sf.mzmine.datamodel.ImagingScan;
-import net.sf.mzmine.datamodel.impl.MergedScan;
+import net.sf.mzmine.datamodel.MergedScan;
+import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimpleImagingScan;
+import net.sf.mzmine.datamodel.impl.SimpleMergedScan;
 import net.sf.mzmine.modules.tools.msmsspectramerge.IntensityMergeMode;
 
 /**
  * Implementation of the Scan interface which stores raw data points in a temporary file, accessed
  * by RawDataFileImpl.readFromFloatBufferFile()
  */
-public class StorableMergedScan extends StorableScan implements ImagingScan {
+public class StorableMergedScan extends StorableScan implements ImagingScan, MergedScan {
 
   private Coordinates coordinates;
   private int mergedScans;
   private IntensityMergeMode intensityMode;
+  private Scan best;
 
   /**
    * Constructor for creating a storable scan from a given scan
    */
-  public StorableMergedScan(MergedScan originalScan, RawDataFileImpl rawDataFile,
+  public StorableMergedScan(SimpleMergedScan originalScan, RawDataFileImpl rawDataFile,
       int numberOfDataPoints, int storageID) {
     super(originalScan, rawDataFile, numberOfDataPoints, storageID);
     if (SimpleImagingScan.class.isInstance(originalScan))
       this.setCoordinates(((SimpleImagingScan) originalScan).getCoordinates());
     mergedScans = originalScan.getScanCount();
     intensityMode = originalScan.getIntensityMode();
+    best = originalScan.getBestScan();
   }
 
   /**
@@ -60,14 +64,24 @@ public class StorableMergedScan extends StorableScan implements ImagingScan {
     this.coordinates = coordinates;
   }
 
-  public int getMergedScans() {
-    return mergedScans;
-  }
-
-
   @Override
   public String toString() {
     return super.toString() + " merged scans: " + mergedScans + " (" + intensityMode.toString()
         + ")";
+  }
+
+  @Override
+  public int getScanCount() {
+    return mergedScans;
+  }
+
+  @Override
+  public Scan getBestScan() {
+    return best;
+  }
+
+  @Override
+  public IntensityMergeMode getIntensityMode() {
+    return intensityMode;
   }
 }

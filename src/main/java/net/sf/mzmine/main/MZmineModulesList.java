@@ -23,6 +23,7 @@ import net.sf.mzmine.modules.masslistmethods.ADAPchromatogrambuilder.ADAPChromat
 import net.sf.mzmine.modules.masslistmethods.chromatogrambuilder.ChromatogramBuilderModule;
 import net.sf.mzmine.modules.masslistmethods.imagebuilder.ImageBuilderModule;
 import net.sf.mzmine.modules.masslistmethods.imagebuildersimple.SimpleImageBuilderModule;
+import net.sf.mzmine.modules.masslistmethods.mergedscanfeaturelist.MergedScanMSMSFeatureListBuilderModule;
 import net.sf.mzmine.modules.masslistmethods.shoulderpeaksfilter.ShoulderPeaksFilterModule;
 import net.sf.mzmine.modules.peaklistmethods.alignment.adap3.ADAP3AlignerModule;
 import net.sf.mzmine.modules.peaklistmethods.alignment.hierarchical.HierarAlignerGcModule;
@@ -163,6 +164,7 @@ public class MZmineModulesList {
       ExtractScansModule.class, ExtractAllScansModule.class, MassDetectionModule.class,
       ShoulderPeaksFilterModule.class, ChromatogramBuilderModule.class,
       ADAPChromatogramBuilderModule.class, SimpleImageBuilderModule.class, ImageBuilderModule.class,
+      MergedScanMSMSFeatureListBuilderModule.class,
       // Not ready for prime time: ADAP3DModule.class,
       GridMassModule.class, ManualPeakPickerModule.class, MsMsPeakPickerModule.class,
       ScanFiltersModule.class, CropFilterModule.class, BaselineCorrectionModule.class,

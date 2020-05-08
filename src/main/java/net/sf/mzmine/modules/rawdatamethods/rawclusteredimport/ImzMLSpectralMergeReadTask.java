@@ -51,8 +51,8 @@ import net.sf.mzmine.datamodel.RawDataFileWriter;
 import net.sf.mzmine.datamodel.impl.CoordinatesXY;
 import net.sf.mzmine.datamodel.impl.CoordinatesXYZ;
 import net.sf.mzmine.datamodel.impl.ImagingParameters;
-import net.sf.mzmine.datamodel.impl.MergedScan;
-import net.sf.mzmine.datamodel.impl.MergedScan.Result;
+import net.sf.mzmine.datamodel.impl.SimpleMergedScan;
+import net.sf.mzmine.datamodel.impl.SimpleMergedScan.Result;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 import net.sf.mzmine.datamodel.impl.SimpleImagingScan;
 import net.sf.mzmine.modules.tools.msmsspectramerge.IntensityMergeMode;
@@ -129,7 +129,7 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
 
     setStatus(TaskStatus.PROCESSING);
     //
-    List<MergedScan> mergedScans = new ArrayList<MergedScan>();
+    List<SimpleMergedScan> mergedScans = new ArrayList<SimpleMergedScan>();
     List<SimpleImagingScan> ms2Scans = new ArrayList<SimpleImagingScan>();
 
 
@@ -176,14 +176,14 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
           // create scan and add new merged scan
           logger.log(Level.INFO, "Scan " + i + " not merged");
           SimpleImagingScan rawscan = createScan(spectrum, dataPoints);
-          mergedScans.add(new MergedScan(rawscan, IntensityMergeMode.AVERAGE));
+          mergedScans.add(new SimpleMergedScan(rawscan, IntensityMergeMode.AVERAGE));
         }
         parsedScans++;
       }
 
       logger.log(Level.INFO, "add all scans to raw file");
       int i = 1;
-      for (MergedScan scan : mergedScans) {
+      for (SimpleMergedScan scan : mergedScans) {
         // add merged
         if (scan.getScanCount() > 1) {
           // clean up
@@ -194,13 +194,13 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
           newMZmineFile.addScan(scan);
           i++;
           // add maximum merged scan
-          MergedScan maxScan = new MergedScan(scan, IntensityMergeMode.MAXIMUM);
+          SimpleMergedScan maxScan = new SimpleMergedScan(scan, IntensityMergeMode.MAXIMUM);
           maxScan.setScanNumber(i);
           newMZmineFile.addScan(maxScan);
           i++;
 
           // sum
-          MergedScan sumScan = new MergedScan(scan, IntensityMergeMode.SUM);
+          SimpleMergedScan sumScan = new SimpleMergedScan(scan, IntensityMergeMode.SUM);
           sumScan.setScanNumber(i);
           newMZmineFile.addScan(sumScan);
           i++;
@@ -285,12 +285,12 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
    * @param dataPoints
    * @return
    */
-  private boolean mergeWithFirst(List<MergedScan> mergedScans, Spectrum spectrum,
+  private boolean mergeWithFirst(List<SimpleMergedScan> mergedScans, Spectrum spectrum,
       DataPoint[] dataPoints) {
     DataPoint[] filtered =
         minHeight > noiseLevel ? null : ScanUtils.getFiltered(dataPoints, minHeight);
     for (int m = 0; m < mergedScans.size(); m++) {
-      MergedScan scan = mergedScans.get(m);
+      SimpleMergedScan scan = mergedScans.get(m);
       // try to merge
       Result res = scan.merge(dataPoints, filtered, mzTol, minHeight, minCosine, minMatch);
       if (!res.equals(Result.FALSE)) {
