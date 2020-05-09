@@ -26,8 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import com.alanmrace.jimzmlparser.exceptions.ImzMLParseException;
 import com.alanmrace.jimzmlparser.imzml.ImzML;
 import com.alanmrace.jimzmlparser.mzml.BinaryDataArray;
@@ -51,10 +49,10 @@ import net.sf.mzmine.datamodel.RawDataFileWriter;
 import net.sf.mzmine.datamodel.impl.CoordinatesXY;
 import net.sf.mzmine.datamodel.impl.CoordinatesXYZ;
 import net.sf.mzmine.datamodel.impl.ImagingParameters;
-import net.sf.mzmine.datamodel.impl.SimpleMergedScan;
-import net.sf.mzmine.datamodel.impl.SimpleMergedScan.Result;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 import net.sf.mzmine.datamodel.impl.SimpleImagingScan;
+import net.sf.mzmine.datamodel.impl.SimpleMergedScan;
+import net.sf.mzmine.datamodel.impl.SimpleMergedScan.Result;
 import net.sf.mzmine.modules.tools.msmsspectramerge.IntensityMergeMode;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
@@ -70,7 +68,7 @@ import net.sf.mzmine.util.scans.ScanUtils;
  */
 public class ImzMLSpectralMergeReadTask extends AbstractTask {
 
-  private Logger logger = Logger.getLogger(this.getClass().getName());
+  private static Logger logger = Logger.getLogger(ImzMLSpectralMergeReadTask.class.getName());
 
   private File file;
   private MZmineProject project;
@@ -162,7 +160,7 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
 
         // get data points and try to merge
         int msLevel = extractMSLevel(spectrum);
-        DataPoint dataPoints[] = extractDataPoints(spectrum);
+        DataPoint dataPoints[] = extractDataPoints(spectrum, noiseLevel);
 
         // add MS2 scan
         if (msLevel > 1) {
@@ -254,9 +252,9 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
     setStatus(TaskStatus.FINISHED);
   }
 
-  private SimpleImagingScan createScan(Spectrum spectrum, DataPoint[] dataPoints) {
+  public static SimpleImagingScan createScan(Spectrum spectrum, DataPoint[] dataPoints) {
     String scanId = spectrum.getID();
-    int scanNumber = convertScanIdToScanNumber(scanId);
+    int scanNumber = 0;
     int msLevel = extractMSLevel(spectrum);
 
     // Extract scan data
@@ -285,7 +283,7 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
    * @param dataPoints
    * @return
    */
-  private boolean mergeWithFirst(List<SimpleMergedScan> mergedScans, Spectrum spectrum,
+  public boolean mergeWithFirst(List<SimpleMergedScan> mergedScans, Spectrum spectrum,
       DataPoint[] dataPoints) {
     DataPoint[] filtered =
         minHeight > noiseLevel ? null : ScanUtils.getFiltered(dataPoints, minHeight);
@@ -316,31 +314,7 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
     return false;
   }
 
-  private int convertScanIdToScanNumber(String scanId) {
-
-    if (scanIdTable.containsKey(scanId))
-      return scanIdTable.get(scanId);
-
-    final Pattern pattern = Pattern.compile("scan=([0-9]+)");
-    final Matcher matcher = pattern.matcher(scanId);
-    boolean scanNumberFound = matcher.find();
-
-    // Some vendors include scan=XX in the ID, some don't, such as
-    // mzML converted from WIFF files. See the definition of nativeID in
-    // http://psidev.cvs.sourceforge.net/viewvc/psidev/psi/psi-ms/mzML/controlledVocabulary/psi-ms.obo
-    if (scanNumberFound) {
-      int scanNumber = Integer.parseInt(matcher.group(1));
-      scanIdTable.put(scanId, scanNumber);
-      return scanNumber;
-    }
-
-    int scanNumber = lastScanNumber + 1;
-    lastScanNumber++;
-    scanIdTable.put(scanId, scanNumber);
-    return scanNumber;
-  }
-
-  private int extractMSLevel(Spectrum spectrum) {
+  public static int extractMSLevel(Spectrum spectrum) {
     // Browse the spectrum parameters
     // MS level MS:1000511
     try {
@@ -355,7 +329,7 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
     return 1;
   }
 
-  private double extractRetentionTime(Spectrum spectrum) {
+  public static double extractRetentionTime(Spectrum spectrum) {
     ScanList scanListElement = spectrum.getScanList();
     if (scanListElement == null)
       return 0;
@@ -374,7 +348,7 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
     return 0;
   }
 
-  private DataPoint[] extractDataPoints(Spectrum spectrum) {
+  public static DataPoint[] extractDataPoints(Spectrum spectrum, double noiseLevel) {
     try {
       BinaryDataArrayList dataList = spectrum.getBinaryDataArrayList();
 
@@ -401,7 +375,7 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
     return new DataPoint[0];
   }
 
-  private Coordinates extractCoordinates(Spectrum spectrum) {
+  public static Coordinates extractCoordinates(Spectrum spectrum) {
     ScanList list = spectrum.getScanList();
     if (list != null) {
       for (Scan scan : spectrum.getScanList()) {
@@ -430,7 +404,7 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
    * @param spectrum
    * @return
    */
-  private int extractParentScanNumber(Spectrum spectrum) {
+  public static int extractParentScanNumber(Spectrum spectrum) {
     PrecursorList precursorListElement = spectrum.getPrecursorList();
     if ((precursorListElement == null) || (precursorListElement.size() == 0))
       return -1;
@@ -447,8 +421,7 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
     return -1;
   }
 
-  private double extractPrecursorMz(Spectrum spectrum) {
-
+  public static double extractPrecursorMz(Spectrum spectrum) {
     PrecursorList precursorListElement = spectrum.getPrecursorList();
     if ((precursorListElement == null) || (precursorListElement.size() == 0))
       return 0;
@@ -474,7 +447,7 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
     return 0;
   }
 
-  private int extractPrecursorCharge(Spectrum spectrum) {
+  public static int extractPrecursorCharge(Spectrum spectrum) {
     PrecursorList precursorList = spectrum.getPrecursorList();
     if ((precursorList == null) || (precursorList.size() == 0))
       return 0;
@@ -495,7 +468,7 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
     return 0;
   }
 
-  private PolarityType extractPolarity(Spectrum spectrum) {
+  public static PolarityType extractPolarity(Spectrum spectrum) {
     CVParam cv = spectrum.getCVParam(Spectrum.SCAN_POLARITY_ID);
     if (spectrum.getCVParam("MS:1000130") != null)
       return PolarityType.POSITIVE;
@@ -516,7 +489,7 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
     return PolarityType.UNKNOWN;
   }
 
-  private String extractScanDefinition(Spectrum spectrum) {
+  public static String extractScanDefinition(Spectrum spectrum) {
     CVParam cvParams = spectrum.getCVParam("MS:1000512");
     if (cvParams != null)
       return cvParams.getValueAsString();
@@ -534,12 +507,8 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
     return spectrum.getID();
   }
 
-  @Override
-  public String getTaskDescription() {
-    return "Opening file " + file;
-  }
 
-  boolean isMsSpectrum(Spectrum spectrum) {
+  public static boolean isMsSpectrum(Spectrum spectrum) {
     // one thats not MS (code for UV?)
     CVParam cvParams = spectrum.getCVParam("MS:1000804");
 
@@ -547,4 +516,8 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
     return cvParams == null;
   }
 
+  @Override
+  public String getTaskDescription() {
+    return "Opening file and merging spectra " + file;
+  }
 }

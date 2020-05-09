@@ -23,6 +23,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
+import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
@@ -62,6 +63,9 @@ public class RawClusteredImportParameters extends SimpleParameterSet {
           "Minimum percantage of spectra with a specific data point of all merged spectra (if a merged spectrum contains more than 4 spectra, data points are filtered to be contained in at least X spectra)",
           0.10), false);
 
+  public static final BooleanParameter multiThreaded = new BooleanParameter("Multi-threaded",
+      "Use the number of threads specified in the preferences", true);
+
 
   public static final MZToleranceParameter mzTol =
       new MZToleranceParameter("m/z tolerance", "Tolerance to match and merge spectra", 0.02, 30);
@@ -69,8 +73,8 @@ public class RawClusteredImportParameters extends SimpleParameterSet {
 
 
   public RawClusteredImportParameters() {
-    super(new Parameter[] {fileNames, mzTol, noiseCutoff, minHeight, minCosine, minMatch,
-        minSpectra, minPercentSpectra});
+    super(new Parameter[] {fileNames, multiThreaded, mzTol, noiseCutoff, minHeight, minCosine,
+        minMatch, minSpectra, minPercentSpectra});
   }
 
 }

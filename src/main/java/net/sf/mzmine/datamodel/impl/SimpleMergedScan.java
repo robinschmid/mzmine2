@@ -62,6 +62,57 @@ public class SimpleMergedScan extends SimpleImagingScan implements MergedScan {
     return merged;
   }
 
+  public Result merge(SimpleMergedScan source, MZTolerance mzTol, double noiseLevel,
+      double minCosine, int minMatch) {
+    DataPoint[] dataPoints = source.getDataPoints();
+    DataPoint[] filtered = source.getFilteredDataPoints(noiseLevel);
+
+    // align
+    List<DataPoint[]> aligned = ScanAlignment.align(mzTol, getFilteredDataPoints(noiseLevel),
+        filtered == null ? dataPoints : filtered);
+
+    // overlapping within mass tolerance
+    int overlap = (int) aligned.stream().filter(dp -> dp[0] != null && dp[1] != null).count();
+
+    if (overlap >= minMatch) {
+      // weighted cosine
+      double[][] diffArray = ScanAlignment.toIntensityArray(aligned);
+      double diffCosine = Similarity.COSINE.calc(diffArray);
+      if (diffCosine >= minCosine) {
+        // if aligned was filtered - need to realign all data points
+        if (filtered != null && filteredMerged != null)
+          aligned = ScanAlignment.align(mzTol, merged, dataPoints);
+        // reset filtered
+        filteredMerged = null;
+        // merge
+        MergedDataPoint[] newMerged = new MergedDataPoint[aligned.size()];
+        for (int i = 0; i < aligned.size(); i++) {
+          DataPoint[] pair = aligned.get(i);
+          if (pair[0] != null && pair[1] != null)
+            newMerged[i] = ((MergedDataPoint) pair[0]).merge(pair[1], mzMode, intensityMergeMode);
+          // new data point
+          else if (pair[0] != null)
+            newMerged[i] = new MergedDataPoint(mzMode, intensityMergeMode, pair[0]);
+          else if (pair[1] != null)
+            newMerged[i] = new MergedDataPoint(mzMode, intensityMergeMode, pair[1]);
+        }
+        // replace
+        merged = newMerged;
+        setDataPoints(merged);
+        mergedCount += source.getScanCount();
+        double tic = source.bestTIC;
+        if (bestTIC < tic) {
+          bestTIC = tic;
+          bestScan = source.getBestScan();
+          // create scan and replace the best
+          return Result.MERGED_REPLACE_BEST_SCAN;
+        }
+        return Result.MERGED;
+      }
+    }
+    return Result.FALSE;
+  }
+
   public Result merge(DataPoint[] dataPoints, DataPoint[] filtered, MZTolerance mzTol,
       double noiseLevel, double minCosine, int minMatch) {
     // align
@@ -109,7 +160,7 @@ public class SimpleMergedScan extends SimpleImagingScan implements MergedScan {
     return Result.FALSE;
   }
 
-  private DataPoint[] getFilteredDataPoints(double noiseLevel) {
+  public DataPoint[] getFilteredDataPoints(double noiseLevel) {
     if (noiseLevel == 0d)
       return merged;
     if (filteredMerged == null || noiseLevel != lastNoiseLevel) {

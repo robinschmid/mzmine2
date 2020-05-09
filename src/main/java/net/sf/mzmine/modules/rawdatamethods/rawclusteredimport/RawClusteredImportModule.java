@@ -160,15 +160,19 @@ public class RawClusteredImportModule implements MZmineProcessingModule {
         continue;
       }
 
-      Task newTask = createOpeningTask(fileType, project, fileNames[i], newMZmineFile, parameters);
+
+      final Task newTask =
+          createOpeningTask(tasks, fileType, project, fileNames[i], newMZmineFile, parameters);
+
+
 
       if (newTask == null) {
         logger.warning("File type " + fileType + " of file " + fileNames[i] + " is not supported.");
         return ExitCode.ERROR;
       }
 
-      tasks.add(newTask);
-
+      if (tasks.isEmpty())
+        tasks.add(newTask);
     }
 
     return ExitCode.OK;
@@ -184,8 +188,11 @@ public class RawClusteredImportModule implements MZmineProcessingModule {
     return RawClusteredImportParameters.class;
   }
 
-  public static Task createOpeningTask(RawDataFileType fileType, MZmineProject project,
-      File fileName, RawDataFileWriter newMZmineFile, ParameterSet parameters) {
+  public static Task createOpeningTask(Collection<Task> tasks, RawDataFileType fileType,
+      MZmineProject project, File fileName, RawDataFileWriter newMZmineFile,
+      ParameterSet parameters) {
+    boolean multiThreaded =
+        parameters.getParameter(RawClusteredImportParameters.multiThreaded).getValue();
     Task newTask = null;
     switch (fileType) {
       case MZDATA:
@@ -195,7 +202,13 @@ public class RawClusteredImportModule implements MZmineProcessingModule {
       case MZXML:
         break;
       case IMZML:
-        newTask = new ImzMLSpectralMergeReadTask(project, fileName, newMZmineFile, parameters);
+        if (multiThreaded) {
+          newTask = new MultiThreadImzMLSpectralMergeReadTask(project, fileName, newMZmineFile,
+              parameters);
+          tasks.add(newTask);
+          ((MultiThreadImzMLSpectralMergeReadTask) newTask).startOtherTasks(tasks);
+        } else
+          newTask = new ImzMLSpectralMergeReadTask(project, fileName, newMZmineFile, parameters);
         break;
       case NETCDF:
         break;
