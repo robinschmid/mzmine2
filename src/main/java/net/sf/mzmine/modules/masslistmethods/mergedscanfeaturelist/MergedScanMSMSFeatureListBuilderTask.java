@@ -18,6 +18,8 @@
 
 package net.sf.mzmine.modules.masslistmethods.mergedscanfeaturelist;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -128,6 +130,9 @@ public class MergedScanMSMSFeatureListBuilderTask extends AbstractTask {
     String comment = "";
     boolean lastWasMerged = false;
     int lastMergedSize = 0;
+    int mergedCounter = 1;
+    NumberFormat format = new DecimalFormat("000");
+
     for (int scannumber : dataFile.getScanNumbers()) {
       if (isCanceled())
         return;
@@ -139,12 +144,15 @@ public class MergedScanMSMSFeatureListBuilderTask extends AbstractTask {
       if (scan instanceof MergedScan) {
         lastWasMerged = true;
         lastMergedSize = ((MergedScan) scan).getScanCount();
-        comment = lastMergedSize + " scans merged: " + ((MergedScan) scan).getIntensityMode();
+        comment = "MID" + format.format(mergedCounter) + " with " + lastMergedSize
+            + " scans merged: " + ((MergedScan) scan).getIntensityMode();
       } else if (lastWasMerged) {
         // add best scan - is always the first after merged scans
-        comment = lastMergedSize + " scans merged: best single scan (highest TIC)";
+        comment = "MID" + format.format(mergedCounter) + " with " + lastMergedSize
+            + " scans merged: best single scan (highest TIC)";
         lastWasMerged = false;
         lastMergedSize = 0;
+        mergedCounter++;
       }
       // add
       if (!comment.isEmpty()) {

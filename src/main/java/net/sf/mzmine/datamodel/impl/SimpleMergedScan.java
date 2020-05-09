@@ -1,5 +1,6 @@
 package net.sf.mzmine.datamodel.impl;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import javax.annotation.Nonnull;
@@ -28,12 +29,18 @@ public class SimpleMergedScan extends SimpleImagingScan implements MergedScan {
   private int mergedCount = 1;
   private DataPoint[] filteredMerged;
   private double lastNoiseLevel;
+  private List<Integer> mergeTags = new ArrayList<>();
 
-  public SimpleMergedScan(Scan sc, IntensityMergeMode intensityMergeMode) {
+  public SimpleMergedScan(SimpleMergedScan sc, IntensityMergeMode intensityMergeMode) {
+    this(sc, intensityMergeMode, -1);
+  }
+
+  public SimpleMergedScan(Scan sc, IntensityMergeMode intensityMergeMode, int mergeTag) {
     super(sc);
     this.intensityMergeMode = intensityMergeMode;
     if (sc instanceof SimpleMergedScan) {
       SimpleMergedScan msc = (SimpleMergedScan) sc;
+      mergeTags.addAll(msc.mergeTags);
       bestScan = msc.getBestScan();
       bestTIC = msc.bestTIC;
       mergedCount = msc.getScanCount();
@@ -42,6 +49,7 @@ public class SimpleMergedScan extends SimpleImagingScan implements MergedScan {
         merged[i] = msc.merged[i].getInstance(mzMode, intensityMergeMode);
       }
     } else {
+      mergeTags.add(mergeTag);
       bestScan = sc;
       bestTIC = 0;
       merged = new MergedDataPoint[sc.getDataPoints().length];
@@ -57,6 +65,25 @@ public class SimpleMergedScan extends SimpleImagingScan implements MergedScan {
     setDataPoints(merged);
   }
 
+  public List<Integer> getMergeTags() {
+    return mergeTags;
+  }
+
+  public void addMergeTag(int tag) {
+    mergeTags.add(tag);
+  }
+
+  /**
+   * This scan was already compared to msc
+   * 
+   * @param msc
+   * @return
+   */
+  public boolean wasAlreadyComparedTo(SimpleMergedScan msc) {
+    return mergeTags.stream()
+        .anyMatch(tag -> msc.mergeTags.stream().anyMatch(tag2 -> tag.equals(tag2)));
+  }
+
   @Override
   public @Nonnull DataPoint[] getDataPoints() {
     return merged;
@@ -64,6 +91,9 @@ public class SimpleMergedScan extends SimpleImagingScan implements MergedScan {
 
   public Result merge(SimpleMergedScan source, MZTolerance mzTol, double noiseLevel,
       double minCosine, int minMatch) {
+    if (source.wasAlreadyComparedTo(this))
+      return Result.FALSE;
+
     DataPoint[] dataPoints = source.getDataPoints();
     DataPoint[] filtered = source.getFilteredDataPoints(noiseLevel);
 
@@ -99,6 +129,7 @@ public class SimpleMergedScan extends SimpleImagingScan implements MergedScan {
         // replace
         merged = newMerged;
         setDataPoints(merged);
+        this.mergeTags.addAll(source.getMergeTags());
         mergedCount += source.getScanCount();
         double tic = source.bestTIC;
         if (bestTIC < tic) {

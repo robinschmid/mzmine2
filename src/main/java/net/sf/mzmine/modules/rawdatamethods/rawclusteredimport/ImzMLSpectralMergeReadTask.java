@@ -174,7 +174,7 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
           // create scan and add new merged scan
           logger.log(Level.INFO, "Scan " + i + " not merged");
           SimpleImagingScan rawscan = createScan(spectrum, dataPoints);
-          mergedScans.add(new SimpleMergedScan(rawscan, IntensityMergeMode.AVERAGE));
+          mergedScans.add(new SimpleMergedScan(rawscan, IntensityMergeMode.AVERAGE, 1));
         }
         parsedScans++;
       }

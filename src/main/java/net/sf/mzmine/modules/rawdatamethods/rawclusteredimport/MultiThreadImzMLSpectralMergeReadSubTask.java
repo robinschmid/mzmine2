@@ -19,6 +19,7 @@
 package net.sf.mzmine.modules.rawdatamethods.rawclusteredimport;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -43,9 +44,14 @@ public class MultiThreadImzMLSpectralMergeReadSubTask extends AbstractTask {
 
   private Logger logger = Logger.getLogger(this.getClass().getName());
 
+  private final int taskID;
   private int parsedScans = 0;
 
   private List<Spectrum> spectra = Collections.synchronizedList(new ArrayList<Spectrum>());
+  // each finished task gives one list
+  // do not compare those entries again between each other
+  private List<SimpleMergedScan> sourceScans =
+      Collections.synchronizedList(new ArrayList<SimpleMergedScan>());
 
   // define by user input
   private double minCosine = 0.90;
@@ -61,7 +67,8 @@ public class MultiThreadImzMLSpectralMergeReadSubTask extends AbstractTask {
   private List<SimpleMergedScan> mergedScans;
 
 
-  public MultiThreadImzMLSpectralMergeReadSubTask(ParameterSet parameters) {
+  public MultiThreadImzMLSpectralMergeReadSubTask(ParameterSet parameters, int taskID) {
+    this.taskID = taskID;
     minCosine = parameters.getParameter(RawClusteredImportParameters.minCosine).getValue();
     mzTol = parameters.getParameter(RawClusteredImportParameters.mzTol).getValue();
     minHeight = parameters.getParameter(RawClusteredImportParameters.minHeight).getValue();
@@ -84,10 +91,18 @@ public class MultiThreadImzMLSpectralMergeReadSubTask extends AbstractTask {
   public double getFinishedPercentage() {
     if (spectra == null)
       return 0;
-    int size = spectra.size();
+    int size = getRemainingSpectra();
     return size == 0 ? 1 : (double) parsedScans / (parsedScans + size);
   }
 
+  /**
+   * Tag merged spectra with this id
+   * 
+   * @return
+   */
+  private int getTaskID() {
+    return taskID;
+  }
 
 
   /**
@@ -104,8 +119,17 @@ public class MultiThreadImzMLSpectralMergeReadSubTask extends AbstractTask {
 
     // do until no more spectra are added and in the list
     while (getStatus().equals(TaskStatus.PROCESSING)
-        && !(finishedSpectraList && spectra.isEmpty())) {
+        && !(finishedSpectraList && getRemainingSpectra() == 0)) {
       try {
+        while (!sourceScans.isEmpty()) {
+          if (isCanceled())
+            break;
+
+          SimpleMergedScan source = sourceScans.remove(0);
+          mergeWithFirst(mergedScans, source);
+          parsedScans++;
+        }
+
         while (!spectra.isEmpty()) {
           if (isCanceled())
             break;
@@ -121,7 +145,7 @@ public class MultiThreadImzMLSpectralMergeReadSubTask extends AbstractTask {
             // was not merged
             // create scan and add new merged scan
             SimpleImagingScan rawscan = ImzMLSpectralMergeReadTask.createScan(spectrum, dataPoints);
-            mergedScans.add(new SimpleMergedScan(rawscan, IntensityMergeMode.AVERAGE));
+            mergedScans.add(new SimpleMergedScan(rawscan, IntensityMergeMode.AVERAGE, getTaskID()));
           }
           parsedScans++;
         }
@@ -178,9 +202,55 @@ public class MultiThreadImzMLSpectralMergeReadSubTask extends AbstractTask {
     return false;
   }
 
+  /**
+   * Merge datapoints into first matching scan. Sort MergedScans list by number of merged scans
+   * 
+   * @param mergedScans
+   * @param spectrum
+   * @param dataPoints
+   * @return
+   */
+  private boolean mergeWithFirst(List<SimpleMergedScan> mergedScans, SimpleMergedScan source) {
+    for (int m = 0; m < mergedScans.size(); m++) {
+      SimpleMergedScan scan = mergedScans.get(m);
+      // try to merge
+      Result res = scan.merge(source, mzTol, minHeight, minCosine, minMatch);
+      if (!res.equals(Result.FALSE)) {
+        logger.info("MERGED SCANS in list index " + m + "; total: " + scan.getScanCount());
+        // was merged into the scan
+        int mergedScanCount = scan.getScanCount();
+        // insert sort list
+        for (int s = 0; s < m; s++) {
+          if (mergedScans.get(s).getScanCount() <= mergedScanCount) {
+            mergedScans.remove(m);
+            mergedScans.add(s, scan);
+            return true;
+          }
+        }
+        return true;
+      }
+    }
+
+    // add as new
+    source.addMergeTag(getTaskID());
+    boolean added = false;
+    for (int i = 0; i < mergedScans.size(); i++) {
+      if (mergedScans.get(i).getScanCount() < source.getScanCount()) {
+        mergedScans.add(i, source);
+        added = true;
+        break;
+      }
+    }
+    if (!added)
+      mergedScans.add(source);
+
+    return false;
+  }
+
+
   @Override
   public String getTaskDescription() {
-    return "Merging scans. Done:" + parsedScans + "; TODO:" + spectra.size();
+    return "Merging scans. Done:" + parsedScans + "; TODO:" + getRemainingSpectra();
   }
 
 
@@ -194,12 +264,23 @@ public class MultiThreadImzMLSpectralMergeReadSubTask extends AbstractTask {
   }
 
   /**
+   * Add merged scan to be merged with this list of merged scans
+   * 
+   * @param simpleMergedScan
+   */
+  public void addSpectrum(SimpleMergedScan simpleMergedScan) {
+    sourceScans.add(simpleMergedScan);
+  }
+
+  /**
    * Spectra that need to be merged
    * 
    * @return
    */
   public int getRemainingSpectra() {
-    return spectra.size();
+    if (spectra == null || sourceScans == null)
+      return 0;
+    return spectra.size() + sourceScans.size();
   }
 
   public void finishedSpectraList() {
@@ -212,6 +293,15 @@ public class MultiThreadImzMLSpectralMergeReadSubTask extends AbstractTask {
 
   public boolean isDone() {
     return isDone;
+  }
+
+  /**
+   * Other merged scans that were still waiting to be merged
+   * 
+   * @return
+   */
+  public Collection<? extends SimpleMergedScan> getRemainingScans() {
+    return sourceScans;
   }
 
 }
