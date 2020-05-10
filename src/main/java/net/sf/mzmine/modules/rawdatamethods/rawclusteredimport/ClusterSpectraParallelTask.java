@@ -50,7 +50,7 @@ import net.sf.mzmine.util.ExceptionUtils;
  * This class reads mzML 1.0 and 1.1.0 files (http://www.psidev.info/index.php?q=node/257) using the
  * jmzml library (http://code.google.com/p/jmzml/).
  */
-public class MultiThreadImzMLSpectralMergeReadTask extends AbstractTask {
+public class ClusterSpectraParallelTask extends AbstractTask {
 
   private Logger logger = Logger.getLogger(this.getClass().getName());
 
@@ -63,7 +63,7 @@ public class MultiThreadImzMLSpectralMergeReadTask extends AbstractTask {
   private int lastScanNumber = 0;
 
   // all sub tasks merging scans
-  private List<MultiThreadImzMLSpectralMergeReadSubTask> subTasks = new ArrayList<>();
+  private List<ClusterSpectraSubTask> subTasks = new ArrayList<>();
 
   // define by user input
   private double minCosine = 0.90;
@@ -77,24 +77,24 @@ public class MultiThreadImzMLSpectralMergeReadTask extends AbstractTask {
   private ParameterSet parameters;
 
 
-  public MultiThreadImzMLSpectralMergeReadTask(MZmineProject project, File fileToOpen,
+  public ClusterSpectraParallelTask(MZmineProject project, File fileToOpen,
       RawDataFileWriter newMZmineFile, ParameterSet parameters) {
     this.project = project;
     this.file = fileToOpen;
     this.newMZmineFile = newMZmineFile;
     this.parameters = parameters;
 
-    minCosine = parameters.getParameter(RawClusteredImportParameters.minCosine).getValue();
-    mzTol = parameters.getParameter(RawClusteredImportParameters.mzTol).getValue();
-    minHeight = parameters.getParameter(RawClusteredImportParameters.minHeight).getValue();
-    noiseLevel = parameters.getParameter(RawClusteredImportParameters.noiseCutoff).getValue();
-    minMatch = parameters.getParameter(RawClusteredImportParameters.minMatch).getValue();
+    minCosine = parameters.getParameter(ClusterSpectraParameters.minCosine).getValue();
+    mzTol = parameters.getParameter(ClusterSpectraParameters.mzTol).getValue();
+    minHeight = parameters.getParameter(ClusterSpectraParameters.minHeight).getValue();
+    noiseLevel = parameters.getParameter(ClusterSpectraParameters.noiseCutoff).getValue();
+    minMatch = parameters.getParameter(ClusterSpectraParameters.minMatch).getValue();
     boolean usePercent =
-        parameters.getParameter(RawClusteredImportParameters.minPercentSpectra).getValue();
+        parameters.getParameter(ClusterSpectraParameters.minPercentSpectra).getValue();
     minPercentSpectra = !usePercent ? 0d
-        : parameters.getParameter(RawClusteredImportParameters.minPercentSpectra)
+        : parameters.getParameter(ClusterSpectraParameters.minPercentSpectra)
             .getEmbeddedParameter().getValue();
-    minSpectra = parameters.getParameter(RawClusteredImportParameters.minSpectra).getValue();
+    minSpectra = parameters.getParameter(ClusterSpectraParameters.minSpectra).getValue();
     if (minHeight <= noiseLevel)
       minHeight = 0d;
   }
@@ -113,8 +113,8 @@ public class MultiThreadImzMLSpectralMergeReadTask extends AbstractTask {
         .getParameter(MZminePreferences.numOfThreads).getValue();
     // start -1
     for (int i = 0; i < threads - 1; i++) {
-      MultiThreadImzMLSpectralMergeReadSubTask sub =
-          new MultiThreadImzMLSpectralMergeReadSubTask(parameters, i);
+      ClusterSpectraSubTask sub =
+          new ClusterSpectraSubTask(parameters, i);
       tasks.add(sub);
       subTasks.add(sub);
     }
@@ -154,18 +154,18 @@ public class MultiThreadImzMLSpectralMergeReadTask extends AbstractTask {
         Spectrum spectrum = spectra.get(i);
 
         // Ignore scans that are not MS, e.g. UV
-        if (!ImzMLSpectralMergeReadTask.isMsSpectrum(spectrum)) {
+        if (!ClusterSpectraTask.isMsSpectrum(spectrum)) {
           parsedScans++;
           continue;
         }
 
         // get data points and try to merge
-        int msLevel = ImzMLSpectralMergeReadTask.extractMSLevel(spectrum);
+        int msLevel = ClusterSpectraTask.extractMSLevel(spectrum);
         // add MS2 scan
         if (msLevel > 1) {
           DataPoint dataPoints[] =
-              ImzMLSpectralMergeReadTask.extractDataPoints(spectrum, noiseLevel);
-          ms2Scans.add(ImzMLSpectralMergeReadTask.createScan(spectrum, dataPoints));
+              ClusterSpectraTask.extractDataPoints(spectrum, noiseLevel);
+          ms2Scans.add(ClusterSpectraTask.createScan(spectrum, dataPoints));
         } else {
           // add to sub task
           subTasks.get(i % subTasks.size()).addSpectrum(spectrum);
@@ -211,7 +211,7 @@ public class MultiThreadImzMLSpectralMergeReadTask extends AbstractTask {
 
       // maybe stopped and now just collect all scans
       if (mergedScans.isEmpty()) {
-        for (MultiThreadImzMLSpectralMergeReadSubTask t : subTasks) {
+        for (ClusterSpectraSubTask t : subTasks) {
           mergedScans.addAll(t.getMergedScans());
           mergedScans.addAll(t.getRemainingScans());
         }

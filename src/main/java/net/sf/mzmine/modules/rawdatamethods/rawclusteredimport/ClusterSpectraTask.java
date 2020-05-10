@@ -66,9 +66,9 @@ import net.sf.mzmine.util.scans.ScanUtils;
  * This class reads mzML 1.0 and 1.1.0 files (http://www.psidev.info/index.php?q=node/257) using the
  * jmzml library (http://code.google.com/p/jmzml/).
  */
-public class ImzMLSpectralMergeReadTask extends AbstractTask {
+public class ClusterSpectraTask extends AbstractTask {
 
-  private static Logger logger = Logger.getLogger(ImzMLSpectralMergeReadTask.class.getName());
+  private static Logger logger = Logger.getLogger(ClusterSpectraTask.class.getName());
 
   private File file;
   private MZmineProject project;
@@ -90,23 +90,23 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
   private int minSpectra = 1;
 
 
-  public ImzMLSpectralMergeReadTask(MZmineProject project, File fileToOpen,
+  public ClusterSpectraTask(MZmineProject project, File fileToOpen,
       RawDataFileWriter newMZmineFile, ParameterSet parameters) {
     this.project = project;
     this.file = fileToOpen;
     this.newMZmineFile = newMZmineFile;
 
-    minCosine = parameters.getParameter(RawClusteredImportParameters.minCosine).getValue();
-    mzTol = parameters.getParameter(RawClusteredImportParameters.mzTol).getValue();
-    minHeight = parameters.getParameter(RawClusteredImportParameters.minHeight).getValue();
-    noiseLevel = parameters.getParameter(RawClusteredImportParameters.noiseCutoff).getValue();
-    minMatch = parameters.getParameter(RawClusteredImportParameters.minMatch).getValue();
+    minCosine = parameters.getParameter(ClusterSpectraParameters.minCosine).getValue();
+    mzTol = parameters.getParameter(ClusterSpectraParameters.mzTol).getValue();
+    minHeight = parameters.getParameter(ClusterSpectraParameters.minHeight).getValue();
+    noiseLevel = parameters.getParameter(ClusterSpectraParameters.noiseCutoff).getValue();
+    minMatch = parameters.getParameter(ClusterSpectraParameters.minMatch).getValue();
     boolean usePercent =
-        parameters.getParameter(RawClusteredImportParameters.minPercentSpectra).getValue();
+        parameters.getParameter(ClusterSpectraParameters.minPercentSpectra).getValue();
     minPercentSpectra = !usePercent ? 0d
-        : parameters.getParameter(RawClusteredImportParameters.minPercentSpectra)
+        : parameters.getParameter(ClusterSpectraParameters.minPercentSpectra)
             .getEmbeddedParameter().getValue();
-    minSpectra = parameters.getParameter(RawClusteredImportParameters.minSpectra).getValue();
+    minSpectra = parameters.getParameter(ClusterSpectraParameters.minSpectra).getValue();
     if (minHeight <= noiseLevel)
       minHeight = 0d;
   }

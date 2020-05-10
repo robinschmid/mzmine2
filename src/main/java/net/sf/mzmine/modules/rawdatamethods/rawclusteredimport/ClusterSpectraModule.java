@@ -46,7 +46,7 @@ import net.sf.mzmine.util.ExitCode;
 /**
  * Raw data import module
  */
-public class RawClusteredImportModule implements MZmineProcessingModule {
+public class ClusterSpectraModule implements MZmineProcessingModule {
 
   private Logger logger = Logger.getLogger(this.getClass().getName());
 
@@ -69,7 +69,7 @@ public class RawClusteredImportModule implements MZmineProcessingModule {
   public ExitCode runModule(final @Nonnull MZmineProject project, @Nonnull ParameterSet parameters,
       @Nonnull Collection<Task> tasks) {
 
-    File fileNames[] = parameters.getParameter(RawClusteredImportParameters.fileNames).getValue();
+    File fileNames[] = parameters.getParameter(ClusterSpectraParameters.fileNames).getValue();
 
     // Find common prefix in raw file names if in GUI mode
     String commonPrefix = null;
@@ -185,14 +185,14 @@ public class RawClusteredImportModule implements MZmineProcessingModule {
 
   @Override
   public @Nonnull Class<? extends ParameterSet> getParameterSetClass() {
-    return RawClusteredImportParameters.class;
+    return ClusterSpectraParameters.class;
   }
 
   public static Task createOpeningTask(Collection<Task> tasks, RawDataFileType fileType,
       MZmineProject project, File fileName, RawDataFileWriter newMZmineFile,
       ParameterSet parameters) {
     boolean multiThreaded =
-        parameters.getParameter(RawClusteredImportParameters.multiThreaded).getValue();
+        parameters.getParameter(ClusterSpectraParameters.multiThreaded).getValue();
     Task newTask = null;
     switch (fileType) {
       case MZDATA:
@@ -203,12 +203,12 @@ public class RawClusteredImportModule implements MZmineProcessingModule {
         break;
       case IMZML:
         if (multiThreaded) {
-          newTask = new MultiThreadImzMLSpectralMergeReadTask(project, fileName, newMZmineFile,
+          newTask = new ClusterSpectraParallelTask(project, fileName, newMZmineFile,
               parameters);
           tasks.add(newTask);
-          ((MultiThreadImzMLSpectralMergeReadTask) newTask).startOtherTasks(tasks);
+          ((ClusterSpectraParallelTask) newTask).startOtherTasks(tasks);
         } else
-          newTask = new ImzMLSpectralMergeReadTask(project, fileName, newMZmineFile, parameters);
+          newTask = new ClusterSpectraTask(project, fileName, newMZmineFile, parameters);
         break;
       case NETCDF:
         break;
