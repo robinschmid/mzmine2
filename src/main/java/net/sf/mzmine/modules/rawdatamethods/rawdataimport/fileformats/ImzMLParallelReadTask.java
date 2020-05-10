@@ -65,7 +65,7 @@ import net.sf.mzmine.util.scans.ScanUtils;
  * This class reads mzML 1.0 and 1.1.0 files (http://www.psidev.info/index.php?q=node/257) using the
  * jmzml library (http://code.google.com/p/jmzml/).
  */
-public class ImzMLReadTask extends AbstractTask {
+public class ImzMLParallelReadTask extends AbstractTask {
 
   private Logger logger = Logger.getLogger(this.getClass().getName());
 
@@ -89,7 +89,8 @@ public class ImzMLReadTask extends AbstractTask {
   private static final int PARENT_STACK_SIZE = 20;
   private LinkedList<SimpleScan> parentStack = new LinkedList<SimpleScan>();
 
-  public ImzMLReadTask(MZmineProject project, File fileToOpen, RawDataFileWriter newMZmineFile) {
+  public ImzMLParallelReadTask(MZmineProject project, File fileToOpen,
+      RawDataFileWriter newMZmineFile) {
     this.project = project;
     this.file = fileToOpen;
     this.newMZmineFile = newMZmineFile;
