@@ -22,13 +22,14 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Hashtable;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 import com.alanmrace.jimzmlparser.exceptions.ImzMLParseException;
 import com.alanmrace.jimzmlparser.imzml.ImzML;
 import com.alanmrace.jimzmlparser.mzml.BinaryDataArray;
@@ -54,7 +55,6 @@ import net.sf.mzmine.datamodel.impl.CoordinatesXYZ;
 import net.sf.mzmine.datamodel.impl.ImagingParameters;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 import net.sf.mzmine.datamodel.impl.SimpleImagingScan;
-import net.sf.mzmine.datamodel.impl.SimpleScan;
 import net.sf.mzmine.project.impl.ImagingRawDataFileImpl;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
@@ -73,21 +73,12 @@ public class ImzMLParallelReadTask extends AbstractTask {
   private MZmineProject project;
   private RawDataFileWriter newMZmineFile;
   private ImagingRawDataFileImpl finalRawDataFile;
-  private int totalScans = 0, parsedScans;
+  private int totalScans = 0;
+  private AtomicInteger parsedScans = new AtomicInteger(0);
 
   private int lastScanNumber = 0;
 
   private Map<String, Integer> scanIdTable = new Hashtable<String, Integer>();
-
-  /*
-   * This stack stores at most 20 consecutive scans. This window serves to find possible fragments
-   * (current scan) that belongs to any of the stored scans in the stack. The reason of the size
-   * follows the concept of neighborhood of scans and all his fragments. These solution is
-   * implemented because exists the possibility to find fragments of one scan after one or more full
-   * scans.
-   */
-  private static final int PARENT_STACK_SIZE = 20;
-  private LinkedList<SimpleScan> parentStack = new LinkedList<SimpleScan>();
 
   public ImzMLParallelReadTask(MZmineProject project, File fileToOpen,
       RawDataFileWriter newMZmineFile) {
@@ -101,7 +92,7 @@ public class ImzMLParallelReadTask extends AbstractTask {
    */
   @Override
   public double getFinishedPercentage() {
-    return totalScans == 0 ? 0 : (double) parsedScans / totalScans;
+    return totalScans == 0 ? 0 : (double) parsedScans.get() / totalScans;
   }
 
   /**
@@ -111,7 +102,7 @@ public class ImzMLParallelReadTask extends AbstractTask {
   public void run() {
 
     setStatus(TaskStatus.PROCESSING);
-    logger.info("Started parsing file " + file);
+    logger.info("Started parsing file (parallel parsing) " + file);
 
     // file = new File("C:/DATA/MALDI Sh/examples/Example_Processed.imzML");
     ImzML imzml;
@@ -126,93 +117,70 @@ public class ImzMLParallelReadTask extends AbstractTask {
     SpectrumList spectra = imzml.getRun().getSpectrumList();
     totalScans = spectra.size();
 
-    try {
+    IntStream.range(0, totalScans).parallel().forEach(i -> {
+      if (!isCanceled()) {
+        try {
+          Spectrum spectrum = spectra.get(i);
+          // Ignore scans that are not MS, e.g. UV
+          if (isMsSpectrum(spectrum)) {
+            String scanId = spectrum.getID();
+            int scanNumber = convertScanIdToScanNumber(scanId);
 
-      for (int i = 0; i < totalScans; i++) {
+            // Extract scan data
+            int msLevel = extractMSLevel(spectrum);
+            double retentionTime = extractRetentionTime(spectrum);
+            PolarityType polarity = extractPolarity(spectrum);
+            int parentScan = extractParentScanNumber(spectrum);
+            double precursorMz = extractPrecursorMz(spectrum);
+            int precursorCharge = extractPrecursorCharge(spectrum);
+            String scanDefinition = extractScanDefinition(spectrum);
+            DataPoint dataPoints[] = extractDataPoints(spectrum);
 
-        if (isCanceled())
-          return;
+            // imaging
+            Coordinates coord = extractCoordinates(spectrum);
 
-        Spectrum spectrum = spectra.get(i);
+            // Auto-detect whether this scan is centroided
+            MassSpectrumType spectrumType = ScanUtils.detectSpectrumType(dataPoints);
 
-        // Ignore scans that are not MS, e.g. UV
-        if (!isMsSpectrum(spectrum)) {
-          parsedScans++;
-          continue;
-        }
+            SimpleImagingScan scan = new SimpleImagingScan(null, scanNumber, msLevel, retentionTime,
+                precursorMz, precursorCharge, null, dataPoints, spectrumType, polarity,
+                scanDefinition, null, coord);
 
-        String scanId = spectrum.getID();
-        int scanNumber = convertScanIdToScanNumber(scanId);
-
-        // Extract scan data
-        int msLevel = extractMSLevel(spectrum);
-        double retentionTime = extractRetentionTime(spectrum);
-        PolarityType polarity = extractPolarity(spectrum);
-        int parentScan = extractParentScanNumber(spectrum);
-        double precursorMz = extractPrecursorMz(spectrum);
-        int precursorCharge = extractPrecursorCharge(spectrum);
-        String scanDefinition = extractScanDefinition(spectrum);
-        DataPoint dataPoints[] = extractDataPoints(spectrum);
-
-        // imaging
-        Coordinates coord = extractCoordinates(spectrum);
-
-        // Auto-detect whether this scan is centroided
-        MassSpectrumType spectrumType = ScanUtils.detectSpectrumType(dataPoints);
-
-        SimpleImagingScan scan = new SimpleImagingScan(null, scanNumber, msLevel, retentionTime,
-            precursorMz, precursorCharge, null, dataPoints, spectrumType, polarity, scanDefinition,
-            null, coord);
-
-        for (SimpleScan s : parentStack) {
-          if (s.getScanNumber() == parentScan) {
-            s.addFragmentScan(scanNumber);
+            // add to list
+            newMZmineFile.addScan(scan);
           }
+
+
+        } catch (Throwable e) {
+          setStatus(TaskStatus.ERROR);
+          setErrorMessage("Error parsing mzML: " + ExceptionUtils.exceptionToString(e));
+          e.printStackTrace();
+          return;
         }
-
-        /*
-         * Verify the size of parentStack. The actual size of the window to cover possible
-         * candidates is defined by limitSize.
-         */
-        if (parentStack.size() > PARENT_STACK_SIZE) {
-          SimpleScan firstScan = parentStack.removeLast();
-          newMZmineFile.addScan(firstScan);
-        }
-
-        parentStack.addFirst(scan);
-
-        parsedScans++;
-
+        parsedScans.getAndIncrement();
       }
+    });
 
-      while (!parentStack.isEmpty()) {
-        SimpleScan scan = parentStack.removeLast();
-        newMZmineFile.addScan(scan);
 
-      }
-
+    if (parsedScans.get() == 0) {
+      setStatus(TaskStatus.ERROR);
+      setErrorMessage("No scans found");
+      return;
+    }
+    try {
       finalRawDataFile = (ImagingRawDataFileImpl) newMZmineFile.finishWriting();
       // set settings of image
       finalRawDataFile.setImagingParam(new ImagingParameters(imzml));
       //
       project.addFile(finalRawDataFile);
-
-    } catch (Throwable e) {
+    } catch (IOException e) {
       setStatus(TaskStatus.ERROR);
-      setErrorMessage("Error parsing mzML: " + ExceptionUtils.exceptionToString(e));
-      e.printStackTrace();
-      return;
-    }
-
-    if (parsedScans == 0) {
-      setStatus(TaskStatus.ERROR);
-      setErrorMessage("No scans found");
+      setErrorMessage("Error finisheing new raw data file: " + ExceptionUtils.exceptionToString(e));
       return;
     }
 
     logger.info("Finished parsing " + file + ", parsed " + parsedScans + " scans");
     setStatus(TaskStatus.FINISHED);
-
   }
 
   private int convertScanIdToScanNumber(String scanId) {
