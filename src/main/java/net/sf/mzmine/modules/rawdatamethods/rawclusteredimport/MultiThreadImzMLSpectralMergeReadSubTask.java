@@ -40,7 +40,7 @@ import net.sf.mzmine.util.scans.ScanUtils;
  * This class reads mzML 1.0 and 1.1.0 files (http://www.psidev.info/index.php?q=node/257) using the
  * jmzml library (http://code.google.com/p/jmzml/).
  */
-public class ClusterSpectraSubTask extends AbstractTask {
+public class MultiThreadImzMLSpectralMergeReadSubTask extends AbstractTask {
 
   private Logger logger = Logger.getLogger(this.getClass().getName());
 
@@ -67,19 +67,19 @@ public class ClusterSpectraSubTask extends AbstractTask {
   private List<SimpleMergedScan> mergedScans;
 
 
-  public ClusterSpectraSubTask(ParameterSet parameters, int taskID) {
+  public MultiThreadImzMLSpectralMergeReadSubTask(ParameterSet parameters, int taskID) {
     this.taskID = taskID;
-    minCosine = parameters.getParameter(ClusterSpectraParameters.minCosine).getValue();
-    mzTol = parameters.getParameter(ClusterSpectraParameters.mzTol).getValue();
-    minHeight = parameters.getParameter(ClusterSpectraParameters.minHeight).getValue();
-    noiseLevel = parameters.getParameter(ClusterSpectraParameters.noiseCutoff).getValue();
-    minMatch = parameters.getParameter(ClusterSpectraParameters.minMatch).getValue();
+    minCosine = parameters.getParameter(RawClusteredImportParameters.minCosine).getValue();
+    mzTol = parameters.getParameter(RawClusteredImportParameters.mzTol).getValue();
+    minHeight = parameters.getParameter(RawClusteredImportParameters.minHeight).getValue();
+    noiseLevel = parameters.getParameter(RawClusteredImportParameters.noiseCutoff).getValue();
+    minMatch = parameters.getParameter(RawClusteredImportParameters.minMatch).getValue();
     boolean usePercent =
-        parameters.getParameter(ClusterSpectraParameters.minPercentSpectra).getValue();
+        parameters.getParameter(RawClusteredImportParameters.minPercentSpectra).getValue();
     minPercentSpectra = !usePercent ? 0d
-        : parameters.getParameter(ClusterSpectraParameters.minPercentSpectra)
+        : parameters.getParameter(RawClusteredImportParameters.minPercentSpectra)
             .getEmbeddedParameter().getValue();
-    minSpectra = parameters.getParameter(ClusterSpectraParameters.minSpectra).getValue();
+    minSpectra = parameters.getParameter(RawClusteredImportParameters.minSpectra).getValue();
     if (minHeight <= noiseLevel)
       minHeight = 0d;
   }
@@ -137,14 +137,14 @@ public class ClusterSpectraSubTask extends AbstractTask {
 
           // get data points and try to merge
           DataPoint dataPoints[] =
-              ClusterSpectraTask.extractDataPoints(spectrum, noiseLevel);
+              ImzMLSpectralMergeReadTask.extractDataPoints(spectrum, noiseLevel);
 
           // try to merge MS1 scans
           // check min signals and add new scan
           if (dataPoints.length >= minMatch && !mergeWithFirst(mergedScans, spectrum, dataPoints)) {
             // was not merged
             // create scan and add new merged scan
-            SimpleImagingScan rawscan = ClusterSpectraTask.createScan(spectrum, dataPoints);
+            SimpleImagingScan rawscan = ImzMLSpectralMergeReadTask.createScan(spectrum, dataPoints);
             mergedScans.add(new SimpleMergedScan(rawscan, IntensityMergeMode.AVERAGE, getTaskID()));
           }
           parsedScans++;
@@ -183,7 +183,7 @@ public class ClusterSpectraSubTask extends AbstractTask {
         logger.info("MERGED SCANS in list index " + m + "; total: " + scan.getScanCount());
         if (res.equals(Result.MERGED_REPLACE_BEST_SCAN)) {
           // replace best scan in merged with this rawscan
-          scan.setBestScan(ClusterSpectraTask.createScan(spectrum, dataPoints));
+          scan.setBestScan(ImzMLSpectralMergeReadTask.createScan(spectrum, dataPoints));
           logger.info("Scan is new best in merged");
         }
         // was merged into the scan

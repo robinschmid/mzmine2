@@ -107,7 +107,7 @@ import net.sf.mzmine.modules.rawdatamethods.peakpicking.manual.ManualPeakPickerM
 import net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection.MassDetectionModule;
 import net.sf.mzmine.modules.rawdatamethods.peakpicking.msms.MsMsPeakPickerModule;
 import net.sf.mzmine.modules.rawdatamethods.peakpicking.targetedpeakdetection.TargetedPeakDetectionModule;
-import net.sf.mzmine.modules.rawdatamethods.rawclusteredimport.ClusterSpectraModule;
+import net.sf.mzmine.modules.rawdatamethods.rawclusteredimport.RawClusteredImportModule;
 import net.sf.mzmine.modules.rawdatamethods.rawdataexport.RawDataExportModule;
 import net.sf.mzmine.modules.rawdatamethods.rawdataimport.RawDataImportModule;
 import net.sf.mzmine.modules.rawdatamethods.sortdatafiles.SortDataFilesModule;
@@ -159,7 +159,7 @@ public class MZmineModulesList {
       BatchModeModule.class,
 
       // Raw data methods
-      RawDataImportModule.class, ClusterSpectraModule.class, BrukerSingleSpecImportModule.class,
+      RawDataImportModule.class, RawClusteredImportModule.class, BrukerSingleSpecImportModule.class,
       RawDataExportModule.class, ExportScansFromRawFilesModule.class, RawFileMergeModule.class,
       ExtractScansModule.class, ExtractAllScansModule.class, MassDetectionModule.class,
       ShoulderPeaksFilterModule.class, ChromatogramBuilderModule.class,
