@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import com.alanmrace.jimzmlparser.exceptions.ImzMLParseException;
@@ -40,6 +41,7 @@ import com.alanmrace.jimzmlparser.mzml.SelectedIonList;
 import com.alanmrace.jimzmlparser.mzml.Spectrum;
 import com.alanmrace.jimzmlparser.mzml.SpectrumList;
 import com.alanmrace.jimzmlparser.parser.ImzMLHandler;
+import com.google.common.base.Stopwatch;
 import net.sf.mzmine.datamodel.Coordinates;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.MZmineProject;
@@ -130,6 +132,7 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
     List<SimpleMergedScan> mergedScans = new ArrayList<SimpleMergedScan>();
     List<SimpleImagingScan> ms2Scans = new ArrayList<SimpleImagingScan>();
 
+    Stopwatch watch = Stopwatch.createStarted();
 
     logger.info("Started parsing file " + file);
     // file = new File("C:/DATA/MALDI Sh/examples/Example_Processed.imzML");
@@ -248,7 +251,9 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
       return;
     }
 
-    logger.info("Finished parsing " + file + ", parsed " + parsedScans + " scans");
+    watch.stop();
+    logger.info("TIME: " + watch.elapsed(TimeUnit.SECONDS) + "; Finished parsing " + file
+        + ", parsed " + parsedScans + " scans");
     setStatus(TaskStatus.FINISHED);
   }
 

@@ -16,36 +16,33 @@
  * USA
  */
 
-package net.sf.mzmine.modules.rawdatamethods.rawclusteredimport;
+package net.sf.mzmine.modules.masslistmethods.clusterspectra;
 
 import java.text.DecimalFormat;
-import javax.swing.filechooser.FileFilter;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
-import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
+import net.sf.mzmine.parameters.parametertypes.MassListParameter;
 import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
 import net.sf.mzmine.parameters.parametertypes.PercentParameter;
-import net.sf.mzmine.parameters.parametertypes.filenames.FileNamesParameter;
+import net.sf.mzmine.parameters.parametertypes.StringParameter;
+import net.sf.mzmine.parameters.parametertypes.selectors.RawDataFilesParameter;
+import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelection;
+import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelectionParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
 
-public class RawClusteredImportParameters extends SimpleParameterSet {
+public class ClusterSpectraParameters extends SimpleParameterSet {
+  public static final RawDataFilesParameter dataFiles = new RawDataFilesParameter();
 
-  private static final FileFilter filters[] =
-      new FileFilter[] {new FileNameExtensionFilter("imzML files (imaging)", "imzML")};
+  public static final ScanSelectionParameter scanSelect =
+      new ScanSelectionParameter(new ScanSelection(1));
 
-  public static final FileNamesParameter fileNames =
-      new FileNamesParameter("Raw files (imzML)", "imzML", filters);
+  public static final MassListParameter massList = new MassListParameter();
 
   public static final DoubleParameter minHeight = new DoubleParameter("Min height",
       "Minimum height of signals that are used to calculate the cosine similarity (higher - faster)",
-      MZmineCore.getConfiguration().getIntensityFormat(), 0d);
-
-  public static final DoubleParameter noiseCutoff = new DoubleParameter("Noise cut-off",
-      "Signals below this threshold are going to be removed from all scans prior to clustering (higher - faster)",
       MZmineCore.getConfiguration().getIntensityFormat(), 0d);
 
   public static final DoubleParameter minCosine = new DoubleParameter("Min similarity",
@@ -63,18 +60,16 @@ public class RawClusteredImportParameters extends SimpleParameterSet {
           "Minimum percantage of spectra with a specific data point of all merged spectra (if a merged spectrum contains more than 4 spectra, data points are filtered to be contained in at least X spectra)",
           0.10), false);
 
-  public static final BooleanParameter multiThreaded = new BooleanParameter("Multi-threaded",
-      "Use the number of threads specified in the preferences", true);
-
-
   public static final MZToleranceParameter mzTol =
       new MZToleranceParameter("m/z tolerance", "Tolerance to match and merge spectra", 0.02, 30);
 
+  public static final StringParameter suffix =
+      new StringParameter("Suffix", "Suffix to new raw data file", "clustered");
 
 
-  public RawClusteredImportParameters() {
-    super(new Parameter[] {fileNames, multiThreaded, mzTol, noiseCutoff, minHeight, minCosine,
-        minMatch, minSpectra, minPercentSpectra});
+  public ClusterSpectraParameters() {
+    super(new Parameter[] {dataFiles, scanSelect, massList, mzTol, minHeight, minCosine, minMatch,
+        minSpectra, minPercentSpectra, suffix});
   }
 
 }

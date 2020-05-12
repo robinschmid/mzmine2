@@ -31,7 +31,7 @@ public class SimpleMergedScan extends SimpleImagingScan implements MergedScan {
   private double lastNoiseLevel;
   private List<Integer> mergeTags = new ArrayList<>();
 
-  public SimpleMergedScan(SimpleMergedScan sc, IntensityMergeMode intensityMergeMode) {
+  public SimpleMergedScan(Scan sc, IntensityMergeMode intensityMergeMode) {
     this(sc, intensityMergeMode, -1);
   }
 
@@ -49,12 +49,15 @@ public class SimpleMergedScan extends SimpleImagingScan implements MergedScan {
         merged[i] = msc.merged[i].getInstance(mzMode, intensityMergeMode);
       }
     } else {
-      mergeTags.add(mergeTag);
+      if (mergeTag != -1)
+        mergeTags.add(mergeTag);
+
+      DataPoint[] dps = sc.getDataPoints();
       bestScan = sc;
       bestTIC = 0;
-      merged = new MergedDataPoint[sc.getDataPoints().length];
-      for (int i = 0; i < sc.getDataPoints().length; i++) {
-        DataPoint d = sc.getDataPoints()[i];
+      merged = new MergedDataPoint[dps.length];
+      for (int i = 0; i < dps.length; i++) {
+        DataPoint d = dps[i];
         if (d instanceof MergedDataPoint)
           merged[i] = ((MergedDataPoint) d).getInstance(mzMode, intensityMergeMode);
         else
@@ -159,7 +162,7 @@ public class SimpleMergedScan extends SimpleImagingScan implements MergedScan {
       double diffCosine = Similarity.COSINE.calc(diffArray);
       if (diffCosine >= minCosine) {
         // if aligned was filtered - need to realign all data points
-        if (filtered != null && filteredMerged != null)
+        if (filtered != null || filteredMerged != null)
           aligned = ScanAlignment.align(mzTol, merged, dataPoints);
         // reset filtered
         filteredMerged = null;
