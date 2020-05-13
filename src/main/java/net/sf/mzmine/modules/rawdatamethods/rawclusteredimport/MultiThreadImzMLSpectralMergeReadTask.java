@@ -20,7 +20,6 @@ package net.sf.mzmine.modules.rawdatamethods.rawclusteredimport;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -44,7 +43,7 @@ import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.project.impl.ImagingRawDataFileImpl;
 import net.sf.mzmine.taskcontrol.AbstractTask;
-import net.sf.mzmine.taskcontrol.Task;
+import net.sf.mzmine.taskcontrol.TaskPriority;
 import net.sf.mzmine.taskcontrol.TaskStatus;
 import net.sf.mzmine.util.ExceptionUtils;
 
@@ -99,6 +98,9 @@ public class MultiThreadImzMLSpectralMergeReadTask extends AbstractTask {
     minSpectra = parameters.getParameter(RawClusteredImportParameters.minSpectra).getValue();
     if (minHeight <= noiseLevel)
       minHeight = 0d;
+
+    // start sub tasks
+    startOtherTasks();
   }
 
   /**
@@ -110,15 +112,19 @@ public class MultiThreadImzMLSpectralMergeReadTask extends AbstractTask {
   }
 
 
-  public void startOtherTasks(Collection<Task> tasks) {
+  public void startOtherTasks() {
     int threads = MZmineCore.getConfiguration().getPreferences()
         .getParameter(MZminePreferences.numOfThreads).getValue();
+
+    if (parameters.getParameter(RawClusteredImportParameters.multiThreaded).getValue())
+      threads = parameters.getParameter(RawClusteredImportParameters.multiThreaded)
+          .getEmbeddedParameter().getValue();
     // start -1
-    for (int i = 0; i < threads - 1; i++) {
+    for (int i = 0; i < threads; i++) {
       MultiThreadImzMLSpectralMergeReadSubTask sub =
           new MultiThreadImzMLSpectralMergeReadSubTask(parameters, i);
-      tasks.add(sub);
       subTasks.add(sub);
+      MZmineCore.getTaskController().addTask(sub, TaskPriority.HIGH);
     }
   }
 

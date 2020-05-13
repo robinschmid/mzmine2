@@ -164,15 +164,12 @@ public class RawClusteredImportModule implements MZmineProcessingModule {
       final Task newTask =
           createOpeningTask(tasks, fileType, project, fileNames[i], newMZmineFile, parameters);
 
-
-
       if (newTask == null) {
         logger.warning("File type " + fileType + " of file " + fileNames[i] + " is not supported.");
         return ExitCode.ERROR;
       }
 
-      if (tasks.isEmpty())
-        tasks.add(newTask);
+      tasks.add(newTask);
     }
 
     return ExitCode.OK;
@@ -205,8 +202,6 @@ public class RawClusteredImportModule implements MZmineProcessingModule {
         if (multiThreaded) {
           newTask = new MultiThreadImzMLSpectralMergeReadTask(project, fileName, newMZmineFile,
               parameters);
-          tasks.add(newTask);
-          ((MultiThreadImzMLSpectralMergeReadTask) newTask).startOtherTasks(tasks);
         } else
           newTask = new ImzMLSpectralMergeReadTask(project, fileName, newMZmineFile, parameters);
         break;

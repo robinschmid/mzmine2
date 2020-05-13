@@ -52,7 +52,8 @@ public class ClusterSpectraModule implements MZmineProcessingModule {
   @Nonnull
   public ExitCode runModule(final @Nonnull MZmineProject project, @Nonnull ParameterSet parameters,
       @Nonnull Collection<Task> tasks) {
-    final Task newTask = new ClusterSpectraTask(tasks, project, parameters);
+    final Task newTask = new ClusterSpectraTask(project, parameters);
+    tasks.add(newTask);
     return ExitCode.OK;
   }
 

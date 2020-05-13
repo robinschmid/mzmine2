@@ -18,11 +18,9 @@
 
 package net.sf.mzmine.modules.masslistmethods.clusterspectra;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -46,7 +44,6 @@ import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelection;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.project.impl.ImagingRawDataFileImpl;
 import net.sf.mzmine.taskcontrol.AbstractTask;
-import net.sf.mzmine.taskcontrol.Task;
 import net.sf.mzmine.taskcontrol.TaskPriority;
 import net.sf.mzmine.taskcontrol.TaskStatus;
 import net.sf.mzmine.util.ExceptionUtils;
@@ -55,7 +52,6 @@ public class ClusterSpectraTask extends AbstractTask {
 
   private Logger logger = Logger.getLogger(this.getClass().getName());
 
-  private File file;
   private MZmineProject project;
   private int totalScans = 0, parsedScans;
   private int lastScanNumber = 0;
@@ -75,9 +71,11 @@ public class ClusterSpectraTask extends AbstractTask {
 
   private int threads;
 
+  private RawDataFile[] raws;
+  private String rawnames = "";
 
-  public ClusterSpectraTask(Collection<Task> tasks, MZmineProject project,
-      ParameterSet parameters) {
+
+  public ClusterSpectraTask(MZmineProject project, ParameterSet parameters) {
     this.project = project;
     this.parameters = parameters;
 
@@ -97,8 +95,7 @@ public class ClusterSpectraTask extends AbstractTask {
             .getValue();
     minSpectra = parameters.getParameter(ClusterSpectraParameters.minSpectra).getValue();
 
-    tasks.add(this);
-    startOtherTasks(tasks);
+    startOtherTasks();
   }
 
   /**
@@ -110,9 +107,9 @@ public class ClusterSpectraTask extends AbstractTask {
   }
 
 
-  public void startOtherTasks(Collection<Task> tasks) {
+  public void startOtherTasks() {
     // start -1
-    for (int i = 0; i < threads - 1; i++) {
+    for (int i = 0; i < threads; i++) {
       MultiThreadImzMLSpectralMergeReadSubTask sub =
           new MultiThreadImzMLSpectralMergeReadSubTask(parameters, i);
       MZmineCore.getTaskController().addTask(sub, TaskPriority.HIGH);
@@ -131,8 +128,9 @@ public class ClusterSpectraTask extends AbstractTask {
     List<SimpleMergedScan> mergedScans = new ArrayList<SimpleMergedScan>();
     List<SimpleImagingScan> ms2Scans = new ArrayList<SimpleImagingScan>();
 
-    RawDataFile[] raws = parameters.getParameter(ClusterSpectraParameters.dataFiles).getValue()
+    raws = parameters.getParameter(ClusterSpectraParameters.dataFiles).getValue()
         .getMatchingRawDataFiles();
+    rawnames = Arrays.stream(raws).map(RawDataFile::getName).collect(Collectors.joining(", "));
     ScanSelection scanSelect =
         parameters.getParameter(ClusterSpectraParameters.scanSelect).getValue();
     String masses = parameters.getParameter(ClusterSpectraParameters.massList).getValue();
@@ -161,17 +159,24 @@ public class ClusterSpectraTask extends AbstractTask {
       Scan[] scans = scanSelect.getMatchingScans(r);
       totalScans += scans.length;
       for (int i = 0; i < scans.length; i++) {
-        // distribute scans
-        if (scans[i] instanceof ImagingScan) {
-          SimpleImagingScan ss = new SimpleImagingScan(scans[i]);
-          ss.setDataPoints(scans[i].getMassList(masses).getDataPoints());
-          SimpleMergedScan ms = new SimpleMergedScan(ss, IntensityMergeMode.AVERAGE);
-          subTasks.get(i % subTasks.size()).addSpectrum(ms);
-        } else {
-          SimpleScan ss = new SimpleScan(scans[i]);
-          ss.setDataPoints(scans[i].getMassList(masses).getDataPoints());
-          SimpleMergedScan ms = new SimpleMergedScan(ss, IntensityMergeMode.AVERAGE);
-          subTasks.get(i % subTasks.size()).addSpectrum(ms);
+        try {
+          // distribute scans
+          if (scans[i] instanceof ImagingScan) {
+            SimpleImagingScan ss = new SimpleImagingScan(scans[i]);
+            ss.setDataPoints(scans[i].getMassList(masses).getDataPoints());
+            SimpleMergedScan ms = new SimpleMergedScan(ss, IntensityMergeMode.AVERAGE);
+            subTasks.get(i % subTasks.size()).addSpectrum(ms);
+          } else {
+            SimpleScan ss = new SimpleScan(scans[i]);
+            ss.setDataPoints(scans[i].getMassList(masses).getDataPoints());
+            SimpleMergedScan ms = new SimpleMergedScan(ss, IntensityMergeMode.AVERAGE);
+            subTasks.get(i % subTasks.size()).addSpectrum(ms);
+          }
+        } catch (Exception e) {
+          setErrorMessage("No masslist? Run mass detection on all scans");
+          setStatus(TaskStatus.ERROR);
+          subTasks.forEach(s -> s.cancel());
+          return;
         }
         parsedScans++;
       }
@@ -300,7 +305,7 @@ public class ClusterSpectraTask extends AbstractTask {
             .setImagingParam(((ImagingRawDataFileImpl) newMZmineFile).getImagingParam());
       //
       watch.stop();
-      logger.info("TIME: " + watch.elapsed(TimeUnit.SECONDS) + "; Finished parsing " + file
+      logger.info("TIME: " + watch.elapsed(TimeUnit.SECONDS) + "; Finished parsing " + rawnames
           + ", added " + finalRawDataFile.getScanNumbers().length + " scans from a total of "
           + totalScans + " raw spectra");
       project.addFile(finalRawDataFile);
@@ -322,7 +327,7 @@ public class ClusterSpectraTask extends AbstractTask {
 
   @Override
   public String getTaskDescription() {
-    return "Clustering spectra in " + file;
+    return "Clustering spectra in " + rawnames;
   }
 
 }

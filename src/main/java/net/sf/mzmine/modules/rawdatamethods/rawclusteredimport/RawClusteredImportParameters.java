@@ -24,7 +24,6 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
-import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
@@ -63,8 +62,10 @@ public class RawClusteredImportParameters extends SimpleParameterSet {
           "Minimum percantage of spectra with a specific data point of all merged spectra (if a merged spectrum contains more than 4 spectra, data points are filtered to be contained in at least X spectra)",
           0.10), false);
 
-  public static final BooleanParameter multiThreaded = new BooleanParameter("Multi-threaded",
-      "Use the number of threads specified in the preferences", true);
+  public static final OptionalParameter<IntegerParameter> multiThreaded =
+      new OptionalParameter<>(new IntegerParameter("Threads",
+          "Override the number of threads. We found that more threads than CPU cores saves time on larger datasets (e.g., >=16 threads on a 8-core system)",
+          16, 1, 99999999), true);
 
 
   public static final MZToleranceParameter mzTol =
