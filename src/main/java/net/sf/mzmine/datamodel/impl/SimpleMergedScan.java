@@ -240,4 +240,8 @@ public class SimpleMergedScan extends SimpleImagingScan implements MergedScan {
         .toArray(MergedDataPoint[]::new);
   }
 
+  public void resetMergeTags() {
+    mergeTags.clear();
+  }
+
 }

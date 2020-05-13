@@ -184,25 +184,40 @@ public class MultiThreadImzMLSpectralMergeReadTask extends AbstractTask {
         if (isCanceled())
           break;
         try {
+          boolean lastIterationStarted = false;
           for (int i = 0; i < subTasks.size(); i++) {
             // empty list. distribute to other tasks
             if (subTasks.get(i).getRemainingSpectra() == 0) {
-              // stop task
               List<SimpleMergedScan> source = subTasks.get(i).getMergedScans();
-              subTasks.get(i).finishedSpectraList();
-              subTasks.remove(i);
-              i--;
-              if (subTasks.isEmpty()) {
+              if (subTasks.size() == 1 && !lastIterationStarted) {
                 logger.log(Level.INFO,
-                    "Last sub task finished. Getting list of finished merged scans");
-                mergedScans = source;
-              } else {
-                logger.log(Level.INFO,
-                    "One task is done. Distributing scans to other tasks: " + (subTasks.size()));
-                for (int s = 0; s < source.size(); s++) {
-                  subTasks.get(s % subTasks.size()).addSpectrum(source.get(s));
+                    "Last clusterin iteration. Removing all unclustered spectra and rechecking all clustered spectra (n>=2)");
+                lastIterationStarted = true;
+                // filter by min 2 spectra
+                for (SimpleMergedScan ms : source) {
+                  if (ms.getScanCount() > 1) {
+                    ms.resetMergeTags();
+                    subTasks.get(i).addSpectrum(ms);
+                  }
                 }
                 break;
+              } else {
+                // stop task
+                subTasks.get(i).finishedSpectraList();
+                subTasks.remove(i);
+                i--;
+                if (subTasks.isEmpty()) {
+                  logger.log(Level.INFO,
+                      "Last sub task finished. Getting list of finished merged scans");
+                  mergedScans = source;
+                } else {
+                  logger.log(Level.INFO,
+                      "One task is done. Distributing scans to other tasks: " + (subTasks.size()));
+                  for (int s = 0; s < source.size(); s++) {
+                    subTasks.get(s % subTasks.size()).addSpectrum(source.get(s));
+                  }
+                  break;
+                }
               }
             }
           }
