@@ -372,7 +372,7 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
           dataPoints.add(new SimpleDataPoint(mz, intensity));
         }
       }
-      return dataPoints.toArray(DataPoint[]::new);
+      return dataPoints.toArray(new DataPoint[dataPoints.size()]);
 
     } catch (IOException e) {
       e.printStackTrace();

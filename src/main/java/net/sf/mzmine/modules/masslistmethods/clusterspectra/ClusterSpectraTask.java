@@ -73,12 +73,19 @@ public class ClusterSpectraTask extends AbstractTask {
 
   private ParameterSet parameters;
 
+  private int threads;
+
 
   public ClusterSpectraTask(Collection<Task> tasks, MZmineProject project,
       ParameterSet parameters) {
     this.project = project;
     this.parameters = parameters;
 
+    threads = MZmineCore.getConfiguration().getPreferences()
+        .getParameter(MZminePreferences.numOfThreads).getValue();
+    if (parameters.getParameter(ClusterSpectraParameters.threads).getValue())
+      threads = parameters.getParameter(ClusterSpectraParameters.threads).getEmbeddedParameter()
+          .getValue();
     minCosine = parameters.getParameter(ClusterSpectraParameters.minCosine).getValue();
     mzTol = parameters.getParameter(ClusterSpectraParameters.mzTol).getValue();
     minHeight = parameters.getParameter(ClusterSpectraParameters.minHeight).getValue();
@@ -104,15 +111,12 @@ public class ClusterSpectraTask extends AbstractTask {
 
 
   public void startOtherTasks(Collection<Task> tasks) {
-    int threads = MZmineCore.getConfiguration().getPreferences()
-        .getParameter(MZminePreferences.numOfThreads).getValue();
     // start -1
-    threads = 20;
     for (int i = 0; i < threads - 1; i++) {
       MultiThreadImzMLSpectralMergeReadSubTask sub =
           new MultiThreadImzMLSpectralMergeReadSubTask(parameters, i);
-      MZmineCore.getTaskController().addTask(sub, TaskPriority.NORMAL);
-      tasks.add(sub);
+      MZmineCore.getTaskController().addTask(sub, TaskPriority.HIGH);
+      // tasks.add(sub);
       subTasks.add(sub);
     }
   }

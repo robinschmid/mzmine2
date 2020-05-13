@@ -55,6 +55,8 @@ public class ClusterSpectraParameters extends SimpleParameterSet {
       "Minimum number of spectra with a specific data point (if a merged spectrum contains more than 4 spectra, data points are filtered to be contained in at least X spectra)",
       2);
 
+  public static final OptionalParameter<IntegerParameter> threads = new OptionalParameter<>(
+      new IntegerParameter("Threads", "Override number of threads", 8), false);
   public static final OptionalParameter<PercentParameter> minPercentSpectra =
       new OptionalParameter<>(new PercentParameter("Minimum spectra with DP (%)",
           "Minimum percantage of spectra with a specific data point of all merged spectra (if a merged spectrum contains more than 4 spectra, data points are filtered to be contained in at least X spectra)",
@@ -68,8 +70,8 @@ public class ClusterSpectraParameters extends SimpleParameterSet {
 
 
   public ClusterSpectraParameters() {
-    super(new Parameter[] {dataFiles, scanSelect, massList, mzTol, minHeight, minCosine, minMatch,
-        minSpectra, minPercentSpectra, suffix});
+    super(new Parameter[] {dataFiles, scanSelect, massList, mzTol, threads, minHeight, minCosine,
+        minMatch, minSpectra, minPercentSpectra, suffix});
   }
 
 }
