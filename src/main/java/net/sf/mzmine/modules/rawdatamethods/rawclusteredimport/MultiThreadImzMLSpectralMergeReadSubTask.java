@@ -143,16 +143,18 @@ public class MultiThreadImzMLSpectralMergeReadSubTask extends AbstractTask {
           if (isCanceled())
             break;
 
-          SimpleMergedScan source = sourceMergedScans.remove(0);
+          SimpleMergedScan source = sourceMergedScans.get(0);
           mergeWithFirst(mergedScans, source);
+          sourceMergedScans.remove(0);
           parsedScans++;
         }
         while (!sourceScans.isEmpty()) {
           if (isCanceled())
             break;
 
-          Scan source = sourceScans.remove(0);
+          Scan source = sourceScans.get(0);
           mergeScan(source);
+          sourceScans.remove(0);
           parsedScans++;
         }
 
@@ -160,7 +162,8 @@ public class MultiThreadImzMLSpectralMergeReadSubTask extends AbstractTask {
           if (isCanceled())
             break;
 
-          mergeImzMLSpectrum(spectra.remove(0));
+          mergeImzMLSpectrum(spectra.get(0));
+          spectra.remove(0);
           parsedScans++;
         }
 
@@ -225,14 +228,12 @@ public class MultiThreadImzMLSpectralMergeReadSubTask extends AbstractTask {
       // try to merge
       Result res = scan.merge(dataPoints, filtered, mzTol, minHeight, minCosine, minMatch);
       if (!res.equals(Result.FALSE)) {
-        logger.info("MERGED SCANS in list index " + m + "; total: " + scan.getScanCount());
         if (res.equals(Result.MERGED_REPLACE_BEST_SCAN)) {
           // replace best scan in merged with this rawscan
           if (spectrum != null)
             scan.setBestScan(ImzMLSpectralMergeReadTask.createScan(spectrum, dataPoints));
           else if (spectrum2 != null)
             scan.setBestScan(spectrum2);
-          logger.info("Scan is new best in merged");
         }
         // was merged into the scan
         int mergedScanCount = scan.getScanCount();
@@ -267,7 +268,6 @@ public class MultiThreadImzMLSpectralMergeReadSubTask extends AbstractTask {
       // try to merge
       Result res = scan.merge(source, mzTol, minHeight, minCosine, minMatch);
       if (!res.equals(Result.FALSE)) {
-        logger.info("MERGED SCANS in list index " + m + "; total: " + scan.getScanCount());
         // was merged into the scan
         int mergedScanCount = scan.getScanCount();
         // insert sort list
@@ -361,6 +361,10 @@ public class MultiThreadImzMLSpectralMergeReadSubTask extends AbstractTask {
    */
   public Collection<? extends SimpleMergedScan> getRemainingScans() {
     return sourceMergedScans;
+  }
+
+  public void clear() {
+    mergedScans = new ArrayList<>();
   }
 
 }

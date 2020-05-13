@@ -184,6 +184,7 @@ public class ClusterSpectraTask extends AbstractTask {
       // wait for all sub tasks to finish
       // subTasks.forEach(s -> s.finishedSpectraList());
 
+      boolean lastIterationStarted = false;
       while (!subTasks.isEmpty()) {
         if (isCanceled()) {
           ((AbstractTask) subTasks).cancel();
@@ -191,7 +192,6 @@ public class ClusterSpectraTask extends AbstractTask {
         }
         try {
           //
-          boolean lastIterationStarted = false;
           for (int i = 0; i < subTasks.size(); i++) {
             // empty list. distribute to other tasks
             if (subTasks.get(i).getRemainingSpectra() == 0) {
@@ -201,6 +201,7 @@ public class ClusterSpectraTask extends AbstractTask {
                 logger.log(Level.INFO,
                     "Last clusterin iteration. Removing all unclustered spectra and rechecking all clustered spectra (n>=2)");
                 lastIterationStarted = true;
+                subTasks.get(i).clear();
                 // filter by min 2 spectra
                 for (SimpleMergedScan ms : source) {
                   if (ms.getScanCount() > 1) {

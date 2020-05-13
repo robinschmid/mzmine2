@@ -180,11 +180,11 @@ public class MultiThreadImzMLSpectralMergeReadTask extends AbstractTask {
       // wait for all sub tasks to finish
       // subTasks.forEach(s -> s.finishedSpectraList());
 
+      boolean lastIterationStarted = false;
       while (!subTasks.isEmpty()) {
         if (isCanceled())
           break;
         try {
-          boolean lastIterationStarted = false;
           for (int i = 0; i < subTasks.size(); i++) {
             // empty list. distribute to other tasks
             if (subTasks.get(i).getRemainingSpectra() == 0) {
@@ -192,6 +192,7 @@ public class MultiThreadImzMLSpectralMergeReadTask extends AbstractTask {
               if (subTasks.size() == 1 && !lastIterationStarted) {
                 logger.log(Level.INFO,
                     "Last clusterin iteration. Removing all unclustered spectra and rechecking all clustered spectra (n>=2)");
+                subTasks.get(i).clear();
                 lastIterationStarted = true;
                 // filter by min 2 spectra
                 for (SimpleMergedScan ms : source) {
