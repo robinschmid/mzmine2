@@ -51,7 +51,7 @@ import net.sf.mzmine.util.spectraldb.entry.SpectralDBPeakIdentity;
  */
 public class MirrorScanWindow extends JFrame {
 
-  private Logger logger = Logger.getLogger(this.getClass().getName());
+  private static Logger logger = Logger.getLogger(MirrorScanWindow.class.getName());
   // for SpectralDBIdentity
 
   public static final DataPointsTag[] tags =
@@ -114,9 +114,27 @@ public class MirrorScanWindow extends JFrame {
    * @param db
    */
   public void setScans(SpectralDBPeakIdentity db) {
+    contentPane.removeAll();
+    // create chart
+    mirrorSpecrumPlot = createSpectralMatchChart(db);
+    if (mirrorSpecrumPlot != null) {
+      contentPane.add(mirrorSpecrumPlot, BorderLayout.CENTER);
+    }
+    contentPane.revalidate();
+    contentPane.repaint();
+  }
+
+
+  /**
+   * Creates a mirror chart for a spectral match
+   * 
+   * @param db
+   * @return
+   */
+  public static EChartPanel createSpectralMatchChart(SpectralDBPeakIdentity db) {
     Scan scan = db.getQueryScan();
     if (scan == null)
-      return;
+      return null;
 
     // get highest data intensity to calc relative intensity
     double mostIntenseQuery = Arrays.stream(db.getQueryDataPoints(DataPointsTag.ORIGINAL))
@@ -131,7 +149,7 @@ public class MirrorScanWindow extends JFrame {
       logger.warning(
           "This data set has no original data points in the query spectrum (development error)");
     if (mostIntenseDB == 0d || mostIntenseQuery == 0d)
-      return;
+      return null;
 
     // get colors for vision
     Vision vision = MZmineCore.getConfiguration().getColorVision();
@@ -148,9 +166,8 @@ public class MirrorScanWindow extends JFrame {
     Double precursorMZB = db.getEntry().getPrecursorMZ();
     Double rtB = (Double) db.getEntry().getField(DBEntryField.RT).orElse(0d);
 
-    contentPane.removeAll();
     // create without data
-    mirrorSpecrumPlot = SpectrumChartFactory.createMirrorChartPanel(
+    EChartPanel mirrorSpecrumPlot = SpectrumChartFactory.createMirrorChartPanel(
         "Query: " + scan.getScanDefinition(), precursorMZA, rtA, null, "Library: " + db.getName(),
         precursorMZB == null ? 0 : precursorMZB, rtB, null, false, true);
     mirrorSpecrumPlot.setMaximumDrawWidth(4200);
@@ -217,15 +234,10 @@ public class MirrorScanWindow extends JFrame {
     // set y axis title
     queryPlot.getRangeAxis().setLabel("rel. intensity [%] (query)");
     libraryPlot.getRangeAxis().setLabel("rel. intensity [%] (library)");
-
-    contentPane.add(mirrorSpecrumPlot, BorderLayout.CENTER);
-    contentPane.revalidate();
-    contentPane.repaint();
+    return mirrorSpecrumPlot;
   }
 
-
-
-  private boolean notInSubsequentMassList(DataPoint dp, DataPoint[][] query, int current) {
+  private static boolean notInSubsequentMassList(DataPoint dp, DataPoint[][] query, int current) {
     for (int i = current + 1; i < query.length; i++) {
       for (DataPoint b : query[i]) {
         if (Double.compare(dp.getMZ(), b.getMZ()) == 0

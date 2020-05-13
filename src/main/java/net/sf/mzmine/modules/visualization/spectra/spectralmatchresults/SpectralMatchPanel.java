@@ -235,10 +235,6 @@ public class SpectralMatchPanel extends JPanel {
     g2.add(panelOther);
     metaDataPanel.add(g2);
 
-    // get mirror spectra window
-    MirrorScanWindow mirrorWindow = new MirrorScanWindow();
-    mirrorWindow.setScans(hit);
-
     // fixed width panel
     ScrollablePanel scrollpn = new ScrollablePanel(new BorderLayout());
     scrollpn.setScrollableWidth(ScrollablePanel.ScrollableSizeHint.FIT);
@@ -250,9 +246,8 @@ public class SpectralMatchPanel extends JPanel {
         new JScrollPane(scrollpn, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
             ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 
-    mirrorChart = mirrorWindow.getMirrorSpecrumPlot();
     // use no buffer for later pdf export
-    mirrorChart = new EChartPanel(mirrorChart.getChart(), false);
+    mirrorChart = MirrorScanWindow.createSpectralMatchChart(hit);
     spectrumPanel.add(mirrorChart);
 
     coupleZoomYListener();

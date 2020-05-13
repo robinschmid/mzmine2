@@ -208,7 +208,7 @@ public class SpectrumChartFactory {
     chart.getTitle().setVisible(showTitle);
     chart.getLegend().setVisible(showLegend);
 
-    return new EChartPanel(chart);
+    return new EChartPanel(chart, false);
   }
 
   public static EChartPanel createScanChartPanel(Scan scan, boolean showTitle, boolean showLegend) {
