@@ -32,10 +32,11 @@ public class SimpleMergedScan extends SimpleImagingScan implements MergedScan {
   private List<Integer> mergeTags = new ArrayList<>();
 
   public SimpleMergedScan(Scan sc, IntensityMergeMode intensityMergeMode) {
-    this(sc, intensityMergeMode, -1);
+    this(sc, intensityMergeMode, -1, null, null, false);
   }
 
-  public SimpleMergedScan(Scan sc, IntensityMergeMode intensityMergeMode, int mergeTag) {
+  public SimpleMergedScan(Scan sc, IntensityMergeMode intensityMergeMode, int mergeTag,
+      List<Double> exclusionList, MZTolerance exclusionMzTol, boolean removeExcludedFromMerge) {
     super(sc);
     this.intensityMergeMode = intensityMergeMode;
     if (sc instanceof SimpleMergedScan) {
@@ -60,9 +61,14 @@ public class SimpleMergedScan extends SimpleImagingScan implements MergedScan {
         DataPoint d = dps[i];
         if (d instanceof MergedDataPoint)
           merged[i] = ((MergedDataPoint) d).getInstance(mzMode, intensityMergeMode);
-        else
+        else {
           merged[i] = new MergedDataPoint(mzMode, intensityMergeMode, d);
+        }
         bestTIC += d.getIntensity();
+      }
+      if (exclusionList != null && removeExcludedFromMerge) {
+        merged = (MergedDataPoint[]) filterByExclusion(merged, exclusionList, exclusionMzTol);
+        bestTIC = Arrays.stream(merged).mapToDouble(DataPoint::getIntensity).sum();
       }
     }
     setDataPoints(merged);
@@ -92,17 +98,18 @@ public class SimpleMergedScan extends SimpleImagingScan implements MergedScan {
     return merged;
   }
 
-  public Result merge(SimpleMergedScan source, MZTolerance mzTol, double noiseLevel,
-      double minCosine, int minMatch) {
+  public Result merge(SimpleMergedScan source, MZTolerance mzTol, List<Double> exclusionList,
+      MZTolerance exclusionMzTol, double noiseLevel, double minCosine, int minMatch) {
     if (source.wasAlreadyComparedTo(this))
       return Result.FALSE;
 
     DataPoint[] dataPoints = source.getDataPoints();
-    DataPoint[] filtered = source.getFilteredDataPoints(noiseLevel);
+    DataPoint[] filtered = source.getFilteredDataPoints(noiseLevel, exclusionList, exclusionMzTol);
 
     // align
-    List<DataPoint[]> aligned = ScanAlignment.align(mzTol, getFilteredDataPoints(noiseLevel),
-        filtered == null ? dataPoints : filtered);
+    List<DataPoint[]> aligned =
+        ScanAlignment.align(mzTol, getFilteredDataPoints(noiseLevel, exclusionList, exclusionMzTol),
+            filtered == null ? dataPoints : filtered);
 
     // overlapping within mass tolerance
     int overlap = (int) aligned.stream().filter(dp -> dp[0] != null && dp[1] != null).count();
@@ -147,11 +154,17 @@ public class SimpleMergedScan extends SimpleImagingScan implements MergedScan {
     return Result.FALSE;
   }
 
-  public Result merge(DataPoint[] dataPoints, DataPoint[] filtered, MZTolerance mzTol,
+  public Result merge(DataPoint[] dataPoints, DataPoint[] filtered, List<Double> exclusionList,
+      MZTolerance exclusionMzTol, boolean removeExcludedFromMerge, MZTolerance mzTol,
       double noiseLevel, double minCosine, int minMatch) {
     // align
-    List<DataPoint[]> aligned = ScanAlignment.align(mzTol, getFilteredDataPoints(noiseLevel),
-        filtered == null ? dataPoints : filtered);
+    if (exclusionList != null) {
+      filtered = filterByExclusion(filtered == null ? dataPoints : filtered, exclusionList,
+          exclusionMzTol);
+    }
+    List<DataPoint[]> aligned =
+        ScanAlignment.align(mzTol, getFilteredDataPoints(noiseLevel, exclusionList, exclusionMzTol),
+            filtered == null ? dataPoints : filtered);
 
     // overlapping within mass tolerance
     int overlap = (int) aligned.stream().filter(dp -> dp[0] != null && dp[1] != null).count();
@@ -161,6 +174,9 @@ public class SimpleMergedScan extends SimpleImagingScan implements MergedScan {
       double[][] diffArray = ScanAlignment.toIntensityArray(aligned);
       double diffCosine = Similarity.COSINE.calc(diffArray);
       if (diffCosine >= minCosine) {
+        if (removeExcludedFromMerge) {
+          dataPoints = filterByExclusion(dataPoints, exclusionList, exclusionMzTol);
+        }
         // if aligned was filtered - need to realign all data points
         if (filtered != null || filteredMerged != null)
           aligned = ScanAlignment.align(mzTol, merged, dataPoints);
@@ -194,12 +210,32 @@ public class SimpleMergedScan extends SimpleImagingScan implements MergedScan {
     return Result.FALSE;
   }
 
-  public DataPoint[] getFilteredDataPoints(double noiseLevel) {
-    if (noiseLevel == 0d)
+  private DataPoint[] filterByExclusion(DataPoint[] source, List<Double> exclusionList,
+      MZTolerance exclusionMzTol) {
+    if (source.length == 0)
+      return source;
+    if (source[0] instanceof MergedDataPoint) {
+      return Arrays.stream(source)
+          .filter(dp -> exclusionList.stream()
+              .noneMatch(exMZ -> exclusionMzTol.checkWithinTolerance(exMZ, dp.getMZ())))
+          .toArray(MergedDataPoint[]::new);
+    } else {
+      return Arrays.stream(source)
+          .filter(dp -> exclusionList.stream()
+              .noneMatch(exMZ -> exclusionMzTol.checkWithinTolerance(exMZ, dp.getMZ())))
+          .toArray(DataPoint[]::new);
+    }
+  }
+
+  public DataPoint[] getFilteredDataPoints(double noiseLevel, List<Double> exclusionList,
+      MZTolerance exclusionMzTol) {
+    if (noiseLevel == 0d && exclusionList == null)
       return merged;
     if (filteredMerged == null || noiseLevel != lastNoiseLevel) {
       lastNoiseLevel = noiseLevel;
       filteredMerged = ScanUtils.getFiltered(merged, noiseLevel);
+      if (exclusionList != null)
+        filteredMerged = filterByExclusion(filteredMerged, exclusionList, exclusionMzTol);
     }
     return filteredMerged;
   }

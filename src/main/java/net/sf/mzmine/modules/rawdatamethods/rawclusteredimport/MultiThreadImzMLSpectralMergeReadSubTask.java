@@ -71,6 +71,12 @@ public class MultiThreadImzMLSpectralMergeReadSubTask extends AbstractTask {
 
   private List<SimpleMergedScan> mergedScans;
 
+  private boolean useExclusionList;
+  private List<Double> exclusionList;
+  private MZTolerance exclusionMzTol;
+  private boolean removeExcludedFromMerge;
+
+
 
   public MultiThreadImzMLSpectralMergeReadSubTask(ParameterSet parameters, int taskID) {
     this.taskID = taskID;
@@ -91,6 +97,22 @@ public class MultiThreadImzMLSpectralMergeReadSubTask extends AbstractTask {
     minSpectra = parameters.getParameter(RawClusteredImportParameters.minSpectra).getValue();
     if (minHeight <= noiseLevel)
       minHeight = 0d;
+
+    useExclusionList =
+        parameters.getParameter(RawClusteredImportParameters.exclusionList).getValue();
+
+    removeExcludedFromMerge = false;
+    if (useExclusionList) {
+      ExclusionListParameters exparam = parameters
+          .getParameter(RawClusteredImportParameters.exclusionList).getEmbeddedParameters();
+      removeExcludedFromMerge =
+          exparam.getParameter(ExclusionListParameters.removeFromScans).getValue();
+      exclusionMzTol = exparam.getParameter(ExclusionListParameters.mzTol).getValue();
+    }
+  }
+
+  public void setExclusionList(List<Double> exclusionList) {
+    this.exclusionList = exclusionList;
   }
 
   /**
@@ -190,7 +212,8 @@ public class MultiThreadImzMLSpectralMergeReadSubTask extends AbstractTask {
       // was not merged
       // create scan and add new merged scan
       SimpleImagingScan rawscan = ImzMLSpectralMergeReadTask.createScan(spectrum, dataPoints);
-      mergedScans.add(new SimpleMergedScan(rawscan, IntensityMergeMode.AVERAGE, getTaskID()));
+      mergedScans.add(new SimpleMergedScan(rawscan, IntensityMergeMode.AVERAGE, getTaskID(),
+          exclusionList, exclusionMzTol, removeExcludedFromMerge));
     }
   }
 
@@ -203,7 +226,8 @@ public class MultiThreadImzMLSpectralMergeReadSubTask extends AbstractTask {
     if (dataPoints.length >= minMatch && !mergeWithFirst(mergedScans, null, spectrum, dataPoints)) {
       // was not merged
       // create scan and add new merged scan
-      mergedScans.add(new SimpleMergedScan(spectrum, IntensityMergeMode.AVERAGE, getTaskID()));
+      mergedScans.add(new SimpleMergedScan(spectrum, IntensityMergeMode.AVERAGE, getTaskID(),
+          exclusionList, exclusionMzTol, removeExcludedFromMerge));
     }
   }
 
@@ -220,13 +244,15 @@ public class MultiThreadImzMLSpectralMergeReadSubTask extends AbstractTask {
       Scan spectrum2, DataPoint[] dataPoints) {
     DataPoint[] filtered =
         minHeight < noiseLevel ? null : ScanUtils.getFiltered(dataPoints, minHeight);
+
     for (int m = 0; m < mergedScans.size(); m++) {
       if (isCanceled())
         return false;
 
       SimpleMergedScan scan = mergedScans.get(m);
       // try to merge
-      Result res = scan.merge(dataPoints, filtered, mzTol, minHeight, minCosine, minMatch);
+      Result res = scan.merge(dataPoints, filtered, exclusionList, exclusionMzTol,
+          removeExcludedFromMerge, mzTol, minHeight, minCosine, minMatch);
       if (!res.equals(Result.FALSE)) {
         if (res.equals(Result.MERGED_REPLACE_BEST_SCAN)) {
           // replace best scan in merged with this rawscan
@@ -266,7 +292,8 @@ public class MultiThreadImzMLSpectralMergeReadSubTask extends AbstractTask {
 
       SimpleMergedScan scan = mergedScans.get(m);
       // try to merge
-      Result res = scan.merge(source, mzTol, minHeight, minCosine, minMatch);
+      Result res =
+          scan.merge(source, mzTol, exclusionList, exclusionMzTol, minHeight, minCosine, minMatch);
       if (!res.equals(Result.FALSE)) {
         // was merged into the scan
         int mergedScanCount = scan.getScanCount();
@@ -343,7 +370,7 @@ public class MultiThreadImzMLSpectralMergeReadSubTask extends AbstractTask {
   }
 
   public void finishedSpectraList() {
-    finishedSpectraList = true;;
+    finishedSpectraList = true;
   }
 
   public List<SimpleMergedScan> getMergedScans() {

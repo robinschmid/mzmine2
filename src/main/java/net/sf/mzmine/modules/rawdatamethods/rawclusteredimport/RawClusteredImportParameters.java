@@ -29,6 +29,7 @@ import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
 import net.sf.mzmine.parameters.parametertypes.PercentParameter;
 import net.sf.mzmine.parameters.parametertypes.filenames.FileNamesParameter;
+import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
 
 public class RawClusteredImportParameters extends SimpleParameterSet {
@@ -71,11 +72,14 @@ public class RawClusteredImportParameters extends SimpleParameterSet {
   public static final MZToleranceParameter mzTol =
       new MZToleranceParameter("m/z tolerance", "Tolerance to match and merge spectra", 0.02, 30);
 
+  public static final OptionalModuleParameter<ExclusionListParameters> exclusionList =
+      new OptionalModuleParameter<ExclusionListParameters>("Exclusion list",
+          "exclude m/z values from clustering", new ExclusionListParameters(), false);
 
 
   public RawClusteredImportParameters() {
-    super(new Parameter[] {fileNames, multiThreaded, mzTol, noiseCutoff, minHeight, minCosine,
-        minMatch, minSpectra, minPercentSpectra});
+    super(new Parameter[] {fileNames, multiThreaded, mzTol, exclusionList, noiseCutoff, minHeight,
+        minCosine, minMatch, minSpectra, minPercentSpectra});
   }
 
 }

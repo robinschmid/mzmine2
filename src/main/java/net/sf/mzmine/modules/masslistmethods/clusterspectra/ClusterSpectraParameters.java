@@ -20,6 +20,7 @@ package net.sf.mzmine.modules.masslistmethods.clusterspectra;
 
 import java.text.DecimalFormat;
 import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.rawdatamethods.rawclusteredimport.ExclusionListParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
@@ -31,6 +32,7 @@ import net.sf.mzmine.parameters.parametertypes.StringParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.RawDataFilesParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelection;
 import net.sf.mzmine.parameters.parametertypes.selectors.ScanSelectionParameter;
+import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
 
 public class ClusterSpectraParameters extends SimpleParameterSet {
@@ -56,7 +58,7 @@ public class ClusterSpectraParameters extends SimpleParameterSet {
       2);
 
   public static final OptionalParameter<IntegerParameter> threads = new OptionalParameter<>(
-      new IntegerParameter("Threads", "Override number of threads", 8), false);
+      new IntegerParameter("Threads", "Override number of threads", 16), true);
   public static final OptionalParameter<PercentParameter> minPercentSpectra =
       new OptionalParameter<>(new PercentParameter("Minimum spectra with DP (%)",
           "Minimum percantage of spectra with a specific data point of all merged spectra (if a merged spectrum contains more than 4 spectra, data points are filtered to be contained in at least X spectra)",
@@ -69,9 +71,13 @@ public class ClusterSpectraParameters extends SimpleParameterSet {
       new StringParameter("Suffix", "Suffix to new raw data file", "clustered");
 
 
+  public static final OptionalModuleParameter<ExclusionListParameters> exclusionList =
+      new OptionalModuleParameter<ExclusionListParameters>("Exclusion list",
+          "exclude m/z values from clustering", new ExclusionListParameters(), false);
+
   public ClusterSpectraParameters() {
-    super(new Parameter[] {dataFiles, scanSelect, massList, mzTol, threads, minHeight, minCosine,
-        minMatch, minSpectra, minPercentSpectra, suffix});
+    super(new Parameter[] {dataFiles, scanSelect, massList, exclusionList, mzTol, threads,
+        minHeight, minCosine, minMatch, minSpectra, minPercentSpectra, suffix});
   }
 
 }

@@ -18,7 +18,10 @@
 
 package net.sf.mzmine.modules.masslistmethods.clusterspectra;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -27,6 +30,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import com.google.common.base.Stopwatch;
+import com.google.common.io.Files;
+import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.ImagingScan;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.RawDataFile;
@@ -37,6 +42,7 @@ import net.sf.mzmine.datamodel.impl.SimpleMergedScan;
 import net.sf.mzmine.datamodel.impl.SimpleScan;
 import net.sf.mzmine.desktop.preferences.MZminePreferences;
 import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.rawdatamethods.rawclusteredimport.ExclusionListParameters;
 import net.sf.mzmine.modules.rawdatamethods.rawclusteredimport.MultiThreadImzMLSpectralMergeReadSubTask;
 import net.sf.mzmine.modules.tools.msmsspectramerge.IntensityMergeMode;
 import net.sf.mzmine.parameters.ParameterSet;
@@ -73,6 +79,13 @@ public class ClusterSpectraTask extends AbstractTask {
 
   private RawDataFile[] raws;
   private String rawnames = "";
+
+  private Boolean useExclusionList;
+  private List<Double> exclusionList;
+
+  private boolean removeExcludedMZ = false;
+
+  private MZTolerance exclusionMzTol;
 
 
   public ClusterSpectraTask(MZmineProject project, ParameterSet parameters) {
@@ -138,6 +151,17 @@ public class ClusterSpectraTask extends AbstractTask {
 
     subTasks.forEach(s -> s.setMassListName(masses));
 
+    try {
+      readExclusionList();
+    } catch (Exception e1) {
+      logger.log(Level.SEVERE,
+          "Error while importing exclusion list. Make sure to have only m/z values in rows", e1);
+      setErrorMessage(
+          "Error while importing exclusion list. Make sure to have only m/z values in rows");
+      setStatus(TaskStatus.ERROR);
+      return;
+    }
+
     RawDataFileWriter newMZmineFile;
     String newName = raws[0].getName() + suffix;
     try {
@@ -163,12 +187,26 @@ public class ClusterSpectraTask extends AbstractTask {
           // distribute scans
           if (scans[i] instanceof ImagingScan) {
             SimpleImagingScan ss = new SimpleImagingScan(scans[i]);
-            ss.setDataPoints(scans[i].getMassList(masses).getDataPoints());
+            DataPoint[] filtered = scans[i].getMassList(masses).getDataPoints();
+            if (removeExcludedMZ && exclusionList != null) {
+              filtered = Arrays.stream(filtered)
+                  .filter(dp -> exclusionList.stream()
+                      .noneMatch(exMZ -> exclusionMzTol.checkWithinTolerance(exMZ, dp.getMZ())))
+                  .toArray(DataPoint[]::new);
+            }
+            ss.setDataPoints(filtered);
             SimpleMergedScan ms = new SimpleMergedScan(ss, IntensityMergeMode.AVERAGE);
             subTasks.get(i % subTasks.size()).addSpectrum(ms);
           } else {
             SimpleScan ss = new SimpleScan(scans[i]);
-            ss.setDataPoints(scans[i].getMassList(masses).getDataPoints());
+            DataPoint[] filtered = scans[i].getMassList(masses).getDataPoints();
+            if (removeExcludedMZ && exclusionList != null) {
+              filtered = Arrays.stream(filtered)
+                  .filter(dp -> exclusionList.stream()
+                      .noneMatch(exMZ -> exclusionMzTol.checkWithinTolerance(exMZ, dp.getMZ())))
+                  .toArray(DataPoint[]::new);
+            }
+            ss.setDataPoints(filtered);
             SimpleMergedScan ms = new SimpleMergedScan(ss, IntensityMergeMode.AVERAGE);
             subTasks.get(i % subTasks.size()).addSpectrum(ms);
           }
@@ -191,13 +229,13 @@ public class ClusterSpectraTask extends AbstractTask {
 
       boolean lastIterationStarted = false;
       while (!subTasks.isEmpty()) {
-        if (isCanceled()) {
-          ((AbstractTask) subTasks).cancel();
-          break;
-        }
         try {
           //
           for (int i = 0; i < subTasks.size(); i++) {
+            if (isCanceled()) {
+              subTasks.get(i).cancel();
+              break;
+            }
             // empty list. distribute to other tasks
             if (subTasks.get(i).getRemainingSpectra() == 0) {
               // stop task
@@ -330,4 +368,34 @@ public class ClusterSpectraTask extends AbstractTask {
     return "Clustering spectra in " + rawnames;
   }
 
+
+  private void readExclusionList() throws Exception {
+    useExclusionList = parameters.getParameter(ClusterSpectraParameters.exclusionList).getValue();
+    if (useExclusionList) {
+      ExclusionListParameters exparam =
+          parameters.getParameter(ClusterSpectraParameters.exclusionList).getEmbeddedParameters();
+      removeExcludedMZ = exparam.getParameter(ExclusionListParameters.removeFromScans).getValue();
+      exclusionMzTol = exparam.getParameter(ExclusionListParameters.mzTol).getValue();
+      File exclusionFile = exparam.getParameter(ExclusionListParameters.fileNames).getValue();
+      if (exclusionFile != null) {
+        if (exclusionFile.exists()) {
+          try {
+            List<String> lines = Files.readLines(exclusionFile, StandardCharsets.UTF_8);
+            try {
+              Double.parseDouble(lines.get(0));
+            } catch (Exception e) {
+              lines.remove(0);
+            }
+
+            exclusionList = lines.stream().map(Double::parseDouble).collect(Collectors.toList());
+            subTasks.forEach(s -> s.setExclusionList(exclusionList));
+          } catch (Exception e) {
+            throw e;
+          }
+        } else {
+          throw (new NoSuchFileException(exclusionFile.getAbsolutePath()));
+        }
+      }
+    }
+  }
 }

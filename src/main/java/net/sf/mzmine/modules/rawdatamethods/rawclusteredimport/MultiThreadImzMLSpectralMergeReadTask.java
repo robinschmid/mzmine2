@@ -19,17 +19,21 @@
 package net.sf.mzmine.modules.rawdatamethods.rawclusteredimport;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import com.alanmrace.jimzmlparser.exceptions.ImzMLParseException;
 import com.alanmrace.jimzmlparser.imzml.ImzML;
 import com.alanmrace.jimzmlparser.mzml.Spectrum;
 import com.alanmrace.jimzmlparser.mzml.SpectrumList;
 import com.alanmrace.jimzmlparser.parser.ImzMLHandler;
 import com.google.common.base.Stopwatch;
+import com.google.common.io.Files;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.RawDataFileWriter;
@@ -76,6 +80,9 @@ public class MultiThreadImzMLSpectralMergeReadTask extends AbstractTask {
   private int minSpectra = 1;
 
   private ParameterSet parameters;
+
+  private boolean useExclusionList;
+  private List<Double> exclusionList;
 
 
   public MultiThreadImzMLSpectralMergeReadTask(MZmineProject project, File fileToOpen,
@@ -133,8 +140,19 @@ public class MultiThreadImzMLSpectralMergeReadTask extends AbstractTask {
    */
   @Override
   public void run() {
-
     setStatus(TaskStatus.PROCESSING);
+
+    try {
+      readExclusionList();
+    } catch (Exception e1) {
+      logger.log(Level.SEVERE,
+          "Error while importing exclusion list. Make sure to have only m/z values in rows", e1);
+      setErrorMessage(
+          "Error while importing exclusion list. Make sure to have only m/z values in rows");
+      setStatus(TaskStatus.ERROR);
+      return;
+    }
+
     //
     List<SimpleMergedScan> mergedScans = new ArrayList<SimpleMergedScan>();
     List<SimpleImagingScan> ms2Scans = new ArrayList<SimpleImagingScan>();
@@ -320,6 +338,35 @@ public class MultiThreadImzMLSpectralMergeReadTask extends AbstractTask {
         + finalRawDataFile.getScanNumbers().length + " scans from a total of " + spectra.size()
         + " raw spectra");
     setStatus(TaskStatus.FINISHED);
+  }
+
+  private void readExclusionList() throws Exception {
+    useExclusionList =
+        parameters.getParameter(RawClusteredImportParameters.exclusionList).getValue();
+    if (useExclusionList) {
+      ExclusionListParameters exparam = parameters
+          .getParameter(RawClusteredImportParameters.exclusionList).getEmbeddedParameters();
+      File exclusionFile = exparam.getParameter(ExclusionListParameters.fileNames).getValue();
+      if (exclusionFile != null) {
+        if (exclusionFile.exists()) {
+          try {
+            List<String> lines = Files.readLines(exclusionFile, StandardCharsets.UTF_8);
+            try {
+              Double.parseDouble(lines.get(0));
+            } catch (Exception e) {
+              lines.remove(0);
+            }
+
+            exclusionList = lines.stream().map(Double::parseDouble).collect(Collectors.toList());
+            subTasks.forEach(s -> s.setExclusionList(exclusionList));
+          } catch (Exception e) {
+            throw e;
+          }
+        } else {
+          throw (new NoSuchFileException(exclusionFile.getAbsolutePath()));
+        }
+      }
+    }
   }
 
   @Override

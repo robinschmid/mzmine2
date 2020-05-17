@@ -177,7 +177,8 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
           // create scan and add new merged scan
           logger.log(Level.INFO, "Scan " + i + " not merged");
           SimpleImagingScan rawscan = createScan(spectrum, dataPoints);
-          mergedScans.add(new SimpleMergedScan(rawscan, IntensityMergeMode.AVERAGE, 1));
+          mergedScans
+              .add(new SimpleMergedScan(rawscan, IntensityMergeMode.AVERAGE, 1, null, null, false));
         }
         parsedScans++;
       }
@@ -295,7 +296,8 @@ public class ImzMLSpectralMergeReadTask extends AbstractTask {
     for (int m = 0; m < mergedScans.size(); m++) {
       SimpleMergedScan scan = mergedScans.get(m);
       // try to merge
-      Result res = scan.merge(dataPoints, filtered, mzTol, minHeight, minCosine, minMatch);
+      Result res = scan.merge(dataPoints, filtered, null, null, false, mzTol, minHeight, minCosine,
+          minMatch);
       if (!res.equals(Result.FALSE)) {
         logger.info("MERGED SCANS in list index " + m + "; total: " + scan.getScanCount());
         if (res.equals(Result.MERGED_REPLACE_BEST_SCAN)) {
