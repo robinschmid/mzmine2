@@ -81,11 +81,16 @@ class SpectralLibraryToGNPSTask extends AbstractTask {
     File mgf = FileAndPathUtil.getRealFilePath(dataBaseFile.getParentFile(),
         FileAndPathUtil.eraseFormat(dataBaseFile.getName()) + "_GNPS_FBMN", "mgf");
     File csv = FileAndPathUtil.getRealFilePath(dataBaseFile.getParentFile(),
-        FileAndPathUtil.eraseFormat(dataBaseFile.getName()) + "_GNPS_FBMN", "csv");
+        FileAndPathUtil.eraseFormat(dataBaseFile.getName()) + "_GNPS_FBMN_QUANT", "csv");
+    File meta = FileAndPathUtil.getRealFilePath(dataBaseFile.getParentFile(),
+        FileAndPathUtil.eraseFormat(dataBaseFile.getName()) + "_GNPS_FBMN_META", "csv");
     // Open file
 
-    try (FileWriter mgfWriter = new FileWriter(mgf); FileWriter csvWriter = new FileWriter(csv)) {
+    try (FileWriter mgfWriter = new FileWriter(mgf);
+        FileWriter csvWriter = new FileWriter(csv);
+        FileWriter metaWriter = new FileWriter(meta)) {
       csvWriter.write("row ID,row m/z,row retention time,Library Peak area," + newLine);
+      csvWriter.write("row ID,name,ion type,comment,SMILES,InChI" + newLine);
 
       // parse db file
       parseFile(dataBaseFile);
@@ -99,7 +104,7 @@ class SpectralLibraryToGNPSTask extends AbstractTask {
         if (!databse.isEmpty()) {
           SpectralDBEntry db = databse.remove(0);
           if (db.getPrecursorMZ() != null) {
-            export(db, counter, csvWriter, mgfWriter);
+            export(db, counter, csvWriter, metaWriter, mgfWriter);
             counter++;
           }
         }
@@ -115,10 +120,13 @@ class SpectralLibraryToGNPSTask extends AbstractTask {
     }
   }
 
-  private void export(SpectralDBEntry db, int counter, FileWriter csvWriter, FileWriter mgfWriter)
-      throws IOException {
+  private void export(SpectralDBEntry db, int counter, FileWriter csvWriter, FileWriter metaWriter,
+      FileWriter mgfWriter) throws IOException {
     // export csv quant table
     exportCSV(db, counter, csvWriter);
+
+    // id,name,ion,comment,smiles,inchi
+    exportCSV(db, counter, metaWriter);
 
     // export mgf
     exportMGF(db, counter, mgfWriter);
@@ -127,6 +135,16 @@ class SpectralLibraryToGNPSTask extends AbstractTask {
   private void exportCSV(SpectralDBEntry db, int counter, FileWriter writer) throws IOException {
     // id,mz,rt,area
     writer.write(counter + "," + mzForm.format(db.getPrecursorMZ()) + ",0,1," + newLine);
+  }
+
+  private void exportMetadata(SpectralDBEntry db, int counter, FileWriter writer)
+      throws IOException {
+    // id,name,ion,comment,smiles,inchi
+    writer.write(counter + "," + db.getField(DBEntryField.NAME).orElse("") + ","
+        + db.getField(DBEntryField.ION_TYPE).orElse("") + ","
+        + db.getField(DBEntryField.COMMENT).orElse("") + ","
+        + db.getField(DBEntryField.SMILES).orElse("") + ","
+        + db.getField(DBEntryField.INCHI).orElse("") + newLine);
   }
 
   private void exportMGF(SpectralDBEntry db, int counter, FileWriter writer) throws IOException {
