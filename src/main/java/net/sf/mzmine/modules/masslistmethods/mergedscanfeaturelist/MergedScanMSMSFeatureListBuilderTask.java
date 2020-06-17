@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import com.google.common.collect.Range;
@@ -164,7 +165,7 @@ public class MergedScanMSMSFeatureListBuilderTask extends AbstractTask {
           setStatus(TaskStatus.ERROR);
           return;
         }
-        DataPoint dp = Arrays.stream(masses.getDataPoints())
+        DataPoint dp = Arrays.stream(masses.getDataPoints()).filter(Objects::nonNull)
             .max(Comparator.comparingDouble(DataPoint::getIntensity)).orElseGet(null);
         if (dp != null) {
           SimpleFeature f = new SimpleFeature(dataFile, dp.getMZ(), 0d, dp.getIntensity(),
@@ -200,6 +201,7 @@ public class MergedScanMSMSFeatureListBuilderTask extends AbstractTask {
             double oldSize = list.get(i).size();
             list.get(i).add(scan);
             double newMZ = (precursor.remove(i) * oldSize + precursorMZ) / (oldSize + 1.0);
+            precursor.add(i, newMZ);
             added = true;
           }
         }
@@ -208,6 +210,7 @@ public class MergedScanMSMSFeatureListBuilderTask extends AbstractTask {
           List<Scan> l = new ArrayList<>();
           l.add(scan);
           list.add(l);
+          precursor.add(precursorMZ);
         }
       }
     }
@@ -227,9 +230,12 @@ public class MergedScanMSMSFeatureListBuilderTask extends AbstractTask {
       double bestTIC = msmsScans[0].getTIC();
       // create feature as highest signal
       DataPoint dp = new SimpleDataPoint(precursor.get(i), bestTIC);
+      DataPoint[] dataPointsPerScan = Arrays.stream(msmsScans)
+          .map(s -> new SimpleDataPoint(s.getPrecursorMZ(), s.getTIC())).toArray(DataPoint[]::new);
+
       comment = msmsScans.length + " MS/MS scans: m/z " + dp.getMZ();
       SimpleFeature f = new SimpleFeature(dataFile, dp.getMZ(), 0d, dp.getIntensity(),
-          dp.getIntensity(), scannumbers, new DataPoint[] {dp}, FeatureStatus.DETECTED,
+          dp.getIntensity(), scannumbers, dataPointsPerScan, FeatureStatus.DETECTED,
           msmsScans[0].getScanNumber(), msmsScans[0].getScanNumber(), scannumbers,
           Range.singleton(0d), mzRange, Range.singleton(dp.getIntensity()));
       addToPeakList(newPeakList, f, comment);

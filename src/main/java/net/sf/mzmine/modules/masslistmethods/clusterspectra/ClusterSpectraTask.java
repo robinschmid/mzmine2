@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -34,6 +35,7 @@ import com.google.common.io.Files;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.ImagingScan;
 import net.sf.mzmine.datamodel.MZmineProject;
+import net.sf.mzmine.datamodel.MassSpectrumType;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.RawDataFileWriter;
 import net.sf.mzmine.datamodel.Scan;
@@ -139,7 +141,7 @@ public class ClusterSpectraTask extends AbstractTask {
     setStatus(TaskStatus.PROCESSING);
     //
     List<SimpleMergedScan> mergedScans = new ArrayList<SimpleMergedScan>();
-    List<SimpleImagingScan> ms2Scans = new ArrayList<SimpleImagingScan>();
+    List<Scan> ms2Scans = new ArrayList<Scan>();
 
     raws = parameters.getParameter(ClusterSpectraParameters.dataFiles).getValue()
         .getMatchingRawDataFiles();
@@ -297,43 +299,80 @@ public class ClusterSpectraTask extends AbstractTask {
 
           // add average
           scan.setScanNumber(i);
+          scan.setSpectrumType(MassSpectrumType.CENTROIDED);
           newMZmineFile.addScan(scan);
           i++;
           // add maximum merged scan
           SimpleMergedScan maxScan = new SimpleMergedScan(scan, IntensityMergeMode.MAXIMUM);
           maxScan.setScanNumber(i);
+          maxScan.setSpectrumType(MassSpectrumType.CENTROIDED);
           newMZmineFile.addScan(maxScan);
           i++;
 
           // sum
           SimpleMergedScan sumScan = new SimpleMergedScan(scan, IntensityMergeMode.SUM);
           sumScan.setScanNumber(i);
+          sumScan.setSpectrumType(MassSpectrumType.CENTROIDED);
           newMZmineFile.addScan(sumScan);
           i++;
 
           // add best scan
-          if (scan instanceof SimpleImagingScan)
+          if (scan.getBestScan() instanceof SimpleImagingScan) {
             ((SimpleImagingScan) scan.getBestScan()).setScanNumber(i);
-          else
+            ((SimpleImagingScan) scan.getBestScan()).setSpectrumType(MassSpectrumType.CENTROIDED);
+          } else {
             ((SimpleScan) scan.getBestScan()).setScanNumber(i);
+            ((SimpleScan) scan.getBestScan()).setSpectrumType(MassSpectrumType.CENTROIDED);
+          }
 
           newMZmineFile.addScan(scan.getBestScan());
           i++;
         }
         // add best
         else {
-          ((SimpleImagingScan) scan.getBestScan()).setScanNumber(i + 1);
+          if (scan.getBestScan() instanceof SimpleImagingScan) {
+            ((SimpleImagingScan) scan.getBestScan()).setScanNumber(i);
+            ((SimpleImagingScan) scan.getBestScan()).setSpectrumType(MassSpectrumType.CENTROIDED);
+          } else {
+            ((SimpleScan) scan.getBestScan()).setScanNumber(i);
+            ((SimpleScan) scan.getBestScan()).setSpectrumType(MassSpectrumType.CENTROIDED);
+          }
           newMZmineFile.addScan(scan.getBestScan());
           i++;
         }
         parsedScans++;
       }
-      for (SimpleImagingScan scan : ms2Scans) {
-        // add ms2 at the end
-        scan.setScanNumber(i);
-        newMZmineFile.addScan(scan);
-        i++;
-        parsedScans++;
+
+      // add MS2 scans
+      if (scanSelect.getMsLevel() != 2) {
+        List<Scan> listmsms = new ArrayList<>();
+        for (RawDataFile r : raws) {
+          int[] scans = r.getScanNumbers();
+          totalScans += scans.length;
+          for (int s = 0; s < scans.length; s++) {
+            Scan original = r.getScan(s);
+            if (original != null && original.getMSLevel() > 1) {
+              // add ms2 at the end
+              listmsms.add(original);
+            }
+          }
+        }
+
+        final int startI = i;
+        AtomicInteger c = new AtomicInteger(0);
+        listmsms.stream().sorted((a, b) -> Double.compare(a.getPrecursorMZ(), b.getPrecursorMZ()))
+            .forEach(original -> {
+              try {
+                SimpleScan scan =
+                    original instanceof SimpleImagingScan ? new SimpleImagingScan(original)
+                        : new SimpleScan(original);
+                scan.setScanNumber(startI + c.get());
+                newMZmineFile.addScan(scan);
+                c.getAndIncrement();
+              } catch (Exception ex) {
+                logger.log(Level.WARNING, "Error while copying MS/MS scans.", ex);
+              }
+            });
       }
 
       RawDataFile finalRawDataFile = newMZmineFile.finishWriting();
