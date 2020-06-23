@@ -93,7 +93,8 @@ public class MergedScanMSMSFeatureListBuilderTask extends AbstractTask {
    */
   @Override
   public String getTaskDescription() {
-    return "Detecting images in " + dataFile;
+    return "Creating a feature list from merges scans (one row per merged scan) and MS/MS scans (precursor m/z as feature) for "
+        + dataFile;
   }
 
   /**
@@ -166,7 +167,7 @@ public class MergedScanMSMSFeatureListBuilderTask extends AbstractTask {
           return;
         }
         DataPoint dp = Arrays.stream(masses.getDataPoints()).filter(Objects::nonNull)
-            .max(Comparator.comparingDouble(DataPoint::getIntensity)).orElseGet(null);
+            .max(Comparator.comparingDouble(DataPoint::getIntensity)).orElse(null);
         if (dp != null) {
           SimpleFeature f = new SimpleFeature(dataFile, dp.getMZ(), 0d, dp.getIntensity(),
               dp.getIntensity(), new int[] {scan.getScanNumber()}, new DataPoint[] {dp},
