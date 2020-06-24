@@ -391,6 +391,13 @@ public class RowsSpectralMatchTask extends AbstractTask {
     // add new identity to the row
     row.addPeakIdentity(pid, false);
 
+    String name = pid.getEntry().getField(DBEntryField.NAME).orElse("NONAME").toString();
+    String comment = row.getComment();
+    if (!name.equals("NONAME") && !comment.contains(name)) {
+      comment += "; " + name;
+      row.setComment(comment);
+    }
+
     if (matchListener != null)
       matchListener.accept(pid);
   }
