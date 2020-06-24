@@ -18,10 +18,12 @@
 
 package net.sf.mzmine.modules.visualization.spectra.spectralmatchresults;
 
+import java.text.DecimalFormat;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
+import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.filenames.FileNameParameter;
 
 /**
@@ -46,12 +48,17 @@ public class SpectraIdentificationResultsParameters extends SimpleParameterSet {
   public static final BooleanParameter svg =
       new BooleanParameter("Show export svg", "Show button in panel", true);
 
+
+  public static final DoubleParameter weightScore = new DoubleParameter("Weight for combined score",
+      "Weight is applied to match score to calculate combined score: (WEIGHT*score + explainedIntensity)/2",
+      new DecimalFormat("0.0"), 2.0, 0.00001, 1000000d);
+
   public static final ComboParameter<MatchSortMode> sorting = new ComboParameter<>(
       "Sort matches by", "Sort matches by score or explained library intensity",
       MatchSortMode.values(), MatchSortMode.MATCH_SCORE);
 
   public SpectraIdentificationResultsParameters() {
-    super(new Parameter[] {sorting, file, all, pdf, emf, eps, svg});
+    super(new Parameter[] {sorting, weightScore, file, all, pdf, emf, eps, svg});
   }
 
 }

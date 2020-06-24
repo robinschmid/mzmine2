@@ -97,13 +97,17 @@ public class SpectraIdentificationResultsWindow extends JFrame {
           .getModuleParameters(SpectraIdentificationResultsModule.class);
       MatchSortMode oldSorting =
           param.getParameter(SpectraIdentificationResultsParameters.sorting).getValue();
+      double oldWeight =
+          param.getParameter(SpectraIdentificationResultsParameters.weightScore).getValue();
       if (param.showSetupDialog(this, true) == ExitCode.OK) {
         showExportButtonsChanged();
 
         // sorting has changed
         MatchSortMode newSorting =
             param.getParameter(SpectraIdentificationResultsParameters.sorting).getValue();
-        if (!oldSorting.equals(newSorting)) {
+        double newWeight =
+            param.getParameter(SpectraIdentificationResultsParameters.weightScore).getValue();
+        if (Double.compare(oldWeight, newWeight) != 0 || !oldSorting.equals(newSorting)) {
           btnToggleSorting.setText("Toggle sorting: " + newSorting.toString());
 
           sortTotalMatches();
@@ -237,11 +241,18 @@ public class SpectraIdentificationResultsWindow extends JFrame {
 
     // reversed sorting (highest cosine first
     synchronized (totalMatches) {
-      MatchSortMode sorting = MZmineCore.getConfiguration()
-          .getModuleParameters(SpectraIdentificationResultsModule.class)
-          .getParameter(SpectraIdentificationResultsParameters.sorting).getValue();
+      ParameterSet param = MZmineCore.getConfiguration()
+          .getModuleParameters(SpectraIdentificationResultsModule.class);
+      MatchSortMode sorting =
+          param.getParameter(SpectraIdentificationResultsParameters.sorting).getValue();
 
       switch (sorting) {
+        case COMBINED:
+          double factorScore =
+              param.getParameter(SpectraIdentificationResultsParameters.weightScore).getValue();
+          totalMatches.sort((SpectralDBPeakIdentity a, SpectralDBPeakIdentity b) -> Double
+              .compare(calcCombinedScore(b, factorScore), calcCombinedScore(a, factorScore)));
+          break;
         case EXPLAINED_LIBRARY_INTENSITY:
           totalMatches.sort((SpectralDBPeakIdentity a, SpectralDBPeakIdentity b) -> Double.compare(
               b.getSimilarity().getExplainedLibraryIntensityRatio(),
@@ -256,6 +267,11 @@ public class SpectraIdentificationResultsWindow extends JFrame {
     }
     // renew layout and show
     renewLayout();
+  }
+
+  public double calcCombinedScore(SpectralDBPeakIdentity id, double factorScore) {
+    return (id.getSimilarity().getScore() * factorScore
+        + id.getSimilarity().getExplainedLibraryIntensityRatio()) / (factorScore + 1d);
   }
 
   public void setMatchingFinished() {

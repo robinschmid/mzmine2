@@ -7,7 +7,7 @@ package net.sf.mzmine.modules.visualization.spectra.spectralmatchresults;
  *
  */
 public enum MatchSortMode {
-  MATCH_SCORE, EXPLAINED_LIBRARY_INTENSITY;
+  MATCH_SCORE, EXPLAINED_LIBRARY_INTENSITY, COMBINED;
   @Override
   public String toString() {
     return super.toString().replaceAll("_", " ");
