@@ -21,6 +21,7 @@ package net.sf.mzmine.modules.visualization.spectra.spectralmatchresults;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
+import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.filenames.FileNameParameter;
 
 /**
@@ -45,8 +46,12 @@ public class SpectraIdentificationResultsParameters extends SimpleParameterSet {
   public static final BooleanParameter svg =
       new BooleanParameter("Show export svg", "Show button in panel", true);
 
+  public static final ComboParameter<MatchSortMode> sorting = new ComboParameter<>(
+      "Sort matches by", "Sort matches by score or explained library intensity",
+      MatchSortMode.values(), MatchSortMode.MATCH_SCORE);
+
   public SpectraIdentificationResultsParameters() {
-    super(new Parameter[] {file, all, pdf, emf, eps, svg});
+    super(new Parameter[] {sorting, file, all, pdf, emf, eps, svg});
   }
 
 }

@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
@@ -42,6 +43,7 @@ import javax.swing.WindowConstants;
 import org.drjekyll.fontchooser.FontDialog;
 import net.sf.mzmine.desktop.impl.WindowsMenu;
 import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.util.ExitCode;
 import net.sf.mzmine.util.spectraldb.entry.SpectralDBPeakIdentity;
 
@@ -87,16 +89,57 @@ public class SpectraIdentificationResultsWindow extends JFrame {
     JMenuBar menuBar = new JMenuBar();
     menuBar.add(new WindowsMenu());
 
+    final JMenuItem btnToggleSorting = new JMenuItem("Toggle sorting: ");
     // set font size of chart
     JMenuItem btnSetup = new JMenuItem("Setup dialog");
     btnSetup.addActionListener(e -> {
-      if (MZmineCore.getConfiguration()
-          .getModuleParameters(SpectraIdentificationResultsModule.class)
-          .showSetupDialog(this, true) == ExitCode.OK) {
+      ParameterSet param = MZmineCore.getConfiguration()
+          .getModuleParameters(SpectraIdentificationResultsModule.class);
+      MatchSortMode oldSorting =
+          param.getParameter(SpectraIdentificationResultsParameters.sorting).getValue();
+      if (param.showSetupDialog(this, true) == ExitCode.OK) {
         showExportButtonsChanged();
+
+        // sorting has changed
+        MatchSortMode newSorting =
+            param.getParameter(SpectraIdentificationResultsParameters.sorting).getValue();
+        if (!oldSorting.equals(newSorting)) {
+          btnToggleSorting.setText("Toggle sorting: " + newSorting.toString());
+
+          sortTotalMatches();
+        }
       }
     });
     menuBar.add(btnSetup);
+
+
+    try {
+      ParameterSet param = MZmineCore.getConfiguration()
+          .getModuleParameters(SpectraIdentificationResultsModule.class);
+      MatchSortMode sorting =
+          param.getParameter(SpectraIdentificationResultsParameters.sorting).getValue();
+      if (sorting == null) {
+        sorting = MatchSortMode.MATCH_SCORE;
+        param.getParameter(SpectraIdentificationResultsParameters.sorting).setValue(sorting);
+      }
+      btnToggleSorting.setText("Toggle sorting: " + sorting.toString());
+      btnToggleSorting.addActionListener(e -> {
+        ParameterSet param2 = MZmineCore.getConfiguration()
+            .getModuleParameters(SpectraIdentificationResultsModule.class);
+        MatchSortMode sorting2 =
+            param2.getParameter(SpectraIdentificationResultsParameters.sorting).getValue();
+        // next sort mode
+        sorting2 = MatchSortMode.values()[(sorting2.ordinal() + 1) % MatchSortMode.values().length];
+        param2.getParameter(SpectraIdentificationResultsParameters.sorting).setValue(sorting2);
+
+        btnToggleSorting.setText("Toggle sorting: " + sorting2.toString());
+        sortTotalMatches();
+      });
+      menuBar.add(btnToggleSorting);
+    } catch (Exception ex) {
+      logger.log(Level.WARNING, "Somehow no parameters were available for the lib match window");
+    }
+
 
     JCheckBoxMenuItem cbCoupleZoomY = new JCheckBoxMenuItem("Couple y-zoom");
     cbCoupleZoomY.setSelected(true);
@@ -194,8 +237,22 @@ public class SpectraIdentificationResultsWindow extends JFrame {
 
     // reversed sorting (highest cosine first
     synchronized (totalMatches) {
-      totalMatches.sort((SpectralDBPeakIdentity a, SpectralDBPeakIdentity b) -> Double
-          .compare(b.getSimilarity().getScore(), a.getSimilarity().getScore()));
+      MatchSortMode sorting = MZmineCore.getConfiguration()
+          .getModuleParameters(SpectraIdentificationResultsModule.class)
+          .getParameter(SpectraIdentificationResultsParameters.sorting).getValue();
+
+      switch (sorting) {
+        case EXPLAINED_LIBRARY_INTENSITY:
+          totalMatches.sort((SpectralDBPeakIdentity a, SpectralDBPeakIdentity b) -> Double.compare(
+              b.getSimilarity().getExplainedLibraryIntensityRatio(),
+              a.getSimilarity().getExplainedLibraryIntensityRatio()));
+          break;
+        case MATCH_SCORE:
+        default:
+          totalMatches.sort((SpectralDBPeakIdentity a, SpectralDBPeakIdentity b) -> Double
+              .compare(b.getSimilarity().getScore(), a.getSimilarity().getScore()));
+          break;
+      }
     }
     // renew layout and show
     renewLayout();

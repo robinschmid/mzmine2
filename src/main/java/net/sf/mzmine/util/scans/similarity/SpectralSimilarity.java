@@ -38,6 +38,16 @@ public class SpectralSimilarity {
   private double score;
   // aligned signals in library and query spectrum
   private int overlap;
+  // library intensity described by matched signals
+  private double explainedLibraryIntensity = 0;
+  private double totalLibraryIntensity = 0;
+  private int explainedLibrarySignals = 0;
+  private int totalLibrarySignals = 0;
+
+  private double explainedQueryIntensity = 0;
+  private double totalQueryIntensity = 0;
+  private int explainedQuerySignals = 0;
+  private int totalQuerySignals = 0;
   // similarity function name
   private String funcitonName;
 
@@ -94,6 +104,9 @@ public class SpectralSimilarity {
       List<DataPoint[]> filtered = ScanAlignment.removeUnaligned(alignedDP);
       aligned = ScanAlignment.convertBackToMassLists(filtered);
 
+      // calculate spectral overlap before removing unaligned signals from filtered library/query
+      calculateSpectralOverlap();
+
       for (DataPoint[] dp : aligned)
         Arrays.sort(dp, sorter);
 
@@ -128,6 +141,67 @@ public class SpectralSimilarity {
       Arrays.sort(this.query, sorter);
   }
 
+
+  private void calculateSpectralOverlap() {
+    explainedLibraryIntensity =
+        Arrays.stream(aligned[0]).mapToDouble(DataPoint::getIntensity).sum();
+    totalLibraryIntensity = Arrays.stream(library).mapToDouble(DataPoint::getIntensity).sum();
+    explainedQueryIntensity = Arrays.stream(aligned[1]).mapToDouble(DataPoint::getIntensity).sum();
+    totalQueryIntensity = Arrays.stream(query).mapToDouble(DataPoint::getIntensity).sum();
+
+
+    explainedLibrarySignals = aligned[0].length;
+    totalLibrarySignals = library.length;
+
+
+    explainedQuerySignals = aligned[1].length;
+    totalQuerySignals = query.length;
+  }
+
+
+  public double getExplainedLibraryIntensity() {
+    return explainedLibraryIntensity;
+  }
+
+  public int getExplainedLibrarySignals() {
+    return explainedLibrarySignals;
+  }
+
+  public double getTotalLibraryIntensity() {
+    return totalLibraryIntensity;
+  }
+
+  public int getTotalLibrarySignals() {
+    return totalLibrarySignals;
+  }
+
+  public double getExplainedQueryIntensity() {
+    return explainedQueryIntensity;
+  }
+
+  public double getTotalQueryIntensity() {
+    return totalQueryIntensity;
+  }
+
+  public int getExplainedQuerySignals() {
+    return explainedQuerySignals;
+  }
+
+  public int getTotalQuerySignals() {
+    return totalQuerySignals;
+  }
+
+  public double getExplainedLibraryIntensityRatio() {
+    if (totalLibraryIntensity == 0)
+      return 0;
+    return explainedLibraryIntensity / totalLibraryIntensity;
+  }
+
+  public double getExplainedQueryIntensityRatio() {
+    if (totalQueryIntensity == 0)
+      return 0;
+    return explainedQueryIntensity / totalQueryIntensity;
+  }
 
   /**
    * Number of overlapping signals in both spectra

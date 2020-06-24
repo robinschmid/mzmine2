@@ -84,6 +84,7 @@ public class SpectralMatchPanel extends JPanel {
   public static final Font FONT = new Font("Verdana", Font.PLAIN, 24);
 
   private static final DecimalFormat COS_FORM = new DecimalFormat("0.000");
+  private static final DecimalFormat FORMAT_NODEC = new DecimalFormat("0");
   private static final long serialVersionUID = 1L;
   public static final int META_WIDTH = 500;
   public static final int ENTRY_HEIGHT = 500;
@@ -99,6 +100,7 @@ public class SpectralMatchPanel extends JPanel {
   private Font headerFont = new Font("Dialog", Font.BOLD, 16);
   private Font titleFont = new Font("Dialog", Font.BOLD, 18);
   private Font scoreFont = new Font("Dialog", Font.BOLD, 30);
+  private Font statsFont = new Font("Dialog", Font.PLAIN, 14);
 
   private EChartPanel mirrorChart;
 
@@ -123,7 +125,7 @@ public class SpectralMatchPanel extends JPanel {
     metaDataPanel.setBackground(Color.WHITE);
 
     // add title
-    MigLayout l = new MigLayout("aligny center, wrap, insets 0 10 0 30", "[grow][]", "[grow]");
+    MigLayout l = new MigLayout("aligny center, wrap, insets 0 10 0 30", "[grow][][]", "[grow]");
     JPanel boxTitlePanel = new JPanel();
     boxTitlePanel.setLayout(l);
 
@@ -150,13 +152,39 @@ public class SpectralMatchPanel extends JPanel {
     JPanel panelScore = new JPanel();
     panelScore.setLayout(new BoxLayout(panelScore, BoxLayout.Y_AXIS));
     JLabel score = new JLabel(COS_FORM.format(simScore));
-    score.setToolTipText("Cosine similarity of raw data scan (top, blue) and database scan: "
-        + COS_FORM.format(simScore));
+    score.setToolTipText(
+        "Cosine similarity of raw data scan (top) and library scan: " + COS_FORM.format(simScore));
     score.setFont(scoreFont);
     score.setForeground(Color.WHITE);
     panelScore.setBackground(gradientCol);
     panelScore.add(score);
-    boxTitlePanel.add(panelScore, "cell 1 0");
+
+    // create explained intensity panel
+    double explainedIntensity = hit.getSimilarity().getExplainedLibraryIntensityRatio() * 100;
+    int explainedSignals = hit.getSimilarity().getExplainedLibrarySignals();
+    int totalSignals = hit.getSimilarity().getTotalLibrarySignals();
+    JLabel lbExplainedLibIntensity = new JLabel(FORMAT_NODEC.format(explainedIntensity) + "% ");
+    lbExplainedLibIntensity.setToolTipText(
+        "Relative explained library intensity: " + FORMAT_NODEC.format(explainedIntensity) + "%");
+    lbExplainedLibIntensity.setFont(statsFont);
+    lbExplainedLibIntensity.setForeground(Color.WHITE);
+
+    JLabel lbExplainedLibSignals = new JLabel(explainedSignals + "/" + totalSignals + " ");
+    lbExplainedLibSignals.setToolTipText("Number of explained library signals/total lib signals "
+        + explainedSignals + "/" + totalSignals);
+    lbExplainedLibSignals.setFont(statsFont);
+    lbExplainedLibSignals.setForeground(Color.WHITE);
+
+    JPanel panelExplainedStats = new JPanel();
+    panelExplainedStats.setLayout(new BoxLayout(panelExplainedStats, BoxLayout.Y_AXIS));
+    panelExplainedStats.setBackground(gradientCol);
+    panelExplainedStats.add(lbExplainedLibSignals);
+    panelExplainedStats.add(lbExplainedLibIntensity);
+
+
+
+    boxTitlePanel.add(panelScore, "cell 2 0");
+    boxTitlePanel.add(panelExplainedStats, "cell 1 0");
     boxTitlePanel.add(panelTitle, "cell 0 0, growx, center");
     boxTitle.add(boxTitlePanel);
 
