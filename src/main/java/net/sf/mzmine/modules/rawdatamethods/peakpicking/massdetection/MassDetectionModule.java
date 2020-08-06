@@ -19,11 +19,11 @@
 package net.sf.mzmine.modules.rawdatamethods.peakpicking.massdetection;
 
 import java.util.Collection;
-
 import javax.annotation.Nonnull;
-
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.RawDataFile;
+import net.sf.mzmine.desktop.preferences.MZminePreferences;
+import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.MZmineModuleCategory;
 import net.sf.mzmine.modules.MZmineProcessingModule;
 import net.sf.mzmine.parameters.ParameterSet;
@@ -54,9 +54,22 @@ public class MassDetectionModule implements MZmineProcessingModule {
     RawDataFile[] dataFiles = parameters.getParameter(MassDetectionParameters.dataFiles).getValue()
         .getMatchingRawDataFiles();
 
-    for (RawDataFile dataFile : dataFiles) {
-      Task newTask = new MassDetectionTask(dataFile, parameters);
-      tasks.add(newTask);
+    if (dataFiles.length > 1) {
+      for (RawDataFile dataFile : dataFiles) {
+        Task newTask = new MassDetectionTask(dataFile, parameters);
+        tasks.add(newTask);
+      }
+    } else {
+      // start multiple jobs on one large file
+      Integer threads = MZmineCore.getConfiguration().getPreferences()
+          .getParameter(MZminePreferences.numOfThreads).getValue();
+      if (threads == null)
+        threads = 1;
+
+      for (int i = 0; i < threads; i++) {
+        Task newTask = new MassDetectionTask(dataFiles[0], parameters, i, threads);
+        tasks.add(newTask);
+      }
     }
 
     return ExitCode.OK;

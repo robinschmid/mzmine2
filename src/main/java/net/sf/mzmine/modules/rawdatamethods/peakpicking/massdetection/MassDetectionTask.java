@@ -22,7 +22,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
@@ -62,6 +61,8 @@ public class MassDetectionTask extends AbstractTask {
   // for outputting file
   private File outFilename;
   private boolean saveToCDF;
+  private int totalThreads = 1;
+  private int thread = -1;
 
   /**
    * @param dataFile
@@ -81,11 +82,21 @@ public class MassDetectionTask extends AbstractTask {
 
     this.outFilename = MassDetectionParameters.outFilenameOption.getEmbeddedParameter().getValue();
 
+    this.thread = -1;
+    this.totalThreads = 1;
+  }
+
+  public MassDetectionTask(RawDataFile rawDataFile, ParameterSet parameters, int thread,
+      int totalThreads) {
+    this(rawDataFile, parameters);
+    this.thread = thread;
+    this.totalThreads = totalThreads;
   }
 
   /**
    * @see net.sf.mzmine.taskcontrol.Task#getTaskDescription()
    */
+  @Override
   public String getTaskDescription() {
     return "Detecting masses in " + dataFile;
   }
@@ -93,6 +104,7 @@ public class MassDetectionTask extends AbstractTask {
   /**
    * @see net.sf.mzmine.taskcontrol.Task#getFinishedPercentage()
    */
+  @Override
   public double getFinishedPercentage() {
     if (totalScans == 0)
       return 0;
@@ -107,6 +119,7 @@ public class MassDetectionTask extends AbstractTask {
   /**
    * @see Runnable#run()
    */
+  @Override
   public void run() {
 
 
@@ -136,11 +149,16 @@ public class MassDetectionTask extends AbstractTask {
       final Scan scans[] = scanSelection.getMatchingScans(dataFile);
       totalScans = scans.length;
       // Process scans one by one
-      for (Scan scan : scans) {
+      for (int i = 0; i < scans.length; i++) {
 
         if (isCanceled())
           return;
 
+        // if large file with multiple threads do only every n-th
+        if (i % totalThreads != thread)
+          continue;
+
+        Scan scan = scans[i];
         MassDetector detector = massDetector.getModule();
         DataPoint mzPeaks[] = detector.getMassValues(scan, massDetector.getParameterSet());
 
