@@ -146,7 +146,7 @@ public class RawDataImportModule implements MZmineProcessingModule {
 
       RawDataFileWriter newMZmineFile;
       try {
-        if (fileType.equals(RawDataFileType.IMZML))
+        if (fileType != null && fileType.equals(RawDataFileType.IMZML))
           newMZmineFile = new ImagingRawDataFileImpl(newName);
         else
           newMZmineFile = MZmineCore.createNewFile(newName);
