@@ -34,6 +34,8 @@ import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
 import net.sf.mzmine.datamodel.DataPoint;
+import net.sf.mzmine.datamodel.PolarityType;
+import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibraryMetaDataParameters;
 import net.sf.mzmine.modules.peaklistmethods.io.spectraldbsubmit.param.LibrarySubmitIonParameters;
 import net.sf.mzmine.parameters.Parameter;
@@ -109,6 +111,32 @@ public class GnpsJsonGenerator {
         }
       }
     }
+
+    // return Json.createObjectBuilder().add("spectrum", json.build()).build().toString();
+    return json.build().toString();
+  }
+
+
+  public static String generateJSON(Scan scan, String comment, DataPoint[] dps) {
+    JsonObjectBuilder json = Json.createObjectBuilder();
+    // tag spectrum from mzmine2
+    json.add(DBEntryField.SOFTWARE.getGnpsJsonID(), "mzmine2");
+
+    json.add(DBEntryField.COMMENT.getGnpsJsonID(), comment);
+    if (scan.getPolarity().equals(PolarityType.POSITIVE))
+      json.add(DBEntryField.ION_MODE.getGnpsJsonID(), "Positive");
+    if (scan.getPolarity().equals(PolarityType.NEGATIVE))
+      json.add(DBEntryField.ION_MODE.getGnpsJsonID(), "Negative");
+
+    if (scan.getMSLevel() == 1)
+      json.add(DBEntryField.MS_LEVEL.getGnpsJsonID(), 1);
+    if (scan.getMSLevel() == 2) {
+      json.add(DBEntryField.MS_LEVEL.getGnpsJsonID(), 2);
+      json.add(DBEntryField.MZ.getGnpsJsonID(), scan.getPrecursorMZ());
+    }
+
+    // add data points array
+    json.add("peaks", genJSONData(dps));
 
     // return Json.createObjectBuilder().add("spectrum", json.build()).build().toString();
     return json.build().toString();
