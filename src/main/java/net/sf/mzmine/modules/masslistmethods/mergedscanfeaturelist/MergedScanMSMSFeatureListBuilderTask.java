@@ -61,6 +61,7 @@ public class MergedScanMSMSFeatureListBuilderTask extends AbstractTask {
   // User parameters
   private String suffix, massListName;
 
+  private boolean includeSingleSpectra;
   //
   private MZTolerance mzTolerance;
 
@@ -68,6 +69,7 @@ public class MergedScanMSMSFeatureListBuilderTask extends AbstractTask {
   private SimplePeakList newPeakList;
 
   private ParameterSet parameters;
+
 
 
   /**
@@ -84,6 +86,8 @@ public class MergedScanMSMSFeatureListBuilderTask extends AbstractTask {
         parameters.getParameter(MergedScanMSMSFeatureListBuilderParameters.massList).getValue();
     mzTolerance =
         parameters.getParameter(MergedScanMSMSFeatureListBuilderParameters.mzTolerance).getValue();
+    includeSingleSpectra = parameters
+        .getParameter(MergedScanMSMSFeatureListBuilderParameters.includeSingleSpectra).getValue();
     this.suffix =
         parameters.getParameter(MergedScanMSMSFeatureListBuilderParameters.suffix).getValue();
   }
@@ -155,6 +159,11 @@ public class MergedScanMSMSFeatureListBuilderTask extends AbstractTask {
         lastWasMerged = false;
         lastMergedSize = 0;
         mergedCounter++;
+      } else {
+        // is a single spectrum
+        if (includeSingleSpectra) {
+          comment = "single spec";
+        }
       }
       // add
       if (!comment.isEmpty()) {

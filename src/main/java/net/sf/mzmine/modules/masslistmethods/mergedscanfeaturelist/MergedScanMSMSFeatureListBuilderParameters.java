@@ -20,6 +20,7 @@ package net.sf.mzmine.modules.masslistmethods.mergedscanfeaturelist;
 
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
+import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.MassListParameter;
 import net.sf.mzmine.parameters.parametertypes.StringParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.RawDataFilesParameter;
@@ -33,11 +34,16 @@ public class MergedScanMSMSFeatureListBuilderParameters extends SimpleParameterS
 
   public static final MZToleranceParameter mzTolerance = new MZToleranceParameter();
 
-  public static final StringParameter suffix =
-      new StringParameter("Suffix", "This string is added to filename as suffix", "image");
+  public static final BooleanParameter includeSingleSpectra =
+      new BooleanParameter("Include single spectra",
+          "Include single MS1 spectra (otherwise only clustered spectra)", false);
+
+
+  public static final StringParameter suffix = new StringParameter("Suffix",
+      "This string is added to filename as suffix", "merged spectra + MS2");
 
   public MergedScanMSMSFeatureListBuilderParameters() {
-    super(new Parameter[] {dataFiles, massList, mzTolerance, suffix});
+    super(new Parameter[] {dataFiles, massList, mzTolerance, includeSingleSpectra, suffix});
   }
 
 }
