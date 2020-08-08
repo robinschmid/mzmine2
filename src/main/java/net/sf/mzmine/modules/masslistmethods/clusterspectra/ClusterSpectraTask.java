@@ -35,11 +35,13 @@ import com.google.common.io.Files;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.ImagingScan;
 import net.sf.mzmine.datamodel.MZmineProject;
+import net.sf.mzmine.datamodel.MassList;
 import net.sf.mzmine.datamodel.MassSpectrumType;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.RawDataFileWriter;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimpleImagingScan;
+import net.sf.mzmine.datamodel.impl.SimpleMassList;
 import net.sf.mzmine.datamodel.impl.SimpleMergedScan;
 import net.sf.mzmine.datamodel.impl.SimpleScan;
 import net.sf.mzmine.desktop.preferences.MZminePreferences;
@@ -89,6 +91,8 @@ public class ClusterSpectraTask extends AbstractTask {
 
   private MZTolerance exclusionMzTol;
 
+  private String massListName;
+
 
   public ClusterSpectraTask(MZmineProject project, ParameterSet parameters) {
     this.project = project;
@@ -99,6 +103,7 @@ public class ClusterSpectraTask extends AbstractTask {
     if (parameters.getParameter(ClusterSpectraParameters.threads).getValue())
       threads = parameters.getParameter(ClusterSpectraParameters.threads).getEmbeddedParameter()
           .getValue();
+    massListName = parameters.getParameter(ClusterSpectraParameters.massList).getValue();
     minCosine = parameters.getParameter(ClusterSpectraParameters.minCosine).getValue();
     mzTol = parameters.getParameter(ClusterSpectraParameters.mzTol).getValue();
     minHeight = parameters.getParameter(ClusterSpectraParameters.minHeight).getValue();
@@ -300,12 +305,14 @@ public class ClusterSpectraTask extends AbstractTask {
           // add average
           scan.setScanNumber(i);
           scan.setSpectrumType(MassSpectrumType.CENTROIDED);
+          addMassList(scan);
           newMZmineFile.addScan(scan);
           i++;
           // add maximum merged scan
           SimpleMergedScan maxScan = new SimpleMergedScan(scan, IntensityMergeMode.MAXIMUM);
           maxScan.setScanNumber(i);
           maxScan.setSpectrumType(MassSpectrumType.CENTROIDED);
+          addMassList(maxScan);
           newMZmineFile.addScan(maxScan);
           i++;
 
@@ -313,6 +320,7 @@ public class ClusterSpectraTask extends AbstractTask {
           SimpleMergedScan sumScan = new SimpleMergedScan(scan, IntensityMergeMode.SUM);
           sumScan.setScanNumber(i);
           sumScan.setSpectrumType(MassSpectrumType.CENTROIDED);
+          addMassList(sumScan);
           newMZmineFile.addScan(sumScan);
           i++;
 
@@ -325,6 +333,7 @@ public class ClusterSpectraTask extends AbstractTask {
             ((SimpleScan) scan.getBestScan()).setSpectrumType(MassSpectrumType.CENTROIDED);
           }
 
+          copyMassList(scan.getBestScan(), scan);
           newMZmineFile.addScan(scan.getBestScan());
           i++;
         }
@@ -337,6 +346,8 @@ public class ClusterSpectraTask extends AbstractTask {
             ((SimpleScan) scan.getBestScan()).setScanNumber(i);
             ((SimpleScan) scan.getBestScan()).setSpectrumType(MassSpectrumType.CENTROIDED);
           }
+
+          copyMassList(scan.getBestScan(), scan);
           newMZmineFile.addScan(scan.getBestScan());
           i++;
         }
@@ -350,7 +361,7 @@ public class ClusterSpectraTask extends AbstractTask {
           int[] scans = r.getScanNumbers();
           totalScans += scans.length;
           for (int s = 0; s < scans.length; s++) {
-            Scan original = r.getScan(s);
+            Scan original = r.getScan(scans[s]);
             if (original != null && original.getMSLevel() > 1) {
               // add ms2 at the end
               listmsms.add(original);
@@ -367,6 +378,12 @@ public class ClusterSpectraTask extends AbstractTask {
                     original instanceof SimpleImagingScan ? new SimpleImagingScan(original)
                         : new SimpleScan(original);
                 scan.setScanNumber(startI + c.get());
+                // add masslists
+                for (MassList m : original.getMassLists()) {
+                  MassList nm = new SimpleMassList(m.getName(), scan, m.getDataPoints());
+                  scan.addMassList(nm);
+                }
+
                 newMZmineFile.addScan(scan);
                 c.getAndIncrement();
               } catch (Exception ex) {
@@ -400,6 +417,18 @@ public class ClusterSpectraTask extends AbstractTask {
     }
 
     setStatus(TaskStatus.FINISHED);
+  }
+
+  private void addMassList(SimpleMergedScan scan) {
+    MassList masses = new SimpleMassList(massListName, scan, scan.getDataPoints());
+    scan.addMassList(masses);
+  }
+
+  private void copyMassList(Scan origin, Scan target) {
+    for (MassList m : origin.getMassLists()) {
+      MassList masses = new SimpleMassList(m.getName(), target, m.getDataPoints());
+      target.addMassList(masses);
+    }
   }
 
   @Override
