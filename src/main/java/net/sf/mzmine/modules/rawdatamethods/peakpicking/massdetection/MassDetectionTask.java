@@ -155,7 +155,7 @@ public class MassDetectionTask extends AbstractTask {
           return;
 
         // if large file with multiple threads do only every n-th
-        if (i % totalThreads != thread)
+        if (totalThreads > 1 && i % totalThreads != thread)
           continue;
 
         Scan scan = scans[i];
