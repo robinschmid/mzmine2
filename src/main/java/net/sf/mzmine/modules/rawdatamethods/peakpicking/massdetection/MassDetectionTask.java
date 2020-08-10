@@ -109,7 +109,7 @@ public class MassDetectionTask extends AbstractTask {
     if (totalScans == 0)
       return 0;
     else
-      return (double) processedScans / totalScans;
+      return (double) processedScans / (totalScans / totalThreads);
   }
 
   public RawDataFile getDataFile() {
