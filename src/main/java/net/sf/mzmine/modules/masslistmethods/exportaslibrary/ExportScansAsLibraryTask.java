@@ -168,7 +168,7 @@ public class ExportScansAsLibraryTask extends AbstractTask {
 
   private boolean checkExportFilters(Scan scan, MassList masses) {
     // min signals
-    if (minSignals < masses.getDataPoints().length)
+    if (masses.getDataPoints().length < minSignals)
       return false;
 
     // export spectrum to file
