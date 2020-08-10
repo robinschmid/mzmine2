@@ -106,7 +106,7 @@ public class RawDataFileTypeDetector {
           return RawDataFileType.IMZML;
         else
           return RawDataFileType.MZML;
-          }
+      }
 
       if (fileHeader.contains(MZDATA_HEADER))
         return RawDataFileType.MZDATA;
@@ -114,13 +114,22 @@ public class RawDataFileTypeDetector {
       if (fileHeader.contains(MZXML_HEADER))
         return RawDataFileType.MZXML;
 
-    if (fileName.getName().toLowerCase().endsWith("imzml"))
-      return RawDataFileType.IMZML;
-      
+      if (fileName.getName().toLowerCase().endsWith("imzml"))
+        return RawDataFileType.IMZML;
+
+      if (fileName.getName().toLowerCase().endsWith("json"))
+        return RawDataFileType.JSON;
+      if (fileName.getName().toLowerCase().endsWith("mgf"))
+        return RawDataFileType.MGF;
+      if (fileName.getName().toLowerCase().endsWith("jdx"))
+        return RawDataFileType.JDX;
+      if (fileName.getName().toLowerCase().endsWith("msp"))
+        return RawDataFileType.MSP;
+
     } catch (Exception e) {
       e.printStackTrace();
     }
-    
+
 
     return null;
 

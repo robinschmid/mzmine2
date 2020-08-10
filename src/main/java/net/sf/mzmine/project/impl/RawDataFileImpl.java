@@ -45,8 +45,9 @@ import net.sf.mzmine.datamodel.MassList;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.RawDataFileWriter;
 import net.sf.mzmine.datamodel.Scan;
-import net.sf.mzmine.datamodel.impl.SimpleMergedScan;
+import net.sf.mzmine.datamodel.impl.SimpleLibraryScan;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
+import net.sf.mzmine.datamodel.impl.SimpleMergedScan;
 
 /**
  * RawDataFile implementation. It provides storage of data points for scans and mass lists using the
@@ -424,9 +425,12 @@ public class RawDataFileImpl implements RawDataFile, RawDataFileWriter {
     StorableScan storedScan;
     // imaging?
     if (SimpleMergedScan.class.isInstance(newScan))
-      storedScan = new StorableMergedScan((SimpleMergedScan) newScan, this, dataPoints.length, storageID);
+      storedScan =
+          new StorableMergedScan((SimpleMergedScan) newScan, this, dataPoints.length, storageID);
     else if (ImagingScan.class.isInstance(newScan))
       storedScan = new StorableImagingScan(newScan, this, dataPoints.length, storageID);
+    else if (SimpleLibraryScan.class.isInstance(newScan))
+      storedScan = new StorableLibraryScan(newScan, this, dataPoints.length, storageID);
     // non imaging (e.g. hplc)
     else
       storedScan = new StorableScan(newScan, this, dataPoints.length, storageID);

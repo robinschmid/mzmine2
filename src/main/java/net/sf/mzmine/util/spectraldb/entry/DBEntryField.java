@@ -25,7 +25,8 @@ public enum DBEntryField {
   ENTRY_ID, NAME, SYNONYM, COMMENT, ION_TYPE, RT(Double.class), MZ(Double.class), CHARGE(
       Integer.class), ION_MODE, COLLISION_ENERGY, FORMULA, MOLWEIGHT(Double.class), EXACT_MASS(
           Double.class), INCHI, INCHIKEY, SMILES, CAS, PUBMED, PUBCHEM, MONA_ID, CHEMSPIDER, INSTRUMENT_TYPE, INSTRUMENT, ION_SOURCE, NUM_PEAKS(
-              Integer.class), ACQUISITION, PRINCIPAL_INVESTIGATOR, DATA_COLLECTOR, SOFTWARE, MS_LEVEL, RESOLUTION;
+              Integer.class), ACQUISITION, PRINCIPAL_INVESTIGATOR, DATA_COLLECTOR, SOFTWARE, MS_LEVEL(
+                  Integer.class), RESOLUTION;
 
   // group of DBEntryFields logically
   public static final DBEntryField[] OTHER_FIELDS =
@@ -128,7 +129,7 @@ public enum DBEntryField {
       case SMILES:
         return "SMILES";
       case MS_LEVEL:
-        return "MS_LEVEL";
+        return "MSLEVEL";
       case PUBCHEM:
         return "PUBCHEM";
       case CHEMSPIDER:

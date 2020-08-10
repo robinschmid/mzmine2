@@ -21,6 +21,7 @@ package net.sf.mzmine.util.spectraldb.entry;
 import java.util.Map;
 import java.util.Optional;
 import net.sf.mzmine.datamodel.DataPoint;
+import net.sf.mzmine.datamodel.PolarityType;
 
 public class SpectralDBEntry {
 
@@ -42,6 +43,19 @@ public class SpectralDBEntry {
 
   public DataPoint[] getDataPoints() {
     return dps;
+  }
+
+  public PolarityType getPolarity() {
+    String polarity = getField(DBEntryField.ION_MODE).orElse("").toString().toLowerCase();
+    if (polarity.contains("+") || polarity.contains("pos"))
+      return PolarityType.POSITIVE;
+    if (polarity.contains("-") || polarity.contains("neg"))
+      return PolarityType.NEGATIVE;
+    if (polarity.contains("p"))
+      return PolarityType.POSITIVE;
+    if (polarity.contains("n"))
+      return PolarityType.NEGATIVE;
+    return PolarityType.UNKNOWN;
   }
 
 }

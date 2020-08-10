@@ -20,11 +20,9 @@ package net.sf.mzmine.modules.rawdatamethods.rawdataimport;
 
 import java.awt.Window;
 import java.io.File;
-
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
-
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.util.ExitCode;
@@ -32,17 +30,21 @@ import net.sf.mzmine.util.ExitCode;
 public class RawDataImportParameters extends SimpleParameterSet {
 
   private static final FileFilter filters[] = new FileFilter[] {
-      new FileNameExtensionFilter("All raw data files", "cdf", "nc", "mzData", "mzML", "mzXML", "imzML",
-          "xml", "raw", "csv", "zip", "gz"),
+      new FileNameExtensionFilter("All raw data files", "cdf", "nc", "mzData", "mzML", "mzXML",
+          "imzML", "xml", "raw", "csv", "zip", "gz", "json", "mgf", "msp", "jdx"),
       new FileNameExtensionFilter("All XML files", "xml"),
       new FileNameExtensionFilter("NetCDF files", "cdf", "nc"),
       new FileNameExtensionFilter("mzData files", "mzData"),
       new FileNameExtensionFilter("mzML files", "mzML"),
-       new FileNameExtensionFilter("imzML files (imaging)", "imzML"),
+      new FileNameExtensionFilter("imzML files (imaging)", "imzML"),
       new FileNameExtensionFilter("Thermo RAW files", "raw"),
       new FileNameExtensionFilter("Waters RAW folders", "raw"),
       new FileNameExtensionFilter("mzXML files", "mzXML"),
       new FileNameExtensionFilter("Agilent CSV files", "csv"),
+      new FileNameExtensionFilter("MoNA json and GNPS json library", "json"),
+      new FileNameExtensionFilter("JDX library", "jdx"),
+      new FileNameExtensionFilter("NIST msp library", "msp"),
+      new FileNameExtensionFilter("Mascot mgf library (e.g. GNPS)", "mgf"),
       new FileNameExtensionFilter("Compressed files", "zip", "gz")};
 
   public static final FileNamesParameter fileNames = new FileNamesParameter();

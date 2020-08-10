@@ -38,6 +38,7 @@ import net.sf.mzmine.modules.MZmineModuleCategory;
 import net.sf.mzmine.modules.MZmineProcessingModule;
 import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.AgilentCsvReadTask;
 import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.ImzMLParallelReadTask;
+import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.LibraryFormatReadTask;
 import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.MzDataReadTask;
 import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.MzMLReadTask;
 import net.sf.mzmine.modules.rawdatamethods.rawdataimport.fileformats.MzXMLReadTask;
@@ -219,7 +220,12 @@ public class RawDataImportModule implements MZmineProcessingModule {
       case GZIP:
         newTask = new ZipReadTask(project, fileName, fileType);
         break;
-
+      case JSON:
+      case JDX:
+      case MGF:
+      case MSP:
+        newTask = new LibraryFormatReadTask(project, fileName, newMZmineFile);
+        break;
     }
     return newTask;
   }

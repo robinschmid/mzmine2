@@ -25,13 +25,16 @@ public enum RawDataFileType {
 
   MZML, //
   MZXML, //
-    IMZML, // imaging
+  IMZML, // imaging
   MZDATA, //
   NETCDF, //
   AGILENT_CSV, //
   THERMO_RAW, //
   WATERS_RAW, //
   ZIP, //
-  GZIP
+  GZIP,
+  // library
+  JSON, // MassBank of North America - GNPS (two formats)
+  MGF, JDX, MSP
 
 }
