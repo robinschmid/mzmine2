@@ -51,6 +51,7 @@ import net.sf.mzmine.modules.peaklistmethods.gapfilling.peakfinder.multithreaded
 import net.sf.mzmine.modules.peaklistmethods.gapfilling.samerange.SameRangeGapFillerModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.adductsearch.AdductSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.camera.CameraSearchModule;
+import net.sf.mzmine.modules.peaklistmethods.identification.carbonblack.CarbonBlackModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.complexsearch.ComplexSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.customdbsearch.CustomDBSearchModule;
 import net.sf.mzmine.modules.peaklistmethods.identification.formulaprediction.FormulaPredictionModule;
@@ -212,7 +213,7 @@ public class MZmineModulesList {
       SignificanceModule.class,
 
       // Identification
-      LocalSpectralDBSearchModule.class, PrecursorDBSearchModule.class,
+      LocalSpectralDBSearchModule.class, CarbonBlackModule.class, PrecursorDBSearchModule.class,
       SortSpectralDBIdentitiesModule.class, CustomDBSearchModule.class,
       FormulaPredictionModule.class, FragmentSearchModule.class, AdductSearchModule.class,
       ComplexSearchModule.class, OnlineDBSearchModule.class, LipidSearchModule.class,
