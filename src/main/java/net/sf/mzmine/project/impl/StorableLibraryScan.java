@@ -53,8 +53,10 @@ public class StorableLibraryScan extends StorableScan implements LibraryScan {
       return super.toString();
     String s = super.toString() + ", " + entry.getField(DBEntryField.NAME).orElse("") + ", "
         + entry.getField(DBEntryField.COMMENT).orElse("");
-    if (getMSLevel() > 1)
-      s += ", " + entry.getField(DBEntryField.ION_TYPE).orElse("");
+    if (getMSLevel() > 1) {
+      s += ", " + entry.getField(DBEntryField.ION_TYPE).orElse("") + " ("
+          + entry.getField(DBEntryField.COLLISION_ENERGY).orElse("") + ")";
+    }
     return s;
   }
 }
