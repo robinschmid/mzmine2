@@ -163,7 +163,7 @@ public class SelectedRowsLocalSpectralDBSearchTask extends AbstractTask {
       throws UnsupportedFormatException, IOException {
     //
     List<RowsSpectralMatchTask> tasks = new ArrayList<>();
-    AutoLibraryParser parser = new AutoLibraryParser(100, new LibraryEntryProcessor() {
+    AutoLibraryParser parser = new AutoLibraryParser(10, new LibraryEntryProcessor() {
       @Override
       public void processNextEntries(List<SpectralDBEntry> list, int alreadyProcessed) {
         // start last task

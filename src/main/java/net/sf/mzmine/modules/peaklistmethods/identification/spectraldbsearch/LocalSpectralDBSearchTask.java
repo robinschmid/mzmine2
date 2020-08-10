@@ -145,12 +145,12 @@ class LocalSpectralDBSearchTask extends AbstractTask {
       throws UnsupportedFormatException, IOException {
     //
     List<RowsSpectralMatchTask> tasks = new ArrayList<>();
-    AutoLibraryParser parser = new AutoLibraryParser(100, new LibraryEntryProcessor() {
+    AutoLibraryParser parser = new AutoLibraryParser(10, new LibraryEntryProcessor() {
       @Override
       public void processNextEntries(List<SpectralDBEntry> list, int alreadyProcessed) {
         // start last task
-        RowsSpectralMatchTask task =
-            new RowsSpectralMatchTask(peakList.getName(), rows, parameters, alreadyProcessed + 1, list);
+        RowsSpectralMatchTask task = new RowsSpectralMatchTask(peakList.getName(), rows, parameters,
+            alreadyProcessed + 1, list);
         MZmineCore.getTaskController().addTask(task);
         tasks.add(task);
       }
