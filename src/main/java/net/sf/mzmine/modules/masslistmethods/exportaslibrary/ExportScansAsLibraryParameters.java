@@ -47,7 +47,7 @@ public class ExportScansAsLibraryParameters extends SimpleParameterSet {
       "Add file name to description", "Adds the file name to the description (start)", true);
 
   public static final StringParameter description =
-      new StringParameter("Description", "Scan description written to the library", "");
+      new StringParameter("Description", "Scan description written to the library", "", false);
 
   public static final BooleanParameter bestScan = new BooleanParameter("Best single spectrum",
       "The best single spectrum in clustered spectra", true);
