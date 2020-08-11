@@ -20,6 +20,7 @@ package net.sf.mzmine.modules.peaklistmethods.identification.carbonblack;
 
 import java.text.DecimalFormat;
 import net.sf.mzmine.datamodel.PolarityType;
+import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
@@ -51,9 +52,13 @@ public class CarbonBlackParameters extends SimpleParameterSet {
 
   public static final DoubleParameter minCosine = new DoubleParameter("Minimum cos similarity",
       "Minimum cosine similarity. (Isotope pattern)", new DecimalFormat("0.000"), 0.7);
+  public static final DoubleParameter minHeight = new DoubleParameter(
+      "Minimum height (noise level)", "Minimum height (noise level for isotope pattern)",
+      MZmineCore.getConfiguration().getIntensityFormat(), 0d);
 
   public CarbonBlackParameters() {
-    super(new Parameter[] {peakLists, masses, mzTolerance, minConsecutive, polarity, minCosine});
+    super(new Parameter[] {peakLists, masses, mzTolerance, minConsecutive, polarity, minHeight,
+        minCosine});
   }
 
 }
