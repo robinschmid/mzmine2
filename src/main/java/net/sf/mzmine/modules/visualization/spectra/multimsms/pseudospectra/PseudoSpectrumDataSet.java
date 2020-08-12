@@ -22,6 +22,7 @@ import org.apache.commons.math3.exception.OutOfRangeException;
 import org.jfree.data.xy.XYDataItem;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
+import net.sf.mzmine.datamodel.identities.ms2.MSMSModificationIdentity;
 import net.sf.mzmine.datamodel.identities.ms2.interf.AbstractMSMSDataPointIdentity;
 import net.sf.mzmine.datamodel.identities.ms2.interf.AbstractMSMSIdentity;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
@@ -79,6 +80,29 @@ public class PseudoSpectrumDataSet extends XYSeriesCollection {
     if (ann instanceof AbstractMSMSDataPointIdentity)
       addDPIdentity(mzTolerance, (AbstractMSMSDataPointIdentity) ann);
     // TODO add diff identity
+    if (ann instanceof MSMSModificationIdentity)
+      addDiffIdentity(mzTolerance, (MSMSModificationIdentity) ann);
+  }
+
+  private void addDiffIdentity(MZTolerance mzTolerance, MSMSModificationIdentity ann) {
+    for (int s = 0; s < getSeriesCount(); s++) {
+      XYSeries series = getSeries(s);
+      for (int i = 0; i < series.getItemCount() - 1; i++) {
+        for (int k = i + 1; k < series.getItemCount(); k++) {
+          XYDataItem dp = series.getDataItem(i);
+          XYDataItem dp2 = series.getDataItem(k);
+
+          double mzdiff = Math.abs(dp2.getXValue() - dp.getXValue());
+
+          if (mzTolerance.checkWithinTolerance(mzdiff, ann.getAbsMass())) {
+            addAnnotation(dp, "-" + ann.getName());
+          }
+          // end loop early
+          else if (mzdiff - 2 > ann.getAbsMass())
+            break;
+        }
+      }
+    }
   }
 
   private void addDPIdentity(MZTolerance mzTolerance, AbstractMSMSDataPointIdentity ann) {
@@ -91,5 +115,11 @@ public class PseudoSpectrumDataSet extends XYSeriesCollection {
         }
       }
     }
+  }
+
+  public void clearAnnotations() {
+    if (annotation == null)
+      return;
+    annotation.clear();
   }
 }

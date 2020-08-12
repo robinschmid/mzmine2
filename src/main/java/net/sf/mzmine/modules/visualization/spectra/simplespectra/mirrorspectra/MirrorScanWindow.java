@@ -38,6 +38,7 @@ import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.visualization.spectra.multimsms.SpectrumChartFactory;
 import net.sf.mzmine.modules.visualization.spectra.multimsms.pseudospectra.PseudoSpectraRenderer;
 import net.sf.mzmine.modules.visualization.spectra.multimsms.pseudospectra.PseudoSpectrumDataSet;
+import net.sf.mzmine.modules.visualization.spectra.simplespectra.renderers.SpectraItemLabelGenerator;
 import net.sf.mzmine.util.ColorPalettes;
 import net.sf.mzmine.util.ColorPalettes.Vision;
 import net.sf.mzmine.util.spectraldb.entry.DBEntryField;
@@ -190,6 +191,9 @@ public class MirrorScanWindow extends JFrame {
     XYPlot queryPlot = (XYPlot) domainPlot.getSubplots().get(0);
     XYPlot libraryPlot = (XYPlot) domainPlot.getSubplots().get(1);
 
+
+    SpectraItemLabelGenerator labelGenerator = new SpectraItemLabelGenerator(mirrorSpecrumPlot);
+
     // add all datapoints to a dataset that are not present in subsequent masslist
     for (int i = 0; i < tags.length; i++) {
       DataPointsTag tag = tags[i];
@@ -217,6 +221,11 @@ public class MirrorScanWindow extends JFrame {
 
       libraryPlot.setDataset(i, ldata);
       libraryPlot.setRenderer(i, renderer2);
+
+      renderer.setDefaultItemLabelGenerator(labelGenerator);
+      renderer.setDefaultItemLabelsVisible(true);
+      renderer2.setDefaultItemLabelGenerator(labelGenerator);
+      renderer2.setDefaultItemLabelsVisible(true);
     }
 
     // add legend
@@ -234,6 +243,7 @@ public class MirrorScanWindow extends JFrame {
     // set y axis title
     queryPlot.getRangeAxis().setLabel("rel. intensity [%] (query)");
     libraryPlot.getRangeAxis().setLabel("rel. intensity [%] (library)");
+
     return mirrorSpecrumPlot;
   }
 

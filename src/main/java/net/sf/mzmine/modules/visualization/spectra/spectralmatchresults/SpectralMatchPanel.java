@@ -26,6 +26,8 @@ import java.awt.Font;
 import java.awt.GridLayout;
 import java.io.File;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.BorderFactory;
@@ -43,7 +45,9 @@ import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.plot.CombinedDomainXYPlot;
 import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYItemRenderer;
 import org.jfree.data.Range;
+import org.jfree.data.xy.XYDataset;
 import org.openscience.cdk.DefaultChemObjectBuilder;
 import org.openscience.cdk.exception.CDKException;
 import org.openscience.cdk.exception.InvalidSmilesException;
@@ -55,13 +59,21 @@ import net.miginfocom.swing.MigLayout;
 import net.sf.mzmine.chartbasics.gui.swing.EChartPanel;
 import net.sf.mzmine.chartbasics.gui.wrapper.ChartViewWrapper;
 import net.sf.mzmine.chartbasics.listener.AxisRangeChangedListener;
+import net.sf.mzmine.datamodel.PolarityType;
+import net.sf.mzmine.datamodel.identities.iontype.IonModification;
+import net.sf.mzmine.datamodel.identities.iontype.IonType;
+import net.sf.mzmine.datamodel.identities.ms2.MSMSIonIdentity;
+import net.sf.mzmine.datamodel.identities.ms2.MSMSModificationIdentity;
+import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
 import net.sf.mzmine.framework.CustomTextPane;
 import net.sf.mzmine.framework.ScrollablePanel;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.visualization.molstructure.Structure2DComponent;
+import net.sf.mzmine.modules.visualization.spectra.multimsms.pseudospectra.PseudoSpectrumDataSet;
 import net.sf.mzmine.modules.visualization.spectra.simplespectra.mirrorspectra.MirrorScanWindow;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.filenames.FileNameParameter;
+import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.util.ColorScaleUtil;
 import net.sf.mzmine.util.components.MultiLineLabel;
 import net.sf.mzmine.util.files.FileAndPathUtil;
@@ -112,7 +124,19 @@ public class SpectralMatchPanel extends JPanel {
   private Font chartFont;
   private JPanel pnExport;
 
+  private List<PseudoSpectrumDataSet> datasets;
+  private List<XYItemRenderer> renderer;
+
+  private MZTolerance lastMZTol;
+
+  private SpectralDBPeakIdentity entry;
+
+  private boolean lastShowAnn;
+
+  private boolean lastShowMods;
+
   public SpectralMatchPanel(SpectralDBPeakIdentity hit) {
+    entry = hit;
     JPanel panel = this;
     panel.setLayout(new BorderLayout());
 
@@ -231,9 +255,9 @@ public class SpectralMatchPanel extends JPanel {
       }
       preview2DPanel.add(newComponent, BorderLayout.CENTER);
       preview2DPanel.revalidate();
-
-      metaDataPanel.add(preview2DPanel);
     }
+    preview2DPanel.setBackground(Color.white);
+    metaDataPanel.add(preview2DPanel);
 
     // information on compound
     JPanel panelCompounds =
@@ -277,8 +301,9 @@ public class SpectralMatchPanel extends JPanel {
     // use no buffer for later pdf export
     mirrorChart = MirrorScanWindow.createSpectralMatchChart(hit);
     spectrumPanel.add(mirrorChart);
-
     coupleZoomYListener();
+    // identify
+    extractDatasets(mirrorChart);
 
     metaDataPanelScrollPane.setPreferredSize(new Dimension(META_WIDTH + 20, ENTRY_HEIGHT));
     panel.setPreferredSize(new Dimension(0, ENTRY_HEIGHT));
@@ -291,6 +316,25 @@ public class SpectralMatchPanel extends JPanel {
     metaDataPanelScrollPane.revalidate();
     scrollpn.revalidate();
     panel.revalidate();
+  }
+
+
+
+  private void extractDatasets(EChartPanel chart) {
+    datasets = new ArrayList<>();
+    renderer = new ArrayList<>();
+
+    CombinedDomainXYPlot plot = (CombinedDomainXYPlot) chart.getChart().getPlot();
+    for (int i = 0; i < plot.getSubplots().size(); i++) {
+      XYPlot p = (XYPlot) plot.getSubplots().get(i);
+      for (int d = 0; d < p.getDatasetCount(); d++) {
+        XYDataset data = p.getDataset(d);
+        renderer.add(p.getRenderer(d));
+        if (data instanceof PseudoSpectrumDataSet) {
+          datasets.add((PseudoSpectrumDataSet) data);
+        }
+      }
+    }
   }
 
 
@@ -535,6 +579,53 @@ public class SpectralMatchPanel extends JPanel {
     addExportButtons(param);
     pnExport.revalidate();
     pnExport.repaint();
+  }
+
+
+  public void showLabels(boolean showLabels) {
+    if (mirrorChart != null) {
+      renderer.stream().forEach(d -> {
+        d.setDefaultItemLabelsVisible(showLabels);
+      });
+    }
+  }
+
+  public void updateAnnotations(boolean showAnn, boolean showMods, MZTolerance mzTol,
+      ArrayList<IonType> ionAnnotations, ArrayList<IonModification> mods) {
+    if (lastMZTol == null || !lastMZTol.equals(mzTol) || lastShowAnn != showAnn
+        || lastShowMods != showMods) {
+      lastMZTol = mzTol;
+      lastShowMods = showMods;
+      lastShowAnn = showAnn;
+
+      double mass = (double) entry.getEntry().getField(DBEntryField.EXACT_MASS).orElse(-1d);
+
+
+      PolarityType polarity = entry.getEntry().getPolarity();
+
+      // update annotations
+      datasets.stream().forEach(d -> {
+        d.clearAnnotations();
+        if (showAnn) {
+          if (showMods) {
+            for (IonModification mod : mods) {
+              MSMSModificationIdentity m = new MSMSModificationIdentity(mzTol, mod);
+              d.addIdentity(mzTol, m);
+            }
+          }
+          if (mass > 0) {
+            for (IonType ion : ionAnnotations) {
+              if (!polarity.equals(PolarityType.UNKNOWN) && !ion.getPolarity().equals(polarity))
+                continue;
+
+              MSMSIonIdentity id =
+                  new MSMSIonIdentity(mzTol, new SimpleDataPoint(ion.getMZ(mass), 1), ion);
+              d.addIdentity(mzTol, id);
+            }
+          }
+        }
+      });
+    }
   }
 
 }

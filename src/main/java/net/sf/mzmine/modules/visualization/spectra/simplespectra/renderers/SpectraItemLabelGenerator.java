@@ -21,7 +21,9 @@ package net.sf.mzmine.modules.visualization.spectra.simplespectra.renderers;
 import java.text.NumberFormat;
 import org.jfree.chart.labels.XYItemLabelGenerator;
 import org.jfree.data.xy.XYDataset;
+import net.sf.mzmine.chartbasics.gui.swing.EChartPanel;
 import net.sf.mzmine.main.MZmineCore;
+import net.sf.mzmine.modules.visualization.spectra.multimsms.pseudospectra.PseudoSpectrumDataSet;
 import net.sf.mzmine.modules.visualization.spectra.simplespectra.SpectraPlot;
 import net.sf.mzmine.modules.visualization.spectra.simplespectra.datasets.ScanDataSet;
 
@@ -36,9 +38,13 @@ public class SpectraItemLabelGenerator implements XYItemLabelGenerator {
    */
   public static final int POINTS_RESERVE_X = 100;
 
-  protected SpectraPlot plot;
+  protected EChartPanel plot;
 
   protected NumberFormat mzFormat = MZmineCore.getConfiguration().getMZFormat();
+
+  public SpectraItemLabelGenerator(EChartPanel plot) {
+    this.plot = plot;
+  }
 
   public SpectraItemLabelGenerator(SpectraPlot plot) {
     this.plot = plot;
@@ -48,6 +54,7 @@ public class SpectraItemLabelGenerator implements XYItemLabelGenerator {
    * @see org.jfree.chart.labels.XYItemLabelGenerator#generateLabel(org.jfree.data.xy.XYDataset,
    *      int, int)
    */
+  @Override
   public String generateLabel(XYDataset dataset, int series, int item) {
 
     // X and Y values of current data point
@@ -55,7 +62,7 @@ public class SpectraItemLabelGenerator implements XYItemLabelGenerator {
     double originalY = dataset.getY(series, item).doubleValue();
 
     // Calculate data size of 1 screen pixel
-    double xLength = (double) plot.getXYPlot().getDomainAxis().getRange().getLength();
+    double xLength = plot.getChart().getXYPlot().getDomainAxis().getRange().getLength();
     double pixelX = xLength / plot.getWidth();
 
     // Size of data set
@@ -88,17 +95,19 @@ public class SpectraItemLabelGenerator implements XYItemLabelGenerator {
     }
 
     // Create label
-    String label = null;
+    double mzValue = dataset.getXValue(series, item);
+    String label = mzFormat.format(mzValue);
+    String ann = null;
     if (dataset instanceof ScanDataSet) {
-      label = ((ScanDataSet) dataset).getAnnotation(item);
+      ann = ((ScanDataSet) dataset).getAnnotation(item);
+    } else if (dataset instanceof PseudoSpectrumDataSet) {
+      ann = ((PseudoSpectrumDataSet) dataset).getAnnotation(series, item);
     }
-    if (label == null) {
-      double mzValue = dataset.getXValue(series, item);
-      label = mzFormat.format(mzValue);
+    if (ann != null) {
+      label += "\n" + ann;
     }
 
     return label;
-
   }
 
 }

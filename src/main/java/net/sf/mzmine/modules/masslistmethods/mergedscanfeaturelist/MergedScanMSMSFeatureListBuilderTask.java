@@ -31,10 +31,12 @@ import com.google.common.collect.Range;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Feature;
 import net.sf.mzmine.datamodel.Feature.FeatureStatus;
+import net.sf.mzmine.datamodel.LibraryScan;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.datamodel.MassList;
 import net.sf.mzmine.datamodel.MergedScan;
 import net.sf.mzmine.datamodel.PeakList;
+import net.sf.mzmine.datamodel.PeakListRow;
 import net.sf.mzmine.datamodel.RawDataFile;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimpleDataPoint;
@@ -46,6 +48,10 @@ import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
+import net.sf.mzmine.util.scans.similarity.HandleUnmatchedSignalOptions;
+import net.sf.mzmine.util.scans.similarity.SpectralSimilarity;
+import net.sf.mzmine.util.spectraldb.entry.SpectralDBEntry;
+import net.sf.mzmine.util.spectraldb.entry.SpectralDBPeakIdentity;
 
 public class MergedScanMSMSFeatureListBuilderTask extends AbstractTask {
 
@@ -269,12 +275,32 @@ public class MergedScanMSMSFeatureListBuilderTask extends AbstractTask {
       newPeakID++;
       newRow.addPeak(dataFile, f);
       newPeakList.addRow(newRow);
+
+      // add library match to itself if library spectrum
+      if (f.getRepresentativeScan() instanceof LibraryScan) {
+        SpectralDBEntry entry = ((LibraryScan) f.getRepresentativeScan()).getEntry();
+
+        DataPoint[] dps = f.getRepresentativeScan().getMassList(massListName).getDataPoints();
+        List<DataPoint[]> list = new ArrayList<>();
+        for (DataPoint d : dps)
+          list.add(new DataPoint[] {d, d});
+
+        SpectralDBPeakIdentity id = new SpectralDBPeakIdentity(f.getRepresentativeScan(),
+            massListName, entry, new SpectralSimilarity("", 1.00, dps.length, dps, dps, list,
+                HandleUnmatchedSignalOptions.KEEP_ALL_AND_MATCH_TO_ZERO),
+            "Library Spectrum");
+        addIdentity(newRow, id);
+      }
     } catch (Exception e) {
       logger.log(Level.WARNING, "Error while adding feature", e);
     }
   }
 
 
+  private void addIdentity(PeakListRow row, SpectralDBPeakIdentity id) {
+    // add new identity to the row
+    row.addPeakIdentity(id, false);
+  }
 
   /**
    * Add peaklist to project, delete old if requested, add description to result

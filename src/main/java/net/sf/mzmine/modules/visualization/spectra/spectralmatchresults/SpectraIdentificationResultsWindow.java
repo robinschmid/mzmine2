@@ -41,9 +41,12 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 import org.drjekyll.fontchooser.FontDialog;
+import net.sf.mzmine.datamodel.identities.iontype.IonModification;
+import net.sf.mzmine.datamodel.identities.iontype.IonType;
 import net.sf.mzmine.desktop.impl.WindowsMenu;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.ParameterSet;
+import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.util.ExitCode;
 import net.sf.mzmine.util.spectraldb.entry.SpectralDBPeakIdentity;
 
@@ -66,11 +69,24 @@ public class SpectraIdentificationResultsWindow extends JFrame {
   private JLabel noMatchesFound;
   private Font chartFont = new Font("Verdana", Font.PLAIN, 11);
 
+  private ArrayList<IonType> ionAnnotations;
+  private ArrayList<IonModification> modifications;
+
+  private MZTolerance mzTol;
+
+  private Boolean showLabels;
+
+  private Boolean showAnnot;
+
+  private Boolean showMods;
+
   public SpectraIdentificationResultsWindow() {
     setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
     setSize(new Dimension(1400, 900));
     getContentPane().setLayout(new BorderLayout());
     setTitle("Processing...");
+
+    initIonAnnotations();
 
     pnGrid = new JPanel();
     // any number of rows
@@ -112,6 +128,15 @@ public class SpectraIdentificationResultsWindow extends JFrame {
 
           sortTotalMatches();
         }
+
+        mzTol = param.getParameter(SpectraIdentificationResultsParameters.mzTol).getValue();
+        showAnnot =
+            param.getParameter(SpectraIdentificationResultsParameters.annotations).getValue();
+        showMods =
+            param.getParameter(SpectraIdentificationResultsParameters.modifications).getValue();
+        updateAnnotations(showAnnot, showMods, mzTol);
+        showLabels = param.getParameter(SpectraIdentificationResultsParameters.labels).getValue();
+        showLabels(showLabels);
       }
     });
     menuBar.add(btnSetup);
@@ -140,6 +165,15 @@ public class SpectraIdentificationResultsWindow extends JFrame {
         sortTotalMatches();
       });
       menuBar.add(btnToggleSorting);
+
+      // annotations and labels
+      mzTol = param.getParameter(SpectraIdentificationResultsParameters.mzTol).getValue();
+      showAnnot = param.getParameter(SpectraIdentificationResultsParameters.annotations).getValue();
+      showMods =
+          param.getParameter(SpectraIdentificationResultsParameters.modifications).getValue();
+      updateAnnotations(showAnnot, showMods, mzTol);
+      showLabels = param.getParameter(SpectraIdentificationResultsParameters.labels).getValue();
+      showLabels(showLabels);
     } catch (Exception ex) {
       logger.log(Level.WARNING, "Somehow no parameters were available for the lib match window");
     }
@@ -170,6 +204,20 @@ public class SpectraIdentificationResultsWindow extends JFrame {
     setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
     validate();
     repaint();
+  }
+
+  private void updateAnnotations(boolean showAnn, boolean showMods, MZTolerance mzTol) {
+    synchronized (matchPanels) {
+      matchPanels.values().stream().filter(Objects::nonNull).forEach(
+          pn -> pn.updateAnnotations(showAnn, showMods, mzTol, ionAnnotations, modifications));
+    }
+  }
+
+  private void showLabels(boolean showLabels) {
+    synchronized (matchPanels) {
+      matchPanels.values().stream().filter(Objects::nonNull)
+          .forEach(pn -> pn.showLabels(showLabels));
+    }
   }
 
   private void setChartFont() {
@@ -238,6 +286,7 @@ public class SpectraIdentificationResultsWindow extends JFrame {
     if (totalMatches.isEmpty()) {
       return;
     }
+    updateAnnotations(showAnnot, showMods, mzTol);
 
     // reversed sorting (highest cosine first
     synchronized (totalMatches) {
@@ -309,6 +358,29 @@ public class SpectraIdentificationResultsWindow extends JFrame {
       scrollPane.repaint();
       this.pnGrid = pnGrid;
     });
+  }
+
+  private void initIonAnnotations() {
+    ionAnnotations = new ArrayList<>();
+    modifications = new ArrayList<>();
+    for (int i = 1; i < 4; i++) {
+      ionAnnotations.add(new IonType(i, IonModification.M_PLUS, null));
+      ionAnnotations.add(new IonType(i, IonModification.H, null));
+      ionAnnotations.add(new IonType(i, IonModification.NA, null));
+      ionAnnotations.add(new IonType(i, IonModification.Hneg_NA2, null));
+      ionAnnotations.add(new IonType(i, IonModification.K, null));
+      ionAnnotations.add(new IonType(i, IonModification.H, IonModification.H2O));
+      ionAnnotations.add(new IonType(i, IonModification.H, IonModification.C2H4));
+      // neg
+      ionAnnotations.add(new IonType(i, IonModification.M_MINUS, null));
+      ionAnnotations.add(new IonType(i, IonModification.H_NEG, null));
+      ionAnnotations.add(new IonType(i, IonModification.H_NEG, IonModification.H2O));
+    }
+    modifications.add(IonModification.C2H4);
+    modifications.add(IonModification.C2H4O);
+    modifications.add(IonModification.CO);
+    modifications.add(IonModification.CO2);
+    modifications.add(IonModification.H2O);
   }
 
   public Font getChartFont() {

@@ -83,6 +83,10 @@ public class IonModification extends NeutralMolecule implements Comparable<IonMo
       new IonModification(IonModificationType.NEUTRAL_LOSS, "H2", "H2", -2.015650, 0);
   public static final IonModification C2H4 =
       new IonModification(IonModificationType.NEUTRAL_LOSS, "C2H4", "C2H4", -28.031301, 0);
+  public static final IonModification C =
+      new IonModification(IonModificationType.NEUTRAL_LOSS, "C", "C", -12, 0);
+  public static final IonModification C2H4O =
+      new IonModification(IonModificationType.NEUTRAL_LOSS, "C2H4O", "C2H4O", -44.02621475, 0);
   public static final IonModification H2O =
       new IonModification(IonModificationType.NEUTRAL_LOSS, "H2O", "H2O", -18.010565, 0);
   public static final IonModification H2O_2 =

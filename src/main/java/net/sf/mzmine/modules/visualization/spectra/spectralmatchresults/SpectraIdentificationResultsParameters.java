@@ -25,6 +25,7 @@ import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.filenames.FileNameParameter;
+import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
 
 /**
  * Saves the export paths of the SpectraIdentificationResultsWindow
@@ -57,8 +58,18 @@ public class SpectraIdentificationResultsParameters extends SimpleParameterSet {
       "Sort matches by", "Sort matches by score or explained library intensity",
       MatchSortMode.values(), MatchSortMode.MATCH_SCORE);
 
+
+  public static final BooleanParameter labels = new BooleanParameter("Show labels", "", true);
+  public static final BooleanParameter annotations =
+      new BooleanParameter("Show annotations", "Adds a few annotations to the data points", true);
+  public static final BooleanParameter modifications =
+      new BooleanParameter("Show modifications", "Adds neutral modification annotations", true);
+  public static final MZToleranceParameter mzTol =
+      new MZToleranceParameter("m/z tolerance", "Annotation m/z tolerance", 0.003, 10);
+
   public SpectraIdentificationResultsParameters() {
-    super(new Parameter[] {sorting, weightScore, file, all, pdf, emf, eps, svg});
+    super(new Parameter[] {sorting, weightScore, file, all, pdf, emf, eps, svg, mzTol, labels,
+        annotations, modifications});
   }
 
 }

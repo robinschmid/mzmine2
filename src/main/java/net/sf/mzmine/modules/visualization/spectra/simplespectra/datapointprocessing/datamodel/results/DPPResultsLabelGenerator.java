@@ -37,6 +37,7 @@ public class DPPResultsLabelGenerator extends SpectraItemLabelGenerator {
    * @see org.jfree.chart.labels.XYItemLabelGenerator#generateLabel(org.jfree.data.xy.XYDataset,
    *      int, int)
    */
+  @Override
   public String generateLabel(XYDataset dataset, int series, int item) {
 
     // X and Y values of current data point
@@ -44,7 +45,7 @@ public class DPPResultsLabelGenerator extends SpectraItemLabelGenerator {
     double originalY = dataset.getY(series, item).doubleValue();
 
     // Calculate data size of 1 screen pixel
-    double xLength = (double) plot.getXYPlot().getDomainAxis().getRange().getLength();
+    double xLength = plot.getChart().getXYPlot().getDomainAxis().getRange().getLength();
     double pixelX = xLength / plot.getWidth();
 
     // Size of data set
@@ -111,7 +112,7 @@ public class DPPResultsLabelGenerator extends SpectraItemLabelGenerator {
         }
       }
     }
-    
+
     label = mz + " ";
 
     if (!formulas.equals(""))
