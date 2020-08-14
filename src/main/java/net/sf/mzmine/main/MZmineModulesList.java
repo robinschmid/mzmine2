@@ -18,6 +18,7 @@
 
 package net.sf.mzmine.main;
 
+import net.sf.mzmine.modules.autobatch.AutoBatchModule;
 import net.sf.mzmine.modules.batchmode.BatchModeModule;
 import net.sf.mzmine.modules.masslistmethods.ADAPchromatogrambuilder.ADAPChromatogramBuilderModule;
 import net.sf.mzmine.modules.masslistmethods.chromatogrambuilder.ChromatogramBuilderModule;
@@ -157,7 +158,7 @@ public class MZmineModulesList {
 
       // Project methods
       ProjectLoadModule.class, ProjectSaveModule.class, ProjectSaveAsModule.class,
-      ProjectCloseModule.class,
+      ProjectCloseModule.class, AutoBatchModule.class,
 
       // Batch mode
       BatchModeModule.class,

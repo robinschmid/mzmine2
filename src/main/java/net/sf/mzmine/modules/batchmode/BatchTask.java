@@ -54,7 +54,7 @@ public class BatchTask extends AbstractTask {
   private final List<RawDataFile> createdDataFiles, previousCreatedDataFiles;
   private final List<PeakList> createdPeakLists, previousCreatedPeakLists;
 
-  BatchTask(MZmineProject project, ParameterSet parameters) {
+  public BatchTask(MZmineProject project, ParameterSet parameters) {
     this.project = project;
     this.queue = parameters.getParameter(BatchModeParameters.batchQueue).getValue();
     totalSteps = queue.size();

@@ -21,6 +21,7 @@ public class FileWatcher implements Runnable {
   protected final File folder;
   protected static final List<WatchService> watchServices = new ArrayList<>();
   protected long sleep = -1;
+  private boolean poll;
 
   public FileWatcher(File folder, long sleep) {
     this(folder);
@@ -51,7 +52,7 @@ public class FileWatcher implements Runnable {
       Path path = Paths.get(folder.getAbsolutePath());
       path.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
       watchServices.add(watchService);
-      boolean poll = true;
+      poll = true;
       while (poll) {
         poll = pollEvents(watchService);
         if (sleep > 0) {
@@ -124,5 +125,9 @@ public class FileWatcher implements Runnable {
 
   public long getSleep() {
     return sleep;
+  }
+
+  public void stop() {
+    poll = false;
   }
 }
