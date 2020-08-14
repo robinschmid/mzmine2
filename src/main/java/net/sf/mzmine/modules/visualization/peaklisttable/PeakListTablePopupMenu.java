@@ -581,10 +581,10 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
     }
     // show spectral db matches
     if (showSpectralDBResults.equals(src)) {
-      List<SpectralDBPeakIdentity> spectralID =
-          Arrays.stream(clickedPeakListRow.getPeakIdentities())
-              .filter(pi -> pi instanceof SpectralDBPeakIdentity)
-              .map(pi -> ((SpectralDBPeakIdentity) pi)).collect(Collectors.toList());
+      List<SpectralDBPeakIdentity> spectralID = Arrays.stream(allClickedPeakListRows)
+          .flatMap(row -> Arrays.stream(row.getPeakIdentities()))
+          .filter(pi -> pi instanceof SpectralDBPeakIdentity)
+          .map(pi -> ((SpectralDBPeakIdentity) pi)).collect(Collectors.toList());
       if (!spectralID.isEmpty()) {
         SpectraIdentificationResultsWindow window = new SpectraIdentificationResultsWindow();
         window.addMatches(spectralID);

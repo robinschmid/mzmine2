@@ -313,6 +313,7 @@ public class SpectraIdentificationResultsWindow extends JFrame {
         + e.getField(DBEntryField.COMMENT).orElse("NOC").toString()
         + e.getField(DBEntryField.MZ).orElse("NOMZ").toString()
         + e.getField(DBEntryField.ION_TYPE).orElse("NOION").toString() //
+        + e.getField(DBEntryField.COLLISION_ENERGY).orElse("NOCOLL").toString() //
     // + "_DP" + e.getDataPoints().length //
     ;
   }
