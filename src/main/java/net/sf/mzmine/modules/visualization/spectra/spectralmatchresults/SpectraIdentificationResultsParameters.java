@@ -67,9 +67,13 @@ public class SpectraIdentificationResultsParameters extends SimpleParameterSet {
   public static final MZToleranceParameter mzTol =
       new MZToleranceParameter("m/z tolerance", "Annotation m/z tolerance", 0.003, 10);
 
+  public static final BooleanParameter collapse = new BooleanParameter("Collapse duplicates",
+      "Collapse duplicate matches to the same spectral entry", true);
+
+
   public SpectraIdentificationResultsParameters() {
     super(new Parameter[] {sorting, weightScore, file, all, pdf, emf, eps, svg, mzTol, labels,
-        annotations, modifications});
+        annotations, modifications, collapse});
   }
 
 }

@@ -48,6 +48,9 @@ import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.util.ExitCode;
+import net.sf.mzmine.util.scans.similarity.SpectralSimilarity;
+import net.sf.mzmine.util.spectraldb.entry.DBEntryField;
+import net.sf.mzmine.util.spectraldb.entry.SpectralDBEntry;
 import net.sf.mzmine.util.spectraldb.entry.SpectralDBPeakIdentity;
 
 /**
@@ -62,6 +65,8 @@ public class SpectraIdentificationResultsWindow extends JFrame {
   private JPanel pnGrid;
   private JScrollPane scrollPane;
   private List<SpectralDBPeakIdentity> totalMatches;
+  private List<SpectralDBPeakIdentity> visibleMatches;
+  private List<SpectralDBPeakIdentity> collapsedMatches;
   private Map<SpectralDBPeakIdentity, SpectralMatchPanel> matchPanels;
   // couple y zoom (if one is changed - change the other in a mirror plot)
   private boolean isCouplingZoomY;
@@ -79,6 +84,8 @@ public class SpectraIdentificationResultsWindow extends JFrame {
   private Boolean showAnnot;
 
   private Boolean showMods;
+
+  private JCheckBoxMenuItem cbCollapse;
 
   public SpectraIdentificationResultsWindow() {
     setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -137,6 +144,10 @@ public class SpectraIdentificationResultsWindow extends JFrame {
         updateAnnotations(showAnnot, showMods, mzTol);
         showLabels = param.getParameter(SpectraIdentificationResultsParameters.labels).getValue();
         showLabels(showLabels);
+
+        boolean collapsed =
+            param.getParameter(SpectraIdentificationResultsParameters.collapse).getValue();
+        cbCollapse.setSelected(collapsed);
       }
     });
     menuBar.add(btnSetup);
@@ -178,6 +189,10 @@ public class SpectraIdentificationResultsWindow extends JFrame {
       logger.log(Level.WARNING, "Somehow no parameters were available for the lib match window");
     }
 
+    cbCollapse = new JCheckBoxMenuItem("Collapse duplicates");
+    cbCollapse.setSelected(true);
+    cbCollapse.addItemListener(e -> setCollapseDuplicates(cbCollapse.isSelected()));
+    menuBar.add(cbCollapse);
 
     JCheckBoxMenuItem cbCoupleZoomY = new JCheckBoxMenuItem("Couple y-zoom");
     cbCoupleZoomY.setSelected(true);
@@ -197,6 +212,7 @@ public class SpectraIdentificationResultsWindow extends JFrame {
     scrollPane.setViewportView(pnGrid);
 
     totalMatches = new ArrayList<>();
+    visibleMatches = totalMatches;
     matchPanels = new HashMap<>();
     setCoupleZoomY(true);
 
@@ -204,6 +220,101 @@ public class SpectraIdentificationResultsWindow extends JFrame {
     setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
     validate();
     repaint();
+  }
+
+  private void setCollapseDuplicates() {
+    ParameterSet param =
+        MZmineCore.getConfiguration().getModuleParameters(SpectraIdentificationResultsModule.class);
+    boolean collapsed =
+        param.getParameter(SpectraIdentificationResultsParameters.collapse).getValue();
+    setCollapseDuplicates(collapsed);
+  }
+
+  private void setCollapseDuplicates(boolean collapsed) {
+    ParameterSet param =
+        MZmineCore.getConfiguration().getModuleParameters(SpectraIdentificationResultsModule.class);
+    param.getParameter(SpectraIdentificationResultsParameters.collapse).setValue(collapsed);
+
+    int oldsize = visibleMatches.size();
+    // update collapsed
+    if (collapsed) {
+      if (collapsedMatches == null) {
+        updateCollapsedMatches();
+      }
+      visibleMatches = collapsedMatches;
+    } else {
+      visibleMatches = totalMatches;
+    }
+    if (oldsize != visibleMatches.size())
+      sortTotalMatches();
+  }
+
+  /**
+   * find best matches for each library entry
+   */
+  private void updateCollapsedMatches() {
+    ParameterSet param =
+        MZmineCore.getConfiguration().getModuleParameters(SpectraIdentificationResultsModule.class);
+    double factorScore =
+        param.getParameter(SpectraIdentificationResultsParameters.weightScore).getValue();
+
+    Map<String, SpectralDBPeakIdentity> best = new HashMap<>();
+    Map<String, SpectralDBPeakIdentity> explained = new HashMap<>();
+    Map<String, SpectralDBPeakIdentity> combined = new HashMap<>();
+    for (SpectralDBPeakIdentity match : totalMatches) {
+      String key = generateKey(match);
+      compareAndAdd(match, key, best, MatchCompareMode.BEST, factorScore);
+      compareAndAdd(match, key, explained, MatchCompareMode.EXPLAINED, factorScore);
+      compareAndAdd(match, key, combined, MatchCompareMode.COMBINED, factorScore);
+    }
+    collapsedMatches = new ArrayList<>();
+    for (SpectralDBPeakIdentity e : best.values()) {
+      collapsedMatches.add(e);
+    }
+    for (SpectralDBPeakIdentity e : explained.values()) {
+      if (!collapsedMatches.contains(e))
+        collapsedMatches.add(e);
+    }
+    for (SpectralDBPeakIdentity e : combined.values()) {
+      if (!collapsedMatches.contains(e))
+        collapsedMatches.add(e);
+    }
+    logger.info("Collapsed " + totalMatches.size() + " to " + collapsedMatches.size() + " matches");
+  }
+
+  private void compareAndAdd(SpectralDBPeakIdentity match, String key,
+      Map<String, SpectralDBPeakIdentity> map, MatchCompareMode compare, double factorScore) {
+    SpectralDBPeakIdentity other = map.get(key);
+    if (other == null) {
+      map.put(key, match);
+      return;
+    }
+    SpectralSimilarity sim = other.getSimilarity();
+    switch (compare) {
+      case BEST:
+        if (sim.getScore() < match.getSimilarity().getScore())
+          map.put(key, match);
+        break;
+      case COMBINED:
+        if (calcCombinedScore(other, factorScore) < calcCombinedScore(match, factorScore))
+          map.put(key, match);
+        break;
+      case EXPLAINED:
+        if (sim.getExplainedLibraryIntensityRatio() < match.getSimilarity()
+            .getExplainedLibraryIntensityRatio())
+          map.put(key, match);
+        break;
+    }
+  }
+
+  private String generateKey(SpectralDBPeakIdentity match) {
+    SpectralDBEntry e = match.getEntry();
+    return e.getField(DBEntryField.NAME).orElse("NONAME").toString()
+        + e.getField(DBEntryField.COMMENT).orElse("NOC").toString()
+        + e.getField(DBEntryField.MZ).orElse("NOMZ").toString()
+        + e.getField(DBEntryField.ION_TYPE).orElse("NOION").toString() //
+    // + "_DP" + e.getDataPoints().length //
+    ;
   }
 
   private void updateAnnotations(boolean showAnn, boolean showMods, MZTolerance mzTol) {
@@ -252,6 +363,9 @@ public class SpectraIdentificationResultsWindow extends JFrame {
       pn.setCoupleZoomY(isCouplingZoomY);
       matchPanels.put(match, pn);
 
+      collapsedMatches = null;
+      setCollapseDuplicates();
+
       // sort and show
       sortTotalMatches();
     }
@@ -274,6 +388,10 @@ public class SpectraIdentificationResultsWindow extends JFrame {
         matchPanels.put(match, pn);
       }
     }
+
+    collapsedMatches = null;
+    setCollapseDuplicates();
+
     // sort and show
     sortTotalMatches();
   }
@@ -290,28 +408,30 @@ public class SpectraIdentificationResultsWindow extends JFrame {
 
     // reversed sorting (highest cosine first
     synchronized (totalMatches) {
-      ParameterSet param = MZmineCore.getConfiguration()
-          .getModuleParameters(SpectraIdentificationResultsModule.class);
-      MatchSortMode sorting =
-          param.getParameter(SpectraIdentificationResultsParameters.sorting).getValue();
+      synchronized (visibleMatches) {
+        ParameterSet param = MZmineCore.getConfiguration()
+            .getModuleParameters(SpectraIdentificationResultsModule.class);
+        MatchSortMode sorting =
+            param.getParameter(SpectraIdentificationResultsParameters.sorting).getValue();
 
-      switch (sorting) {
-        case COMBINED:
-          double factorScore =
-              param.getParameter(SpectraIdentificationResultsParameters.weightScore).getValue();
-          totalMatches.sort((SpectralDBPeakIdentity a, SpectralDBPeakIdentity b) -> Double
-              .compare(calcCombinedScore(b, factorScore), calcCombinedScore(a, factorScore)));
-          break;
-        case EXPLAINED_LIBRARY_INTENSITY:
-          totalMatches.sort((SpectralDBPeakIdentity a, SpectralDBPeakIdentity b) -> Double.compare(
-              b.getSimilarity().getExplainedLibraryIntensityRatio(),
-              a.getSimilarity().getExplainedLibraryIntensityRatio()));
-          break;
-        case MATCH_SCORE:
-        default:
-          totalMatches.sort((SpectralDBPeakIdentity a, SpectralDBPeakIdentity b) -> Double
-              .compare(b.getSimilarity().getScore(), a.getSimilarity().getScore()));
-          break;
+        switch (sorting) {
+          case COMBINED:
+            double factorScore =
+                param.getParameter(SpectraIdentificationResultsParameters.weightScore).getValue();
+            visibleMatches.sort((SpectralDBPeakIdentity a, SpectralDBPeakIdentity b) -> Double
+                .compare(calcCombinedScore(b, factorScore), calcCombinedScore(a, factorScore)));
+            break;
+          case EXPLAINED_LIBRARY_INTENSITY:
+            visibleMatches.sort((SpectralDBPeakIdentity a, SpectralDBPeakIdentity b) -> Double
+                .compare(b.getSimilarity().getExplainedLibraryIntensityRatio(),
+                    a.getSimilarity().getExplainedLibraryIntensityRatio()));
+            break;
+          case MATCH_SCORE:
+          default:
+            visibleMatches.sort((SpectralDBPeakIdentity a, SpectralDBPeakIdentity b) -> Double
+                .compare(b.getSimilarity().getScore(), a.getSimilarity().getScore()));
+            break;
+        }
       }
     }
     // renew layout and show
@@ -344,10 +464,12 @@ public class SpectraIdentificationResultsWindow extends JFrame {
       pnGrid.setAutoscrolls(false);
       // add all panel in order
       synchronized (totalMatches) {
-        for (SpectralDBPeakIdentity match : totalMatches) {
-          JPanel pn = matchPanels.get(match);
-          if (pn != null)
-            pnGrid.add(pn);
+        synchronized (visibleMatches) {
+          for (SpectralDBPeakIdentity match : visibleMatches) {
+            JPanel pn = matchPanels.get(match);
+            if (pn != null)
+              pnGrid.add(pn);
+          }
         }
       }
       // show
