@@ -50,6 +50,7 @@ import net.sf.mzmine.taskcontrol.AbstractTask;
 import net.sf.mzmine.taskcontrol.TaskStatus;
 import net.sf.mzmine.util.scans.similarity.HandleUnmatchedSignalOptions;
 import net.sf.mzmine.util.scans.similarity.SpectralSimilarity;
+import net.sf.mzmine.util.spectraldb.entry.DBEntryField;
 import net.sf.mzmine.util.spectraldb.entry.SpectralDBEntry;
 import net.sf.mzmine.util.spectraldb.entry.SpectralDBPeakIdentity;
 
@@ -286,9 +287,11 @@ public class MergedScanMSMSFeatureListBuilderTask extends AbstractTask {
           list.add(new DataPoint[] {d, d});
 
         SpectralDBPeakIdentity id = new SpectralDBPeakIdentity(f.getRepresentativeScan(),
-            massListName, entry, new SpectralSimilarity("", 1.00, dps.length, dps, dps, list,
+            massListName, entry, new SpectralSimilarity("", 0, dps.length, dps, dps, list,
                 HandleUnmatchedSignalOptions.KEEP_ALL_AND_MATCH_TO_ZERO),
             "Library Spectrum");
+        newRow.setComment(entry.getField(DBEntryField.NAME).orElse("") + " "
+            + entry.getField(DBEntryField.COMMENT).orElse("") + " " + newRow.getComment());
         addIdentity(newRow, id);
       }
     } catch (Exception e) {

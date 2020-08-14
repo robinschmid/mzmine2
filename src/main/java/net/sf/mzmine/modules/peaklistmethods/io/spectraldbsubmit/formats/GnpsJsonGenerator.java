@@ -117,12 +117,15 @@ public class GnpsJsonGenerator {
   }
 
 
-  public static String generateJSON(Scan scan, String comment, DataPoint[] dps) {
+  public static String generateJSON(Scan scan, String comment, String name, DataPoint[] dps) {
     JsonObjectBuilder json = Json.createObjectBuilder();
     // tag spectrum from mzmine2
     json.add(DBEntryField.SOFTWARE.getGnpsJsonID(), "mzmine2");
 
-    json.add(DBEntryField.COMMENT.getGnpsJsonID(), comment);
+    if (name != null && !name.isEmpty())
+      json.add(DBEntryField.COMMENT.getGnpsJsonID(), name);
+    if (comment != null && !comment.isEmpty())
+      json.add(DBEntryField.COMMENT.getGnpsJsonID(), comment);
     if (scan.getPolarity().equals(PolarityType.POSITIVE))
       json.add(DBEntryField.ION_MODE.getGnpsJsonID(), "Positive");
     if (scan.getPolarity().equals(PolarityType.NEGATIVE))

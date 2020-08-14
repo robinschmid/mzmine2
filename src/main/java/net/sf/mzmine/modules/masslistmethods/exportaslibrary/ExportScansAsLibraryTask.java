@@ -160,7 +160,7 @@ public class ExportScansAsLibraryTask extends AbstractTask {
       comment = raw.getName();
     if (description.length() > 0)
       comment = comment.isEmpty() ? description : comment + " " + description;
-    String json = GnpsJsonGenerator.generateJSON(scan, comment, masses.getDataPoints());
+    String json = GnpsJsonGenerator.generateJSON(scan, comment, comment, masses.getDataPoints());
     // export json
     writer.append(json + "\n");
   }
