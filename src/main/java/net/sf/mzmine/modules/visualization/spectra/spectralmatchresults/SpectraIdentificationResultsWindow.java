@@ -122,6 +122,8 @@ public class SpectraIdentificationResultsWindow extends JFrame {
           param.getParameter(SpectraIdentificationResultsParameters.sorting).getValue();
       double oldWeight =
           param.getParameter(SpectraIdentificationResultsParameters.weightScore).getValue();
+
+
       if (param.showSetupDialog(this, true) == ExitCode.OK) {
         showExportButtonsChanged();
 
@@ -145,9 +147,13 @@ public class SpectraIdentificationResultsWindow extends JFrame {
         showLabels = param.getParameter(SpectraIdentificationResultsParameters.labels).getValue();
         showLabels(showLabels);
 
+        collapsedMatches = null;
         boolean collapsed =
             param.getParameter(SpectraIdentificationResultsParameters.collapse).getValue();
-        cbCollapse.setSelected(collapsed);
+        if (cbCollapse.isSelected() != collapsed)
+          cbCollapse.setSelected(collapsed);
+        else
+          setCollapseDuplicates(collapsed);
       }
     });
     menuBar.add(btnSetup);
@@ -257,12 +263,17 @@ public class SpectraIdentificationResultsWindow extends JFrame {
         MZmineCore.getConfiguration().getModuleParameters(SpectraIdentificationResultsModule.class);
     double factorScore =
         param.getParameter(SpectraIdentificationResultsParameters.weightScore).getValue();
+    DBEntryField[] compareFields =
+        param.getParameter(SpectraIdentificationResultsParameters.collapse).getEmbeddedParameters()
+            .getParameter(SpectralMatchCompareParameters.fields).getValue();
+    boolean compareDataPoints = param.getParameter(SpectraIdentificationResultsParameters.collapse)
+        .getEmbeddedParameters().getParameter(SpectralMatchCompareParameters.dataPoints).getValue();
 
     Map<String, SpectralDBPeakIdentity> best = new HashMap<>();
     Map<String, SpectralDBPeakIdentity> explained = new HashMap<>();
     Map<String, SpectralDBPeakIdentity> combined = new HashMap<>();
     for (SpectralDBPeakIdentity match : totalMatches) {
-      String key = generateKey(match);
+      String key = generateKey(match, compareFields, compareDataPoints);
       compareAndAdd(match, key, best, MatchCompareMode.BEST, factorScore);
       compareAndAdd(match, key, explained, MatchCompareMode.EXPLAINED, factorScore);
       compareAndAdd(match, key, combined, MatchCompareMode.COMBINED, factorScore);
@@ -307,15 +318,27 @@ public class SpectraIdentificationResultsWindow extends JFrame {
     }
   }
 
-  private String generateKey(SpectralDBPeakIdentity match) {
+  /**
+   * Generate key to compare library entries
+   * 
+   * @param match
+   * @param compareFields
+   * @param compareDataPoints
+   * @return
+   */
+  private String generateKey(SpectralDBPeakIdentity match, DBEntryField[] compareFields,
+      boolean compareDataPoints) {
     SpectralDBEntry e = match.getEntry();
-    return e.getField(DBEntryField.NAME).orElse("NONAME").toString()
-        + e.getField(DBEntryField.COMMENT).orElse("NOC").toString()
-        + e.getField(DBEntryField.MZ).orElse("NOMZ").toString()
-        + e.getField(DBEntryField.ION_TYPE).orElse("NOION").toString() //
-        + e.getField(DBEntryField.COLLISION_ENERGY).orElse("NOCOLL").toString() //
-    // + "_DP" + e.getDataPoints().length //
-    ;
+    StringBuilder key = new StringBuilder();
+    for (DBEntryField f : compareFields) {
+      key.append(e.getField(f).orElse("NO").toString());
+    }
+    if (compareDataPoints) {
+      key.append("_DP");
+      key.append(e.getDataPoints().length);
+    }
+
+    return key.toString();
   }
 
   private void updateAnnotations(boolean showAnn, boolean showMods, MZTolerance mzTol) {
@@ -460,7 +483,11 @@ public class SpectraIdentificationResultsWindow extends JFrame {
   public void renewLayout() {
     SwingUtilities.invokeLater(() -> {
       // any number of rows
-      JPanel pnGrid = new JPanel(new GridLayout(0, 1, 0, 5));
+      ParameterSet param = MZmineCore.getConfiguration()
+          .getModuleParameters(SpectraIdentificationResultsModule.class);
+      int columns = param.getParameter(SpectraIdentificationResultsParameters.columns).getValue();
+
+      JPanel pnGrid = new JPanel(new GridLayout(0, columns, 0, 5));
       pnGrid.setBackground(Color.WHITE);
       pnGrid.setAutoscrolls(false);
       // add all panel in order

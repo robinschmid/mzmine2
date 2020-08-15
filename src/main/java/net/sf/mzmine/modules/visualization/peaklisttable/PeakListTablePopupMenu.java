@@ -586,10 +586,12 @@ public class PeakListTablePopupMenu extends JPopupMenu implements ActionListener
           .filter(pi -> pi instanceof SpectralDBPeakIdentity)
           .map(pi -> ((SpectralDBPeakIdentity) pi)).collect(Collectors.toList());
       if (!spectralID.isEmpty()) {
+        String rows = Arrays.stream(allClickedPeakListRows).map(row -> String.valueOf(row.getID()))
+            .collect(Collectors.joining(", "));
         SpectraIdentificationResultsWindow window = new SpectraIdentificationResultsWindow();
         window.addMatches(spectralID);
-        window.setTitle("Matched " + spectralID.size() + " compounds for feature list row"
-            + clickedPeakListRow.getID());
+        window
+            .setTitle("Matched " + spectralID.size() + " compounds for feature list rows: " + rows);
         window.setVisible(true);
       }
     }

@@ -24,7 +24,9 @@ import net.sf.mzmine.parameters.impl.SimpleParameterSet;
 import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
+import net.sf.mzmine.parameters.parametertypes.IntegerParameter;
 import net.sf.mzmine.parameters.parametertypes.filenames.FileNameParameter;
+import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
 
 /**
@@ -49,6 +51,9 @@ public class SpectraIdentificationResultsParameters extends SimpleParameterSet {
   public static final BooleanParameter svg =
       new BooleanParameter("Show export svg", "Show button in panel", true);
 
+  public static final IntegerParameter columns =
+      new IntegerParameter("Columns", "Layout columns", 1, 1, 1000);
+
 
   public static final DoubleParameter weightScore = new DoubleParameter("Weight for combined score",
       "Weight is applied to match score to calculate combined score: (WEIGHT*score + explainedIntensity)/2",
@@ -67,13 +72,15 @@ public class SpectraIdentificationResultsParameters extends SimpleParameterSet {
   public static final MZToleranceParameter mzTol =
       new MZToleranceParameter("m/z tolerance", "Annotation m/z tolerance", 0.003, 10);
 
-  public static final BooleanParameter collapse = new BooleanParameter("Collapse duplicates",
-      "Collapse duplicate matches to the same spectral entry", true);
+  public static final OptionalModuleParameter<SpectralMatchCompareParameters> collapse =
+      new OptionalModuleParameter<>("Collapse duplicates",
+          "Collapse duplicate matches to the same spectral entry",
+          new SpectralMatchCompareParameters(), true);
 
 
   public SpectraIdentificationResultsParameters() {
-    super(new Parameter[] {sorting, weightScore, file, all, pdf, emf, eps, svg, mzTol, labels,
-        annotations, modifications, collapse});
+    super(new Parameter[] {sorting, weightScore, columns, file, all, pdf, emf, eps, svg, mzTol,
+        labels, annotations, modifications, collapse});
   }
 
 }
