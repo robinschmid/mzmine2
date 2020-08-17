@@ -20,13 +20,10 @@ package net.sf.mzmine.parameters.parametertypes.filenames;
 
 import java.io.File;
 import java.util.Collection;
-
 import javax.swing.filechooser.FileFilter;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
-
 import net.sf.mzmine.parameters.UserParameter;
 
 /**
@@ -38,11 +35,25 @@ public class FileNamesParameter implements UserParameter<File[], FileNamesCompon
   private String name, description;
   private File value[];
   private FileFilter[] filters;
+  private boolean folder = false;
+
+  public FileNamesParameter(String name, String description, boolean folder) {
+    this.name = name;
+    this.description = description;
+    this.folder = folder;
+    this.filters = null;
+  }
 
   public FileNamesParameter(String name, String description, FileFilter[] filters) {
+    this(name, description, filters, false);
+  }
+
+  private FileNamesParameter(String name, String description, FileFilter[] filters,
+      boolean folder) {
     this.name = name;
     this.description = description;
     this.filters = filters;
+    this.folder = folder;
   }
 
   /**
@@ -63,7 +74,7 @@ public class FileNamesParameter implements UserParameter<File[], FileNamesCompon
 
   @Override
   public FileNamesComponent createEditingComponent() {
-    return new FileNamesComponent(filters);
+    return new FileNamesComponent(filters, folder);
   }
 
   @Override
@@ -78,7 +89,7 @@ public class FileNamesParameter implements UserParameter<File[], FileNamesCompon
 
   @Override
   public FileNamesParameter cloneParameter() {
-    FileNamesParameter copy = new FileNamesParameter(name, description, filters);
+    FileNamesParameter copy = new FileNamesParameter(name, description, filters, folder);
     copy.setValue(this.getValue());
     return copy;
   }

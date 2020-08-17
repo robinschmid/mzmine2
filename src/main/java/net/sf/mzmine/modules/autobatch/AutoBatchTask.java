@@ -60,11 +60,14 @@ public class AutoBatchTask extends AbstractTask implements TaskStatusListener {
   private final File batchFile;
   private final File listFile;
   private File doneFile;
+  private File errorFile;
   private FileWatcher watcher;
+  private FileWatcher[] watcherNewFiles;
 
   //
   private List<String> todo = Collections.synchronizedList(new ArrayList<>());
   private List<String> done = Collections.synchronizedList(new ArrayList<>());
+  private List<String> error = Collections.synchronizedList(new ArrayList<>());
   private String currentFile;
 
   private BatchQueue queue;
@@ -72,11 +75,19 @@ public class AutoBatchTask extends AbstractTask implements TaskStatusListener {
 
   private BatchTask batchTask;
 
+
+  private boolean autoAddFiles;
+  private File[] listenToFolders;
+
   AutoBatchTask(MZmineProject project, ParameterSet parameters) {
     this.project = project;
     this.listFile = parameters.getParameter(AutoBatchParameters.FILENAME).getValue();
     this.batchFile = parameters.getParameter(AutoBatchParameters.BATCH).getValue();
+    this.autoAddFiles = parameters.getParameter(AutoBatchParameters.listenToFolder).getValue();
+    this.listenToFolders = parameters.getParameter(AutoBatchParameters.listenToFolder)
+        .getEmbeddedParameter().getValue();
     doneFile = FileAndPathUtil.getRealFilePath(listFile, "_done.txt");
+    errorFile = FileAndPathUtil.getRealFilePath(listFile, "_error.txt");
   }
 
   @Override
@@ -101,6 +112,7 @@ public class AutoBatchTask extends AbstractTask implements TaskStatusListener {
 
     // read done list if available
     readDoneFilesList();
+    readErrorFilesList();
     // read list
     if (!readFilesList() || !readBatchFile()) {
       setStatus(TaskStatus.ERROR);
@@ -110,6 +122,7 @@ public class AutoBatchTask extends AbstractTask implements TaskStatusListener {
 
     // listen for changes to the file
     addFileListener();
+    addFolderListener();
 
     // loop
     while (getStatus().equals(TaskStatus.PROCESSING)) {
@@ -117,20 +130,31 @@ public class AutoBatchTask extends AbstractTask implements TaskStatusListener {
         // start new
         if (todo.size() > 0) {
           currentFile = todo.get(0);
-
-          // set file to raw data parameters or clustered import
-          if (!setImportFile(new File(currentFile))) {
-            setStatus(TaskStatus.ERROR);
-            setErrorMessage(
-                "Batch file does not start with raw data import or clustered raw data import");
-            close();
-            return;
+          File file = null;
+          try {
+            file = new File(currentFile);
+            if (file.exists()) {
+              // set file to raw data parameters or clustered import
+              if (!setImportFile(file)) {
+                setStatus(TaskStatus.ERROR);
+                setErrorMessage(
+                    "Batch file does not start with raw data import or clustered raw data import");
+                close();
+                return;
+              }
+              BatchModeParameters param = new BatchModeParameters();
+              param.getParameter(BatchModeParameters.batchQueue).setValue(queue);
+              batchTask = new BatchTask(project, param);
+              MZmineCore.getTaskController().addTask(batchTask);
+              batchTask.addTaskStatusListener(this);
+            } else {
+              // file does not exist
+              errorFile(currentFile, BatchResult.FILE_NOT_FOUND);
+              todo.remove(currentFile);
+              currentFile = null;
+            }
+          } catch (Exception e) {
           }
-          BatchModeParameters param = new BatchModeParameters();
-          param.getParameter(BatchModeParameters.batchQueue).setValue(queue);
-          batchTask = new BatchTask(project, param);
-          MZmineCore.getTaskController().addTask(batchTask);
-          batchTask.addTaskStatusListener(this);
         }
       }
 
@@ -139,6 +163,11 @@ public class AutoBatchTask extends AbstractTask implements TaskStatusListener {
         synchronized (todo) {
           if (TaskStatus.FINISHED.equals(batchTask.getStatus())) {
             finishedFile(currentFile);
+          } else {
+            if (TaskStatus.CANCELED.equals(batchTask.getStatus()))
+              errorFile(currentFile, BatchResult.CANCELED);
+            if (TaskStatus.ERROR.equals(batchTask.getStatus()))
+              errorFile(currentFile, BatchResult.ERROR);
           }
           todo.remove(currentFile);
           currentFile = null;
@@ -166,7 +195,7 @@ public class AutoBatchTask extends AbstractTask implements TaskStatusListener {
       BufferedWriter writer = null;
       try {
         // Success
-        logger.info("Write done files to " + doneFile);
+        logger.info("Write done files to " + doneFile.getAbsolutePath());
 
         try {
           if (!doneFile.getParentFile().exists())
@@ -192,9 +221,47 @@ public class AutoBatchTask extends AbstractTask implements TaskStatusListener {
     }
   }
 
+  private void errorFile(String f, BatchResult res) {
+    synchronized (error) {
+      error.add(f);
+
+
+      BufferedWriter writer = null;
+      try {
+        // Success
+        logger.info("Write error files to " + errorFile.getAbsolutePath());
+
+        try {
+          if (!doneFile.getParentFile().exists())
+            doneFile.getParentFile().mkdirs();
+        } catch (Exception e) {
+          logger.log(Level.SEVERE, "Cannot create folder " + errorFile.getParent(), e);
+        }
+        writer = new BufferedWriter(new FileWriter(errorFile, true));
+        writer.append(f + ";" + res.toString() + "\n");
+
+      } catch (Throwable t) {
+        logger.log(Level.SEVERE, "error during export to error file", t);
+        setStatus(TaskStatus.ERROR);
+        setErrorMessage(t.getMessage());
+      } finally {
+        if (writer != null)
+          try {
+            writer.close();
+          } catch (IOException e) {
+            logger.log(Level.SEVERE, "Closing error", e);
+          }
+      }
+    }
+  }
+
   private void close() {
     if (watcher != null)
       watcher.stop();
+
+    if (watcherNewFiles != null)
+      for (FileWatcher w : watcherNewFiles)
+        w.stop();
   }
 
   private boolean setImportFile(File raw) {
@@ -237,6 +304,65 @@ public class AutoBatchTask extends AbstractTask implements TaskStatusListener {
     watcher.watch();
   }
 
+  /**
+   * Listen to new raw data files
+   */
+  private void addFolderListener() {
+    if (!autoAddFiles)
+      return;
+
+    watcherNewFiles = new FileWatcher[listenToFolders.length];
+
+    for (int i = 0; i < listenToFolders.length; i++) {
+      watcherNewFiles[i] = new FileWatcher(listenToFolders[i], 5000);
+      watcherNewFiles[i].addListener(new FileAdapter() {
+        @Override
+        public void onModified(FileEvent event) {
+          String path = event.getFile().getAbsolutePath();
+          String s = path.toLowerCase();
+          if (s.endsWith("imzml") || s.endsWith("mzml") || s.endsWith("mzxml")) {
+            appendFileTodo(path);
+          }
+        }
+      });
+      watcherNewFiles[i].watch();
+    }
+  }
+
+  /**
+   * Append new file to list files
+   * 
+   * @param f
+   */
+  protected void appendFileTodo(String f) {
+    BufferedWriter writer = null;
+    try {
+      // Success
+      logger.info("Add new file " + f + "\nto list " + listFile.getAbsolutePath());
+
+      try {
+        if (!listFile.getParentFile().exists())
+          listFile.getParentFile().mkdirs();
+      } catch (Exception e) {
+        logger.log(Level.SEVERE, "Cannot create folder " + listFile.getParent(), e);
+      }
+      writer = new BufferedWriter(new FileWriter(listFile, true));
+      writer.append(f + "\n");
+
+    } catch (Throwable t) {
+      logger.log(Level.SEVERE, "done export error", t);
+      setStatus(TaskStatus.ERROR);
+      setErrorMessage(t.getMessage());
+    } finally {
+      if (writer != null)
+        try {
+          writer.close();
+        } catch (IOException e) {
+          logger.log(Level.SEVERE, "Closing error", e);
+        }
+    }
+  }
+
   protected synchronized boolean readFilesList() {
     try {
       logger.info("Reading list of files");
@@ -249,6 +375,7 @@ public class AutoBatchTask extends AbstractTask implements TaskStatusListener {
         File f = new File(s);
         if (!f.exists()) {
           logger.log(Level.WARNING, "File not found (excluding it): " + s);
+          errorFile(s, BatchResult.FILE_NOT_FOUND);
         } else if (!done.contains(s) && !todo.contains(s)) {
           todo.add(s);
         }
@@ -279,6 +406,29 @@ public class AutoBatchTask extends AbstractTask implements TaskStatusListener {
       return true;
     } catch (IOException e) {
       logger.log(Level.WARNING, "Cannot read file (UTF8) " + doneFile.getAbsolutePath(), e);
+      return false;
+    }
+  }
+
+  protected synchronized boolean readErrorFilesList() {
+    try {
+      List<String> lines = Files.readLines(errorFile, StandardCharsets.UTF_8);
+
+      for (String s : lines) {
+        if (s.isEmpty())
+          continue;
+
+        File f = new File(s);
+        if (!f.exists()) {
+          logger.log(Level.WARNING, "File not found (excluding it): " + s);
+          errorFile(s, BatchResult.FILE_NOT_FOUND);
+        } else if (!done.contains(s)) {
+          error.add(s);
+        }
+      }
+      return true;
+    } catch (IOException e) {
+      logger.log(Level.WARNING, "Cannot read file (UTF8) " + errorFile.getAbsolutePath(), e);
       return false;
     }
   }

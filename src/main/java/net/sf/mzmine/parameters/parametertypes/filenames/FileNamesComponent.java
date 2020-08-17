@@ -24,7 +24,6 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -41,11 +40,11 @@ public class FileNamesComponent extends JPanel implements ActionListener {
   private JTextArea txtFilename;
 
   private FileFilter[] filters;
+  private boolean folder;
 
-  public FileNamesComponent(FileFilter[] filters) {
-
+  public FileNamesComponent(FileFilter[] filters, boolean folder) {
     this.filters = filters;
-
+    this.folder = folder;
     setBorder(BorderFactory.createEmptyBorder(0, 3, 0, 0));
 
     txtFilename = new JTextArea();
@@ -57,7 +56,6 @@ public class FileNamesComponent extends JPanel implements ActionListener {
     JButton btnFileBrowser = new JButton("...");
     btnFileBrowser.addActionListener(this);
     add(btnFileBrowser);
-
   }
 
   public File[] getValue() {
@@ -82,10 +80,14 @@ public class FileNamesComponent extends JPanel implements ActionListener {
     txtFilename.setText(b.toString());
   }
 
+  @Override
   public void actionPerformed(ActionEvent e) {
 
     JFileChooser fileChooser = new JFileChooser();
     fileChooser.setMultiSelectionEnabled(true);
+    if (folder)
+      fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+
     if ((filters != null) && (filters.length > 0)) {
       for (FileFilter f : filters)
         fileChooser.addChoosableFileFilter(f);

@@ -18,7 +18,6 @@
 
 package net.sf.mzmine.parameters.dialogs;
 
-import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.Dialog;
@@ -39,7 +38,6 @@ import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.HyperlinkEvent;
@@ -270,6 +268,7 @@ public class ParameterSetupDialog extends JDialog implements ActionListener, Doc
   /**
    * Implementation for ActionListener interface
    */
+  @Override
   public void actionPerformed(ActionEvent ae) {
 
     Object src = ae.getSource();

@@ -7,11 +7,15 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -50,7 +54,16 @@ public class FileWatcher implements Runnable {
   public void run() {
     try (WatchService watchService = FileSystems.getDefault().newWatchService()) {
       Path path = Paths.get(folder.getAbsolutePath());
-      path.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
+      Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+        @Override
+        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+            throws IOException {
+          dir.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
+          return FileVisitResult.CONTINUE;
+        }
+      });
+
+      // path.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
       watchServices.add(watchService);
       poll = true;
       while (poll) {
