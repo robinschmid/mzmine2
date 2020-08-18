@@ -172,7 +172,7 @@ public class AutoBatchTask extends AbstractTask implements TaskStatusListener {
           todo.remove(currentFile);
           currentFile = null;
           // remove file
-          project.removeFile(project.getDataFiles()[0]);
+          project.clearAll();
           batchTask = null;
         }
       }
