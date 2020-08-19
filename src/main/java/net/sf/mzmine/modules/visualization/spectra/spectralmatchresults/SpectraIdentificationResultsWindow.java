@@ -48,9 +48,7 @@ import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.parameters.parametertypes.tolerances.MZTolerance;
 import net.sf.mzmine.util.ExitCode;
-import net.sf.mzmine.util.scans.similarity.SpectralSimilarity;
 import net.sf.mzmine.util.spectraldb.entry.DBEntryField;
-import net.sf.mzmine.util.spectraldb.entry.SpectralDBEntry;
 import net.sf.mzmine.util.spectraldb.entry.SpectralDBPeakIdentity;
 
 /**
@@ -269,76 +267,8 @@ public class SpectraIdentificationResultsWindow extends JFrame {
     boolean compareDataPoints = param.getParameter(SpectraIdentificationResultsParameters.collapse)
         .getEmbeddedParameters().getParameter(SpectralMatchCompareParameters.dataPoints).getValue();
 
-    Map<String, SpectralDBPeakIdentity> best = new HashMap<>();
-    Map<String, SpectralDBPeakIdentity> explained = new HashMap<>();
-    Map<String, SpectralDBPeakIdentity> combined = new HashMap<>();
-    for (SpectralDBPeakIdentity match : totalMatches) {
-      String key = generateKey(match, compareFields, compareDataPoints);
-      compareAndAdd(match, key, best, MatchCompareMode.BEST, factorScore);
-      compareAndAdd(match, key, explained, MatchCompareMode.EXPLAINED, factorScore);
-      compareAndAdd(match, key, combined, MatchCompareMode.COMBINED, factorScore);
-    }
-    collapsedMatches = new ArrayList<>();
-    for (SpectralDBPeakIdentity e : best.values()) {
-      collapsedMatches.add(e);
-    }
-    for (SpectralDBPeakIdentity e : explained.values()) {
-      if (!collapsedMatches.contains(e))
-        collapsedMatches.add(e);
-    }
-    for (SpectralDBPeakIdentity e : combined.values()) {
-      if (!collapsedMatches.contains(e))
-        collapsedMatches.add(e);
-    }
-    logger.info("Collapsed " + totalMatches.size() + " to " + collapsedMatches.size() + " matches");
-  }
-
-  private void compareAndAdd(SpectralDBPeakIdentity match, String key,
-      Map<String, SpectralDBPeakIdentity> map, MatchCompareMode compare, double factorScore) {
-    SpectralDBPeakIdentity other = map.get(key);
-    if (other == null) {
-      map.put(key, match);
-      return;
-    }
-    SpectralSimilarity sim = other.getSimilarity();
-    switch (compare) {
-      case BEST:
-        if (sim.getScore() < match.getSimilarity().getScore())
-          map.put(key, match);
-        break;
-      case COMBINED:
-        if (calcCombinedScore(other, factorScore) < calcCombinedScore(match, factorScore))
-          map.put(key, match);
-        break;
-      case EXPLAINED:
-        if (sim.getExplainedLibraryIntensityRatio() < match.getSimilarity()
-            .getExplainedLibraryIntensityRatio())
-          map.put(key, match);
-        break;
-    }
-  }
-
-  /**
-   * Generate key to compare library entries
-   * 
-   * @param match
-   * @param compareFields
-   * @param compareDataPoints
-   * @return
-   */
-  private String generateKey(SpectralDBPeakIdentity match, DBEntryField[] compareFields,
-      boolean compareDataPoints) {
-    SpectralDBEntry e = match.getEntry();
-    StringBuilder key = new StringBuilder();
-    for (DBEntryField f : compareFields) {
-      key.append(e.getField(f).orElse("NO").toString());
-    }
-    if (compareDataPoints) {
-      key.append("_DP");
-      key.append(e.getDataPoints().length);
-    }
-
-    return key.toString();
+    collapsedMatches = SpectralMatchUtils.collapseList(totalMatches, compareFields,
+        compareDataPoints, factorScore);
   }
 
   private void updateAnnotations(boolean showAnn, boolean showMods, MZTolerance mzTol) {
@@ -437,35 +367,16 @@ public class SpectraIdentificationResultsWindow extends JFrame {
             .getModuleParameters(SpectraIdentificationResultsModule.class);
         MatchSortMode sorting =
             param.getParameter(SpectraIdentificationResultsParameters.sorting).getValue();
+        double factorScore =
+            param.getParameter(SpectraIdentificationResultsParameters.weightScore).getValue();
 
-        switch (sorting) {
-          case COMBINED:
-            double factorScore =
-                param.getParameter(SpectraIdentificationResultsParameters.weightScore).getValue();
-            visibleMatches.sort((SpectralDBPeakIdentity a, SpectralDBPeakIdentity b) -> Double
-                .compare(calcCombinedScore(b, factorScore), calcCombinedScore(a, factorScore)));
-            break;
-          case EXPLAINED_LIBRARY_INTENSITY:
-            visibleMatches.sort((SpectralDBPeakIdentity a, SpectralDBPeakIdentity b) -> Double
-                .compare(b.getSimilarity().getExplainedLibraryIntensityRatio(),
-                    a.getSimilarity().getExplainedLibraryIntensityRatio()));
-            break;
-          case MATCH_SCORE:
-          default:
-            visibleMatches.sort((SpectralDBPeakIdentity a, SpectralDBPeakIdentity b) -> Double
-                .compare(b.getSimilarity().getScore(), a.getSimilarity().getScore()));
-            break;
-        }
+        SpectralMatchUtils.sort(visibleMatches, sorting, factorScore);
       }
     }
     // renew layout and show
     renewLayout();
   }
 
-  public double calcCombinedScore(SpectralDBPeakIdentity id, double factorScore) {
-    return (id.getSimilarity().getScore() * factorScore
-        + id.getSimilarity().getExplainedLibraryIntensityRatio()) / (factorScore + 1d);
-  }
 
   public void setMatchingFinished() {
     if (totalMatches.isEmpty()) {
