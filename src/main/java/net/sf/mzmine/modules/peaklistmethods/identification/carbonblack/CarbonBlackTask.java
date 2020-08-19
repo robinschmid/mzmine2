@@ -196,7 +196,7 @@ class CarbonBlackTask extends AbstractTask {
             tmp.add(list.get(k));
           }
         }
-        DataPoint[] libraryOnlyIsotopes = tmp.toArray(DataPoint[]::new);
+        DataPoint[] libraryOnlyIsotopes = tmp.toArray(new DataPoint[tmp.size()]);
 
         SpectralSimilarity sim =
             simFunc.getSimilarity(param, mzTolerance, 3, libraryOnlyIsotopes, dps);
