@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.logging.Logger;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.taskcontrol.AbstractTask;
+import net.sf.mzmine.util.spectraldb.entry.DBEntryField;
 import net.sf.mzmine.util.spectraldb.entry.SpectralDBEntry;
 
 public abstract class SpectralDBParser {
@@ -96,8 +97,11 @@ public abstract class SpectralDBParser {
         .anyMatch(v -> Double.compare(v, 0) == 0))
       return false;
     list.add(entry);
+    if (entry.getField(DBEntryField.ENTRY_ID) == null) {
+      entry.setField(DBEntryField.ENTRY_ID, list.size() + processedEntries);
+    }
     if (list.size() % bufferEntries == 0) {
-      // start new task for every 1000 entries
+      // start new task for every X entries
       logger.info("Imported " + list.size() + " library entries");
       // push entries
       processor.processNextEntries(list, processedEntries);

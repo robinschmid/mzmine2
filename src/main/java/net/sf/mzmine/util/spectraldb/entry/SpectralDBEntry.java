@@ -58,4 +58,11 @@ public class SpectralDBEntry {
     return PolarityType.UNKNOWN;
   }
 
+  public void setField(DBEntryField field, Object value) {
+    fields.put(field, value);
+  }
+
+  public Map<DBEntryField, Object> getFields() {
+    return fields;
+  }
 }
