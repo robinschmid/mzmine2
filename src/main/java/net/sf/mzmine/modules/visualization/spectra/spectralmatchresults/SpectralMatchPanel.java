@@ -467,6 +467,13 @@ public class SpectralMatchPanel extends JPanel {
 
     CombinedDomainXYPlot plot = (CombinedDomainXYPlot) mirrorChart.getChart().getPlot();
     plot.getDomainAxis().setRange(range);
+
+    for (Object o : plot.getSubplots()) {
+      if (o instanceof XYPlot) {
+        XYPlot p = (XYPlot) o;
+        p.getRangeAxis().setRange(0, 120);
+      }
+    }
   }
 
   private Range getMZRange() {

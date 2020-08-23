@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -56,6 +57,9 @@ public class LibraryMatchGraphicsExportTask extends AbstractTask {
   private final static String NL = "\n";
   private final static String Q = "\"";
 
+  private AtomicInteger threads = new AtomicInteger(0);
+  private AtomicInteger threadsFinished = new AtomicInteger(0);
+
   private final PeakList[] peakLists;
   private final File fileName;
   private final String massListName;
@@ -77,7 +81,7 @@ public class LibraryMatchGraphicsExportTask extends AbstractTask {
   private PolarityType polarity;
   private MZTolerance mzTol;
 
-  private Formats[] formats;
+  private String[] formats;
 
   private boolean substitute;
 
@@ -102,12 +106,16 @@ public class LibraryMatchGraphicsExportTask extends AbstractTask {
         parameters.getParameter(LibraryMatchResultsExportParameters.MASS_LIST).getValue();
 
     // graphics formats
-    formats = parameters.getParameter(LibraryMatchResultsExportParameters.GRAPHICS).getChoices();
+    Formats[] form =
+        parameters.getParameter(LibraryMatchResultsExportParameters.GRAPHICS).getValue();
 
-    boolean all = Arrays.stream(formats).anyMatch(f -> f.equals(Formats.ALL));
+    boolean all = Arrays.stream(form).anyMatch(f -> f.equals(Formats.ALL));
     if (all) {
-      formats = new Formats[] {Formats.PDF, Formats.SVG, Formats.EPS, Formats.EMF};
+      formats = new String[] {"all"};
+    } else {
+      formats = Arrays.stream(form).map(f -> f.toString()).toArray(String[]::new);
     }
+
 
     // sorting
     this.sorting = parameters.getParameter(LibraryMatchResultsExportParameters.sorting).getValue();
@@ -208,7 +216,7 @@ public class LibraryMatchGraphicsExportTask extends AbstractTask {
       try {
         // Filename
         File curFile = getRealFileName(substitute, pkl, match.getKey());
-        exportMatch(match, curFile);
+        exportMatch(window, match, curFile);
       } catch (Exception e) {
         logger.log(Level.WARNING, "Cannot export graphics", e);
       }
@@ -216,15 +224,23 @@ public class LibraryMatchGraphicsExportTask extends AbstractTask {
     }
   }
 
-  private void exportMatch(final Entry<SpectralDBPeakIdentity, SpectralMatchPanel> match,
-      final File curFile) throws DocumentException, UnsupportedFormatException, IOException {
+  private void exportMatch(SpectraIdentificationResultsWindow window,
+      final Entry<SpectralDBPeakIdentity, SpectralMatchPanel> match, final File curFile)
+      throws DocumentException, UnsupportedFormatException, IOException {
     logger.info("Exporting graphics for library entry to " + curFile.getAbsolutePath());
     SwingUtilities.invokeLater(() -> {
-
-      boolean exported = match.getValue().exportToGraphics(curFile,
-          Arrays.stream(formats).map(f -> f.toString()).toArray(String[]::new));
-      if (exported)
-        logger.log(Level.WARNING, "Cannot export graphics to " + curFile.getAbsolutePath());
+      Thread t = new Thread(() -> {
+        threads.getAndIncrement();
+        if (!isCanceled()) {
+          boolean exported = match.getValue().exportToGraphics(curFile, formats);
+          if (!exported)
+            logger.log(Level.WARNING, "Cannot export graphics to " + curFile.getAbsolutePath());
+        }
+        if (threadsFinished.incrementAndGet() >= threads.get()) {
+          window.setVisible(false);
+        }
+      });
+      t.start();
     });
   }
 

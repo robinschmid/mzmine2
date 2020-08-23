@@ -236,6 +236,35 @@ public class LibraryMatchResultsExportTask extends AbstractTask {
    */
   private void exportHeader(BufferedWriter writer) throws IOException {
     StringBuilder s = new StringBuilder();
+    // second line header
+    s.append(DEL);
+    s.append(DEL);
+    s.append(DEL);
+
+    // match scores
+    s.append(DEL);
+    s.append(DEL);
+    s.append(DEL);
+    s.append(DEL);
+    s.append(DEL);
+    s.append(DEL);
+    s.append(DEL);
+
+    s.append(DEL);
+    s.append(DEL);
+    s.append(DEL);
+
+    for (DBEntryField db : DBEntryField.values())
+      s.append(DEL);
+
+    for (IonType ion : ionAnnotations) {
+      s.append(DEL + "Intensity");
+      s.append(DEL + "ppm error");
+    }
+
+    s.append(NL);
+
+
     // Sample specific
     s.append("Data File");
     s.append(DEL + "MS Level");
@@ -266,33 +295,6 @@ public class LibraryMatchResultsExportTask extends AbstractTask {
       s.append(DEL + ion.toString(false));
     }
     // finish line
-    s.append(NL);
-
-    // second line header
-    s.append(DEL);
-    s.append(DEL);
-    s.append(DEL);
-
-    // match scores
-    s.append(DEL);
-    s.append(DEL);
-    s.append(DEL);
-    s.append(DEL);
-    s.append(DEL);
-    s.append(DEL);
-
-    s.append(DEL);
-    s.append(DEL);
-    s.append(DEL);
-
-    for (DBEntryField db : DBEntryField.values())
-      s.append(DEL);
-
-    for (IonType ion : ionAnnotations) {
-      s.append(DEL + "Intensity");
-      s.append(DEL + "ppm error");
-    }
-
     s.append(NL);
     writer.append(s.toString());
   }
