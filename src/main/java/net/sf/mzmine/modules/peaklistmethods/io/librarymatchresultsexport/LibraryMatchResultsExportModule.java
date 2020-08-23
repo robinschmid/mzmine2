@@ -17,6 +17,7 @@ import javax.annotation.Nonnull;
 import net.sf.mzmine.datamodel.MZmineProject;
 import net.sf.mzmine.modules.MZmineModuleCategory;
 import net.sf.mzmine.modules.MZmineProcessingModule;
+import net.sf.mzmine.modules.peaklistmethods.io.librarymatchresultsexport.LibraryMatchResultsExportParameters.Formats;
 import net.sf.mzmine.parameters.ParameterSet;
 import net.sf.mzmine.taskcontrol.Task;
 import net.sf.mzmine.util.ExitCode;
@@ -41,6 +42,13 @@ public class LibraryMatchResultsExportModule implements MZmineProcessingModule {
       @Nonnull Collection<Task> tasks) {
     LibraryMatchResultsExportTask task = new LibraryMatchResultsExportTask(parameters);
     tasks.add(task);
+
+    Formats[] formats =
+        parameters.getParameter(LibraryMatchResultsExportParameters.GRAPHICS).getChoices();
+    if (formats != null && formats.length > 0) {
+      LibraryMatchGraphicsExportTask task2 = new LibraryMatchGraphicsExportTask(parameters);
+      tasks.add(task2);
+    }
     return ExitCode.OK;
   }
 

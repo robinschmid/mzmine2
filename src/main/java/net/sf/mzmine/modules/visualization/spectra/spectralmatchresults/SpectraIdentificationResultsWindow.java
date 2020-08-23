@@ -434,7 +434,9 @@ public class SpectraIdentificationResultsWindow extends JFrame {
       ionAnnotations.add(new IonType(i, IonModification.H, IonModification.C2H4));
       // neg
       ionAnnotations.add(new IonType(i, IonModification.M_MINUS, null));
+      ionAnnotations.add(new IonType(i, IonModification.CL, null));
       ionAnnotations.add(new IonType(i, IonModification.H_NEG, null));
+      ionAnnotations.add(new IonType(i, IonModification.NA_2H, null));
       ionAnnotations.add(new IonType(i, IonModification.H_NEG, IonModification.H2O));
     }
     modifications.add(IonModification.C2H4);

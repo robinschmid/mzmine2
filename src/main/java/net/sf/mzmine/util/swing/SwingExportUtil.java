@@ -95,6 +95,45 @@ public class SwingExportUtil {
   }
 
   /**
+   * 
+   * @param panel
+   * @param path
+   * @param fileName
+   * @param format without . (ALL, PDF, EMF, EPS, SVG). ALL = export all at once
+   */
+  public static void writeToGraphics(JComponent panel, File file, String format, int width,
+      int height) throws IOException, DocumentException, UnsupportedFormatException {
+    writeToGraphics(panel, file.getParentFile(), file.getName(), format, width, height);
+  }
+
+  public static void writeToGraphics(JComponent panel, File path, String fileName, String format,
+      int width, int height) throws IOException, DocumentException, UnsupportedFormatException {
+    switch (format.toLowerCase()) {
+      case "all":
+        writeToPDF(panel, path, fileName, width, height);
+        writeToEMF(panel, path, fileName, width, height);
+        writeToEPS(panel, path, fileName, width, height);
+        writeToSVG(panel, path, fileName, width, height);
+        break;
+      case "pdf":
+        writeToPDF(panel, path, fileName, width, height);
+        break;
+      case "emf":
+        writeToEMF(panel, path, fileName, width, height);
+        writeToEPS(panel, path, fileName, width, height);
+        break;
+      case "eps":
+        writeToEPS(panel, path, fileName, width, height);
+        break;
+      case "svg":
+        writeToSVG(panel, path, fileName, width, height);
+        break;
+      default:
+        throw new UnsupportedFormatException("Format is not supported for image export: " + format);
+    }
+  }
+
+  /**
    * Writes swing to pdf
    * 
    * @param panel
@@ -107,6 +146,20 @@ public class SwingExportUtil {
     // print the panel to pdf
     int width = panel.getWidth();
     int height = panel.getHeight();
+    writeToPDF(panel, fileName, width, height);
+  }
+
+  /**
+   * 
+   * @param panel
+   * @param fileName
+   * @param width
+   * @param height
+   * @throws IOException
+   * @throws DocumentException
+   */
+  public static void writeToPDF(JComponent panel, File fileName, int width, int height)
+      throws IOException, DocumentException {
     logger.info(
         () -> MessageFormat.format("Exporting panel to PDF file (width x height; {0} x {1}): {2}",
             width, height, fileName.getAbsolutePath()));
@@ -141,6 +194,19 @@ public class SwingExportUtil {
     // print the panel to pdf
     int width = panel.getWidth();
     int height = panel.getWidth();
+    writeToEPS(panel, fileName, width, height);
+  }
+
+  /**
+   * 
+   * @param panel
+   * @param fileName
+   * @param width
+   * @param height
+   * @throws IOException
+   */
+  public static void writeToEPS(JComponent panel, File fileName, int width, int height)
+      throws IOException {
     logger.info(
         () -> MessageFormat.format("Exporting panel to EPS file (width x height; {0} x {1}): {2}",
             width, height, fileName.getAbsolutePath()));
@@ -162,6 +228,17 @@ public class SwingExportUtil {
     // print the panel to pdf
     int width = panel.getWidth();
     int height = panel.getWidth();
+    writeToEMF(panel, fileName, width, height);
+  }
+
+  /**
+   * 
+   * @param panel
+   * @param fileName
+   * @throws IOException
+   */
+  public static void writeToEMF(JComponent panel, File fileName, int width, int height)
+      throws IOException {
     logger.info(
         () -> MessageFormat.format("Exporting panel to EMF file (width x height; {0} x {1}): {2}",
             width, height, fileName.getAbsolutePath()));
@@ -176,6 +253,19 @@ public class SwingExportUtil {
     // print the panel to pdf
     int width = panel.getWidth();
     int height = panel.getWidth();
+    writeToSVG(panel, fileName, width, height);
+  }
+
+  /**
+   * 
+   * @param panel
+   * @param fileName
+   * @param width
+   * @param height
+   * @throws IOException
+   */
+  public static void writeToSVG(JComponent panel, File fileName, int width, int height)
+      throws IOException {
     logger.info(
         () -> MessageFormat.format("Exporting panel to SVG file (width x height; {0} x {1}): {2}",
             width, height, fileName.getAbsolutePath()));
@@ -209,6 +299,11 @@ public class SwingExportUtil {
     writeToPDF(panel, FileAndPathUtil.getRealFilePath(path, fileName, "pdf"));
   }
 
+  public static void writeToPDF(JComponent panel, File path, String fileName, int width, int height)
+      throws IOException, DocumentException {
+    writeToPDF(panel, FileAndPathUtil.getRealFilePath(path, fileName, "pdf"), width, height);
+  }
+
   /**
    * Writes swing to EPS
    * 
@@ -217,6 +312,11 @@ public class SwingExportUtil {
    * @param fileName
    * @throws Exception
    */
+  public static void writeToEPS(JComponent panel, File path, String fileName, int width, int height)
+      throws IOException {
+    writeToEPS(panel, FileAndPathUtil.getRealFilePath(path, fileName, "eps"), width, height);
+  }
+
   public static void writeToEPS(JComponent panel, File path, String fileName) throws IOException {
     writeToEPS(panel, FileAndPathUtil.getRealFilePath(path, fileName, "eps"));
   }
@@ -229,6 +329,11 @@ public class SwingExportUtil {
    * @param fileName
    * @throws Exception
    */
+  public static void writeToEMF(JComponent panel, File path, String fileName, int width, int height)
+      throws IOException {
+    writeToEMF(panel, FileAndPathUtil.getRealFilePath(path, fileName, "emf"), width, height);
+  }
+
   public static void writeToEMF(JComponent panel, File path, String fileName) throws IOException {
     writeToEMF(panel, FileAndPathUtil.getRealFilePath(path, fileName, "emf"));
   }
@@ -241,6 +346,11 @@ public class SwingExportUtil {
    * @param fileName
    * @throws IOException
    */
+  public static void writeToSVG(JComponent panel, File path, String fileName, int width, int height)
+      throws IOException {
+    writeToSVG(panel, FileAndPathUtil.getRealFilePath(path, fileName, "svg"), width, height);
+  }
+
   public static void writeToSVG(JComponent panel, File path, String fileName) throws IOException {
     writeToSVG(panel, FileAndPathUtil.getRealFilePath(path, fileName, "svg"));
   }

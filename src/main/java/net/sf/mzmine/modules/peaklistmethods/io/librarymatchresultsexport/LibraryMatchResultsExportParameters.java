@@ -13,14 +13,15 @@
 package net.sf.mzmine.modules.peaklistmethods.io.librarymatchresultsexport;
 
 import java.text.DecimalFormat;
+import net.sf.mzmine.datamodel.PolarityType;
 import net.sf.mzmine.modules.visualization.spectra.spectralmatchresults.MatchSortMode;
 import net.sf.mzmine.modules.visualization.spectra.spectralmatchresults.SpectralMatchCompareParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
-import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.MassListParameter;
+import net.sf.mzmine.parameters.parametertypes.MultiChoiceParameter;
 import net.sf.mzmine.parameters.parametertypes.filenames.FileNameParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
@@ -28,6 +29,10 @@ import net.sf.mzmine.parameters.parametertypes.tolerances.MZToleranceParameter;
 
 
 public class LibraryMatchResultsExportParameters extends SimpleParameterSet {
+
+  public static enum Formats {
+    ALL, PDF, SVG, EMF, EPS;
+  }
 
   public static final PeakListsParameter PEAK_LISTS = new PeakListsParameter();
 
@@ -50,6 +55,11 @@ public class LibraryMatchResultsExportParameters extends SimpleParameterSet {
       "Sort matches by", "Sort matches by score or explained library intensity",
       MatchSortMode.values(), MatchSortMode.MATCH_SCORE);
 
+  public static final ComboParameter<PolarityType> polarity =
+      new ComboParameter<>("Polarity", "Polarity to filter annotations",
+          new PolarityType[] {PolarityType.POSITIVE, PolarityType.NEGATIVE, PolarityType.UNKNOWN},
+          PolarityType.POSITIVE);
+
   public static final MZToleranceParameter mzTol =
       new MZToleranceParameter("m/z tolerance", "Annotation m/z tolerance", 0.003, 10);
 
@@ -57,14 +67,18 @@ public class LibraryMatchResultsExportParameters extends SimpleParameterSet {
       new OptionalModuleParameter<>("Collapse duplicates",
           "Collapse duplicate matches to the same spectral entry",
           new SpectralMatchCompareParameters(), true);
-  
+
+  // export graphics
+  public static final MultiChoiceParameter<Formats> GRAPHICS = new MultiChoiceParameter<>(
+      "Graphics export", "Export multiple graphics formats: pdf,emf,eps,svg or all (all formats)",
+      Formats.values(), new Formats[] {Formats.ALL});
 
   public LibraryMatchResultsExportParameters() {
     super(new Parameter[] {PEAK_LISTS, FILENAME, MASS_LIST, collapse, // collapse results
         sorting, weightScore, // sorting of matches
-        mzTol // annotation of ions
-        });
-    }
+        mzTol, polarity, // annotation of ions
+        GRAPHICS // export graphics
+    });
   }
 
 }
