@@ -28,6 +28,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import net.sf.mzmine.datamodel.DataPoint;
+import net.sf.mzmine.datamodel.LibraryScan;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PolarityType;
 import net.sf.mzmine.datamodel.identities.iontype.IonModification;
@@ -238,6 +239,9 @@ public class LibraryMatchResultsExportTask extends AbstractTask {
     // Sample specific
     s.append("Data File");
     s.append(DEL + "MS Level");
+    s.append(DEL + "Spectrum ID");
+    s.append(DEL + "Spectrum Name");
+    s.append(DEL + "Spectrum Description");
 
     // match scores
     s.append(DEL + "Matched Signals");
@@ -266,7 +270,10 @@ public class LibraryMatchResultsExportTask extends AbstractTask {
 
     // second line header
     s.append(DEL);
+    s.append(DEL);
+    s.append(DEL);
 
+    // match scores
     s.append(DEL);
     s.append(DEL);
     s.append(DEL);
@@ -303,6 +310,28 @@ public class LibraryMatchResultsExportTask extends AbstractTask {
     // Sample specific
     s.append(Q + match.getQueryScan().getDataFile().getName() + Q);
     s.append(DEL + match.getQueryScan().getMSLevel());
+    if (match.getQueryScan() instanceof LibraryScan) {
+      LibraryScan library = (LibraryScan) match.getQueryScan();
+
+      // library entry metadata
+      DBEntryField[] libraryFields =
+          new DBEntryField[] {DBEntryField.ENTRY_ID, DBEntryField.NAME, DBEntryField.COMMENT};
+      for (DBEntryField db : libraryFields) {
+        String entry = match.getEntry().getField(db).orElse("").toString();
+        // escape quatation marks
+        // entry.replace(Q, Q + Q + Q);
+        entry.replace(Q, "");
+        if (entry.contains(",")) {
+          // escape comma containing strings
+          entry = Q + entry + Q;
+        }
+        s.append(DEL + entry);
+      }
+    } else {
+      s.append(DEL);
+      s.append(DEL);
+      s.append(DEL);
+    }
 
     // match scores
     s.append(DEL + sim.getOverlap());
@@ -326,7 +355,7 @@ public class LibraryMatchResultsExportTask extends AbstractTask {
         // escape comma containing strings
         entry = Q + entry + Q;
       }
-      s.append(DEL + Q + entry + Q);
+      s.append(DEL + entry);
     }
 
 
