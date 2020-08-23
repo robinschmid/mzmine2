@@ -97,7 +97,7 @@ public abstract class SpectralDBParser {
         .anyMatch(v -> Double.compare(v, 0) == 0))
       return false;
     list.add(entry);
-    if (entry.getField(DBEntryField.ENTRY_ID) == null) {
+    if (entry.getField(DBEntryField.ENTRY_ID).orElse(null) == null) {
       entry.setField(DBEntryField.ENTRY_ID, list.size() + processedEntries);
     }
     if (list.size() % bufferEntries == 0) {
