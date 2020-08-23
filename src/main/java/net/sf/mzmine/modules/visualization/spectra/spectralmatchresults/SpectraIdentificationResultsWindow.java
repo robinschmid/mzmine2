@@ -278,6 +278,12 @@ public class SpectraIdentificationResultsWindow extends JFrame {
     }
   }
 
+  private void autoRange() {
+    synchronized (matchPanels) {
+      matchPanels.values().stream().filter(Objects::nonNull).forEach(pn -> pn.autoRange());
+    }
+  }
+
   private void showLabels(boolean showLabels) {
     synchronized (matchPanels) {
       matchPanels.values().stream().filter(Objects::nonNull)
@@ -418,6 +424,8 @@ public class SpectraIdentificationResultsWindow extends JFrame {
       scrollPane.revalidate();
       scrollPane.repaint();
       this.pnGrid = pnGrid;
+
+      autoRange();
     });
   }
 
@@ -467,5 +475,9 @@ public class SpectraIdentificationResultsWindow extends JFrame {
       pn.applySettings(MZmineCore.getConfiguration()
           .getModuleParameters(SpectraIdentificationResultsModule.class));
     });
+  }
+
+  public Map<SpectralDBPeakIdentity, SpectralMatchPanel> getMatchPanels() {
+    return matchPanels;
   }
 }

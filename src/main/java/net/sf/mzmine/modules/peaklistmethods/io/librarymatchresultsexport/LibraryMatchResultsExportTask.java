@@ -369,7 +369,7 @@ public class LibraryMatchResultsExportTask extends AbstractTask {
         Double ionMZ = (Double) match.getEntry().getField(DBEntryField.EXACT_MASS).orElse(null);
         ionMZ = ion.getMZ(ionMZ);
         String intensity = intensityForm.format(dp.getIntensity());
-        String ppm = ppmForm.format(Math.pow((dp.getMZ() - ionMZ) / ionMZ, -6));
+        String ppm = ppmForm.format((dp.getMZ() - ionMZ) / ionMZ * Math.pow(10, 6));
         s.append(DEL + intensity);
         s.append(DEL + ppm);
       } else {

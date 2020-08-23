@@ -21,6 +21,7 @@ package net.sf.mzmine.util.spectraldb.entry;
 import java.text.DecimalFormat;
 import java.text.MessageFormat;
 import java.util.Arrays;
+import org.jfree.data.Range;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.Scan;
 import net.sf.mzmine.datamodel.impl.SimplePeakIdentity;
@@ -106,6 +107,24 @@ public class SpectralDBPeakIdentity extends SimplePeakIdentity {
         return new DataPoint[0];
     }
     return new DataPoint[0];
+  }
+
+  public Range getMZRange() {
+    double min = Double.MAX_VALUE;
+    double max = 0;
+    for (DataPoint dp : getQueryDataPoints()) {
+      if (dp.getMZ() < min)
+        min = dp.getMZ();
+      if (dp.getMZ() > max)
+        max = dp.getMZ();
+    }
+    for (DataPoint dp : getLibraryDataPoints(DataPointsTag.ORIGINAL)) {
+      if (dp.getMZ() < min)
+        min = dp.getMZ();
+      if (dp.getMZ() > max)
+        max = dp.getMZ();
+    }
+    return new Range(min, max);
   }
 
 }

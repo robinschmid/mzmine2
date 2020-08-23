@@ -18,10 +18,13 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import javax.swing.SwingUtilities;
 import com.itextpdf.text.DocumentException;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PolarityType;
@@ -29,6 +32,9 @@ import net.sf.mzmine.datamodel.identities.iontype.IonType;
 import net.sf.mzmine.main.MZmineCore;
 import net.sf.mzmine.modules.peaklistmethods.io.librarymatchresultsexport.LibraryMatchResultsExportParameters.Formats;
 import net.sf.mzmine.modules.visualization.spectra.spectralmatchresults.MatchSortMode;
+import net.sf.mzmine.modules.visualization.spectra.spectralmatchresults.SpectraIdentificationResultsModule;
+import net.sf.mzmine.modules.visualization.spectra.spectralmatchresults.SpectraIdentificationResultsParameters;
+import net.sf.mzmine.modules.visualization.spectra.spectralmatchresults.SpectraIdentificationResultsWindow;
 import net.sf.mzmine.modules.visualization.spectra.spectralmatchresults.SpectralMatchCompareParameters;
 import net.sf.mzmine.modules.visualization.spectra.spectralmatchresults.SpectralMatchPanel;
 import net.sf.mzmine.modules.visualization.spectra.spectralmatchresults.SpectralMatchUtils;
@@ -40,7 +46,6 @@ import net.sf.mzmine.util.files.FileAndPathUtil;
 import net.sf.mzmine.util.spectraldb.entry.DBEntryField;
 import net.sf.mzmine.util.spectraldb.entry.SpectralDBPeakIdentity;
 import net.sf.mzmine.util.spectraldb.parser.UnsupportedFormatException;
-import net.sf.mzmine.util.swing.SwingExportUtil;
 
 public class LibraryMatchGraphicsExportTask extends AbstractTask {
 
@@ -129,10 +134,6 @@ public class LibraryMatchGraphicsExportTask extends AbstractTask {
 
     substitute = fileName.getPath().contains(plNamePattern);
 
-    for (PeakList l : peakLists) {
-      this.totalRows += l.getNumberOfRows();
-    }
-
     // Process feature lists
     for (PeakList pkl : peakLists) {
       try {
@@ -159,12 +160,20 @@ public class LibraryMatchGraphicsExportTask extends AbstractTask {
    */
   private File getRealFileName(boolean substitute, PeakList peakList,
       SpectralDBPeakIdentity match) {
-    String newFilename =
-        FileAndPathUtil.eraseFormat(fileName).getAbsolutePath() + "_" + match.toString();
-    newFilename = newFilename.replaceAll("[^a-zA-Z0-9.-]", "_");
+    String newFilename = FileAndPathUtil.eraseFormat(fileName).getAbsolutePath();
+
+
+    newFilename += "_" + finishedRows;
+    newFilename += "_ID" + match.getEntry().getField(DBEntryField.ENTRY_ID).orElse("").toString();
+    newFilename += "_" + match.getEntry().getField(DBEntryField.NAME).orElse("").toString()
+        .replaceAll("[^a-zA-Z0-9-]", "_");
+    newFilename +=
+        "_" + match.getEntry().getField(DBEntryField.COLLISION_ENERGY).orElse("").toString();
+    newFilename += "_" + match.getEntry().getField(DBEntryField.ION_TYPE).orElse("").toString();
+
     if (substitute) {
       // Cleanup from illegal filename characters
-      String cleanPlName = peakList.getName().replaceAll("[^a-zA-Z0-9.-]", "_");
+      String cleanPlName = peakList.getName().replaceAll("[^a-zA-Z0-9-]", "_");
       // Substitute
       newFilename = newFilename.replaceAll(Pattern.quote(plNamePattern), cleanPlName);
       return FileAndPathUtil.getRealFilePath(new File(newFilename), "pdf");
@@ -182,23 +191,41 @@ public class LibraryMatchGraphicsExportTask extends AbstractTask {
     }
     // sort
     SpectralMatchUtils.sort(matches, sorting, factorScore);
+    totalRows += matches.size();
+
+    SpectraIdentificationResultsWindow window = new SpectraIdentificationResultsWindow();
+    window.setSize(1100, 1000);
+    ParameterSet param =
+        MZmineCore.getConfiguration().getModuleParameters(SpectraIdentificationResultsModule.class);
+    param.getParameter(SpectraIdentificationResultsParameters.collapse).setValue(false);
+
+    window.addMatches(matches);
+
 
     // export to csv
-    for (SpectralDBPeakIdentity match : matches) {
-      // Filename
-      File curFile = getRealFileName(substitute, pkl, match);
-      exportMatch(match, curFile);
+    for (Map.Entry<SpectralDBPeakIdentity, SpectralMatchPanel> match : window.getMatchPanels()
+        .entrySet()) {
+      try {
+        // Filename
+        File curFile = getRealFileName(substitute, pkl, match.getKey());
+        exportMatch(match, curFile);
+      } catch (Exception e) {
+        logger.log(Level.WARNING, "Cannot export graphics", e);
+      }
+      finishedRows++;
     }
-
-    finishedRows++;
   }
 
-  private void exportMatch(SpectralDBPeakIdentity match, File file)
-      throws DocumentException, UnsupportedFormatException, IOException {
-    for (Formats f : formats) {
-      SpectralMatchPanel panel = new SpectralMatchPanel(match);
-      SwingExportUtil.writeToGraphics(panel, file, f.toString(), 1000, 900);
-    }
+  private void exportMatch(final Entry<SpectralDBPeakIdentity, SpectralMatchPanel> match,
+      final File curFile) throws DocumentException, UnsupportedFormatException, IOException {
+    logger.info("Exporting graphics for library entry to " + curFile.getAbsolutePath());
+    SwingUtilities.invokeLater(() -> {
+
+      boolean exported = match.getValue().exportToGraphics(curFile,
+          Arrays.stream(formats).map(f -> f.toString()).toArray(String[]::new));
+      if (exported)
+        logger.log(Level.WARNING, "Cannot export graphics to " + curFile.getAbsolutePath());
+    });
   }
 
 

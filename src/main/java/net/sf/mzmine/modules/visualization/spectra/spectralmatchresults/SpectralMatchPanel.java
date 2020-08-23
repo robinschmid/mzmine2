@@ -396,7 +396,7 @@ public class SpectralMatchPanel extends JPanel {
    * 
    * @param format
    */
-  public void exportToGraphics(String format) {
+  public void exportToGraphics(String... formats) {
     // old path
     FileNameParameter param =
         MZmineCore.getConfiguration().getModuleParameters(SpectraIdentificationResultsModule.class)
@@ -409,23 +409,30 @@ public class SpectralMatchPanel extends JPanel {
       chooser = new JFileChooser();
     // get file
     if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
-      try {
-        File f = chooser.getSelectedFile();
-        pnExport.setVisible(false);
-        pnExport.revalidate();
-        pnExport.getParent().revalidate();
-        pnExport.getParent().repaint();
-
-        SwingExportUtil.writeToGraphics(this, f.getParentFile(), f.getName(), format);
+      if (exportToGraphics(chooser.getSelectedFile(), formats)) {
         // save path
-        param.setValue(FileAndPathUtil.eraseFormat(f));
-      } catch (Exception ex) {
-        logger.log(Level.WARNING, "Cannot export graphics of spectra match panel", ex);
-      } finally {
-        pnExport.setVisible(true);
-        pnExport.getParent().revalidate();
-        pnExport.getParent().repaint();
+        param.setValue(FileAndPathUtil.eraseFormat(chooser.getSelectedFile()));
       }
+    }
+  }
+
+  public boolean exportToGraphics(File f, String... formats) {
+    try {
+      pnExport.setVisible(false);
+      pnExport.revalidate();
+      pnExport.getParent().revalidate();
+      pnExport.getParent().repaint();
+
+      for (String format : formats)
+        SwingExportUtil.writeToGraphics(this, f.getParentFile(), f.getName(), format);
+      return true;
+    } catch (Exception ex) {
+      logger.log(Level.WARNING, "Cannot export graphics of spectra match panel", ex);
+      return false;
+    } finally {
+      pnExport.setVisible(true);
+      pnExport.getParent().revalidate();
+      pnExport.getParent().repaint();
     }
   }
 
@@ -450,6 +457,23 @@ public class SpectralMatchPanel extends JPanel {
       }
     });
   }
+
+  public void autoRange() {
+    if (mirrorChart == null)
+      return;
+    Range range = getMZRange();
+    // round up and down to next 10
+    range = new Range((range.getLowerBound() / 10) * 10, ((range.getUpperBound() + 10) / 10) * 10);
+
+    CombinedDomainXYPlot plot = (CombinedDomainXYPlot) mirrorChart.getChart().getPlot();
+    plot.getDomainAxis().setRange(range);
+  }
+
+  private Range getMZRange() {
+    return entry.getMZRange();
+  }
+
+
 
   /**
    * Apply changes to all other charts

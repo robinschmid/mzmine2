@@ -174,6 +174,7 @@ public class SwingExportUtil {
       panel.print(g2);
       g2.dispose();
       contentByte.addTemplate(template, 0, 0);
+      writer.setPageEmpty(false);
       document.close();
       writer.close();
     } finally {
@@ -193,7 +194,7 @@ public class SwingExportUtil {
   public static void writeToEPS(JComponent panel, File fileName) throws IOException {
     // print the panel to pdf
     int width = panel.getWidth();
-    int height = panel.getWidth();
+    int height = panel.getHeight();
     writeToEPS(panel, fileName, width, height);
   }
 
@@ -227,7 +228,7 @@ public class SwingExportUtil {
   public static void writeToEMF(JComponent panel, File fileName) throws IOException {
     // print the panel to pdf
     int width = panel.getWidth();
-    int height = panel.getWidth();
+    int height = panel.getHeight();
     writeToEMF(panel, fileName, width, height);
   }
 
@@ -252,7 +253,7 @@ public class SwingExportUtil {
   public static void writeToSVG(JComponent panel, File fileName) throws IOException {
     // print the panel to pdf
     int width = panel.getWidth();
-    int height = panel.getWidth();
+    int height = panel.getHeight();
     writeToSVG(panel, fileName, width, height);
   }
 
