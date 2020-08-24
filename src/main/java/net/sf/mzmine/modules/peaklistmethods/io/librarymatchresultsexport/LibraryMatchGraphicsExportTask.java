@@ -61,7 +61,7 @@ public class LibraryMatchGraphicsExportTask extends AbstractTask {
   private AtomicInteger threadsFinished = new AtomicInteger(0);
 
   private final PeakList[] peakLists;
-  private final File fileName;
+  private File fileName;
   private final String massListName;
   protected long finishedRows, totalRows;
   protected int exported = 0;
@@ -85,6 +85,10 @@ public class LibraryMatchGraphicsExportTask extends AbstractTask {
 
   private boolean substitute;
 
+  private int graphicsWidth;
+
+  private boolean useGraphicsFolder;
+
 
   @Override
   public double getFinishedPercentage() {
@@ -104,6 +108,18 @@ public class LibraryMatchGraphicsExportTask extends AbstractTask {
         parameters.getParameter(LibraryMatchResultsExportParameters.FILENAME).getValue();
     this.massListName =
         parameters.getParameter(LibraryMatchResultsExportParameters.MASS_LIST).getValue();
+
+
+    boolean useGraphicsFileName =
+        parameters.getParameter(LibraryMatchResultsExportParameters.FILENAME_GRAPHICS).getValue();
+    if (useGraphicsFileName) {
+      this.fileName = parameters.getParameter(LibraryMatchResultsExportParameters.FILENAME_GRAPHICS)
+          .getEmbeddedParameter().getValue();
+    }
+    useGraphicsFolder =
+        parameters.getParameter(LibraryMatchResultsExportParameters.GRAPHICS_FOLDER).getValue();
+    graphicsWidth = (int) ((double) parameters
+        .getParameter(LibraryMatchResultsExportParameters.WIDTH).getValue());
 
     // graphics formats
     Formats[] form =
@@ -154,6 +170,19 @@ public class LibraryMatchGraphicsExportTask extends AbstractTask {
       }
     }
 
+    while (true) {
+      if (threads.get() > 0 && threads.get() == threadsFinished.get())
+        break;
+      else {
+        try {
+          Thread.sleep(500);
+        } catch (InterruptedException e) {
+          logger.log(Level.WARNING, "Cannot sleep thread in graphics export");
+          break;
+        }
+      }
+    }
+
     if (getStatus() == TaskStatus.PROCESSING)
       setStatus(TaskStatus.FINISHED);
   }
@@ -168,20 +197,23 @@ public class LibraryMatchGraphicsExportTask extends AbstractTask {
    */
   private File getRealFileName(boolean substitute, PeakList peakList,
       SpectralDBPeakIdentity match) {
+    // Cleanup from illegal filename characters
+    String cleanPlName = peakList.getName().replaceAll("[^a-zA-Z0-9-]", "_");
+
     String newFilename = FileAndPathUtil.eraseFormat(fileName).getAbsolutePath();
+    if (useGraphicsFolder) {
+      newFilename = new File(newFilename, cleanPlName).getAbsolutePath();
+    }
 
-
-    newFilename += "_" + finishedRows;
-    newFilename += "_ID" + match.getEntry().getField(DBEntryField.ENTRY_ID).orElse("").toString();
     newFilename += "_" + match.getEntry().getField(DBEntryField.NAME).orElse("").toString()
         .replaceAll("[^a-zA-Z0-9-]", "_");
     newFilename +=
         "_" + match.getEntry().getField(DBEntryField.COLLISION_ENERGY).orElse("").toString();
     newFilename += "_" + match.getEntry().getField(DBEntryField.ION_TYPE).orElse("").toString();
+    newFilename += "_" + finishedRows;
+    newFilename += "_ID" + match.getEntry().getField(DBEntryField.ENTRY_ID).orElse("").toString();
 
     if (substitute) {
-      // Cleanup from illegal filename characters
-      String cleanPlName = peakList.getName().replaceAll("[^a-zA-Z0-9-]", "_");
       // Substitute
       newFilename = newFilename.replaceAll(Pattern.quote(plNamePattern), cleanPlName);
       return FileAndPathUtil.getRealFilePath(new File(newFilename), "pdf");
@@ -202,7 +234,7 @@ public class LibraryMatchGraphicsExportTask extends AbstractTask {
     totalRows += matches.size();
 
     SpectraIdentificationResultsWindow window = new SpectraIdentificationResultsWindow();
-    window.setSize(1100, 1000);
+    window.setSize(graphicsWidth, 1000);
     ParameterSet param =
         MZmineCore.getConfiguration().getModuleParameters(SpectraIdentificationResultsModule.class);
     param.getParameter(SpectraIdentificationResultsParameters.collapse).setValue(false);

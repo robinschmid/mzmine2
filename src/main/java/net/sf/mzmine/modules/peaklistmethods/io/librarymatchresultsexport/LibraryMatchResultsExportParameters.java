@@ -18,10 +18,12 @@ import net.sf.mzmine.modules.visualization.spectra.spectralmatchresults.MatchSor
 import net.sf.mzmine.modules.visualization.spectra.spectralmatchresults.SpectralMatchCompareParameters;
 import net.sf.mzmine.parameters.Parameter;
 import net.sf.mzmine.parameters.impl.SimpleParameterSet;
+import net.sf.mzmine.parameters.parametertypes.BooleanParameter;
 import net.sf.mzmine.parameters.parametertypes.ComboParameter;
 import net.sf.mzmine.parameters.parametertypes.DoubleParameter;
 import net.sf.mzmine.parameters.parametertypes.MassListParameter;
 import net.sf.mzmine.parameters.parametertypes.MultiChoiceParameter;
+import net.sf.mzmine.parameters.parametertypes.OptionalParameter;
 import net.sf.mzmine.parameters.parametertypes.filenames.FileNameParameter;
 import net.sf.mzmine.parameters.parametertypes.selectors.PeakListsParameter;
 import net.sf.mzmine.parameters.parametertypes.submodules.OptionalModuleParameter;
@@ -68,16 +70,31 @@ public class LibraryMatchResultsExportParameters extends SimpleParameterSet {
           "Collapse duplicate matches to the same spectral entry",
           new SpectralMatchCompareParameters(), true);
 
+  public static final OptionalParameter<FileNameParameter> FILENAME_GRAPHICS =
+      new OptionalParameter<>(new FileNameParameter("Export graphics to",
+          "Base name of the graphics output files "
+              + "Use pattern \"{}\" in the file name to substitute with feature list name. "
+              + "(i.e. \"blah{}blah.pdf\" would become \"blahSourcePeakListNameblah.pdf\"). "
+              + "If the file already exists, it will be overwritten.",
+          ""), true);
+
+  public static final BooleanParameter GRAPHICS_FOLDER =
+      new BooleanParameter("Create dataset graphics folders",
+          "Create a dataset graphics folder for each feature list", true);
+
   // export graphics
   public static final MultiChoiceParameter<Formats> GRAPHICS = new MultiChoiceParameter<>(
       "Graphics export", "Export multiple graphics formats: pdf,emf,eps,svg or all (all formats)",
       Formats.values(), new Formats[] {Formats.ALL});
 
+  public static final DoubleParameter WIDTH = new DoubleParameter("Graphics width",
+      "Width of exported entries", new DecimalFormat("0"), 1000d, 500d, 20000d);
+
   public LibraryMatchResultsExportParameters() {
     super(new Parameter[] {PEAK_LISTS, FILENAME, MASS_LIST, collapse, // collapse results
         sorting, weightScore, // sorting of matches
         mzTol, polarity, // annotation of ions
-        GRAPHICS // export graphics
+        FILENAME_GRAPHICS, GRAPHICS_FOLDER, WIDTH, GRAPHICS // export graphics
     });
   }
 

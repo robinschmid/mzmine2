@@ -463,7 +463,8 @@ public class SpectralMatchPanel extends JPanel {
       return;
     Range range = getMZRange();
     // round up and down to next 10
-    range = new Range((range.getLowerBound() / 10) * 10, ((range.getUpperBound() + 10) / 10) * 10);
+    range = new Range((int) (range.getLowerBound() / 10) * 10,
+        ((int) (range.getUpperBound() + 10) / 10) * 10);
 
     CombinedDomainXYPlot plot = (CombinedDomainXYPlot) mirrorChart.getChart().getPlot();
     plot.getDomainAxis().setRange(range);
