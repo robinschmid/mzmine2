@@ -257,12 +257,17 @@ public class LibraryMatchResultsExportTask extends AbstractTask {
     for (DBEntryField db : DBEntryField.values())
       s.append(DEL);
 
+    s.append(DEL);
+
     for (IonType ion : ionAnnotations) {
       s.append(DEL + "Intensity");
       s.append(DEL + "ppm error");
     }
 
+    s.append(DEL);
+
     s.append(NL);
+    // end of first line
 
 
     // Sample specific
@@ -289,11 +294,18 @@ public class LibraryMatchResultsExportTask extends AbstractTask {
       s.append(DEL + db.toString());
     }
 
+    // name again
+    s.append(DEL + "Compound Name");
+
     // annotated signals matched (ion identities)
     for (IonType ion : ionAnnotations) {
       s.append(DEL + ion.toString(false));
       s.append(DEL + ion.toString(false));
     }
+
+    // name again
+    s.append(DEL + "Compound Name");
+
     // finish line
     s.append(NL);
     writer.append(s.toString());
@@ -349,17 +361,11 @@ public class LibraryMatchResultsExportTask extends AbstractTask {
 
     // library entry metadata
     for (DBEntryField db : DBEntryField.values()) {
-      String entry = match.getEntry().getField(db).orElse("").toString();
-      // escape quatation marks
-      // entry.replace(Q, Q + Q + Q);
-      entry.replace(Q, "");
-      if (entry.contains(",")) {
-        // escape comma containing strings
-        entry = Q + entry + Q;
-      }
-      s.append(DEL + entry);
+      s.append(DEL + formatField(match, db));
     }
 
+    // name again
+    s.append(DEL + formatField(match, DBEntryField.NAME));
 
     DataPoint[] data = match.getQueryDataPoints();
     // annotated signals matched (ion identities)
@@ -380,8 +386,23 @@ public class LibraryMatchResultsExportTask extends AbstractTask {
       }
     }
 
+    // name again
+    s.append(DEL + formatField(match, DBEntryField.NAME));
+
     s.append(NL);
     writer.append(s.toString());
+  }
+
+  private String formatField(SpectralDBPeakIdentity match, DBEntryField db) {
+    String entry = match.getEntry().getField(db).orElse("").toString();
+    // escape quatation marks
+    // entry.replace(Q, Q + Q + Q);
+    entry.replace(Q, "");
+    if (entry.contains(",")) {
+      // escape comma containing strings
+      entry = Q + entry + Q;
+    }
+    return entry;
   }
 
   /**
