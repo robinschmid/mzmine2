@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -273,23 +274,27 @@ public class SpectraIdentificationResultsWindow extends JFrame {
 
   private void updateAnnotations(boolean showAnn, boolean showMods, MZTolerance mzTol) {
     synchronized (matchPanels) {
-      matchPanels.values().stream().filter(Objects::nonNull).forEach(
+      streamPanels().forEach(
           pn -> pn.updateAnnotations(showAnn, showMods, mzTol, ionAnnotations, modifications));
     }
   }
 
   private void autoRange() {
     synchronized (matchPanels) {
-      matchPanels.values().stream().filter(Objects::nonNull).forEach(pn -> pn.autoRange());
+      streamPanels().forEach(pn -> pn.autoRange());
     }
   }
 
   private void showLabels(boolean showLabels) {
     synchronized (matchPanels) {
-      matchPanels.values().stream().filter(Objects::nonNull)
-          .forEach(pn -> pn.showLabels(showLabels));
+      streamPanels().forEach(pn -> pn.showLabels(showLabels));
     }
   }
+
+  private Stream<SpectralMatchPanel> streamPanels() {
+    return matchPanels.values().stream().filter(Objects::nonNull);
+  }
+
 
   private void setChartFont() {
     FontDialog dialog = new FontDialog(this, "Font Dialog Example", true);
@@ -304,8 +309,7 @@ public class SpectraIdentificationResultsWindow extends JFrame {
     isCouplingZoomY = selected;
 
     synchronized (matchPanels) {
-      matchPanels.values().stream().filter(Objects::nonNull)
-          .forEach(pn -> pn.setCoupleZoomY(selected));
+      streamPanels().forEach(pn -> pn.setCoupleZoomY(selected));
     }
   }
 
@@ -319,8 +323,7 @@ public class SpectraIdentificationResultsWindow extends JFrame {
     if (!totalMatches.contains(match)) {
       // add
       totalMatches.add(match);
-      SpectralMatchPanel pn = new SpectralMatchPanel(match);
-      pn.setCoupleZoomY(isCouplingZoomY);
+      SpectralMatchPanel pn = createMatchPanel(match);
       matchPanels.put(match, pn);
 
       collapsedMatches = null;
@@ -330,6 +333,7 @@ public class SpectraIdentificationResultsWindow extends JFrame {
       sortTotalMatches();
     }
   }
+
 
   /**
    * add all matches and sort the view
@@ -343,8 +347,7 @@ public class SpectraIdentificationResultsWindow extends JFrame {
       if (!totalMatches.contains(match)) {
         // add
         totalMatches.add(match);
-        SpectralMatchPanel pn = new SpectralMatchPanel(match);
-        pn.setCoupleZoomY(isCouplingZoomY);
+        SpectralMatchPanel pn = createMatchPanel(match);
         matchPanels.put(match, pn);
       }
     }
@@ -411,7 +414,11 @@ public class SpectraIdentificationResultsWindow extends JFrame {
       synchronized (totalMatches) {
         synchronized (visibleMatches) {
           for (SpectralDBPeakIdentity match : visibleMatches) {
-            JPanel pn = matchPanels.get(match);
+            SpectralMatchPanel pn = matchPanels.get(match);
+            if (pn == null) {
+              pn = createMatchPanel(match);
+              matchPanels.put(match, pn);
+            }
             if (pn != null)
               pnGrid.add(pn);
           }
@@ -462,7 +469,7 @@ public class SpectraIdentificationResultsWindow extends JFrame {
     this.chartFont = chartFont;
     if (matchPanels == null)
       return;
-    matchPanels.values().stream().forEach(pn -> {
+    streamPanels().forEach(pn -> {
       pn.setChartFont(chartFont);
     });
   }
@@ -471,7 +478,7 @@ public class SpectraIdentificationResultsWindow extends JFrame {
   private void showExportButtonsChanged() {
     if (matchPanels == null)
       return;
-    matchPanels.values().stream().forEach(pn -> {
+    streamPanels().forEach(pn -> {
       pn.applySettings(MZmineCore.getConfiguration()
           .getModuleParameters(SpectraIdentificationResultsModule.class));
     });
@@ -479,5 +486,11 @@ public class SpectraIdentificationResultsWindow extends JFrame {
 
   public Map<SpectralDBPeakIdentity, SpectralMatchPanel> getMatchPanels() {
     return matchPanels;
+  }
+
+  private SpectralMatchPanel createMatchPanel(SpectralDBPeakIdentity match) {
+    SpectralMatchPanel pn = new SpectralMatchPanel(match);
+    pn.setCoupleZoomY(isCouplingZoomY);
+    return pn;
   }
 }
