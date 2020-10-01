@@ -150,9 +150,9 @@ public class MergedScanMSMSFeatureListBuilderTask extends AbstractTask {
       if (isCanceled())
         return;
       Scan scan = dataFile.getScan(scannumber);
-      if (scan == null)
+      // MS level 1 only
+      if (scan == null || (scan.getMSLevel() > 1 && scan.getPrecursorMZ() > 0))
         continue;
-
 
       if (scan instanceof MergedScan) {
         lastWasMerged = true;
