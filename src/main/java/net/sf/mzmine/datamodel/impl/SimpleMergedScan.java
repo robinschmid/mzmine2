@@ -7,6 +7,7 @@ import javax.annotation.Nonnull;
 import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.MergedScan;
 import net.sf.mzmine.datamodel.Scan;
+import net.sf.mzmine.modules.masslistmethods.clusterspectra.FilteredScan;
 import net.sf.mzmine.modules.tools.msmsspectramerge.IntensityMergeMode;
 import net.sf.mzmine.modules.tools.msmsspectramerge.MergedDataPoint;
 import net.sf.mzmine.modules.tools.msmsspectramerge.MzMergeMode;
@@ -37,7 +38,7 @@ public class SimpleMergedScan extends SimpleImagingScan implements MergedScan {
 
   public SimpleMergedScan(Scan sc, IntensityMergeMode intensityMergeMode, int mergeTag,
       List<Double> exclusionList, MZTolerance exclusionMzTol, boolean removeExcludedFromMerge) {
-    super(sc);
+    super(sc instanceof FilteredScan ? ((FilteredScan) sc).getParentScan() : sc);
     this.intensityMergeMode = intensityMergeMode;
     if (sc instanceof SimpleMergedScan) {
       SimpleMergedScan msc = (SimpleMergedScan) sc;
@@ -55,6 +56,8 @@ public class SimpleMergedScan extends SimpleImagingScan implements MergedScan {
 
       DataPoint[] dps = sc.getDataPoints();
       bestScan = sc;
+      if (sc instanceof FilteredScan)
+        bestScan = ((FilteredScan) sc).getParentScan();
       bestTIC = 0;
       merged = new MergedDataPoint[dps.length];
       for (int i = 0; i < dps.length; i++) {

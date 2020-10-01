@@ -193,7 +193,6 @@ public class ClusterSpectraTask extends AbstractTask {
         try {
           // distribute scans
           if (scans[i] instanceof ImagingScan) {
-            SimpleImagingScan ss = new SimpleImagingScan(scans[i]);
             DataPoint[] filtered = scans[i].getMassList(masses).getDataPoints();
             if (removeExcludedMZ && exclusionList != null) {
               filtered = Arrays.stream(filtered)
@@ -201,11 +200,10 @@ public class ClusterSpectraTask extends AbstractTask {
                       .noneMatch(exMZ -> exclusionMzTol.checkWithinTolerance(exMZ, dp.getMZ())))
                   .toArray(DataPoint[]::new);
             }
-            ss.setDataPoints(filtered);
+            FilteredScan ss = new FilteredScan(scans[i], filtered);
             SimpleMergedScan ms = new SimpleMergedScan(ss, IntensityMergeMode.AVERAGE);
             subTasks.get(i % subTasks.size()).addSpectrum(ms);
           } else {
-            SimpleScan ss = new SimpleScan(scans[i]);
             DataPoint[] filtered = scans[i].getMassList(masses).getDataPoints();
             if (removeExcludedMZ && exclusionList != null) {
               filtered = Arrays.stream(filtered)
@@ -213,13 +211,15 @@ public class ClusterSpectraTask extends AbstractTask {
                       .noneMatch(exMZ -> exclusionMzTol.checkWithinTolerance(exMZ, dp.getMZ())))
                   .toArray(DataPoint[]::new);
             }
-            ss.setDataPoints(filtered);
+            FilteredScan ss = new FilteredScan(scans[i], filtered);
             SimpleMergedScan ms = new SimpleMergedScan(ss, IntensityMergeMode.AVERAGE);
             subTasks.get(i % subTasks.size()).addSpectrum(ms);
           }
         } catch (Exception e) {
           setErrorMessage("No masslist? Run mass detection on all scans");
           setStatus(TaskStatus.ERROR);
+          logger.log(Level.WARNING, "No masslist? Run mass detection on all scans", e);
+          e.printStackTrace();
           subTasks.forEach(s -> s.cancel());
           return;
         }
@@ -293,6 +293,10 @@ public class ClusterSpectraTask extends AbstractTask {
         }
       }
 
+      // store mass lists - need to be added after finalizeWriting of rawdatafile
+      // SimpleScan does not support mass lists
+      List<List<MassList>> finalMassLists = new ArrayList<>();
+
       logger.log(Level.INFO, "add all scans to raw file");
       parsedScans = 0;
       int i = 1;
@@ -305,14 +309,14 @@ public class ClusterSpectraTask extends AbstractTask {
           // add average
           scan.setScanNumber(i);
           scan.setSpectrumType(MassSpectrumType.CENTROIDED);
-          addMassList(scan);
+          addMassList(finalMassLists, scan);
           newMZmineFile.addScan(scan);
           i++;
           // add maximum merged scan
           SimpleMergedScan maxScan = new SimpleMergedScan(scan, IntensityMergeMode.MAXIMUM);
           maxScan.setScanNumber(i);
           maxScan.setSpectrumType(MassSpectrumType.CENTROIDED);
-          addMassList(maxScan);
+          addMassList(finalMassLists, maxScan);
           newMZmineFile.addScan(maxScan);
           i++;
 
@@ -320,35 +324,27 @@ public class ClusterSpectraTask extends AbstractTask {
           SimpleMergedScan sumScan = new SimpleMergedScan(scan, IntensityMergeMode.SUM);
           sumScan.setScanNumber(i);
           sumScan.setSpectrumType(MassSpectrumType.CENTROIDED);
-          addMassList(sumScan);
+          addMassList(finalMassLists, sumScan);
           newMZmineFile.addScan(sumScan);
           i++;
 
-          // add best scan
-          if (scan.getBestScan() instanceof SimpleImagingScan) {
-            ((SimpleImagingScan) scan.getBestScan()).setScanNumber(i);
-            ((SimpleImagingScan) scan.getBestScan()).setSpectrumType(MassSpectrumType.CENTROIDED);
-          } else {
-            ((SimpleScan) scan.getBestScan()).setScanNumber(i);
-            ((SimpleScan) scan.getBestScan()).setSpectrumType(MassSpectrumType.CENTROIDED);
-          }
-
-          copyMassList(scan.getBestScan(), scan);
-          newMZmineFile.addScan(scan.getBestScan());
+          // add best scan (max TIC single scan)
+          final SimpleScan copy = scan.getBestScan() instanceof SimpleImagingScan
+              ? new SimpleImagingScan(scan.getBestScan())
+              : new SimpleScan(scan.getBestScan());
+          copy.setScanNumber(i);
+          copyMassList(finalMassLists, scan.getBestScan(), copy);
+          newMZmineFile.addScan(copy);
           i++;
         }
         // add best
         else {
-          if (scan.getBestScan() instanceof SimpleImagingScan) {
-            ((SimpleImagingScan) scan.getBestScan()).setScanNumber(i);
-            ((SimpleImagingScan) scan.getBestScan()).setSpectrumType(MassSpectrumType.CENTROIDED);
-          } else {
-            ((SimpleScan) scan.getBestScan()).setScanNumber(i);
-            ((SimpleScan) scan.getBestScan()).setSpectrumType(MassSpectrumType.CENTROIDED);
-          }
-
-          copyMassList(scan.getBestScan(), scan);
-          newMZmineFile.addScan(scan.getBestScan());
+          final SimpleScan copy = scan.getBestScan() instanceof SimpleImagingScan
+              ? new SimpleImagingScan(scan.getBestScan())
+              : new SimpleScan(scan.getBestScan());
+          copy.setScanNumber(i);
+          copyMassList(finalMassLists, scan.getBestScan(), copy);
+          newMZmineFile.addScan(copy);
           i++;
         }
         parsedScans++;
@@ -379,10 +375,7 @@ public class ClusterSpectraTask extends AbstractTask {
                         : new SimpleScan(original);
                 scan.setScanNumber(startI + c.get());
                 // add masslists
-                for (MassList m : original.getMassLists()) {
-                  MassList nm = new SimpleMassList(m.getName(), scan, m.getDataPoints());
-                  scan.addMassList(nm);
-                }
+                copyMassList(finalMassLists, original, scan);
 
                 newMZmineFile.addScan(scan);
                 c.getAndIncrement();
@@ -397,6 +390,19 @@ public class ClusterSpectraTask extends AbstractTask {
       if (finalRawDataFile instanceof ImagingRawDataFileImpl)
         ((ImagingRawDataFileImpl) finalRawDataFile)
             .setImagingParam(((ImagingRawDataFileImpl) newMZmineFile).getImagingParam());
+
+      // create mass lists after newMZmineFile.finishWriting -
+      // otherwise addMassList is not supported by SimpleScan
+      int index = 0;
+      for (int scannumber : finalRawDataFile.getScanNumbers()) {
+        Scan scan = finalRawDataFile.getScan(scannumber);
+        List<MassList> list = finalMassLists.get(index);
+        for (MassList m : list) {
+          scan.addMassList(m);
+        }
+        index++;
+      }
+
       //
       watch.stop();
       logger.info("TIME: " + watch.elapsed(TimeUnit.SECONDS) + "; Finished parsing " + rawnames
@@ -419,15 +425,27 @@ public class ClusterSpectraTask extends AbstractTask {
     setStatus(TaskStatus.FINISHED);
   }
 
-  private void addMassList(SimpleMergedScan scan) {
+  private void addMassList(List<List<MassList>> finalMassLists, SimpleMergedScan scan) {
     MassList masses = new SimpleMassList(massListName, scan, scan.getDataPoints());
-    scan.addMassList(masses);
+    List<MassList> list = new ArrayList<>(1);
+    list.add(masses);
+    finalMassLists.add(list);
   }
 
-  private void copyMassList(Scan origin, Scan target) {
-    for (MassList m : origin.getMassLists()) {
-      MassList masses = new SimpleMassList(m.getName(), target, m.getDataPoints());
-      target.addMassList(masses);
+  private void copyMassList(List<List<MassList>> finalMassLists, Scan origin, Scan target) {
+    if (origin instanceof FilteredScan)
+      origin = ((FilteredScan) origin).getParentScan();
+    try {
+      List<MassList> list = new ArrayList<>(origin.getMassLists().length);
+      for (MassList m : origin.getMassLists()) {
+        MassList masses = new SimpleMassList(m.getName(), target, m.getDataPoints());
+        list.add(masses);
+      }
+      finalMassLists.add(list);
+    } catch (Exception e) {
+      setErrorMessage("Developing error - cannot copy mass list from wrong scan type");
+      logger.log(Level.WARNING, "Cannot copy mass list", e);
+      setStatus(TaskStatus.ERROR);
     }
   }
 
