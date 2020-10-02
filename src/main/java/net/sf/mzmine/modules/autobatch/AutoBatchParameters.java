@@ -23,6 +23,7 @@ import net.sf.mzmine.parameters.parametertypes.filenames.FileNameParameter;
 import net.sf.mzmine.parameters.parametertypes.filenames.FileNamesParameter;
 import net.sf.mzmine.util.ExitCode;
 import net.sf.mzmine.util.chartexport.FileTypeFilter;
+import net.sf.mzmine.util.files.FileAndPathUtil;
 
 public class AutoBatchParameters extends SimpleParameterSet {
 
@@ -87,6 +88,7 @@ public class AutoBatchParameters extends SimpleParameterSet {
   }
 
   private static void writeFile(File file, String[] strings) {
+    file = FileAndPathUtil.getRealFilePath(file, ".txt");
     BufferedWriter writer = null;
     try {
       // Success

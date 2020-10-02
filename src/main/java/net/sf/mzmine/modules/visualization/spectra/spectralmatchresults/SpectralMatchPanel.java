@@ -418,6 +418,13 @@ public class SpectralMatchPanel extends JPanel {
 
   public boolean exportToGraphics(File f, String... formats) {
     try {
+      try {
+        if (!f.getParentFile().exists())
+          f.getParentFile().mkdirs();
+      } catch (Exception e) {
+        logger.log(Level.SEVERE, "Cannot create folder " + f.getParent(), e);
+      }
+
       pnExport.setVisible(false);
       pnExport.revalidate();
       pnExport.getParent().revalidate();
