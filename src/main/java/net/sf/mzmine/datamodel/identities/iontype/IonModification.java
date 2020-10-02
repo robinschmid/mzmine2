@@ -98,6 +98,9 @@ public class IonModification extends NeutralMolecule implements Comparable<IonMo
       new IonModification(IonModificationType.NEUTRAL_LOSS, "CO", "CO", -27.994915, 0);
   public static final IonModification CO2 =
       new IonModification(IonModificationType.NEUTRAL_LOSS, "CO2", "CO2", -43.989829, 0);
+
+  public static final IonModification CL_H_EXCHANGE =
+      new IonModification(IonModificationType.NEUTRAL_LOSS, "-Cl+H", -33.96102765, 0);
   // cluster
   public static final IonModification MEOH =
       new IonModification(IonModificationType.CLUSTER, "MeOH", "CH3OH", 32.026215, 0);

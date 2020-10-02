@@ -459,6 +459,7 @@ public class SpectraIdentificationResultsWindow extends JFrame {
     modifications.add(IonModification.CO);
     modifications.add(IonModification.CO2);
     modifications.add(IonModification.H2O);
+    modifications.add(IonModification.CL_H_EXCHANGE);
   }
 
   public Font getChartFont() {

@@ -31,6 +31,7 @@ import net.sf.mzmine.datamodel.DataPoint;
 import net.sf.mzmine.datamodel.LibraryScan;
 import net.sf.mzmine.datamodel.PeakList;
 import net.sf.mzmine.datamodel.PolarityType;
+import net.sf.mzmine.datamodel.identities.iontype.CombinedIonModification;
 import net.sf.mzmine.datamodel.identities.iontype.IonModification;
 import net.sf.mzmine.datamodel.identities.iontype.IonType;
 import net.sf.mzmine.main.MZmineCore;
@@ -180,6 +181,13 @@ public class LibraryMatchResultsExportTask extends AbstractTask {
         ionAnnotations.add(new IonType(i, IonModification.K, null));
         ionAnnotations.add(new IonType(i, IonModification.H, IonModification.H2O));
         ionAnnotations.add(new IonType(i, IonModification.H, IonModification.C2H4));
+
+        ionAnnotations.add(new IonType(i, IonModification.M_PLUS, IonModification.CL_H_EXCHANGE));
+        ionAnnotations.add(new IonType(i, IonModification.M_PLUS, new CombinedIonModification(
+            IonModification.CL_H_EXCHANGE, IonModification.CL_H_EXCHANGE)));
+        ionAnnotations.add(new IonType(i, IonModification.H, IonModification.CL_H_EXCHANGE));
+        ionAnnotations.add(new IonType(i, IonModification.H, new CombinedIonModification(
+            IonModification.CL_H_EXCHANGE, IonModification.CL_H_EXCHANGE)));
       }
       // neg
       if (!polarity.equals(PolarityType.POSITIVE)) {
