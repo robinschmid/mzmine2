@@ -219,14 +219,17 @@ class CarbonBlackTask extends AbstractTask {
 
           // enough consecutive?
           if (minConsecutive <= maxConsecutive) {
+            name = "Carbon Black:" + name;
             Map<DBEntryField, Object> fields = new HashMap<>();
             fields.put(DBEntryField.NAME, name);
-            fields.put(DBEntryField.COMMENT, "Carbon Black without main signals; " + name);
+            fields.put(DBEntryField.COMMENT,
+                "Carbon Black without main signals (only isotopes); " + name);
             SpectralDBEntry entry = new SpectralDBEntry(fields, libraryOnlyIsotopes);
 
             SpectralDBPeakIdentity id = new SpectralDBPeakIdentity(
                 row.getBestPeak().getRepresentativeScan(), masses, entry, sim, "Carbon Black ID");
             addIdentity(row, id);
+
 
             // add with main signals
             SpectralSimilarity sim2 = simFunc.getSimilarity(param, mzTolerance, 3, library, dps);
@@ -253,6 +256,10 @@ class CarbonBlackTask extends AbstractTask {
   private void addIdentity(PeakListRow row, SpectralDBPeakIdentity id) {
     // add new identity to the row
     row.addPeakIdentity(id, false);
+    if (row.getComment().isEmpty())
+      row.setComment("Carbon Black");
+    else
+      row.setComment(row.getComment() + ";");
 
     // Notify the GUI about the change in the project
     MZmineCore.getProjectManager().getCurrentProject().notifyObjectChanged(row, false);
