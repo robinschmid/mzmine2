@@ -31,6 +31,7 @@ import java.util.List;
  * @author Robin Schmid (robinschmid@uni-muenster.de)
  */
 public class FileAndPathUtil {
+  public static final int MAX_PATH_LENGTH = 240;
 
   /**
    * Returns the real file path as path/filename.fileformat
@@ -41,7 +42,23 @@ public class FileAndPathUtil {
    * @return
    */
   public static File getRealFilePath(File path, String name, String format) {
-    return new File(getFolderOfFile(path), getRealFileName(name, format));
+    return getRealFilePath(path, name, format, true);
+  }
+
+  public static File getRealFilePath(File path, String name, String format,
+      boolean checkMaxLength) {
+    File f = new File(getFolderOfFile(path), getRealFileName(name, format));
+
+    if (checkMaxLength && f.length() > MAX_PATH_LENGTH - format.length()) {
+      int length = MAX_PATH_LENGTH - path.getAbsolutePath().length() - format.length();
+      if (length <= 0) {
+        throw new PathLengthException(f);
+      }
+      String newname = name.substring(0, length);
+      f = getRealFilePath(path, newname, format, false);
+    }
+
+    return f;
   }
 
   /**
@@ -54,7 +71,11 @@ public class FileAndPathUtil {
    * @throws Exception if there is no filname (selected path = folder)
    */
   public static File getRealFilePath(File filepath, String format) {
-    return new File(filepath.getParentFile(), getRealFileName(filepath.getName(), format));
+    return getRealFilePath(filepath, format, true);
+  }
+
+  public static File getRealFilePath(File filepath, String format, boolean checkMaxLength) {
+    return getRealFilePath(filepath.getParentFile(), filepath.getName(), format, checkMaxLength);
   }
 
   /**
@@ -65,7 +86,20 @@ public class FileAndPathUtil {
    * @return
    */
   public static String getRealFileName(String name, String format) {
+    return getRealFileName(name, format, true);
+  }
+
+  /**
+   * Returns the real file name as filename.fileformat
+   * 
+   * @param name
+   * @param format a format starting with a dot for example .pdf
+   * @return
+   */
+  public static String getRealFileName(String name, String format, boolean checkMaxLength) {
     String result = eraseFormat(name);
+    if (checkMaxLength && result.length() > MAX_PATH_LENGTH - format.length())
+      result = result.substring(0, MAX_PATH_LENGTH - format.length());
     result = addFormat(result, format);
     return result;
   }
@@ -79,6 +113,17 @@ public class FileAndPathUtil {
    */
   public static String getRealFileName(File name, String format) {
     return getRealFileName(name.getAbsolutePath(), format);
+  }
+
+  /**
+   * Returns the real file name as filename.fileformat
+   * 
+   * @param name
+   * @param format a format starting with a dot for example .pdf
+   * @return
+   */
+  public static String getRealFileName(File name, String format, boolean checkMaxLength) {
+    return getRealFileName(name.getAbsolutePath(), format, checkMaxLength);
   }
 
   /**

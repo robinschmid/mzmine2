@@ -216,9 +216,10 @@ public class LibraryMatchGraphicsExportTask extends AbstractTask {
     if (substitute) {
       // Substitute
       newFilename = newFilename.replaceAll(Pattern.quote(plNamePattern), cleanPlName);
-      return FileAndPathUtil.getRealFilePath(new File(newFilename), "pdf");
+
+      return FileAndPathUtil.getRealFilePath(new File(newFilename), "pdf", true);
     } else
-      return FileAndPathUtil.getRealFilePath(new File(newFilename), "pdf");
+      return FileAndPathUtil.getRealFilePath(new File(newFilename), "pdf", true);
   }
 
   private void exportPeakList(PeakList pkl)
